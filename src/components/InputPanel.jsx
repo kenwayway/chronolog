@@ -4,6 +4,7 @@ import { SESSION_STATUS } from '../utils/constants'
 export function InputPanel({
     status,
     onLogIn,
+    onSwitch,
     onNote,
     onLogOff,
     aiLoading,
@@ -26,6 +27,9 @@ export function InputPanel({
             case 'logIn':
                 onLogIn(input.trim())
                 break
+            case 'switch':
+                onSwitch(input.trim())
+                break
             case 'note':
                 onNote(input.trim())
                 break
@@ -40,14 +44,24 @@ export function InputPanel({
     }
 
     const handleKeyDown = (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
+        // Enter = NOTE
+        if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey) {
             e.preventDefault()
             handleSubmit('note')
-        } else if (e.key === 'Enter' && e.ctrlKey) {
+        }
+        // Ctrl+Enter = LOG IN / SWITCH (starts new session)
+        else if (e.key === 'Enter' && e.ctrlKey && !e.shiftKey) {
             e.preventDefault()
             if (!isStreaming) {
                 handleSubmit('logIn')
             } else {
+                handleSubmit('switch')
+            }
+        }
+        // Ctrl+Shift+Enter = LOG OFF (only when streaming)
+        else if (e.key === 'Enter' && e.ctrlKey && e.shiftKey) {
+            e.preventDefault()
+            if (isStreaming) {
                 handleSubmit('logOff')
             }
         }
@@ -66,91 +80,92 @@ export function InputPanel({
     }, [input])
 
     return (
-        <div
-            className="fixed bottom-0 left-0 right-0 z-300 pointer-events-none"
-            style={{ paddingBottom: 0 }}
-        >
-            <div
-                className="max-w-4xl mx-auto px-4 pb-3 pt-3 bg-[var(--bg-primary)] border-t border-[var(--border-subtle)] pointer-events-auto"
-                style={{
-                    transform: 'translateY(0)',
-                    transition: 'all 150ms ease-out'
-                }}
-            >
-                {/* Main input area */}
-                <div className={`flex items-end gap-3 p-3 bg-[var(--bg-secondary)] border rounded-[4px] transition-all duration-150 ${isFocused ? 'border-[var(--accent)] shadow-[0_0_0_1px_var(--accent-subtle)]' : 'border-[var(--border-light)]'}`}>
-                    {/* Prompt Symbol */}
-                    <div className="flex-shrink-0 pb-0.5 text-[var(--accent)] font-bold select-none text-sm">
-                        {isStreaming ? '➜' : '❯'}
+        <div className="fixed bottom-0 left-0 right-0 z-300 bg-[var(--bg-primary)] border-t border-[var(--border-subtle)]">
+            <div className="max-w-4xl mx-auto px-4 py-4">
+                <div className="flex flex-col gap-3">
+                    {/* Input Area */}
+                    <div className="relative flex items-start gap-3">
+                        <div className="flex-shrink-0 pt-1 text-[var(--accent)] font-bold select-none text-sm">
+                            {isStreaming ? '➜' : '❯'}
+                        </div>
+                        <div className="flex-1">
+                            <textarea
+                                ref={inputRef}
+                                value={input}
+                                onChange={(e) => setInput(e.target.value)}
+                                onKeyDown={handleKeyDown}
+                                onFocus={() => setIsFocused(true)}
+                                onBlur={() => setIsFocused(false)}
+                                placeholder={isStreaming ? "Add note or switch session..." : "What are you working on?"}
+                                rows={1}
+                                className="w-full bg-transparent text-[var(--text-primary)] font-mono text-[15px] resize-none focus:outline-none placeholder:text-[var(--text-dim)] leading-relaxed overflow-y-auto transition-all duration-200 ease-in-out"
+                                style={{
+                                    height: isFocused ? Math.max(textareaHeight, 80) + 'px' : textareaHeight + 'px',
+                                    minHeight: isFocused ? '80px' : '24px',
+                                    maxHeight: '300px'
+                                }}
+                            />
+                        </div>
                     </div>
 
-                    {/* Input Area - grows upward */}
-                    <div className="flex-1 relative flex flex-col justify-end">
-                        <textarea
-                            ref={inputRef}
-                            value={input}
-                            onChange={(e) => setInput(e.target.value)}
-                            onKeyDown={handleKeyDown}
-                            onFocus={() => setIsFocused(true)}
-                            onBlur={() => setIsFocused(false)}
-                            placeholder={isStreaming ? "Add note..." : "What are you working on?"}
-                            rows={1}
-                            className="w-full bg-transparent text-[var(--text-primary)] font-mono text-sm resize-none focus:outline-none placeholder:text-[var(--text-dim)] leading-relaxed overflow-y-auto"
-                            style={{
-                                height: textareaHeight + 'px',
-                                minHeight: '24px',
-                                maxHeight: '200px'
-                            }}
-                        />
-                    </div>
+                    {/* Bottom Bar: Status & Actions */}
+                    <div className="flex-between pl-6">
+                        {/* Status Indicators */}
+                        <div className="flex items-center gap-4 text-[10px] font-mono text-[var(--text-dim)]">
+                            <div className={`flex items-center gap-1.5 ${isStreaming ? 'text-[var(--streaming)]' : ''}`}>
+                                <div className={`w-1.5 h-1.5 rounded-full ${isStreaming ? 'bg-[var(--streaming)] animate-pulse' : 'bg-[var(--text-dim)]'}`}></div>
+                                <span className="uppercase tracking-wider">{isStreaming ? 'ACTIVE' : 'IDLE'}</span>
+                            </div>
 
-                    {/* Action buttons */}
-                    <div className="flex-shrink-0 flex items-center gap-1 pb-0.5">
-                        {aiLoading && (
-                            <span className="w-1.5 h-1.5 bg-[var(--accent)] rounded-full animate-pulse mr-2"></span>
-                        )}
+                            {aiLoading && (
+                                <div className="flex items-center gap-1.5 text-[var(--accent)]">
+                                    <span className="w-1.5 h-1.5 bg-[var(--accent)] rounded-full animate-pulse"></span>
+                                    <span className="uppercase tracking-wider">AI_PROCESSING</span>
+                                </div>
+                            )}
 
-                        {!isStreaming ? (
+                            {!hasApiKey && (
+                                <span className="opacity-50">NO_API</span>
+                            )}
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex items-center gap-4 font-mono text-[10px]">
+                            {/* NOTE button */}
                             <button
-                                className="px-2 py-1 text-[10px] font-bold text-[var(--bg-primary)] bg-[var(--accent)] rounded-[3px] cursor-pointer hover:bg-[var(--accent-light)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors uppercase tracking-wide"
-                                onClick={() => handleSubmit('logIn')}
+                                className="text-[var(--text-dim)] hover:text-[var(--text-primary)] cursor-pointer bg-transparent border-none uppercase tracking-wider transition-colors disabled:opacity-30"
+                                onClick={() => handleSubmit('note')}
+                                disabled={!input.trim()}
+                                title="Enter"
+                            >
+                                [ NOTE ]
+                            </button>
+
+                            {/* LOG OFF button */}
+                            {isStreaming && (
+                                <button
+                                    className="text-[var(--error)] hover:text-[var(--error)]/80 cursor-pointer bg-transparent border-none uppercase tracking-wider transition-colors"
+                                    onClick={() => handleSubmit('logOff')}
+                                    title="Ctrl+Shift+Enter"
+                                >
+                                    [ LOG OFF ]
+                                </button>
+                            )}
+
+                            {/* LOG IN / SWITCH button */}
+                            <button
+                                className="text-[var(--accent)] hover:text-[var(--accent-light)] cursor-pointer bg-transparent border-none uppercase tracking-wider transition-colors disabled:opacity-30"
+                                onClick={() => handleSubmit(isStreaming ? 'switch' : 'logIn')}
                                 disabled={!input.trim()}
                                 title="Ctrl+Enter"
                             >
-                                START
+                                [ {isStreaming ? 'SWITCH' : 'LOG IN'} ]
                             </button>
-                        ) : (
-                            <button
-                                className="px-2 py-1 text-[10px] font-bold text-[var(--error)] bg-transparent border border-[var(--error)] rounded-[3px] cursor-pointer hover:bg-[var(--error)] hover:text-[var(--bg-primary)] transition-colors uppercase tracking-wide"
-                                onClick={() => handleSubmit('logOff')}
-                                title="Ctrl+Enter"
-                            >
-                                END
-                            </button>
-                        )}
-                    </div>
-                </div>
-
-                {/* Status bar */}
-                <div className="flex items-center justify-between mt-2 px-1">
-                    <div className="flex items-center gap-3 text-[10px] font-mono text-[var(--text-dim)]">
-                        <div className={`flex items-center gap-1.5 ${isStreaming ? 'text-[var(--streaming)]' : ''}`}>
-                            <div className={`w-1.5 h-1.5 rounded-full ${isStreaming ? 'bg-[var(--streaming)] animate-pulse' : 'bg-[var(--text-dim)]'}`}></div>
-                            <span className="uppercase tracking-wider">{isStreaming ? 'ACTIVE' : 'IDLE'}</span>
                         </div>
-
-                        {!hasApiKey && (
-                            <span className="opacity-50">NO_API</span>
-                        )}
-                    </div>
-
-                    <div className="text-[10px] font-mono text-[var(--text-dim)] opacity-50">
-                        <span>↵ note</span>
-                        <span className="mx-2">·</span>
-                        <span>^↵ {isStreaming ? 'end' : 'start'}</span>
                     </div>
                 </div>
             </div>
         </div>
     )
 }
+

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useTheme, ACCENT_COLORS } from '../hooks/useTheme.jsx'
+import { useTheme, ACCENT_COLORS, TEXT_VARIANTS } from '../hooks/useTheme.jsx'
 
 export function SettingsModal({
     isOpen,
@@ -16,7 +16,7 @@ export function SettingsModal({
     const [saved, setSaved] = useState(false)
     const [newCatLabel, setNewCatLabel] = useState('')
     const [newCatColor, setNewCatColor] = useState('#7aa2f7')
-    const { theme, setMode, setAccent } = useTheme()
+    const { theme, setMode, setAccent, setTextColor } = useTheme()
 
     if (!isOpen) return null
 
@@ -45,12 +45,12 @@ export function SettingsModal({
 
     return (
         <div
-            className="fixed inset-0 flex-center p-6 bg-black/70 backdrop-blur-sm z-400 animate-fade-in font-mono"
+            className="fixed inset-0 flex-center p-6 bg-black/70 backdrop-blur-sm z-400 font-mono"
             onClick={handleBackdropClick}
         >
-            <div className="w-full max-w-[520px] max-h-[90vh] overflow-y-auto bg-[var(--bg-secondary)] border border-[var(--border-light)] rounded-[4px] shadow-2xl animate-slide-in">
+            <div className="w-full max-w-[520px] max-h-[90vh] overflow-y-auto bg-[var(--bg-secondary)] border border-[var(--border-light)] rounded-[4px] shadow-2xl">
                 <div className="flex-between px-6 py-4 border-b border-[var(--border-light)] bg-[var(--bg-secondary)]">
-                    <h2 className="text-sm font-bold text-[var(--text-primary)] uppercase tracking-wider">[SYSTEM_CONFIG]</h2>
+                    <h2 className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">[SYSTEM_CONFIG]</h2>
                     <button
                         className="text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer bg-transparent border-none text-lg"
                         onClick={onClose}
@@ -67,13 +67,13 @@ export function SettingsModal({
                         </label>
                         <div className="flex gap-3">
                             <button
-                                className={`flex-1 flex-center gap-2 p-3 text-xs font-bold border rounded-[2px] cursor-pointer transition-all duration-150 ${theme.mode === 'light' ? 'text-[var(--bg-primary)] bg-[var(--text-primary)] border-[var(--text-primary)]' : 'text-[var(--text-secondary)] bg-transparent border-[var(--border-light)] hover:border-[var(--text-muted)] hover:text-[var(--text-primary)]'}`}
+                                className={`flex-1 btn ${theme.mode === 'light' ? 'btn-primary' : 'btn-secondary'}`}
                                 onClick={() => setMode('light')}
                             >
                                 <span>LIGHT_MODE</span>
                             </button>
                             <button
-                                className={`flex-1 flex-center gap-2 p-3 text-xs font-bold border rounded-[2px] cursor-pointer transition-all duration-150 ${theme.mode === 'dark' ? 'text-[var(--bg-primary)] bg-[var(--text-primary)] border-[var(--text-primary)]' : 'text-[var(--text-secondary)] bg-transparent border-[var(--border-light)] hover:border-[var(--text-muted)] hover:text-[var(--text-primary)]'}`}
+                                className={`flex-1 btn ${theme.mode === 'dark' ? 'btn-primary' : 'btn-secondary'}`}
                                 onClick={() => setMode('dark')}
                             >
                                 <span>DARK_MODE</span>
@@ -100,6 +100,8 @@ export function SettingsModal({
                             ))}
                         </div>
                     </div>
+
+
 
                     {/* Categories */}
                     <div>
@@ -154,7 +156,7 @@ export function SettingsModal({
                                 onKeyDown={(e) => e.key === 'Enter' && handleAddCategory()}
                             />
                             <button
-                                className="px-3 py-2 text-xs font-bold text-[var(--accent)] bg-transparent border border-[var(--accent)] rounded-[2px] cursor-pointer hover:bg-[var(--accent-subtle)] uppercase"
+                                className="btn btn-secondary text-[var(--accent)] border-[var(--accent)] hover:bg-[var(--accent-subtle)]"
                                 onClick={handleAddCategory}
                             >
                                 ADD
@@ -190,13 +192,13 @@ export function SettingsModal({
 
                 <div className="flex justify-end gap-3 px-6 py-4 border-t border-[var(--border-light)] bg-[var(--bg-secondary)]">
                     <button
-                        className="px-4 py-2 text-xs font-bold text-[var(--text-secondary)] bg-transparent border border-transparent rounded-[2px] cursor-pointer hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] uppercase tracking-wide"
+                        className="btn btn-ghost uppercase tracking-wide"
                         onClick={onClose}
                     >
                         CANCEL
                     </button>
                     <button
-                        className={`px-4 py-2 text-xs font-bold text-[var(--bg-primary)] border border-transparent rounded-[2px] cursor-pointer uppercase tracking-wide transition-all ${saved ? 'bg-[var(--streaming)]' : 'bg-[var(--accent)] hover:bg-[var(--accent-light)]'}`}
+                        className={`btn uppercase tracking-wide ${saved ? 'btn-primary bg-[var(--streaming)] hover:bg-[var(--streaming)]' : 'btn-primary'}`}
                         onClick={handleSave}
                     >
                         {saved ? 'SAVED' : 'SAVE_CONFIG'}

@@ -64,27 +64,27 @@ export default defineConfig({
         /* Theme Variables - Dark (Default) */
         :root,
         [data-theme="dark"] {
-          --bg-primary: #0d0d12; /* Darker, deeper background */
-          --bg-secondary: #16161e;
-          --bg-tertiary: #1e1e2a;
-          --bg-glass: rgba(13, 13, 18, 0.95); /* Less transparent, more solid */
+          --bg-primary: #0f0f14; /* Slightly lighter than #0d0d12 for less harsh contrast */
+          --bg-secondary: #1a1a24;
+          --bg-tertiary: #242432;
+          --bg-glass: rgba(15, 15, 20, 0.95);
           
-          --accent: #7aa2f7; /* Tokyo Night Blue/Indigo */
+          --accent: #7aa2f7;
           --accent-light: #89ddff;
           --accent-glow: rgba(122, 162, 247, 0.15);
           --accent-subtle: rgba(122, 162, 247, 0.1);
           
           --text-primary: #c0caf5;
-          --text-secondary: #9aa5ce;
-          --text-muted: #565f89;
-          --text-dim: #414868;
+          --text-secondary: #a9b1d6; /* Brightened from #9aa5ce */
+          --text-muted: #787c99; /* Brightened from #565f89 */
+          --text-dim: #565f89; /* Brightened from #414868 */
           
-          --streaming: #9ece6a; /* Green */
+          --streaming: #9ece6a;
           --streaming-glow: rgba(158, 206, 106, 0.2);
-          --todo: #e0af68; /* Orange/Yellow */
+          --todo: #e0af68;
           --todo-glow: rgba(224, 175, 104, 0.15);
-          --done: #bb9af7; /* Purple */
-          --error: #f7768e; /* Red */
+          --done: #bb9af7;
+          --error: #f7768e;
           
           --border-subtle: #1f2335;
           --border-light: #292e42;
@@ -105,9 +105,9 @@ export default defineConfig({
           --accent-subtle: rgba(46, 92, 186, 0.05);
           
           --text-primary: #2c3e50;
-          --text-secondary: #586e88;
-          --text-muted: #8da1b9;
-          --text-dim: #cbd5e1;
+          --text-secondary: #475569;
+          --text-muted: #64748b;
+          --text-dim: #94a3b8;
           
           --streaming: #10b981;
           --streaming-glow: rgba(16, 185, 129, 0.15);
@@ -129,7 +129,7 @@ export default defineConfig({
         }
         
         html {
-          font-size: 14px; /* Slightly smaller for code editor feel */
+          font-size: 15px; /* Increased from 14px for better readability */
           -webkit-font-smoothing: antialiased;
         }
         
@@ -137,7 +137,7 @@ export default defineConfig({
           font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
           background-color: var(--bg-primary);
           color: var(--text-primary);
-          line-height: 1.5;
+          line-height: 1.6; /* Increased from 1.5 */
           min-height: 100vh;
           overflow-x: hidden;
         }

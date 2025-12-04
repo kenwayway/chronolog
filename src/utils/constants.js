@@ -15,6 +15,7 @@ export const SESSION_STATUS = {
 // Action types for reducer
 export const ACTIONS = {
     LOG_IN: 'LOG_IN',
+    SWITCH: 'SWITCH',  // End current session and start new one
     NOTE: 'NOTE',
     LOG_OFF: 'LOG_OFF',
     COMPLETE_TASK: 'COMPLETE_TASK',

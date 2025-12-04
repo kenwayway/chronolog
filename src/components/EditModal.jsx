@@ -40,11 +40,11 @@ export function EditModal({ isOpen, entry, onSave, onClose }) {
 
     return (
         <div
-            className="fixed inset-0 flex-center p-6 bg-black/70 backdrop-blur-sm z-400 animate-fade-in font-mono"
+            className="fixed inset-0 flex-center p-6 bg-black/70 backdrop-blur-sm z-400 font-mono"
             onClick={handleBackdropClick}
             onKeyDown={handleKeyDown}
         >
-            <div className="w-full max-w-[600px] bg-[var(--bg-secondary)] border border-[var(--border-light)] rounded-[4px] shadow-2xl animate-slide-in">
+            <div className="w-full max-w-[600px] bg-[var(--bg-secondary)] border border-[var(--border-light)] rounded-[4px] shadow-2xl">
                 <div className="flex-between px-4 py-3 border-b border-[var(--border-light)]">
                     <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">[EDIT_ENTRY]</span>
                     <button
@@ -71,13 +71,13 @@ export function EditModal({ isOpen, entry, onSave, onClose }) {
                     </span>
                     <div className="flex gap-3">
                         <button
-                            className="px-4 py-2 text-xs font-bold text-[var(--text-secondary)] bg-transparent border border-transparent rounded-[2px] cursor-pointer hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] uppercase tracking-wide"
+                            className="btn btn-ghost uppercase tracking-wide"
                             onClick={onClose}
                         >
                             CANCEL
                         </button>
                         <button
-                            className="px-4 py-2 text-xs font-bold text-[var(--bg-primary)] bg-[var(--accent)] border border-transparent rounded-[2px] cursor-pointer hover:bg-[var(--accent-light)] uppercase tracking-wide"
+                            className="btn btn-primary uppercase tracking-wide"
                             onClick={handleSave}
                         >
                             SAVE

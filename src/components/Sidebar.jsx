@@ -15,7 +15,7 @@ export function Sidebar({ isOpen, onClose, tasks, onCompleteTask }) {
             {/* Sidebar panel */}
             <div className={`fixed top-0 right-0 bottom-0 w-80 max-w-[100vw] bg-[var(--bg-secondary)] border-l border-[var(--border-light)] z-401 flex flex-col transition-transform duration-300 ease-out shadow-[-10px_0_30px_rgba(0,0,0,0.3)] ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
                 <div className="flex-between px-6 py-4 border-b border-[var(--border-light)] bg-[var(--bg-secondary)]">
-                    <h2 className="text-sm font-bold text-[var(--text-primary)] uppercase tracking-wider">[TASK_MATRIX]</h2>
+                    <h2 className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono">[ TASKS ]</h2>
                     <button
                         className="text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer bg-transparent border-none text-lg"
                         onClick={onClose}
@@ -71,7 +71,7 @@ export function Sidebar({ isOpen, onClose, tasks, onCompleteTask }) {
 
 function TaskItem({ task, onComplete }) {
     return (
-        <div className={`group relative flex gap-3 p-3 bg-[var(--bg-primary)] border border-[var(--border-light)] rounded-[2px] transition-all duration-150 ${!task.done ? 'hover:border-[var(--accent)] hover:shadow-[0_2px_8px_rgba(0,0,0,0.1)]' : 'opacity-60 bg-[var(--bg-tertiary)]'}`}>
+        <div className={`group relative flex gap-3 p-3.5 bg-[var(--bg-primary)] border border-[var(--border-light)] rounded-[4px] transition-all duration-150 ${!task.done ? 'hover:border-[var(--accent)] hover:shadow-[0_2px_8px_rgba(0,0,0,0.1)]' : 'opacity-60 bg-[var(--bg-tertiary)]'}`}>
             <label className="relative flex items-start pt-0.5 cursor-pointer">
                 <input
                     type="checkbox"
@@ -80,17 +80,17 @@ function TaskItem({ task, onComplete }) {
                     disabled={task.done}
                     className="peer absolute opacity-0 w-full h-full cursor-pointer"
                 />
-                <div className={`w-4 h-4 border border-[var(--text-muted)] rounded-[2px] flex items-center justify-center transition-colors peer-checked:bg-[var(--done)] peer-checked:border-[var(--done)] peer-hover:border-[var(--accent)]`}>
+                <div className={`w-4 h-4 border border-[var(--text-muted)] rounded-[3px] flex items-center justify-center transition-colors peer-checked:bg-[var(--done)] peer-checked:border-[var(--done)] peer-hover:border-[var(--accent)]`}>
                     {task.done && <span className="text-[var(--bg-primary)] text-xs font-bold">✓</span>}
                 </div>
             </label>
 
             <div className="flex-1 min-w-0">
-                <p className={`text-xs leading-relaxed break-words ${task.done ? 'line-through text-[var(--text-muted)]' : 'text-[var(--text-primary)]'}`}>
+                <p className={`text-[13px] leading-relaxed break-words ${task.done ? 'line-through text-[var(--text-muted)]' : 'text-[var(--text-primary)]'}`}>
                     {task.content}
                 </p>
-                <div className="mt-1 text-[10px] text-[var(--text-dim)] flex items-center gap-2">
-                    <span>ID: {task.id.slice(-4)}</span>
+                <div className="mt-1.5 text-[10px] text-[var(--text-dim)] flex items-center gap-2">
+                    <span className="font-mono opacity-70">ID: {task.id.slice(-4)}</span>
                     <span>{new Date(task.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
                 </div>
             </div>

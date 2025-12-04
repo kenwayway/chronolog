@@ -178,6 +178,42 @@ function sessionReducer(state, action) {
             }
         }
 
+        case ACTIONS.SWITCH: {
+            // If already streaming, end the current session first
+            const now = Date.now()
+            const newSessionId = generateId()
+            let newEntries = [...state.entries]
+
+            if (state.status === SESSION_STATUS.STREAMING && state.sessionStart) {
+                // Add session end entry
+                const endEntry = {
+                    id: generateId(),
+                    type: ENTRY_TYPES.SESSION_END,
+                    content: '',
+                    timestamp: now,
+                    duration: now - state.sessionStart
+                }
+                newEntries.push(endEntry)
+            }
+
+            // Add session start entry
+            const startEntry = {
+                id: generateId(),
+                type: ENTRY_TYPES.SESSION_START,
+                content: action.payload.content,
+                timestamp: now + 1, // +1ms to ensure order
+                sessionId: newSessionId
+            }
+            newEntries.push(startEntry)
+
+            return {
+                ...state,
+                status: SESSION_STATUS.STREAMING,
+                sessionStart: startEntry.timestamp,
+                entries: newEntries
+            }
+        }
+
         case ACTIONS.NOTE: {
             // Allow NOTE in any state (both IDLE and STREAMING)
             const newEntry = {
@@ -422,11 +458,16 @@ export function useSession() {
         dispatch({ type: ACTIONS.SET_ENTRY_CATEGORY, payload: { entryId, category } })
     }, [])
 
+    const switchSession = useCallback((content) => {
+        dispatch({ type: ACTIONS.SWITCH, payload: { content } })
+    }, [])
+
     return {
         state,
         isStreaming: state.status === SESSION_STATUS.STREAMING,
         actions: {
             logIn,
+            switchSession,
             addNote,
             logOff,
             addTask,

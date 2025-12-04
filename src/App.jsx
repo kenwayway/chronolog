@@ -34,6 +34,17 @@ function App() {
         }
     }, [actions, state.apiKey, detectIntent])
 
+    const handleSwitch = useCallback(async (content) => {
+        actions.switchSession(content)
+
+        if (state.apiKey) {
+            const result = await detectIntent(content)
+            if (result.isTodo && result.confidence > 0.6) {
+                actions.addTask(content, result.taskDescription)
+            }
+        }
+    }, [actions, state.apiKey, detectIntent])
+
     const handleNote = useCallback(async (content) => {
         let todoData = null
 
@@ -141,6 +152,7 @@ function App() {
             <InputPanel
                 status={state.status}
                 onLogIn={handleLogIn}
+                onSwitch={handleSwitch}
                 onNote={handleNote}
                 onLogOff={handleLogOff}
                 aiLoading={aiLoading}
