@@ -8,79 +8,142 @@ const defaultTestData = {
     status: SESSION_STATUS.IDLE,
     sessionStart: null,
     entries: [
-        // Session 1: Morning work
+        // Session 1: Morning deep work
         {
             id: 'test-1',
             type: ENTRY_TYPES.SESSION_START,
-            content: '开始写代码',
-            timestamp: now - 4 * 60 * 60 * 1000, // 4 hours ago
+            content: '开始写代码 #coding #deepwork',
+            timestamp: now - 6 * 60 * 60 * 1000, // 6 hours ago
+            category: 'craft',
         },
         {
             id: 'test-2',
             type: ENTRY_TYPES.NOTE,
-            content: '想到一个好的架构方案',
-            timestamp: now - 3.5 * 60 * 60 * 1000,
+            content: '想到一个好的架构方案：使用状态机来管理session的生命周期。这样可以更清晰地定义状态转换，避免边界情况的bug。需要画个状态图来理清思路。 #architecture #design',
+            timestamp: now - 5.5 * 60 * 60 * 1000,
             isTodo: false,
+            category: 'craft',
         },
         {
             id: 'test-3',
             type: ENTRY_TYPES.NOTE,
-            content: '需要买咖啡豆',
-            timestamp: now - 3 * 60 * 60 * 1000,
+            content: '☕ 需要买咖啡豆，家里的快用完了 #shopping',
+            timestamp: now - 5 * 60 * 60 * 1000,
             isTodo: true,
             taskId: 'task-1',
+            category: 'maintenance',
         },
         {
             id: 'test-4',
-            type: ENTRY_TYPES.SESSION_END,
-            content: '',
-            timestamp: now - 2.5 * 60 * 60 * 1000,
-            duration: 1.5 * 60 * 60 * 1000, // 1.5 hours
+            type: ENTRY_TYPES.NOTE,
+            content: '刚刚看到一个很棒的UI设计，保存一下参考！\n📷 https://dribbble.com/shots/example\n\n主要亮点：\n- 使用了很深的暗色背景\n- 强调typography的层次感\n- 动效很细腻 #design #inspiration',
+            timestamp: now - 4.8 * 60 * 60 * 1000,
+            isTodo: false,
+            category: 'explore',
         },
-        // Standalone note
         {
             id: 'test-5',
-            type: ENTRY_TYPES.NOTE,
-            content: '午休时想到的灵感',
-            timestamp: now - 2 * 60 * 60 * 1000,
-            isTodo: false,
+            type: ENTRY_TYPES.SESSION_END,
+            content: '完成了状态机的基础实现',
+            timestamp: now - 4 * 60 * 60 * 1000,
+            duration: 2 * 60 * 60 * 1000, // 2 hours
         },
-        // Session 2: Afternoon work
+        // Standalone notes during break
         {
             id: 'test-6',
-            type: ENTRY_TYPES.SESSION_START,
-            content: '继续开发功能',
-            timestamp: now - 1.5 * 60 * 60 * 1000,
+            type: ENTRY_TYPES.NOTE,
+            content: '午休时想到的灵感：可以用CSS变量来实现主题切换，这样用户可以自定义accent color。比hardcode颜色更灵活。 #idea #css',
+            timestamp: now - 3.5 * 60 * 60 * 1000,
+            isTodo: false,
         },
         {
             id: 'test-7',
             type: ENTRY_TYPES.NOTE,
-            content: '记得给设计师反馈',
-            timestamp: now - 1 * 60 * 60 * 1000,
+            content: '📖 读到一篇关于原子习惯的文章，核心观点是：\n\n"你不会达成目标，你只会适应你的系统。"\n\n这和我做这个app的理念很契合——不是记录目标，而是记录行为本身。行为的积累自然会带来结果。\n\n来源: https://jamesclear.com/atomic-habits #reading #productivity #philosophy',
+            timestamp: now - 3 * 60 * 60 * 1000,
+            isTodo: false,
+        },
+        // Session 2: Afternoon coding
+        {
+            id: 'test-8',
+            type: ENTRY_TYPES.SESSION_START,
+            content: '继续开发UI组件 #coding #frontend',
+            timestamp: now - 2.5 * 60 * 60 * 1000,
+        },
+        {
+            id: 'test-9',
+            type: ENTRY_TYPES.NOTE,
+            content: '✅ 完成了Timeline组件的重构，现在支持：\n- 按日期分组\n- 时间戳显示在左侧\n- 不同类型的entry有不同图标\n\n下一步要做InputPanel #progress',
+            timestamp: now - 2 * 60 * 60 * 1000,
+            isTodo: false,
+        },
+        {
+            id: 'test-10',
+            type: ENTRY_TYPES.NOTE,
+            content: '记得给设计师反馈，关于配色方案的想法 #design #collaboration',
+            timestamp: now - 1.5 * 60 * 60 * 1000,
             isTodo: true,
             taskId: 'task-2',
         },
         {
-            id: 'test-8',
+            id: 'test-11',
+            type: ENTRY_TYPES.NOTE,
+            content: '🐛 发现一个bug：当快速切换主题时，动画会卡顿。需要加debounce或者用CSS transition代替JS动画。 #bug #performance',
+            timestamp: now - 1.2 * 60 * 60 * 1000,
+            isTodo: true,
+            taskId: 'task-3',
+        },
+        {
+            id: 'test-12',
             type: ENTRY_TYPES.SESSION_END,
-            content: '完成了主要功能',
+            content: '今天效率不错，主要UI框架搭好了',
+            timestamp: now - 1 * 60 * 60 * 1000,
+            duration: 1.5 * 60 * 60 * 1000, // 1.5 hours
+        },
+        // Recent standalone notes
+        {
+            id: 'test-13',
+            type: ENTRY_TYPES.NOTE,
+            content: '晚饭吃什么？🍜 想吃拉面但是太远了... #life',
             timestamp: now - 0.5 * 60 * 60 * 1000,
-            duration: 1 * 60 * 60 * 1000, // 1 hour
+            isTodo: false,
+        },
+        {
+            id: 'test-14',
+            type: ENTRY_TYPES.NOTE,
+            content: '明天要做的事情：\n1. 完成InputPanel的CLI样式\n2. 添加键盘快捷键支持\n3. 测试移动端适配\n4. 写一下README文档\n\n#planning #tomorrow',
+            timestamp: now - 0.3 * 60 * 60 * 1000,
+            isTodo: true,
+            taskId: 'task-4',
         },
     ],
     tasks: [
         {
             id: 'task-1',
-            content: '需要买咖啡豆',
-            createdAt: now - 3 * 60 * 60 * 1000,
+            content: '☕ 需要买咖啡豆',
+            createdAt: now - 5 * 60 * 60 * 1000,
             entryId: 'test-3',
             done: false,
         },
         {
             id: 'task-2',
-            content: '记得给设计师反馈',
-            createdAt: now - 1 * 60 * 60 * 1000,
-            entryId: 'test-7',
+            content: '记得给设计师反馈配色方案',
+            createdAt: now - 1.5 * 60 * 60 * 1000,
+            entryId: 'test-10',
+            done: false,
+        },
+        {
+            id: 'task-3',
+            content: '修复主题切换动画卡顿bug',
+            createdAt: now - 1.2 * 60 * 60 * 1000,
+            entryId: 'test-11',
+            done: false,
+        },
+        {
+            id: 'task-4',
+            content: '明天的开发计划',
+            createdAt: now - 0.3 * 60 * 60 * 1000,
+            entryId: 'test-14',
             done: false,
         },
     ],
@@ -257,6 +320,16 @@ function sessionReducer(state, action) {
             }
         }
 
+        case ACTIONS.SET_ENTRY_CATEGORY: {
+            const { entryId, category } = action.payload
+            return {
+                ...state,
+                entries: state.entries.map(e =>
+                    e.id === entryId ? { ...e, category } : e
+                )
+            }
+        }
+
         default:
             return state
     }
@@ -345,6 +418,10 @@ export function useSession() {
         dispatch({ type: ACTIONS.SET_API_KEY, payload: { apiKey } })
     }, [])
 
+    const setEntryCategory = useCallback((entryId, category) => {
+        dispatch({ type: ACTIONS.SET_ENTRY_CATEGORY, payload: { entryId, category } })
+    }, [])
+
     return {
         state,
         isStreaming: state.status === SESSION_STATUS.STREAMING,
@@ -356,7 +433,8 @@ export function useSession() {
             completeTask,
             deleteEntry,
             editEntry,
-            setApiKey
+            setApiKey,
+            setEntryCategory
         }
     }
 }

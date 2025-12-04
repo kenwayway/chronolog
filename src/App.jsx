@@ -1,18 +1,22 @@
 import { useState, useCallback } from 'react'
 import { useSession } from './hooks/useSession'
 import { useAI } from './hooks/useAI'
+import { useCategories } from './hooks/useCategories'
 import { Timeline } from './components/Timeline'
 import { InputPanel } from './components/InputPanel'
 import { Sidebar } from './components/Sidebar'
 import { ContextMenu } from './components/ContextMenu'
 import { SettingsModal } from './components/SettingsModal'
+import { EditModal } from './components/EditModal'
 
 function App() {
     const { state, isStreaming, actions } = useSession()
     const { detectIntent, loading: aiLoading } = useAI(state.apiKey)
+    const { categories, addCategory, updateCategory, deleteCategory, resetToDefaults } = useCategories()
 
     const [sidebarOpen, setSidebarOpen] = useState(false)
     const [settingsOpen, setSettingsOpen] = useState(false)
+    const [editModal, setEditModal] = useState({ isOpen: false, entry: null })
     const [contextMenu, setContextMenu] = useState({
         isOpen: false,
         position: { x: 0, y: 0 },
@@ -59,11 +63,16 @@ function App() {
     }, [])
 
     const handleEditEntry = useCallback((entry) => {
-        const newContent = prompt('Edit entry:', entry.content)
-        if (newContent !== null && newContent !== entry.content) {
-            actions.editEntry(entry.id, newContent)
-        }
+        setEditModal({ isOpen: true, entry })
+    }, [])
+
+    const handleSaveEdit = useCallback((entryId, content) => {
+        actions.editEntry(entryId, content)
     }, [actions])
+
+    const closeEditModal = useCallback(() => {
+        setEditModal({ isOpen: false, entry: null })
+    }, [])
 
     const handleDeleteEntry = useCallback((entry) => {
         if (confirm('Delete this entry?')) {
@@ -75,51 +84,56 @@ function App() {
         navigator.clipboard.writeText(entry.content || '')
     }, [])
 
+    const handleSetCategory = useCallback((entryId, category) => {
+        actions.setEntryCategory(entryId, category)
+    }, [actions])
+
     const handleCompleteTask = useCallback((taskId) => {
         actions.completeTask(taskId)
     }, [actions])
 
     return (
-        <div className="min-h-screen flex flex-col bg-[var(--bg-primary)]">
-            {/* Header */}
-            <header className="sticky top-0 flex-between px-6 py-4 glass backdrop-blur-20 border-b border-[var(--border-subtle)] z-200">
-                <div className="flex items-baseline gap-4">
-                    <h1 className="flex items-center gap-2 text-xl font-700 text-[var(--text-primary)] tracking-tight">
-                        <span className="text-lg text-[var(--accent)]">◇</span>
-                        Chronolog
-                    </h1>
-                    <span className="text-sm text-[var(--text-muted)] font-400">低熵容器</span>
+        <div className="min-h-screen flex flex-col bg-[var(--bg-primary)] font-mono selection:bg-[var(--accent-subtle)] selection:text-[var(--accent)]">
+            {/* Header - Minimal CLI style */}
+            <header className="sticky top-0 flex-between px-4 py-2 bg-[var(--bg-primary)] border-b border-[var(--border-subtle)] z-200">
+                <div className="flex items-center gap-3">
+                    <span className="text-[var(--accent)] font-bold">~/chronolog</span>
+                    <span className="text-[var(--text-muted)] text-xs">v1.0.0</span>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-4">
                     <button
-                        className="relative flex-center w-10 h-10 text-lg text-[var(--text-secondary)] bg-transparent border border-[var(--border-subtle)] rounded-lg cursor-pointer transition-all duration-150 hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] hover:border-[var(--border-light)]"
+                        className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer bg-transparent border-none flex items-center gap-1 transition-colors"
                         onClick={() => setSidebarOpen(true)}
                         title="Task Matrix"
                     >
-                        <span>☰</span>
+                        <span>[tasks]</span>
                         {state.tasks.filter(t => !t.done).length > 0 && (
-                            <span className="absolute -top-1 -right-1 min-w-4.5 h-4.5 px-1 text-2.5 font-700 text-white bg-[var(--accent)] rounded-full flex-center">
+                            <span className="text-[var(--accent)] font-bold">
                                 {state.tasks.filter(t => !t.done).length}
                             </span>
                         )}
                     </button>
 
                     <button
-                        className="flex-center w-10 h-10 text-lg text-[var(--text-secondary)] bg-transparent border border-[var(--border-subtle)] rounded-lg cursor-pointer transition-all duration-150 hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] hover:border-[var(--border-light)]"
+                        className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer bg-transparent border-none transition-colors"
                         onClick={() => setSettingsOpen(true)}
                         title="Settings"
                     >
-                        <span>⚙</span>
+                        [config]
                     </button>
                 </div>
             </header>
 
             {/* Main content */}
-            <main className="flex-1 flex flex-col max-w-800px w-full mx-auto">
+            <main className="flex-1 flex flex-col max-w-4xl w-full mx-auto relative">
+                {/* Vertical line decoration */}
+                <div className="absolute left-6 top-0 bottom-0 w-px bg-[var(--border-subtle)] z-0 hidden md:block"></div>
+
                 <Timeline
                     entries={state.entries}
                     status={state.status}
+                    categories={categories}
                     onContextMenu={handleContextMenu}
                 />
             </main>
@@ -144,10 +158,19 @@ function App() {
                 isOpen={contextMenu.isOpen}
                 position={contextMenu.position}
                 entry={contextMenu.entry}
+                categories={categories}
                 onClose={closeContextMenu}
                 onEdit={handleEditEntry}
                 onDelete={handleDeleteEntry}
                 onCopy={handleCopyEntry}
+                onSetCategory={handleSetCategory}
+            />
+
+            <EditModal
+                isOpen={editModal.isOpen}
+                entry={editModal.entry}
+                onSave={handleSaveEdit}
+                onClose={closeEditModal}
             />
 
             <SettingsModal
@@ -155,6 +178,11 @@ function App() {
                 onClose={() => setSettingsOpen(false)}
                 apiKey={state.apiKey}
                 onSaveApiKey={actions.setApiKey}
+                categories={categories}
+                onAddCategory={addCategory}
+                onUpdateCategory={updateCategory}
+                onDeleteCategory={deleteCategory}
+                onResetCategories={resetToDefaults}
             />
         </div>
     )

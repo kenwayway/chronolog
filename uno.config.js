@@ -1,172 +1,124 @@
 import { defineConfig, presetUno, presetAttributify, presetIcons } from 'unocss'
 
 export default defineConfig({
-    presets: [
-        presetUno(),
-        presetAttributify(),
-        presetIcons({
-            scale: 1.2,
-            cdn: 'https://esm.sh/'
-        }),
-    ],
+  presets: [
+    presetUno(),
+    presetAttributify(),
+    presetIcons({
+      scale: 1.2,
+      cdn: 'https://esm.sh/'
+    }),
+  ],
 
-    theme: {
-        colors: {
-            // Will be overridden by CSS variables for theme switching
-            accent: 'var(--accent)',
-            'accent-light': 'var(--accent-light)',
-            streaming: 'var(--streaming)',
-            todo: 'var(--todo)',
-            done: 'var(--done)',
-            error: 'var(--error)',
-        },
+  theme: {
+    colors: {
+      // Will be overridden by CSS variables for theme switching
+      accent: 'var(--accent)',
+      'accent-light': 'var(--accent-light)',
+      streaming: 'var(--streaming)',
+      todo: 'var(--todo)',
+      done: 'var(--done)',
+      error: 'var(--error)',
     },
+    fontFamily: {
+      sans: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace", // Force monospace everywhere
+      mono: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
+    }
+  },
 
-    shortcuts: {
-        // Layout
-        'flex-center': 'flex items-center justify-center',
-        'flex-between': 'flex items-center justify-between',
+  shortcuts: {
+    // Layout
+    'flex-center': 'flex items-center justify-center',
+    'flex-between': 'flex items-center justify-between',
 
-        // Glass effect
-        'glass': 'bg-[var(--bg-glass)] backdrop-blur-12 border border-[var(--border-subtle)]',
-        'glass-light': 'bg-[var(--bg-glass-light)] backdrop-blur-8',
+    // Container
+    'panel': 'bg-[var(--bg-secondary)] border border-[var(--border-light)]',
 
-        // Buttons
-        'btn': 'inline-flex items-center gap-1 px-4 py-2 font-sans text-sm font-600 border-none rounded-lg cursor-pointer transition-all duration-150',
-        'btn-primary': 'btn text-white bg-[var(--accent)] shadow-[0_2px_8px_var(--accent-glow)] hover:bg-[var(--accent-light)] hover:shadow-[0_4px_12px_var(--accent-glow)] hover:-translate-y-0.5',
-        'btn-secondary': 'btn text-[var(--text-primary)] bg-[var(--bg-tertiary)] border border-[var(--border-light)] hover:bg-[var(--bg-secondary)] hover:border-[var(--accent)]',
-        'btn-danger': 'btn text-white bg-[var(--error)] hover:bg-red-600 hover:-translate-y-0.5',
+    // Buttons (Flat, sharp, CLI-style)
+    'btn': 'inline-flex items-center justify-center gap-2 px-3 py-1.5 font-mono text-xs font-600 border border-transparent rounded-[4px] cursor-pointer transition-all duration-150 active:translate-y-px select-none',
+    'btn-primary': 'btn text-[var(--bg-primary)] bg-[var(--accent)] hover:bg-[var(--accent-light)]',
+    'btn-secondary': 'btn text-[var(--text-primary)] bg-[var(--bg-tertiary)] border-[var(--border-light)] hover:border-[var(--text-muted)] hover:text-[var(--text-primary)]',
+    'btn-ghost': 'btn bg-transparent hover:bg-[var(--bg-tertiary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]',
+    'btn-danger': 'btn text-white bg-[var(--error)] hover:opacity-90',
+    'btn-icon': 'w-8 h-8 p-0 text-lg',
 
-        // Inputs
-        'input-field': 'w-full px-4 py-3 font-sans text-base text-[var(--text-primary)] bg-[var(--bg-secondary)] border border-[var(--border-light)] rounded-lg transition-all duration-150 focus:outline-none focus:border-[var(--accent)] focus:shadow-[0_0_0_3px_var(--accent-glow)]',
+    // Inputs
+    'input-base': 'w-full bg-[var(--bg-primary)] text-[var(--text-primary)] font-mono text-sm border border-[var(--border-light)] rounded-[4px] focus:outline-none focus:border-[var(--accent)] transition-colors placeholder:text-[var(--text-dim)]',
 
-        // Text
-        'text-primary': 'text-[var(--text-primary)]',
-        'text-secondary': 'text-[var(--text-secondary)]',
-        'text-muted': 'text-[var(--text-muted)]',
-        'text-dim': 'text-[var(--text-dim)]',
+    // Text
+    'text-primary': 'text-[var(--text-primary)]',
+    'text-secondary': 'text-[var(--text-secondary)]',
+    'text-muted': 'text-[var(--text-muted)]',
+    'text-dim': 'text-[var(--text-dim)]',
 
-        // Backgrounds
-        'bg-primary': 'bg-[var(--bg-primary)]',
-        'bg-secondary': 'bg-[var(--bg-secondary)]',
-        'bg-tertiary': 'bg-[var(--bg-tertiary)]',
+    // Badges
+    'badge': 'inline-flex items-center px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-[2px]',
+    'badge-accent': 'badge text-[var(--accent)] bg-[var(--accent-subtle)] border border-[var(--accent)]',
+    'badge-todo': 'badge text-[var(--todo)] bg-[var(--todo-glow)] border border-[var(--todo)]',
+    'badge-done': 'badge text-[var(--done)] bg-[var(--accent-subtle)] border border-[var(--done)]',
+  },
 
-        // Badges
-        'badge': 'inline-flex items-center px-2 py-0.5 text-xs font-600 rounded',
-        'badge-accent': 'badge text-[var(--accent)] bg-[var(--accent-subtle)] border border-[var(--accent)]',
-        'badge-todo': 'badge text-[var(--todo)] bg-[var(--todo-glow)]',
-        'badge-done': 'badge text-[var(--done)] bg-[var(--accent-subtle)]',
-
-        // Animations
-        'animate-pulse': 'animate-[pulse_2s_ease-in-out_infinite]',
-        'animate-slide-in': 'animate-[slideIn_200ms_ease-out]',
-        'animate-fade-in': 'animate-[fadeIn_200ms_ease-out]',
-        'animate-glow': 'animate-[glow_2s_ease-in-out_infinite]',
-    },
-
-    rules: [
-        // Custom backdrop blur values
-        ['backdrop-blur-12', { 'backdrop-filter': 'blur(12px)', '-webkit-backdrop-filter': 'blur(12px)' }],
-        ['backdrop-blur-8', { 'backdrop-filter': 'blur(8px)', '-webkit-backdrop-filter': 'blur(8px)' }],
-        ['backdrop-blur-20', { 'backdrop-filter': 'blur(20px)', '-webkit-backdrop-filter': 'blur(20px)' }],
-
-        // Font families
-        ['font-sans', { 'font-family': "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" }],
-        ['font-mono', { 'font-family': "'JetBrains Mono', 'Fira Code', 'Consolas', monospace" }],
-    ],
-
-    preflights: [
-        {
-            getCSS: () => `
+  preflights: [
+    {
+      getCSS: () => `
         /* Theme Variables - Dark (Default) */
         :root,
         [data-theme="dark"] {
-          --bg-primary: #0a0a0f;
-          --bg-secondary: #12121a;
-          --bg-tertiary: #1a1a24;
-          --bg-glass: rgba(18, 18, 26, 0.8);
-          --bg-glass-light: rgba(26, 26, 36, 0.6);
+          --bg-primary: #0d0d12; /* Darker, deeper background */
+          --bg-secondary: #16161e;
+          --bg-tertiary: #1e1e2a;
+          --bg-glass: rgba(13, 13, 18, 0.95); /* Less transparent, more solid */
           
-          --accent: #6366f1;
-          --accent-light: #818cf8;
-          --accent-glow: rgba(99, 102, 241, 0.3);
-          --accent-subtle: rgba(99, 102, 241, 0.1);
+          --accent: #7aa2f7; /* Tokyo Night Blue/Indigo */
+          --accent-light: #89ddff;
+          --accent-glow: rgba(122, 162, 247, 0.15);
+          --accent-subtle: rgba(122, 162, 247, 0.1);
           
-          --text-primary: #e4e4e7;
-          --text-secondary: #a1a1aa;
-          --text-muted: #52525b;
-          --text-dim: #3f3f46;
+          --text-primary: #c0caf5;
+          --text-secondary: #9aa5ce;
+          --text-muted: #565f89;
+          --text-dim: #414868;
           
-          --streaming: #22c55e;
-          --streaming-glow: rgba(34, 197, 94, 0.3);
-          --todo: #f59e0b;
-          --todo-glow: rgba(245, 158, 11, 0.2);
-          --done: var(--accent);
+          --streaming: #9ece6a; /* Green */
+          --streaming-glow: rgba(158, 206, 106, 0.2);
+          --todo: #e0af68; /* Orange/Yellow */
+          --todo-glow: rgba(224, 175, 104, 0.15);
+          --done: #bb9af7; /* Purple */
+          --error: #f7768e; /* Red */
+          
+          --border-subtle: #1f2335;
+          --border-light: #292e42;
+          
+          --icon-bg: var(--bg-secondary);
+        }
+        
+        /* Theme Variables - Light (High Contrast Code) */
+        [data-theme="light"] {
+          --bg-primary: #ffffff;
+          --bg-secondary: #f4f5f9;
+          --bg-tertiary: #e9ebf2;
+          --bg-glass: rgba(255, 255, 255, 0.95);
+          
+          --accent: #2e5cba;
+          --accent-light: #4b7be5;
+          --accent-glow: rgba(46, 92, 186, 0.1);
+          --accent-subtle: rgba(46, 92, 186, 0.05);
+          
+          --text-primary: #2c3e50;
+          --text-secondary: #586e88;
+          --text-muted: #8da1b9;
+          --text-dim: #cbd5e1;
+          
+          --streaming: #10b981;
+          --streaming-glow: rgba(16, 185, 129, 0.15);
+          --todo: #d97706;
+          --todo-glow: rgba(217, 119, 6, 0.1);
           --error: #ef4444;
           
-          --border-subtle: rgba(255, 255, 255, 0.06);
-          --border-light: rgba(255, 255, 255, 0.1);
+          --border-subtle: #e2e8f0;
+          --border-light: #cbd5e1;
           
-          --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-          --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
-          --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
-          
-          --icon-bg: var(--bg-primary);
-        }
-        
-        /* Theme Variables - Light */
-        [data-theme="light"] {
-          --bg-primary: #fafafa;
-          --bg-secondary: #ffffff;
-          --bg-tertiary: #f4f4f5;
-          --bg-glass: rgba(255, 255, 255, 0.8);
-          --bg-glass-light: rgba(250, 250, 250, 0.6);
-          
-          --text-primary: #18181b;
-          --text-secondary: #52525b;
-          --text-muted: #a1a1aa;
-          --text-dim: #d4d4d8;
-          
-          --streaming: #16a34a;
-          --streaming-glow: rgba(22, 163, 74, 0.2);
-          --todo: #d97706;
-          --todo-glow: rgba(217, 119, 6, 0.15);
-          --error: #dc2626;
-          
-          --border-subtle: rgba(0, 0, 0, 0.06);
-          --border-light: rgba(0, 0, 0, 0.1);
-          
-          --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-          --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.08);
-          --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
-          
-          --icon-bg: var(--bg-primary);
-        }
-        
-        /* Animations */
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.5; }
-        }
-        
-        @keyframes slideIn {
-          from { opacity: 0; transform: translateY(-10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        
-        @keyframes slideInRight {
-          from { opacity: 0; transform: translateX(20px); }
-          to { opacity: 1; transform: translateX(0); }
-        }
-        
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        
-        @keyframes glow {
-          0%, 100% { box-shadow: 0 0 5px var(--streaming-glow); }
-          50% { box-shadow: 0 0 20px var(--streaming-glow), 0 0 30px var(--streaming-glow); }
+          --icon-bg: var(--bg-secondary);
         }
         
         /* Base styles */
@@ -177,26 +129,20 @@ export default defineConfig({
         }
         
         html {
-          font-size: 16px;
+          font-size: 14px; /* Slightly smaller for code editor feel */
           -webkit-font-smoothing: antialiased;
-          -moz-osx-font-smoothing: grayscale;
         }
         
         body {
-          font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
           background-color: var(--bg-primary);
           color: var(--text-primary);
-          line-height: 1.6;
+          line-height: 1.5;
           min-height: 100vh;
           overflow-x: hidden;
-          transition: background-color 200ms ease, color 200ms ease;
         }
         
-        #root {
-          min-height: 100vh;
-        }
-        
-        /* Scrollbar */
+        /* Custom Scrollbar */
         ::-webkit-scrollbar {
           width: 6px;
           height: 6px;
@@ -207,8 +153,8 @@ export default defineConfig({
         }
         
         ::-webkit-scrollbar-thumb {
-          background: var(--text-dim);
-          border-radius: 9999px;
+          background: var(--border-light);
+          border-radius: 3px;
         }
         
         ::-webkit-scrollbar-thumb:hover {
@@ -216,15 +162,15 @@ export default defineConfig({
         }
         
         ::selection {
-          background: var(--accent);
-          color: white;
+          background: var(--accent-subtle);
+          color: var(--accent);
         }
         
         :focus-visible {
-          outline: 2px solid var(--accent);
-          outline-offset: 2px;
+          outline: 1px solid var(--accent);
+          outline-offset: -1px;
         }
       `
-        }
-    ]
+    }
+  ]
 })

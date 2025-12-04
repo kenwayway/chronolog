@@ -7,36 +7,37 @@ export function Sidebar({ isOpen, onClose, tasks, onCompleteTask }) {
             {/* Backdrop */}
             {isOpen && (
                 <div
-                    className="fixed inset-0 bg-black/50 backdrop-blur-4 z-400 animate-fade-in"
+                    className="fixed inset-0 bg-black/50 backdrop-blur-sm z-400 animate-fade-in"
                     onClick={onClose}
                 />
             )}
 
             {/* Sidebar panel */}
-            <div className={`fixed top-0 right-0 bottom-0 w-90 max-w-100vw bg-[var(--bg-secondary)] border-l border-[var(--border-subtle)] z-401 flex flex-col transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
-                <div className="flex-between px-6 py-6 border-b border-[var(--border-subtle)]">
-                    <h2 className="text-lg font-600 text-[var(--text-primary)]">Task Matrix</h2>
+            <div className={`fixed top-0 right-0 bottom-0 w-80 max-w-[100vw] bg-[var(--bg-secondary)] border-l border-[var(--border-light)] z-401 flex flex-col transition-transform duration-300 ease-out shadow-[-10px_0_30px_rgba(0,0,0,0.3)] ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+                <div className="flex-between px-6 py-4 border-b border-[var(--border-light)] bg-[var(--bg-secondary)]">
+                    <h2 className="text-sm font-bold text-[var(--text-primary)] uppercase tracking-wider">[TASK_MATRIX]</h2>
                     <button
-                        className="flex-center w-8 h-8 text-xl text-[var(--text-muted)] bg-transparent border-none rounded-lg cursor-pointer transition-all duration-150 hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]"
+                        className="text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer bg-transparent border-none text-lg"
                         onClick={onClose}
                     >
                         ×
                     </button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-6">
+                <div className="flex-1 overflow-y-auto p-4 font-mono">
                     {pendingTasks.length === 0 && completedTasks.length === 0 && (
-                        <div className="flex flex-col items-center justify-center h-50 text-[var(--text-muted)] text-center">
-                            <div className="text-4xl mb-4 opacity-50">◇</div>
-                            <p>No tasks yet</p>
-                            <p className="text-sm text-[var(--text-dim)] mt-1">AI will detect tasks from your notes</p>
+                        <div className="flex flex-col items-center justify-center h-40 text-[var(--text-muted)] text-center opacity-50">
+                            <div className="text-2xl mb-2">[]</div>
+                            <p className="text-xs">No tasks detected.</p>
                         </div>
                     )}
 
                     {/* Pending tasks */}
                     {pendingTasks.length > 0 && (
                         <div className="mb-8">
-                            <h3 className="text-xs font-600 tracking-widest uppercase text-[var(--text-muted)] mb-4">Pending</h3>
+                            <h3 className="text-[10px] font-bold tracking-widest uppercase text-[var(--text-muted)] mb-3 pl-1">
+                                PENDING ({pendingTasks.length})
+                            </h3>
                             <div className="flex flex-col gap-2">
                                 {pendingTasks.map(task => (
                                     <TaskItem
@@ -52,7 +53,9 @@ export function Sidebar({ isOpen, onClose, tasks, onCompleteTask }) {
                     {/* Completed tasks */}
                     {completedTasks.length > 0 && (
                         <div className="mb-8">
-                            <h3 className="text-xs font-600 tracking-widest uppercase text-[var(--text-muted)] mb-4">Completed</h3>
+                            <h3 className="text-[10px] font-bold tracking-widest uppercase text-[var(--text-muted)] mb-3 pl-1">
+                                ARCHIVED ({completedTasks.length})
+                            </h3>
                             <div className="flex flex-col gap-2">
                                 {completedTasks.map(task => (
                                     <TaskItem key={task.id} task={task} />
@@ -68,31 +71,28 @@ export function Sidebar({ isOpen, onClose, tasks, onCompleteTask }) {
 
 function TaskItem({ task, onComplete }) {
     return (
-        <div className={`flex gap-4 p-4 bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] rounded-lg transition-all duration-150 animate-[slideInRight_200ms_ease-out] ${!task.done ? 'hover:border-[var(--accent)] hover:shadow-[0_0_0_1px_var(--accent-subtle)]' : 'opacity-60'}`}>
-            <label className="relative flex-center flex-shrink-0">
+        <div className={`group relative flex gap-3 p-3 bg-[var(--bg-primary)] border border-[var(--border-light)] rounded-[2px] transition-all duration-150 ${!task.done ? 'hover:border-[var(--accent)] hover:shadow-[0_2px_8px_rgba(0,0,0,0.1)]' : 'opacity-60 bg-[var(--bg-tertiary)]'}`}>
+            <label className="relative flex items-start pt-0.5 cursor-pointer">
                 <input
                     type="checkbox"
                     checked={task.done}
                     onChange={onComplete}
                     disabled={task.done}
-                    className="absolute opacity-0 w-full h-full cursor-pointer"
+                    className="peer absolute opacity-0 w-full h-full cursor-pointer"
                 />
-                <span className={`flex-center w-5 h-5 text-xs font-bold text-[var(--done)] bg-[var(--bg-secondary)] border-2 border-[var(--border-light)] rounded transition-all duration-150 ${task.done ? 'bg-[var(--accent-subtle)] border-[var(--done)]' : ''}`}>
-                    {task.done ? '✓' : ''}
-                </span>
+                <div className={`w-4 h-4 border border-[var(--text-muted)] rounded-[2px] flex items-center justify-center transition-colors peer-checked:bg-[var(--done)] peer-checked:border-[var(--done)] peer-hover:border-[var(--accent)]`}>
+                    {task.done && <span className="text-[var(--bg-primary)] text-xs font-bold">✓</span>}
+                </div>
             </label>
 
             <div className="flex-1 min-w-0">
-                <p className={`text-sm text-[var(--text-primary)] leading-relaxed break-words mb-0.5 ${task.done ? 'line-through text-[var(--text-muted)]' : ''}`}>
+                <p className={`text-xs leading-relaxed break-words ${task.done ? 'line-through text-[var(--text-muted)]' : 'text-[var(--text-primary)]'}`}>
                     {task.content}
                 </p>
-                <span className="text-xs text-[var(--text-dim)] font-mono">
-                    {new Date(task.createdAt).toLocaleTimeString('en-US', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        hour12: false
-                    })}
-                </span>
+                <div className="mt-1 text-[10px] text-[var(--text-dim)] flex items-center gap-2">
+                    <span>ID: {task.id.slice(-4)}</span>
+                    <span>{new Date(task.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
+                </div>
             </div>
         </div>
     )
