@@ -1,102 +1,75 @@
 import { useEffect, useRef } from 'react'
-import './ContextMenu.css'
 
-export function ContextMenu({
-    isOpen,
-    position,
-    entry,
-    onClose,
-    onEdit,
-    onDelete,
-    onCopy
-}) {
+export function ContextMenu({ isOpen, position, entry, onClose, onEdit, onDelete, onCopy }) {
     const menuRef = useRef(null)
 
-    // Close on click outside
     useEffect(() => {
-        if (!isOpen) return
-
         const handleClickOutside = (e) => {
             if (menuRef.current && !menuRef.current.contains(e.target)) {
                 onClose()
             }
         }
 
-        const handleEscape = (e) => {
-            if (e.key === 'Escape') {
-                onClose()
-            }
+        if (isOpen) {
+            document.addEventListener('mousedown', handleClickOutside)
+            document.addEventListener('touchstart', handleClickOutside)
         }
-
-        document.addEventListener('mousedown', handleClickOutside)
-        document.addEventListener('keydown', handleEscape)
 
         return () => {
             document.removeEventListener('mousedown', handleClickOutside)
-            document.removeEventListener('keydown', handleEscape)
+            document.removeEventListener('touchstart', handleClickOutside)
         }
     }, [isOpen, onClose])
 
-    // Adjust position to stay within viewport
-    useEffect(() => {
-        if (!isOpen || !menuRef.current) return
-
-        const menu = menuRef.current
-        const rect = menu.getBoundingClientRect()
-        const viewportWidth = window.innerWidth
-        const viewportHeight = window.innerHeight
-
-        let adjustedX = position.x
-        let adjustedY = position.y
-
-        if (position.x + rect.width > viewportWidth) {
-            adjustedX = viewportWidth - rect.width - 16
-        }
-
-        if (position.y + rect.height > viewportHeight) {
-            adjustedY = viewportHeight - rect.height - 16
-        }
-
-        menu.style.left = `${adjustedX}px`
-        menu.style.top = `${adjustedY}px`
-    }, [isOpen, position])
-
     if (!isOpen || !entry) return null
 
-    const handleAction = (action) => {
-        action()
+    const handleEdit = () => {
+        onEdit(entry)
+        onClose()
+    }
+
+    const handleDelete = () => {
+        onDelete(entry)
+        onClose()
+    }
+
+    const handleCopy = () => {
+        onCopy(entry)
         onClose()
     }
 
     return (
         <div
             ref={menuRef}
-            className="context-menu glass"
-            style={{ left: position.x, top: position.y }}
+            className="fixed min-w-40 p-1 bg-[var(--bg-secondary)] border border-[var(--border-light)] rounded-lg shadow-lg z-500 animate-slide-in"
+            style={{
+                left: position.x,
+                top: position.y
+            }}
         >
             <button
-                className="menu-item"
-                onClick={() => handleAction(() => onEdit(entry))}
+                className="flex items-center gap-2 w-full px-4 py-2 font-sans text-sm text-[var(--text-primary)] bg-transparent border-none rounded cursor-pointer transition-colors duration-150 text-left hover:bg-[var(--bg-tertiary)]"
+                onClick={handleEdit}
             >
-                <span className="menu-icon">✎</span>
+                <span className="text-xs opacity-70">✏</span>
                 Edit
             </button>
 
             <button
-                className="menu-item"
-                onClick={() => handleAction(() => onCopy(entry))}
+                className="flex items-center gap-2 w-full px-4 py-2 font-sans text-sm text-[var(--text-primary)] bg-transparent border-none rounded cursor-pointer transition-colors duration-150 text-left hover:bg-[var(--bg-tertiary)]"
+                onClick={handleCopy}
             >
-                <span className="menu-icon">◫</span>
+                <span className="text-xs opacity-70">📋</span>
                 Copy
             </button>
 
-            <div className="menu-divider" />
+            <div className="h-px mx-2 my-1 bg-[var(--border-subtle)]"></div>
 
             <button
-                className="menu-item danger"
-                onClick={() => handleAction(() => onDelete(entry))}
+                className="flex items-center gap-2 w-full px-4 py-2 font-sans text-sm text-[var(--error)] bg-transparent border-none rounded cursor-pointer transition-colors duration-150 text-left hover:bg-red-500/10"
+                onClick={handleDelete}
             >
-                <span className="menu-icon">✕</span>
+                <span className="text-xs opacity-70">🗑</span>
                 Delete
             </button>
         </div>
