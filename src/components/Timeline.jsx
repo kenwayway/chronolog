@@ -185,7 +185,7 @@ function TimelineEntry({ entry, isFirst, isLast, sessionDuration, categories, on
                 {/* Main content - supports multi-line with whitespace-pre-wrap */}
                 <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 mb-1.5">
                     {entry.content && (
-                        <span className={`text-[15px] leading-relaxed break-words font-mono whitespace-pre-wrap ${isSessionStart ? 'text-[var(--text-primary)] font-bold' :
+                        <span className={`text-[15px] leading-relaxed break-words font-sans whitespace-pre-wrap ${isSessionStart ? 'text-[var(--text-primary)] font-bold' :
                             isSessionEnd ? 'text-[var(--text-muted)] italic' :
                                 isTodo ? 'text-[var(--todo)]' :
                                     isTaskDone ? 'text-[var(--text-muted)] line-through decoration-[var(--done)]' :

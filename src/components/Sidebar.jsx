@@ -13,7 +13,7 @@ export function Sidebar({ isOpen, onClose, tasks, onCompleteTask }) {
             )}
 
             {/* Sidebar panel */}
-            <div className={`fixed top-0 right-0 bottom-0 w-80 max-w-[100vw] bg-[var(--bg-secondary)] border-l border-[var(--border-light)] z-401 flex flex-col transition-transform duration-300 ease-out shadow-[-10px_0_30px_rgba(0,0,0,0.3)] ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+            <div className={`fixed top-0 right-0 bottom-0 w-80 max-w-[100vw] bg-[var(--bg-secondary)]/90 backdrop-blur-xl border-l border-[var(--border-light)] z-401 flex flex-col transition-transform duration-300 ease-out shadow-[-10px_0_30px_rgba(0,0,0,0.3)] ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
                 <div className="flex-between px-4 py-3 border-b border-[var(--border-subtle)] bg-[var(--bg-primary)]">
                     <div className="flex items-center gap-3 text-xs text-[var(--text-muted)] font-mono">
                         <span className="text-[var(--text-dim)] opacity-50">::</span>
@@ -95,7 +95,7 @@ function TaskItem({ task, onComplete }) {
             </label>
 
             <div className="flex-1 min-w-0">
-                <p className={`text-[13px] leading-relaxed break-words ${task.done ? 'line-through text-[var(--text-muted)]' : 'text-[var(--text-primary)]'}`}>
+                <p className={`text-[13px] leading-relaxed break-words font-sans ${task.done ? 'line-through text-[var(--text-muted)]' : 'text-[var(--text-primary)]'}`}>
                     {task.content}
                 </p>
                 <div className="mt-1.5 text-[10px] text-[var(--text-dim)] flex items-center gap-2">

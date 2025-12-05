@@ -69,19 +69,55 @@ export function SettingsModal({
                             <span className="uppercase tracking-widest font-bold">MODE</span>
                             <div className="flex-1 h-px bg-[var(--border-subtle)] opacity-50"></div>
                         </div>
-                        <div className="flex gap-3">
-                            <button
-                                className={`flex-1 btn ${theme.mode === 'light' ? 'btn-primary' : 'btn-secondary'}`}
-                                onClick={() => setMode('light')}
-                            >
-                                <span>LIGHT_MODE</span>
-                            </button>
-                            <button
-                                className={`flex-1 btn ${theme.mode === 'dark' ? 'btn-primary' : 'btn-secondary'}`}
-                                onClick={() => setMode('dark')}
-                            >
-                                <span>DARK_MODE</span>
-                            </button>
+                        <div className="flex items-center justify-between p-3 bg-[var(--bg-primary)] border border-[var(--border-light)] rounded-[4px]">
+                            <div className="flex items-center gap-2">
+                                {theme.mode === 'dark' ? (
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--text-secondary)]">
+                                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                                    </svg>
+                                ) : (
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--text-secondary)]">
+                                        <circle cx="12" cy="12" r="5"></circle>
+                                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                                    </svg>
+                                )}
+                                <span className="text-xs text-[var(--text-secondary)]">
+                                    {theme.mode === 'dark' ? 'DARK_MODE' : 'LIGHT_MODE'}
+                                </span>
+                            </div>
+                            <label className="relative inline-flex items-center cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={theme.mode === 'dark'}
+                                    onChange={() => setMode(theme.mode === 'dark' ? 'light' : 'dark')}
+                                    className="sr-only peer"
+                                />
+                                <div className="
+                                    peer w-14 h-7 rounded-full 
+                                    bg-[var(--border-light)] 
+                                    peer-checked:bg-[var(--accent)]
+                                    ring-0 outline-none
+                                    duration-300
+                                    after:duration-300
+                                    after:content-['☀']
+                                    after:absolute after:top-1 after:left-1
+                                    after:w-5 after:h-5
+                                    after:bg-white after:rounded-full
+                                    after:flex after:justify-center after:items-center
+                                    after:text-[10px]
+                                    after:shadow-md
+                                    peer-checked:after:translate-x-7
+                                    peer-checked:after:content-['☾']
+                                    peer-hover:after:scale-95
+                                "></div>
+                            </label>
                         </div>
                     </div>
 
@@ -106,8 +142,6 @@ export function SettingsModal({
                             ))}
                         </div>
                     </div>
-
-
 
                     {/* Categories */}
                     <div>

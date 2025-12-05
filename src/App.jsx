@@ -106,7 +106,7 @@ function App() {
     return (
         <div className="min-h-screen flex flex-col bg-[var(--bg-primary)] font-mono selection:bg-[var(--accent-subtle)] selection:text-[var(--accent)]">
             {/* Header - Timeline Style */}
-            <header className="sticky top-0 flex-between px-4 bg-[var(--bg-primary)] border-b border-[var(--border-subtle)] z-200 h-12">
+            <header className="sticky top-0 flex-between px-4 bg-[var(--bg-primary)]/80 backdrop-blur-md border-b border-[var(--border-subtle)] z-200 h-12">
                 {/* Left: Status + Title */}
                 <div className="flex items-center gap-4">
                     {/* Breathing Light Status */}

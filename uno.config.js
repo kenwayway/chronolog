@@ -21,8 +21,8 @@ export default defineConfig({
       error: 'var(--error)',
     },
     fontFamily: {
-      sans: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace", // Force monospace everywhere
-      mono: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
+      sans: "'Inter', 'JetBrains Mono', 'Fira Code', 'Consolas', sans-serif", // Inter for content
+      mono: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace", // Code & UI
     }
   },
 
@@ -33,6 +33,8 @@ export default defineConfig({
 
     // Container
     'panel': 'bg-[var(--bg-secondary)] border border-[var(--border-light)]',
+    'glass': 'bg-[var(--bg-glass)] backdrop-blur-md',
+    'glass-border': 'border-b border-[var(--border-subtle)]',
 
     // Buttons (Flat, sharp, CLI-style)
     'btn': 'inline-flex items-center justify-center gap-2 px-3 py-1.5 font-mono text-xs font-600 border border-transparent rounded-[4px] cursor-pointer transition-all duration-150 active:translate-y-px select-none',
@@ -67,7 +69,7 @@ export default defineConfig({
           --bg-primary: #0f0f14; /* Slightly lighter than #0d0d12 for less harsh contrast */
           --bg-secondary: #1a1a24;
           --bg-tertiary: #242432;
-          --bg-glass: rgba(15, 15, 20, 0.95);
+          --bg-glass: rgba(15, 15, 20, 0.75);
           
           --accent: #7aa2f7;
           --accent-light: #89ddff;
@@ -97,7 +99,7 @@ export default defineConfig({
           --bg-primary: #ffffff;
           --bg-secondary: #f4f5f9;
           --bg-tertiary: #e9ebf2;
-          --bg-glass: rgba(255, 255, 255, 0.95);
+          --bg-glass: rgba(255, 255, 255, 0.75);
           
           --accent: #2e5cba;
           --accent-light: #4b7be5;
@@ -134,7 +136,7 @@ export default defineConfig({
         }
         
         body {
-          font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+          font-family: 'Inter', 'JetBrains Mono', 'Fira Code', 'Consolas', sans-serif;
           background-color: var(--bg-primary);
           color: var(--text-primary);
           line-height: 1.6; /* Increased from 1.5 */

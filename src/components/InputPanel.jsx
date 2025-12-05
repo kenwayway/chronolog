@@ -80,13 +80,22 @@ export function InputPanel({
     }, [input])
 
     return (
-        <div className="fixed bottom-0 left-0 right-0 z-300 bg-[var(--bg-primary)] border-t border-[var(--border-subtle)]">
-            <div className="max-w-4xl mx-auto">
-                <div className="flex flex-col">
+        <div className="fixed bottom-6 left-0 right-0 z-300 flex justify-center px-4 pointer-events-none">
+            <div className="w-full max-w-3xl pointer-events-auto">
+                <div className={`
+                    flex flex-col 
+                    bg-[var(--bg-primary)] 
+                    border border-[var(--border-light)] 
+                    rounded-xl 
+                    shadow-2xl 
+                    overflow-hidden 
+                    transition-all duration-300 
+                    ${isFocused ? 'border-[var(--accent)] shadow-[0_0_30px_rgba(0,0,0,0.2)]' : ''}
+                `}>
                     {/* Input Area with Gutter */}
                     <div className="flex items-stretch bg-[var(--bg-primary)]">
                         {/* Gutter */}
-                        <div className="flex-shrink-0 w-12 pt-3 pr-3 text-right border-r border-[var(--border-subtle)] select-none bg-[var(--bg-secondary)]/10">
+                        <div className="flex-shrink-0 w-12 pt-3 pr-3 text-right border-r border-[var(--border-subtle)] select-none bg-[var(--bg-secondary)]/30">
                             <span className="text-[var(--accent)] font-bold text-sm font-mono">{isStreaming ? '➜' : '❯'}</span>
                         </div>
 
@@ -112,7 +121,7 @@ export function InputPanel({
                     </div>
 
                     {/* Bottom Bar: Actions */}
-                    <div className="flex items-center justify-between pl-12 pr-4 py-2 border-t border-[var(--border-subtle)]">
+                    <div className="flex items-center justify-between pl-4 pr-4 py-2 border-t border-[var(--border-subtle)] bg-[var(--bg-secondary)]/30">
                         <div className="flex items-center gap-2 text-[10px] text-[var(--text-dim)] font-mono">
                             <span className="opacity-50">::</span>
                             <span className="uppercase tracking-wider">{isStreaming ? 'ACTIVE' : 'READY'}</span>
