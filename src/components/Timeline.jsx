@@ -10,13 +10,33 @@ export function Timeline({ entries, status, categories, onContextMenu }) {
     const sessionDurations = {}
     let currentSessionStartId = null
 
+    // Calculate line states
+    const entryLineStates = {}
+    let inSession = false
+
     for (const entry of sortedEntries) {
+        // Session Duration Logic
         if (entry.type === ENTRY_TYPES.SESSION_START) {
             currentSessionStartId = entry.id
         } else if (entry.type === ENTRY_TYPES.SESSION_END && currentSessionStartId) {
             sessionDurations[currentSessionStartId] = entry.duration
             currentSessionStartId = null
         }
+
+        // Line State Logic
+        let state = 'default' // default is gray
+
+        if (entry.type === ENTRY_TYPES.SESSION_START) {
+            inSession = true
+            state = 'start' // top gray, bottom accent
+        } else if (entry.type === ENTRY_TYPES.SESSION_END) {
+            inSession = false
+            state = 'end' // top accent, bottom gray
+        } else if (inSession) {
+            state = 'active' // full accent
+        }
+
+        entryLineStates[entry.id] = state
     }
 
     // Group entries by date
@@ -68,6 +88,7 @@ export function Timeline({ entries, status, categories, onContextMenu }) {
                                 sessionDuration={sessionDurations[entry.id]}
                                 categories={categories}
                                 onContextMenu={onContextMenu}
+                                lineState={entryLineStates[entry.id]}
                             />
                         ))}
                     </div>
@@ -77,7 +98,7 @@ export function Timeline({ entries, status, categories, onContextMenu }) {
     )
 }
 
-function TimelineEntry({ entry, isFirst, isLast, sessionDuration, categories, onContextMenu }) {
+function TimelineEntry({ entry, isFirst, isLast, sessionDuration, categories, onContextMenu, lineState }) {
     const [pressTimer, setPressTimer] = useState(null)
 
     const handleContextMenu = (e) => {
@@ -139,9 +160,24 @@ function TimelineEntry({ entry, isFirst, isLast, sessionDuration, categories, on
                 {formatTime(entry.timestamp)}
             </div>
 
-            {/* Symbol */}
-            <div className="flex-shrink-0 w-5 text-center pt-0.5 text-sm select-none">
-                {getEntrySymbol()}
+            {/* Symbol Column with Line */}
+            <div className="relative flex-shrink-0 w-5 text-center text-sm select-none flex flex-col items-center self-stretch">
+                {/* Line Top */}
+                {!isFirst && (
+                    <div className={`absolute -top-3 left-1/2 -translate-x-1/2 w-px h-6 ${lineState === 'start' || lineState === 'default' ? 'bg-[var(--border-subtle)]' : 'bg-[var(--accent)]'
+                        }`}></div>
+                )}
+
+                {/* Line Bottom */}
+                {!isLast && (
+                    <div className={`absolute top-3 -bottom-3 left-1/2 -translate-x-1/2 w-px ${lineState === 'end' || lineState === 'default' ? 'bg-[var(--border-subtle)]' : 'bg-[var(--accent)]'
+                        }`}></div>
+                )}
+
+                {/* Icon (z-index to sit on top) */}
+                <div className="relative z-10 w-5 h-5 flex items-center justify-center rounded-full bg-[var(--bg-primary)] group-hover:bg-[var(--bg-tertiary)] transition-colors">
+                    {getEntrySymbol()}
+                </div>
             </div>
 
             {/* Content */}

@@ -167,9 +167,6 @@ function App() {
 
             {/* Main content */}
             <main className="flex-1 flex flex-col max-w-4xl w-full mx-auto relative">
-                {/* Vertical line decoration */}
-                <div className="absolute left-6 top-0 bottom-0 w-px bg-[var(--border-subtle)] z-0 hidden md:block"></div>
-
                 <Timeline
                     entries={state.entries}
                     status={state.status}
