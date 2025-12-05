@@ -14,8 +14,11 @@ export function Sidebar({ isOpen, onClose, tasks, onCompleteTask }) {
 
             {/* Sidebar panel */}
             <div className={`fixed top-0 right-0 bottom-0 w-80 max-w-[100vw] bg-[var(--bg-secondary)] border-l border-[var(--border-light)] z-401 flex flex-col transition-transform duration-300 ease-out shadow-[-10px_0_30px_rgba(0,0,0,0.3)] ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
-                <div className="flex-between px-6 py-4 border-b border-[var(--border-light)] bg-[var(--bg-secondary)]">
-                    <h2 className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono">[ TASKS ]</h2>
+                <div className="flex-between px-4 py-3 border-b border-[var(--border-subtle)] bg-[var(--bg-primary)]">
+                    <div className="flex items-center gap-3 text-xs text-[var(--text-muted)] font-mono">
+                        <span className="text-[var(--text-dim)] opacity-50">::</span>
+                        <span className="uppercase tracking-wider font-bold">TASKS</span>
+                    </div>
                     <button
                         className="text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer bg-transparent border-none text-lg"
                         onClick={onClose}
@@ -35,9 +38,12 @@ export function Sidebar({ isOpen, onClose, tasks, onCompleteTask }) {
                     {/* Pending tasks */}
                     {pendingTasks.length > 0 && (
                         <div className="mb-8">
-                            <h3 className="text-[10px] font-bold tracking-widest uppercase text-[var(--text-muted)] mb-3 pl-1">
-                                PENDING ({pendingTasks.length})
-                            </h3>
+                            <div className="flex items-center gap-3 text-[10px] text-[var(--text-muted)] mb-3 font-mono">
+                                <span className="text-[var(--text-dim)] opacity-50">»</span>
+                                <span className="uppercase tracking-widest font-bold">PENDING</span>
+                                <span className="text-[var(--accent)]">{pendingTasks.length}</span>
+                                <div className="flex-1 h-px bg-[var(--border-subtle)] opacity-50"></div>
+                            </div>
                             <div className="flex flex-col gap-2">
                                 {pendingTasks.map(task => (
                                     <TaskItem
@@ -53,9 +59,12 @@ export function Sidebar({ isOpen, onClose, tasks, onCompleteTask }) {
                     {/* Completed tasks */}
                     {completedTasks.length > 0 && (
                         <div className="mb-8">
-                            <h3 className="text-[10px] font-bold tracking-widest uppercase text-[var(--text-muted)] mb-3 pl-1">
-                                ARCHIVED ({completedTasks.length})
-                            </h3>
+                            <div className="flex items-center gap-3 text-[10px] text-[var(--text-muted)] mb-3 font-mono">
+                                <span className="text-[var(--text-dim)] opacity-50">■</span>
+                                <span className="uppercase tracking-widest font-bold">ARCHIVED</span>
+                                <span className="text-[var(--text-dim)]">{completedTasks.length}</span>
+                                <div className="flex-1 h-px bg-[var(--border-subtle)] opacity-50"></div>
+                            </div>
                             <div className="flex flex-col gap-2">
                                 {completedTasks.map(task => (
                                     <TaskItem key={task.id} task={task} />

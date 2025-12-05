@@ -74,10 +74,10 @@ export default defineConfig({
           --accent-glow: rgba(122, 162, 247, 0.15);
           --accent-subtle: rgba(122, 162, 247, 0.1);
           
-          --text-primary: #c0caf5;
-          --text-secondary: #a9b1d6; /* Brightened from #9aa5ce */
-          --text-muted: #787c99; /* Brightened from #565f89 */
-          --text-dim: #565f89; /* Brightened from #414868 */
+          --text-primary: #e0d4c8;
+          --text-secondary: #c9beb4;
+          --text-muted: #9a8f85;
+          --text-dim: #6b6259;
           
           --streaming: #9ece6a;
           --streaming-glow: rgba(158, 206, 106, 0.2);

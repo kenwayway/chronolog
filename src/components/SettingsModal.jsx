@@ -49,8 +49,11 @@ export function SettingsModal({
             onClick={handleBackdropClick}
         >
             <div className="w-full max-w-[520px] max-h-[90vh] overflow-y-auto bg-[var(--bg-secondary)] border border-[var(--border-light)] rounded-[4px] shadow-2xl">
-                <div className="flex-between px-6 py-4 border-b border-[var(--border-light)] bg-[var(--bg-secondary)]">
-                    <h2 className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">[SYSTEM_CONFIG]</h2>
+                <div className="flex-between px-4 py-3 border-b border-[var(--border-subtle)] bg-[var(--bg-primary)]">
+                    <div className="flex items-center gap-3 text-xs text-[var(--text-muted)] font-mono">
+                        <span className="text-[var(--text-dim)] opacity-50">::</span>
+                        <span className="uppercase tracking-wider font-bold">CONFIG</span>
+                    </div>
                     <button
                         className="text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer bg-transparent border-none text-lg"
                         onClick={onClose}
@@ -62,9 +65,11 @@ export function SettingsModal({
                 <div className="p-6 space-y-8">
                     {/* Theme Mode */}
                     <div>
-                        <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-3">
-                            INTERFACE_MODE
-                        </label>
+                        <div className="flex items-center gap-3 text-[10px] text-[var(--text-muted)] mb-3 font-mono">
+                            <span className="text-[var(--text-dim)] opacity-50">»</span>
+                            <span className="uppercase tracking-widest font-bold">MODE</span>
+                            <div className="flex-1 h-px bg-[var(--border-subtle)] opacity-50"></div>
+                        </div>
                         <div className="flex gap-3">
                             <button
                                 className={`flex-1 btn ${theme.mode === 'light' ? 'btn-primary' : 'btn-secondary'}`}
@@ -83,9 +88,11 @@ export function SettingsModal({
 
                     {/* Accent Color */}
                     <div>
-                        <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-3">
-                            ACCENT_COLOR
-                        </label>
+                        <div className="flex items-center gap-3 text-[10px] text-[var(--text-muted)] mb-3 font-mono">
+                            <span className="text-[var(--text-dim)] opacity-50">·</span>
+                            <span className="uppercase tracking-widest font-bold">ACCENT</span>
+                            <div className="flex-1 h-px bg-[var(--border-subtle)] opacity-50"></div>
+                        </div>
                         <div className="flex flex-wrap gap-2">
                             {Object.entries(ACCENT_COLORS).map(([colorKey, color]) => (
                                 <button
@@ -106,9 +113,11 @@ export function SettingsModal({
                     {/* Categories */}
                     <div>
                         <div className="flex-between mb-3">
-                            <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">
-                                CATEGORIES
-                            </label>
+                            <div className="flex items-center gap-3 text-[10px] text-[var(--text-muted)] font-mono">
+                                <span className="text-[var(--text-dim)] opacity-50">·</span>
+                                <span className="uppercase tracking-widest font-bold">CATEGORIES</span>
+                                <div className="flex-1 h-px bg-[var(--border-subtle)] opacity-50"></div>
+                            </div>
                             <button
                                 className="text-[10px] text-[var(--text-dim)] hover:text-[var(--text-secondary)] cursor-pointer bg-transparent border-none uppercase"
                                 onClick={onResetCategories}
@@ -166,9 +175,11 @@ export function SettingsModal({
 
                     {/* API Key */}
                     <div>
-                        <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-2">
-                            GEMINI_API_KEY
-                        </label>
+                        <div className="flex items-center gap-3 text-[10px] text-[var(--text-muted)] mb-3 font-mono">
+                            <span className="text-[var(--text-dim)] opacity-50">·</span>
+                            <span className="uppercase tracking-widest font-bold">API_KEY</span>
+                            <div className="flex-1 h-px bg-[var(--border-subtle)] opacity-50"></div>
+                        </div>
                         <p className="text-[10px] text-[var(--text-dim)] mb-3 leading-relaxed">
                             REQUIRED FOR AI INTENT DETECTION. OBTAIN KEY FROM{' '}
                             <a

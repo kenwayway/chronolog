@@ -105,33 +105,62 @@ function App() {
 
     return (
         <div className="min-h-screen flex flex-col bg-[var(--bg-primary)] font-mono selection:bg-[var(--accent-subtle)] selection:text-[var(--accent)]">
-            {/* Header - Minimal CLI style */}
-            <header className="sticky top-0 flex-between px-4 py-2 bg-[var(--bg-primary)] border-b border-[var(--border-subtle)] z-200">
-                <div className="flex items-center gap-3">
-                    <span className="text-[var(--accent)] font-bold">~/chronolog</span>
-                    <span className="text-[var(--text-muted)] text-xs">v1.0.0</span>
+            {/* Header - Timeline Style */}
+            <header className="sticky top-0 flex-between px-4 bg-[var(--bg-primary)] border-b border-[var(--border-subtle)] z-200 h-12">
+                {/* Left: Status + Title */}
+                <div className="flex items-center gap-4">
+                    {/* Breathing Light Status */}
+                    <div className="relative flex items-center justify-center w-3 h-3">
+                        <div className={`absolute w-full h-full rounded-full opacity-75 ${isStreaming ? 'bg-[var(--streaming)] animate-ping' : 'bg-[var(--text-dim)] scale-50'}`}></div>
+                        <div className={`relative w-2 h-2 rounded-full ${isStreaming ? 'bg-[var(--streaming)]' : 'bg-[var(--text-dim)]'}`}></div>
+                    </div>
+
+                    <div className="flex items-center gap-3 text-sm text-[var(--text-muted)] font-mono">
+                        <span className="text-[var(--text-dim)] opacity-50">::</span>
+                        <span className="text-[var(--text-primary)] font-bold tracking-wide">chronolog</span>
+                    </div>
                 </div>
 
+                {/* Right: Controls */}
                 <div className="flex items-center gap-4">
+                    {/* API Status */}
+                    {aiLoading && (
+                        <div className="flex items-center gap-1.5 text-[var(--accent)] text-[10px] font-mono animate-pulse">
+                            <span className="w-1.5 h-1.5 bg-[var(--accent)] rounded-full"></span>
+                            <span>AI</span>
+                        </div>
+                    )}
+                    {!state.apiKey && (
+                        <span className="text-[10px] text-[var(--text-dim)] font-mono opacity-70">NO_API</span>
+                    )}
+
                     <button
-                        className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer bg-transparent border-none flex items-center gap-1 transition-colors"
+                        className="btn btn-ghost w-8 h-8 p-0 flex-center rounded-[4px] relative group"
                         onClick={() => setSidebarOpen(true)}
-                        title="Task Matrix"
+                        title="Tasks"
                     >
-                        <span>[tasks]</span>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="8" y1="6" x2="21" y2="6"></line>
+                            <line x1="8" y1="12" x2="21" y2="12"></line>
+                            <line x1="8" y1="18" x2="21" y2="18"></line>
+                            <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                            <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                            <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                        </svg>
                         {state.tasks.filter(t => !t.done).length > 0 && (
-                            <span className="text-[var(--accent)] font-bold">
-                                {state.tasks.filter(t => !t.done).length}
-                            </span>
+                            <span className="absolute top-0.5 right-0.5 w-2 h-2 bg-[var(--accent)] rounded-full"></span>
                         )}
                     </button>
 
                     <button
-                        className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer bg-transparent border-none transition-colors"
+                        className="btn btn-ghost w-8 h-8 p-0 flex-center rounded-[4px]"
                         onClick={() => setSettingsOpen(true)}
-                        title="Settings"
+                        title="Config"
                     >
-                        [config]
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
                     </button>
                 </div>
             </header>

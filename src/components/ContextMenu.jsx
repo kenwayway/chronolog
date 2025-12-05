@@ -62,8 +62,9 @@ export function ContextMenu({ isOpen, position, entry, onClose, onEdit, onDelete
                 top: position.y
             }}
         >
-            <div className="px-2 py-1 text-[10px] text-[var(--text-muted)] uppercase tracking-wider border-b border-[var(--border-subtle)] mb-1">
-                ACTION_MENU
+            <div className="flex items-center gap-2 px-2 py-1 text-[10px] text-[var(--text-muted)] border-b border-[var(--border-subtle)] mb-1">
+                <span className="text-[var(--text-dim)] opacity-50">::</span>
+                <span className="uppercase tracking-wider font-bold">ACTION</span>
             </div>
 
             {/* Category selector */}

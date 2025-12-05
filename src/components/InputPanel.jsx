@@ -81,14 +81,17 @@ export function InputPanel({
 
     return (
         <div className="fixed bottom-0 left-0 right-0 z-300 bg-[var(--bg-primary)] border-t border-[var(--border-subtle)]">
-            <div className="max-w-4xl mx-auto px-4 py-4">
-                <div className="flex flex-col gap-3">
-                    {/* Input Area */}
-                    <div className="relative flex items-start gap-3">
-                        <div className="flex-shrink-0 pt-1 text-[var(--accent)] font-bold select-none text-sm">
-                            {isStreaming ? '➜' : '❯'}
+            <div className="max-w-4xl mx-auto">
+                <div className="flex flex-col">
+                    {/* Input Area with Gutter */}
+                    <div className="flex items-stretch bg-[var(--bg-primary)]">
+                        {/* Gutter */}
+                        <div className="flex-shrink-0 w-12 pt-3 pr-3 text-right border-r border-[var(--border-subtle)] select-none bg-[var(--bg-secondary)]/10">
+                            <span className="text-[var(--accent)] font-bold text-sm font-mono">{isStreaming ? '➜' : '❯'}</span>
                         </div>
-                        <div className="flex-1">
+
+                        {/* Editor */}
+                        <div className="flex-1 pt-3 pb-3 pl-3">
                             <textarea
                                 ref={inputRef}
                                 value={input}
@@ -98,7 +101,7 @@ export function InputPanel({
                                 onBlur={() => setIsFocused(false)}
                                 placeholder={isStreaming ? "Add note or switch session..." : "What are you working on?"}
                                 rows={1}
-                                className="w-full bg-transparent text-[var(--text-primary)] font-mono text-[15px] resize-none focus:outline-none placeholder:text-[var(--text-dim)] leading-relaxed overflow-y-auto transition-all duration-200 ease-in-out"
+                                className="w-full bg-transparent text-[var(--text-primary)] font-mono text-[15px] resize-none focus:outline-none placeholder:text-[var(--text-dim)] leading-relaxed overflow-y-auto transition-all duration-200 ease-in-out block"
                                 style={{
                                     height: isFocused ? Math.max(textareaHeight, 80) + 'px' : textareaHeight + 'px',
                                     minHeight: isFocused ? '80px' : '24px',
@@ -108,28 +111,13 @@ export function InputPanel({
                         </div>
                     </div>
 
-                    {/* Bottom Bar: Status & Actions */}
-                    <div className="flex-between pl-6">
-                        {/* Status Indicators */}
-                        <div className="flex items-center gap-4 text-[10px] font-mono text-[var(--text-dim)]">
-                            <div className={`flex items-center gap-1.5 ${isStreaming ? 'text-[var(--streaming)]' : ''}`}>
-                                <div className={`w-1.5 h-1.5 rounded-full ${isStreaming ? 'bg-[var(--streaming)] animate-pulse' : 'bg-[var(--text-dim)]'}`}></div>
-                                <span className="uppercase tracking-wider">{isStreaming ? 'ACTIVE' : 'IDLE'}</span>
-                            </div>
-
-                            {aiLoading && (
-                                <div className="flex items-center gap-1.5 text-[var(--accent)]">
-                                    <span className="w-1.5 h-1.5 bg-[var(--accent)] rounded-full animate-pulse"></span>
-                                    <span className="uppercase tracking-wider">AI_PROCESSING</span>
-                                </div>
-                            )}
-
-                            {!hasApiKey && (
-                                <span className="opacity-50">NO_API</span>
-                            )}
+                    {/* Bottom Bar: Actions */}
+                    <div className="flex items-center justify-between pl-12 pr-4 py-2 border-t border-[var(--border-subtle)]">
+                        <div className="flex items-center gap-2 text-[10px] text-[var(--text-dim)] font-mono">
+                            <span className="opacity-50">::</span>
+                            <span className="uppercase tracking-wider">{isStreaming ? 'ACTIVE' : 'READY'}</span>
                         </div>
 
-                        {/* Action Buttons */}
                         <div className="flex items-center gap-4 font-mono text-[10px]">
                             {/* NOTE button */}
                             <button
