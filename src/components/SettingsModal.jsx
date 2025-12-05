@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useTheme, ACCENT_COLORS, TEXT_VARIANTS } from '../hooks/useTheme.jsx'
+import { useTheme, ACCENT_COLORS } from '../hooks/useTheme.jsx'
 
 export function SettingsModal({
     isOpen,
@@ -8,7 +8,6 @@ export function SettingsModal({
     onSaveApiKey,
     categories,
     onAddCategory,
-    onUpdateCategory,
     onDeleteCategory,
     onResetCategories
 }) {
@@ -16,7 +15,7 @@ export function SettingsModal({
     const [saved, setSaved] = useState(false)
     const [newCatLabel, setNewCatLabel] = useState('')
     const [newCatColor, setNewCatColor] = useState('#7aa2f7')
-    const { theme, setMode, setAccent, setTextColor } = useTheme()
+    const { theme, setMode, setAccent } = useTheme()
 
     if (!isOpen) return null
 

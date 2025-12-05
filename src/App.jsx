@@ -12,7 +12,7 @@ import { EditModal } from './components/EditModal'
 function App() {
     const { state, isStreaming, actions } = useSession()
     const { detectIntent, loading: aiLoading } = useAI(state.apiKey)
-    const { categories, addCategory, updateCategory, deleteCategory, resetToDefaults } = useCategories()
+    const { categories, addCategory, deleteCategory, resetToDefaults } = useCategories()
 
     const [sidebarOpen, setSidebarOpen] = useState(false)
     const [settingsOpen, setSettingsOpen] = useState(false)
@@ -218,7 +218,6 @@ function App() {
                 onSaveApiKey={actions.setApiKey}
                 categories={categories}
                 onAddCategory={addCategory}
-                onUpdateCategory={updateCategory}
                 onDeleteCategory={deleteCategory}
                 onResetCategories={resetToDefaults}
             />

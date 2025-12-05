@@ -29,12 +29,6 @@ export function useCategories() {
         setCategories(prev => [...prev, { id, label, color }])
     }, [])
 
-    const updateCategory = useCallback((id, updates) => {
-        setCategories(prev => prev.map(cat =>
-            cat.id === id ? { ...cat, ...updates } : cat
-        ))
-    }, [])
-
     const deleteCategory = useCallback((id) => {
         setCategories(prev => prev.filter(cat => cat.id !== id))
     }, [])
@@ -46,7 +40,6 @@ export function useCategories() {
     return {
         categories,
         addCategory,
-        updateCategory,
         deleteCategory,
         resetToDefaults
     }
