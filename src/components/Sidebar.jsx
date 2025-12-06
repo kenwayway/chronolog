@@ -36,7 +36,7 @@ export function Sidebar({ isOpen, onClose, tasks, onCompleteTask }) {
                 bottom: 0,
                 width: 320,
                 maxWidth: '100vw',
-                backgroundColor: 'rgba(26, 26, 36, 0.9)',
+                backgroundColor: 'var(--bg-glass)',
                 backdropFilter: 'blur(24px)',
                 borderLeft: '1px solid var(--border-light)',
                 zIndex: 401,

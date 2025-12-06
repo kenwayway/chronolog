@@ -68,7 +68,7 @@ export function InputPanel({ status, onLogIn, onSwitch, onNote, onLogOff }) {
                     display: 'flex',
                     flexDirection: 'column',
                     backgroundColor: 'var(--bg-primary)',
-                    border: isFocused ? '1px solid var(--accent)' : '1px solid var(--border-light)',
+                    border: '1px solid var(--border-light)',
                     borderRadius: 12,
                     boxShadow: isFocused ? '0 0 30px rgba(0,0,0,0.2)' : '0 25px 50px -12px rgba(0,0,0,0.25)',
                     overflow: 'hidden',
@@ -84,7 +84,7 @@ export function InputPanel({ status, onLogIn, onSwitch, onNote, onLogOff }) {
                             paddingRight: 12,
                             textAlign: 'right',
                             borderRight: '1px solid var(--border-subtle)',
-                            backgroundColor: 'rgba(26, 26, 36, 0.3)',
+                            backgroundColor: 'var(--bg-secondary)',
                             userSelect: 'none'
                         }}>
                             <span style={{ color: 'var(--accent)', fontWeight: 700, fontSize: 14, fontFamily: 'monospace' }}>
@@ -124,31 +124,39 @@ export function InputPanel({ status, onLogIn, onSwitch, onNote, onLogOff }) {
                     </div>
 
                     {/* Bottom Bar */}
-                    <div className="flex-between" style={{ padding: '8px 16px', borderTop: '1px solid var(--border-subtle)', backgroundColor: 'rgba(26, 26, 36, 0.3)' }}>
-                        <div className="flex items-center gap-2" style={{ fontSize: 10, color: 'var(--text-dim)', fontFamily: 'monospace' }}>
-                            <span style={{ opacity: 0.5 }}>::</span>
-                            <span className="uppercase tracking-wider">{isStreaming ? 'ACTIVE' : 'READY'}</span>
+                    <div className="flex-between" style={{ padding: '10px 16px', borderTop: '1px solid var(--border-subtle)', backgroundColor: 'var(--bg-secondary)' }}>
+                        <div className="flex items-center gap-3" style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'monospace' }}>
+                            <span style={{
+                                width: 6,
+                                height: 6,
+                                borderRadius: '50%',
+                                backgroundColor: isStreaming ? 'var(--success)' : 'var(--text-dim)'
+                            }} />
+                            <span className="uppercase tracking-wider">{isStreaming ? 'SESSION ACTIVE' : 'READY'}</span>
                         </div>
 
-                        <div className="flex items-center gap-4 font-mono">
+                        <div className="flex items-center gap-3">
+                            {/* Note button */}
                             <button
-                                style={{ ...actionBtnStyle, color: 'var(--text-dim)', opacity: input.trim() ? 1 : 0.3 }}
+                                className="btn-action btn-action-secondary"
                                 onClick={() => handleSubmit('note')}
                                 disabled={!input.trim()}
-                            >[ NOTE ]</button>
+                            >NOTE</button>
 
+                            {/* Log Off button */}
                             {isStreaming && (
                                 <button
-                                    style={{ ...actionBtnStyle, color: 'var(--error)' }}
+                                    className="btn-action btn-action-danger"
                                     onClick={() => handleSubmit('logOff')}
-                                >[ LOG OFF ]</button>
+                                >LOG OFF</button>
                             )}
 
+                            {/* Primary action button */}
                             <button
-                                style={{ ...actionBtnStyle, color: 'var(--accent)', opacity: input.trim() ? 1 : 0.3 }}
+                                className="btn-action btn-action-primary"
                                 onClick={() => handleSubmit(isStreaming ? 'switch' : 'logIn')}
                                 disabled={!input.trim()}
-                            >[ {isStreaming ? 'SWITCH' : 'LOG IN'} ]</button>
+                            >{isStreaming ? 'SWITCH' : 'LOG IN'}</button>
                         </div>
                     </div>
                 </div>

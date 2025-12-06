@@ -17,7 +17,7 @@ export const ACCENT_COLORS = {
 // ===== Theme Config =====
 const defaultTheme = {
     mode: 'dark',      // 'dark' | 'light'
-    accent: 'blue',    // key from ACCENT_COLORS
+    accent: 'emerald'// key from ACCENT_COLORS
 }
 
 const ThemeContext = createContext(null)

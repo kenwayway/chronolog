@@ -1184,3 +1184,58 @@ a:hover {
   white-space: nowrap;
   border: 0;
 }
+/* ===== Action Buttons (InputPanel) ===== */
+.btn-action {
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 150ms ease;
+  user-select: none;
+}
+
+.btn-action:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
+.btn-action-secondary {
+  background-color: transparent;
+  border: 1px solid var(--border-light);
+  color: var(--text-secondary);
+}
+
+.btn-action-secondary:hover:not(:disabled) {
+  border-color: var(--text-muted);
+  color: var(--text-primary);
+}
+
+.btn-action-danger {
+  background-color: transparent;
+  border: 1px solid var(--error);
+  color: var(--error);
+}
+
+.btn-action-danger:hover {
+  background-color: rgba(239, 68, 68, 0.1);
+}
+
+.btn-action-primary {
+  background-color: var(--accent);
+  border: none;
+  color: white;
+  padding: 5px 12px;
+}
+
+.btn-action-primary:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.btn-action-primary:disabled {
+  background-color: var(--bg-tertiary);
+  color: var(--text-dim);
+}
