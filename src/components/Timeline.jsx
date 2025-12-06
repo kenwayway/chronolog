@@ -145,11 +145,33 @@ function TimelineEntry({ entry, isFirst, isLast, sessionDuration, categories, on
     const isTaskDone = entry.type === ENTRY_TYPES.TASK_DONE
     const isTodo = entry.isTodo
 
+    // Convert URLs in text to clickable links
+    const linkifyContent = (text) => {
+        if (!text) return null
+        const urlRegex = /(https?:\/\/[^\s]+)/g
+        const parts = text.split(urlRegex)
+        return parts.map((part, i) => {
+            if (part.match(urlRegex)) {
+                return (
+                    <a
+                        key={i}
+                        href={part}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[var(--accent)] hover:underline break-all"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {part}
+                    </a>
+                )
+            }
+            return part
+        })
+    }
+
     return (
         <div
-            className={`group flex items-start gap-4 py-3 px-3 -mx-3 rounded-[4px] transition-colors duration-150 cursor-default select-text 
-                ${isSessionStart ? 'bg-[var(--bg-tertiary)]/30 hover:bg-[var(--bg-tertiary)]/50' : 'hover:bg-[var(--bg-tertiary)]'} 
-                ${isTaskDone ? 'opacity-70' : ''}`}
+            className={`group flex items-start gap-4 py-3 px-3 -mx-3 rounded-[4px] transition-colors duration-150 cursor-default select-text hover:bg-[var(--bg-tertiary)] ${isTaskDone ? 'opacity-70' : ''}`}
             onContextMenu={handleContextMenu}
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
@@ -185,13 +207,13 @@ function TimelineEntry({ entry, isFirst, isLast, sessionDuration, categories, on
                 {/* Main content - supports multi-line with whitespace-pre-wrap */}
                 <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 mb-1.5">
                     {entry.content && (
-                        <span className={`text-[15px] leading-relaxed break-words font-sans whitespace-pre-wrap ${isSessionStart ? 'text-[var(--text-primary)] font-bold' :
+                        <span className={`text-[15px] leading-relaxed break-words font-sans whitespace-pre-wrap ${isSessionStart ? 'text-[var(--text-primary)]' :
                             isSessionEnd ? 'text-[var(--text-muted)] italic' :
                                 isTodo ? 'text-[var(--todo)]' :
                                     isTaskDone ? 'text-[var(--text-muted)] line-through decoration-[var(--done)]' :
                                         'text-[var(--text-secondary)]'
                             }`}>
-                            {entry.content}
+                            {linkifyContent(entry.content)}
                         </span>
                     )}
 

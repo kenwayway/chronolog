@@ -366,6 +366,59 @@ function sessionReducer(state, action) {
             }
         }
 
+        case ACTIONS.TOGGLE_TODO: {
+            const { entryId } = action.payload
+            const entry = state.entries.find(e => e.id === entryId)
+            if (!entry || entry.type !== 'NOTE') return state
+
+            const isNowTodo = !entry.isTodo
+            let newTasks = state.tasks
+
+            if (isNowTodo) {
+                // Add to tasks
+                const taskId = generateId()
+                newTasks = [...state.tasks, {
+                    id: taskId,
+                    content: entry.content,
+                    createdAt: entry.timestamp,
+                    entryId: entry.id,
+                    done: false
+                }]
+                return {
+                    ...state,
+                    entries: state.entries.map(e =>
+                        e.id === entryId ? { ...e, isTodo: true, taskId } : e
+                    ),
+                    tasks: newTasks
+                }
+            } else {
+                // Remove from tasks
+                newTasks = state.tasks.filter(t => t.entryId !== entryId)
+                return {
+                    ...state,
+                    entries: state.entries.map(e =>
+                        e.id === entryId ? { ...e, isTodo: false, taskId: null } : e
+                    ),
+                    tasks: newTasks
+                }
+            }
+        }
+
+        case ACTIONS.UPDATE_ENTRY: {
+            const { entryId, content, timestamp, category } = action.payload
+            return {
+                ...state,
+                entries: state.entries.map(e => {
+                    if (e.id !== entryId) return e
+                    const updated = { ...e }
+                    if (content !== undefined) updated.content = content
+                    if (timestamp !== undefined) updated.timestamp = timestamp
+                    if (category !== undefined) updated.category = category
+                    return updated
+                })
+            }
+        }
+
         default:
             return state
     }
@@ -458,6 +511,14 @@ export function useSession() {
         dispatch({ type: ACTIONS.SET_ENTRY_CATEGORY, payload: { entryId, category } })
     }, [])
 
+    const toggleTodo = useCallback((entryId) => {
+        dispatch({ type: ACTIONS.TOGGLE_TODO, payload: { entryId } })
+    }, [])
+
+    const updateEntry = useCallback((entryId, updates) => {
+        dispatch({ type: ACTIONS.UPDATE_ENTRY, payload: { entryId, ...updates } })
+    }, [])
+
     const switchSession = useCallback((content) => {
         dispatch({ type: ACTIONS.SWITCH, payload: { content } })
     }, [])
@@ -475,7 +536,9 @@ export function useSession() {
             deleteEntry,
             editEntry,
             setApiKey,
-            setEntryCategory
+            setEntryCategory,
+            toggleTodo,
+            updateEntry
         }
     }
 }

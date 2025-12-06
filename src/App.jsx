@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react'
 import { useSession } from './hooks/useSession'
-import { useAI } from './hooks/useAI'
 import { useCategories } from './hooks/useCategories'
 import { Timeline } from './components/Timeline'
 import { InputPanel } from './components/InputPanel'
@@ -11,7 +10,6 @@ import { EditModal } from './components/EditModal'
 
 function App() {
     const { state, isStreaming, actions } = useSession()
-    const { detectIntent, loading: aiLoading } = useAI(state.apiKey)
     const { categories, addCategory, deleteCategory, resetToDefaults } = useCategories()
 
     const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -23,43 +21,18 @@ function App() {
         entry: null
     })
 
-    const handleLogIn = useCallback(async (content) => {
+    // Simplified handlers - no AI detection
+    const handleLogIn = useCallback((content) => {
         actions.logIn(content)
+    }, [actions])
 
-        if (state.apiKey) {
-            const result = await detectIntent(content)
-            if (result.isTodo && result.confidence > 0.6) {
-                actions.addTask(content, result.taskDescription)
-            }
-        }
-    }, [actions, state.apiKey, detectIntent])
-
-    const handleSwitch = useCallback(async (content) => {
+    const handleSwitch = useCallback((content) => {
         actions.switchSession(content)
+    }, [actions])
 
-        if (state.apiKey) {
-            const result = await detectIntent(content)
-            if (result.isTodo && result.confidence > 0.6) {
-                actions.addTask(content, result.taskDescription)
-            }
-        }
-    }, [actions, state.apiKey, detectIntent])
-
-    const handleNote = useCallback(async (content) => {
-        let todoData = null
-
-        if (state.apiKey) {
-            const result = await detectIntent(content)
-            if (result.isTodo && result.confidence > 0.6) {
-                todoData = {
-                    isTodo: true,
-                    taskDescription: result.taskDescription
-                }
-            }
-        }
-
-        actions.addNote(content, todoData)
-    }, [actions, state.apiKey, detectIntent])
+    const handleNote = useCallback((content) => {
+        actions.addNote(content)
+    }, [actions])
 
     const handleLogOff = useCallback((content) => {
         actions.logOff(content)
@@ -77,8 +50,14 @@ function App() {
         setEditModal({ isOpen: true, entry })
     }, [])
 
-    const handleSaveEdit = useCallback((entryId, content) => {
-        actions.editEntry(entryId, content)
+    const handleSaveEdit = useCallback((entryId, updates) => {
+        // Filter out undefined values
+        const cleanUpdates = Object.fromEntries(
+            Object.entries(updates).filter(([, v]) => v !== undefined)
+        )
+        if (Object.keys(cleanUpdates).length > 0) {
+            actions.updateEntry(entryId, cleanUpdates)
+        }
     }, [actions])
 
     const closeEditModal = useCallback(() => {
@@ -95,8 +74,8 @@ function App() {
         navigator.clipboard.writeText(entry.content || '')
     }, [])
 
-    const handleSetCategory = useCallback((entryId, category) => {
-        actions.setEntryCategory(entryId, category)
+    const handleToggleTodo = useCallback((entryId) => {
+        actions.toggleTodo(entryId)
     }, [actions])
 
     const handleCompleteTask = useCallback((taskId) => {
@@ -105,37 +84,24 @@ function App() {
 
     return (
         <div className="min-h-screen flex flex-col bg-[var(--bg-primary)] font-mono selection:bg-[var(--accent-subtle)] selection:text-[var(--accent)]">
-            {/* Header - Timeline Style */}
+            {/* Header */}
             <header className="sticky top-0 flex-between px-4 bg-[var(--bg-primary)]/80 backdrop-blur-md border-b border-[var(--border-subtle)] z-200 h-12">
-                {/* Left: Status + Title */}
                 <div className="flex items-center gap-4">
-                    {/* Breathing Light Status */}
+                    {/* Status indicator */}
                     <div className="relative flex items-center justify-center w-3 h-3">
                         <div className={`absolute w-full h-full rounded-full opacity-75 ${isStreaming ? 'bg-[var(--streaming)] animate-ping' : 'bg-[var(--text-dim)] scale-50'}`}></div>
                         <div className={`relative w-2 h-2 rounded-full ${isStreaming ? 'bg-[var(--streaming)]' : 'bg-[var(--text-dim)]'}`}></div>
                     </div>
 
-                    <div className="flex items-center gap-3 text-sm text-[var(--text-muted)] font-mono">
+                    <div className="flex items-center gap-3 text-sm text-[var(--text-muted)]">
                         <span className="text-[var(--text-dim)] opacity-50">::</span>
                         <span className="text-[var(--text-primary)] font-bold tracking-wide">chronolog</span>
                     </div>
                 </div>
 
-                {/* Right: Controls */}
                 <div className="flex items-center gap-4">
-                    {/* API Status */}
-                    {aiLoading && (
-                        <div className="flex items-center gap-1.5 text-[var(--accent)] text-[10px] font-mono animate-pulse">
-                            <span className="w-1.5 h-1.5 bg-[var(--accent)] rounded-full"></span>
-                            <span>AI</span>
-                        </div>
-                    )}
-                    {!state.apiKey && (
-                        <span className="text-[10px] text-[var(--text-dim)] font-mono opacity-70">NO_API</span>
-                    )}
-
                     <button
-                        className="btn btn-ghost w-8 h-8 p-0 flex-center rounded-[4px] relative group"
+                        className="btn btn-ghost w-8 h-8 p-0 flex-center rounded relative group"
                         onClick={() => setSidebarOpen(true)}
                         title="Tasks"
                     >
@@ -153,7 +119,7 @@ function App() {
                     </button>
 
                     <button
-                        className="btn btn-ghost w-8 h-8 p-0 flex-center rounded-[4px]"
+                        className="btn btn-ghost w-8 h-8 p-0 flex-center rounded"
                         onClick={() => setSettingsOpen(true)}
                         title="Config"
                     >
@@ -181,8 +147,6 @@ function App() {
                 onSwitch={handleSwitch}
                 onNote={handleNote}
                 onLogOff={handleLogOff}
-                aiLoading={aiLoading}
-                hasApiKey={!!state.apiKey}
             />
 
             <Sidebar
@@ -196,17 +160,17 @@ function App() {
                 isOpen={contextMenu.isOpen}
                 position={contextMenu.position}
                 entry={contextMenu.entry}
-                categories={categories}
                 onClose={closeContextMenu}
                 onEdit={handleEditEntry}
                 onDelete={handleDeleteEntry}
                 onCopy={handleCopyEntry}
-                onSetCategory={handleSetCategory}
+                onToggleTodo={handleToggleTodo}
             />
 
             <EditModal
                 isOpen={editModal.isOpen}
                 entry={editModal.entry}
+                categories={categories}
                 onSave={handleSaveEdit}
                 onClose={closeEditModal}
             />

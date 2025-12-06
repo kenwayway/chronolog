@@ -21,6 +21,8 @@ export const ACTIONS = {
     COMPLETE_TASK: 'COMPLETE_TASK',
     DELETE_ENTRY: 'DELETE_ENTRY',
     EDIT_ENTRY: 'EDIT_ENTRY',
+    UPDATE_ENTRY: 'UPDATE_ENTRY',  // Update content, timestamp, category
+    TOGGLE_TODO: 'TOGGLE_TODO',
     LOAD_STATE: 'LOAD_STATE',
     SET_API_KEY: 'SET_API_KEY',
     ADD_TASK: 'ADD_TASK',

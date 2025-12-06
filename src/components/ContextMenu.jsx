@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
+import { ENTRY_TYPES } from '../utils/constants'
 
-export function ContextMenu({ isOpen, position, entry, onClose, onEdit, onDelete, onCopy, onSetCategory, categories }) {
+export function ContextMenu({ isOpen, position, entry, onClose, onEdit, onDelete, onCopy, onToggleTodo }) {
     const menuRef = useRef(null)
-    const [showCategories, setShowCategories] = useState(false)
 
     useEffect(() => {
         const handleClickOutside = (e) => {
@@ -22,13 +22,6 @@ export function ContextMenu({ isOpen, position, entry, onClose, onEdit, onDelete
         }
     }, [isOpen, onClose])
 
-    // Reset submenu when menu closes
-    useEffect(() => {
-        if (!isOpen) {
-            setShowCategories(false)
-        }
-    }, [isOpen])
-
     if (!isOpen || !entry) return null
 
     const handleEdit = () => {
@@ -46,70 +39,36 @@ export function ContextMenu({ isOpen, position, entry, onClose, onEdit, onDelete
         onClose()
     }
 
-    const handleCategorySelect = (categoryId) => {
-        onSetCategory(entry.id, categoryId)
+    const handleToggleTodo = () => {
+        onToggleTodo(entry.id)
         onClose()
     }
 
-    const currentCategory = categories?.find(c => c.id === entry.category)
+    const isNote = entry.type === ENTRY_TYPES.NOTE
 
     return (
         <div
             ref={menuRef}
-            className="fixed min-w-[180px] p-1 bg-[var(--bg-secondary)] border border-[var(--border-light)] rounded-[4px] shadow-lg z-500 animate-slide-in font-mono"
+            className="fixed min-w-[160px] p-1 bg-[var(--bg-secondary)] border border-[var(--border-light)] rounded-lg shadow-lg z-500 animate-slide-in font-mono"
             style={{
                 left: position.x,
                 top: position.y
             }}
         >
             <div className="flex items-center gap-2 px-2 py-1 text-[10px] text-[var(--text-muted)] border-b border-[var(--border-subtle)] mb-1">
-                <span className="text-[var(--text-dim)] opacity-50">::</span>
                 <span className="uppercase tracking-wider font-bold">ACTION</span>
             </div>
 
-            {/* Category selector */}
-            <div className="relative">
+            {/* Toggle TODO - only for notes */}
+            {isNote && (
                 <button
-                    className="flex items-center justify-between gap-2 w-full px-3 py-1.5 text-xs text-[var(--text-primary)] bg-transparent border-none cursor-pointer transition-colors text-left hover:bg-[var(--bg-tertiary)] hover:text-[var(--accent)]"
-                    onClick={() => setShowCategories(!showCategories)}
+                    className="flex items-center gap-3 w-full px-3 py-1.5 text-xs text-[var(--text-primary)] bg-transparent border-none cursor-pointer transition-colors text-left hover:bg-[var(--bg-tertiary)] hover:text-[var(--accent)]"
+                    onClick={handleToggleTodo}
                 >
-                    <span className="flex items-center gap-2">
-                        <span className="opacity-50">[C]</span>
-                        CATEGORY
-                    </span>
-                    {currentCategory && (
-                        <span
-                            className="w-2 h-2 rounded-full"
-                            style={{ backgroundColor: currentCategory.color }}
-                        ></span>
-                    )}
+                    <span className="opacity-50">[T]</span>
+                    {entry.isTodo ? 'UNMARK TODO' : 'MARK AS TODO'}
                 </button>
-
-                {showCategories && categories && (
-                    <div className="absolute left-full top-0 ml-1 min-w-[140px] p-1 bg-[var(--bg-secondary)] border border-[var(--border-light)] rounded-[4px] shadow-lg">
-                        <button
-                            className={`flex items-center gap-2 w-full px-3 py-1.5 text-xs bg-transparent border-none cursor-pointer transition-colors text-left hover:bg-[var(--bg-tertiary)] ${!entry.category ? 'text-[var(--accent)]' : 'text-[var(--text-secondary)]'}`}
-                            onClick={() => handleCategorySelect(null)}
-                        >
-                            <span className="w-2 h-2 rounded-full bg-[var(--text-dim)]"></span>
-                            None
-                        </button>
-                        {categories.map(cat => (
-                            <button
-                                key={cat.id}
-                                className={`flex items-center gap-2 w-full px-3 py-1.5 text-xs bg-transparent border-none cursor-pointer transition-colors text-left hover:bg-[var(--bg-tertiary)] ${entry.category === cat.id ? 'text-[var(--accent)]' : 'text-[var(--text-primary)]'}`}
-                                onClick={() => handleCategorySelect(cat.id)}
-                            >
-                                <span
-                                    className="w-2 h-2 rounded-full"
-                                    style={{ backgroundColor: cat.color }}
-                                ></span>
-                                {cat.label}
-                            </button>
-                        ))}
-                    </div>
-                )}
-            </div>
+            )}
 
             <button
                 className="flex items-center gap-3 w-full px-3 py-1.5 text-xs text-[var(--text-primary)] bg-transparent border-none cursor-pointer transition-colors text-left hover:bg-[var(--bg-tertiary)] hover:text-[var(--accent)]"

@@ -6,9 +6,7 @@ export function InputPanel({
     onLogIn,
     onSwitch,
     onNote,
-    onLogOff,
-    aiLoading,
-    hasApiKey
+    onLogOff
 }) {
     const [input, setInput] = useState('')
     const [isFocused, setIsFocused] = useState(false)
