@@ -21,7 +21,6 @@ function App() {
         entry: null
     })
 
-    // Simplified handlers - no AI detection
     const handleLogIn = useCallback((content) => {
         actions.logIn(content)
     }, [actions])
@@ -51,7 +50,6 @@ function App() {
     }, [])
 
     const handleSaveEdit = useCallback((entryId, updates) => {
-        // Filter out undefined values
         const cleanUpdates = Object.fromEntries(
             Object.entries(updates).filter(([, v]) => v !== undefined)
         )
@@ -83,49 +81,57 @@ function App() {
     }, [actions])
 
     return (
-        <div className="min-h-screen flex flex-col bg-[var(--bg-primary)] font-mono selection:bg-[var(--accent-subtle)] selection:text-[var(--accent)]">
+        <div className="min-h-screen flex flex-col font-mono" style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
             {/* Header */}
-            <header className="sticky top-0 flex-between px-4 bg-[var(--bg-primary)]/80 backdrop-blur-md border-b border-[var(--border-subtle)] z-200 h-12">
+            <header className="sticky top-0 flex-between px-4 h-12 z-200 border-b" style={{ backgroundColor: 'rgba(15,15,20,0.8)', backdropFilter: 'blur(12px)', borderColor: 'var(--border-subtle)' }}>
                 <div className="flex items-center gap-4">
                     {/* Status indicator */}
-                    <div className="relative flex items-center justify-center w-3 h-3">
-                        <div className={`absolute w-full h-full rounded-full opacity-75 ${isStreaming ? 'bg-[var(--streaming)] animate-ping' : 'bg-[var(--text-dim)] scale-50'}`}></div>
-                        <div className={`relative w-2 h-2 rounded-full ${isStreaming ? 'bg-[var(--streaming)]' : 'bg-[var(--text-dim)]'}`}></div>
+                    <div className="relative flex-center" style={{ width: 12, height: 12 }}>
+                        <div
+                            className={`absolute w-full h-full rounded-full opacity-75 ${isStreaming ? 'animate-ping' : ''}`}
+                            style={{ backgroundColor: isStreaming ? 'var(--streaming)' : 'var(--text-dim)', transform: isStreaming ? 'none' : 'scale(0.5)' }}
+                        />
+                        <div
+                            className="relative rounded-full"
+                            style={{ width: 8, height: 8, backgroundColor: isStreaming ? 'var(--streaming)' : 'var(--text-dim)' }}
+                        />
                     </div>
 
-                    <div className="flex items-center gap-3 text-sm text-[var(--text-muted)]">
-                        <span className="text-[var(--text-dim)] opacity-50">::</span>
-                        <span className="text-[var(--text-primary)] font-bold tracking-wide">chronolog</span>
+                    <div className="flex items-center gap-3 text-sm text-muted">
+                        <span className="text-dim opacity-50">::</span>
+                        <span className="text-primary font-bold tracking-wide">chronolog</span>
                     </div>
                 </div>
 
                 <div className="flex items-center gap-4">
                     <button
-                        className="btn btn-ghost w-8 h-8 p-0 flex-center rounded relative group"
+                        className="btn btn-ghost relative rounded"
+                        style={{ width: 32, height: 32, padding: 0 }}
                         onClick={() => setSidebarOpen(true)}
                         title="Tasks"
                     >
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <line x1="8" y1="6" x2="21" y2="6"></line>
-                            <line x1="8" y1="12" x2="21" y2="12"></line>
-                            <line x1="8" y1="18" x2="21" y2="18"></line>
-                            <line x1="3" y1="6" x2="3.01" y2="6"></line>
-                            <line x1="3" y1="12" x2="3.01" y2="12"></line>
-                            <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                            <line x1="8" y1="6" x2="21" y2="6" />
+                            <line x1="8" y1="12" x2="21" y2="12" />
+                            <line x1="8" y1="18" x2="21" y2="18" />
+                            <line x1="3" y1="6" x2="3.01" y2="6" />
+                            <line x1="3" y1="12" x2="3.01" y2="12" />
+                            <line x1="3" y1="18" x2="3.01" y2="18" />
                         </svg>
                         {state.tasks.filter(t => !t.done).length > 0 && (
-                            <span className="absolute top-0.5 right-0.5 w-2 h-2 bg-[var(--accent)] rounded-full"></span>
+                            <span className="absolute rounded-full" style={{ top: 2, right: 2, width: 8, height: 8, backgroundColor: 'var(--accent)' }} />
                         )}
                     </button>
 
                     <button
-                        className="btn btn-ghost w-8 h-8 p-0 flex-center rounded"
+                        className="btn btn-ghost rounded"
+                        style={{ width: 32, height: 32, padding: 0 }}
                         onClick={() => setSettingsOpen(true)}
                         title="Config"
                     >
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
-                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+                            <circle cx="12" cy="12" r="3" />
                         </svg>
                     </button>
                 </div>

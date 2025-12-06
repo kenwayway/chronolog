@@ -1,7 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { ThemeProvider } from './hooks/useTheme.jsx'
-import 'virtual:uno.css'
+import './styles.css'
 import App from './App.jsx'
 
 createRoot(document.getElementById('root')).render(

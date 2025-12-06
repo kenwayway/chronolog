@@ -3,10 +3,9 @@ import { ENTRY_TYPES } from '../utils/constants'
 import { formatTime, formatDuration, formatDate } from '../utils/formatters'
 
 export function Timeline({ entries, status, categories, onContextMenu }) {
-    // Sort entries chronologically (oldest first, top to bottom)
     const sortedEntries = [...entries].sort((a, b) => a.timestamp - b.timestamp)
 
-    // Build a map of SESSION_START -> duration (from matching SESSION_END)
+    // Build session durations map
     const sessionDurations = {}
     let currentSessionStartId = null
 
@@ -15,7 +14,6 @@ export function Timeline({ entries, status, categories, onContextMenu }) {
     let inSession = false
 
     for (const entry of sortedEntries) {
-        // Session Duration Logic
         if (entry.type === ENTRY_TYPES.SESSION_START) {
             currentSessionStartId = entry.id
         } else if (entry.type === ENTRY_TYPES.SESSION_END && currentSessionStartId) {
@@ -23,59 +21,46 @@ export function Timeline({ entries, status, categories, onContextMenu }) {
             currentSessionStartId = null
         }
 
-        // Line State Logic
-        let state = 'default' // default is gray
-
+        let state = 'default'
         if (entry.type === ENTRY_TYPES.SESSION_START) {
             inSession = true
-            state = 'start' // top gray, bottom accent
+            state = 'start'
         } else if (entry.type === ENTRY_TYPES.SESSION_END) {
             inSession = false
-            state = 'end' // top accent, bottom gray
+            state = 'end'
         } else if (inSession) {
-            state = 'active' // full accent
+            state = 'active'
         }
-
         entryLineStates[entry.id] = state
     }
 
-    // Group entries by date
+    // Group by date
     const groupedEntries = sortedEntries.reduce((acc, entry) => {
         const dateKey = new Date(entry.timestamp).toDateString()
-        if (!acc[dateKey]) {
-            acc[dateKey] = []
-        }
+        if (!acc[dateKey]) acc[dateKey] = []
         acc[dateKey].push(entry)
         return acc
     }, {})
 
-    // Sort date groups chronologically (oldest first)
-    const dateGroups = Object.keys(groupedEntries).sort((a, b) =>
-        new Date(a) - new Date(b)
-    )
-
-    const isToday = (dateStr) => {
-        return new Date(dateStr).toDateString() === new Date().toDateString()
-    }
+    const dateGroups = Object.keys(groupedEntries).sort((a, b) => new Date(a) - new Date(b))
+    const isToday = (dateStr) => new Date(dateStr).toDateString() === new Date().toDateString()
 
     return (
-        <div className="flex-1 overflow-y-auto px-4 py-6 pb-40 font-mono">
+        <div style={{ flex: 1, overflowY: 'auto', padding: '24px 16px 160px', fontFamily: 'monospace' }}>
             {entries.length === 0 && (
-                <div className="flex flex-col items-center justify-center h-64 text-[var(--text-muted)] text-center opacity-50">
-                    <div className="text-4xl mb-4">_</div>
-                    <p className="text-sm">System initialized.</p>
-                    <p className="text-xs mt-2">Waiting for input...</p>
+                <div className="flex flex-col items-center justify-center" style={{ height: 256, color: 'var(--text-muted)', textAlign: 'center', opacity: 0.5 }}>
+                    <div style={{ fontSize: 32, marginBottom: 16 }}>_</div>
+                    <p style={{ fontSize: 14 }}>System initialized.</p>
+                    <p style={{ fontSize: 12, marginTop: 8 }}>Waiting for input...</p>
                 </div>
             )}
 
             {dateGroups.map(dateKey => (
-                <div key={dateKey} className="mb-8">
-                    <div className="flex items-center gap-4 mb-4 text-xs text-[var(--text-muted)] select-none font-mono">
-                        <span className="text-[var(--text-dim)] opacity-50">::</span>
-                        <span className="uppercase tracking-wider font-bold">
-                            {isToday(dateKey) ? 'TODAY' : formatDate(new Date(dateKey).getTime())}
-                        </span>
-                        <div className="flex-1 h-px bg-[var(--border-subtle)] opacity-50"></div>
+                <div key={dateKey} style={{ marginBottom: 32 }}>
+                    <div className="flex items-center gap-4 select-none" style={{ marginBottom: 16, fontSize: 12, color: 'var(--text-muted)', fontFamily: 'monospace' }}>
+                        <span style={{ color: 'var(--text-dim)', opacity: 0.5 }}>::</span>
+                        <span className="uppercase tracking-wider font-bold">{isToday(dateKey) ? 'TODAY' : formatDate(new Date(dateKey).getTime())}</span>
+                        <div style={{ flex: 1, height: 1, backgroundColor: 'var(--border-subtle)', opacity: 0.5 }} />
                     </div>
 
                     <div className="space-y-1">
@@ -122,128 +107,131 @@ function TimelineEntry({ entry, isFirst, isLast, sessionDuration, categories, on
     }
 
     const getEntrySymbol = () => {
+        const styles = { fontSize: 14 }
         switch (entry.type) {
             case ENTRY_TYPES.SESSION_START:
-                return <span className="text-[var(--streaming)] font-bold text-lg">»</span>
+                return <span style={{ ...styles, color: 'var(--streaming)', fontWeight: 700, fontSize: 18 }}>»</span>
             case ENTRY_TYPES.SESSION_END:
-                return <span className="text-[var(--text-muted)]">■</span>
+                return <span style={{ ...styles, color: 'var(--text-muted)' }}>■</span>
             case ENTRY_TYPES.NOTE:
-                return <span className="text-[var(--text-dim)]">{entry.isTodo ? '○' : '·'}</span>
+                return <span style={{ ...styles, color: 'var(--text-dim)' }}>{entry.isTodo ? '○' : '·'}</span>
             case ENTRY_TYPES.TASK_DONE:
-                return <span className="text-[var(--done)] font-bold">✓</span>
+                return <span style={{ ...styles, color: 'var(--done)', fontWeight: 700 }}>✓</span>
             default:
-                return <span className="text-[var(--text-dim)]">·</span>
+                return <span style={{ ...styles, color: 'var(--text-dim)' }}>·</span>
         }
     }
 
-    // Get category info
     const category = categories?.find(c => c.id === entry.category)
-
-    // Styles for different entry types
     const isSessionStart = entry.type === ENTRY_TYPES.SESSION_START
     const isSessionEnd = entry.type === ENTRY_TYPES.SESSION_END
     const isTaskDone = entry.type === ENTRY_TYPES.TASK_DONE
     const isTodo = entry.isTodo
 
-    // Convert URLs in text to clickable links
     const linkifyContent = (text) => {
         if (!text) return null
         const urlRegex = /(https?:\/\/[^\s]+)/g
         const parts = text.split(urlRegex)
         return parts.map((part, i) => {
             if (part.match(urlRegex)) {
-                return (
-                    <a
-                        key={i}
-                        href={part}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[var(--accent)] hover:underline break-all"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        {part}
-                    </a>
-                )
+                return <a key={i} href={part} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', wordBreak: 'break-all' }} onClick={(e) => e.stopPropagation()}>{part}</a>
             }
             return part
         })
     }
 
+    const getLineColor = (position) => {
+        if (position === 'top') {
+            return (lineState === 'start' || lineState === 'default') ? 'var(--border-subtle)' : 'var(--accent)'
+        }
+        return (lineState === 'end' || lineState === 'default') ? 'var(--border-subtle)' : 'var(--accent)'
+    }
+
+    const getContentColor = () => {
+        if (isSessionStart) return 'var(--text-primary)'
+        if (isSessionEnd) return 'var(--text-muted)'
+        if (isTodo) return 'var(--todo)'
+        if (isTaskDone) return 'var(--text-muted)'
+        return 'var(--text-secondary)'
+    }
+
     return (
         <div
-            className={`group flex items-start gap-4 py-3 px-3 -mx-3 rounded-[4px] transition-colors duration-150 cursor-default select-text hover:bg-[var(--bg-tertiary)] ${isTaskDone ? 'opacity-70' : ''}`}
+            style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 16,
+                padding: '12px',
+                margin: '0 -12px',
+                borderRadius: 4,
+                cursor: 'default',
+                userSelect: 'text',
+                opacity: isTaskDone ? 0.7 : 1,
+                transition: 'background-color 150ms ease'
+            }}
             onContextMenu={handleContextMenu}
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
             onTouchCancel={handleTouchEnd}
+            onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)'}
+            onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
         >
-            {/* Timestamp (Line Number Style) */}
-            <div className="flex-shrink-0 w-14 text-xs text-[var(--text-muted)] text-right pt-1 font-mono opacity-60 group-hover:opacity-100 transition-opacity">
+            {/* Timestamp */}
+            <div style={{ flexShrink: 0, width: 56, fontSize: 12, color: 'var(--text-muted)', textAlign: 'right', paddingTop: 4, fontFamily: 'monospace', opacity: 0.6 }}>
                 {formatTime(entry.timestamp)}
             </div>
 
-            {/* Symbol Column with Line */}
-            <div className="relative flex-shrink-0 w-5 text-center text-sm select-none flex flex-col items-center self-stretch">
-                {/* Line Top */}
-                {!isFirst && (
-                    <div className={`absolute -top-3 left-1/2 -translate-x-1/2 w-px h-6 ${lineState === 'start' || lineState === 'default' ? 'bg-[var(--border-subtle)]' : 'bg-[var(--accent)]'
-                        }`}></div>
-                )}
-
-                {/* Line Bottom */}
-                {!isLast && (
-                    <div className={`absolute top-3 -bottom-3 left-1/2 -translate-x-1/2 w-px ${lineState === 'end' || lineState === 'default' ? 'bg-[var(--border-subtle)]' : 'bg-[var(--accent)]'
-                        }`}></div>
-                )}
-
-                {/* Icon (z-index to sit on top) */}
-                <div className="relative z-10 w-5 h-5 flex items-center justify-center rounded-full bg-[var(--bg-primary)] group-hover:bg-[var(--bg-tertiary)] transition-colors">
+            {/* Symbol Column */}
+            <div style={{ position: 'relative', flexShrink: 0, width: 20, textAlign: 'center', fontSize: 14, userSelect: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', alignSelf: 'stretch' }}>
+                {!isFirst && <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', width: 1, height: 24, backgroundColor: getLineColor('top') }} />}
+                {!isLast && <div style={{ position: 'absolute', top: 12, bottom: -12, left: '50%', transform: 'translateX(-50%)', width: 1, backgroundColor: getLineColor('bottom') }} />}
+                <div style={{ position: 'relative', zIndex: 10, width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 9999, backgroundColor: 'var(--bg-primary)' }}>
                     {getEntrySymbol()}
                 </div>
             </div>
 
             {/* Content */}
-            <div className="flex-1 min-w-0">
-                {/* Main content - supports multi-line with whitespace-pre-wrap */}
-                <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 mb-1.5">
+            <div style={{ flex: 1, minWidth: 0 }}>
+                <div className="flex flex-wrap items-baseline" style={{ gap: '4px 12px', marginBottom: 6 }}>
                     {entry.content && (
-                        <span className={`text-[15px] leading-relaxed break-words font-sans whitespace-pre-wrap ${isSessionStart ? 'text-[var(--text-primary)]' :
-                            isSessionEnd ? 'text-[var(--text-muted)] italic' :
-                                isTodo ? 'text-[var(--todo)]' :
-                                    isTaskDone ? 'text-[var(--text-muted)] line-through decoration-[var(--done)]' :
-                                        'text-[var(--text-secondary)]'
-                            }`}>
+                        <span style={{
+                            fontSize: 15,
+                            lineHeight: 1.6,
+                            overflowWrap: 'break-word',
+                            fontFamily: 'Inter, sans-serif',
+                            whiteSpace: 'pre-wrap',
+                            color: getContentColor(),
+                            fontStyle: isSessionEnd ? 'italic' : 'normal',
+                            textDecoration: isTaskDone ? 'line-through' : 'none'
+                        }}>
                             {linkifyContent(entry.content)}
                         </span>
                     )}
 
-                    {/* Inline badges */}
                     {isSessionStart && sessionDuration && (
-                        <span className="text-[11px] text-[var(--accent)] bg-[var(--accent-subtle)] px-1.5 py-0.5 rounded-[3px] select-none font-medium">
+                        <span style={{ fontSize: 11, color: 'var(--accent)', backgroundColor: 'var(--accent-subtle)', padding: '2px 6px', borderRadius: 3, userSelect: 'none', fontWeight: 500 }}>
                             {formatDuration(sessionDuration)}
                         </span>
                     )}
 
-                    {isTaskDone && (
-                        <span className="text-[11px] text-[var(--done)] font-bold select-none">[DONE]</span>
-                    )}
-
-                    {isTodo && (
-                        <span className="text-[11px] text-[var(--todo)] font-bold select-none">[TODO]</span>
-                    )}
+                    {isTaskDone && <span style={{ fontSize: 11, color: 'var(--done)', fontWeight: 700, userSelect: 'none' }}>[DONE]</span>}
+                    {isTodo && <span style={{ fontSize: 11, color: 'var(--todo)', fontWeight: 700, userSelect: 'none' }}>[TODO]</span>}
                 </div>
 
-                {/* Category badge - below content */}
                 {category && (
-                    <div className="mt-1.5">
-                        <span
-                            className="text-[10px] px-2 py-0.5 rounded-[3px] font-bold uppercase select-none tracking-wide"
-                            style={{
-                                color: category.color,
-                                backgroundColor: `${category.color}15`,
-                                border: `1px solid ${category.color}30`
-                            }}
-                        >
+                    <div style={{ marginTop: 6 }}>
+                        <span style={{
+                            fontSize: 10,
+                            padding: '2px 8px',
+                            borderRadius: 3,
+                            fontWeight: 700,
+                            textTransform: 'uppercase',
+                            userSelect: 'none',
+                            letterSpacing: '0.05em',
+                            color: category.color,
+                            backgroundColor: `${category.color}15`,
+                            border: `1px solid ${category.color}30`
+                        }}>
                             {category.label}
                         </span>
                     </div>

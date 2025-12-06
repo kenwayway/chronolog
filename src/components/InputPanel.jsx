@@ -1,13 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { SESSION_STATUS } from '../utils/constants'
 
-export function InputPanel({
-    status,
-    onLogIn,
-    onSwitch,
-    onNote,
-    onLogOff
-}) {
+export function InputPanel({ status, onLogIn, onSwitch, onNote, onLogOff }) {
     const [input, setInput] = useState('')
     const [isFocused, setIsFocused] = useState(false)
     const [textareaHeight, setTextareaHeight] = useState(24)
@@ -20,55 +14,32 @@ export function InputPanel({
 
     const handleSubmit = (action) => {
         if (!input.trim() && action !== 'logOff') return
-
         switch (action) {
-            case 'logIn':
-                onLogIn(input.trim())
-                break
-            case 'switch':
-                onSwitch(input.trim())
-                break
-            case 'note':
-                onNote(input.trim())
-                break
-            case 'logOff':
-                onLogOff(input.trim())
-                break
+            case 'logIn': onLogIn(input.trim()); break
+            case 'switch': onSwitch(input.trim()); break
+            case 'note': onNote(input.trim()); break
+            case 'logOff': onLogOff(input.trim()); break
         }
-
         setInput('')
         setTextareaHeight(24)
         inputRef.current?.focus()
     }
 
     const handleKeyDown = (e) => {
-        // Enter = NOTE
         if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey) {
             e.preventDefault()
             handleSubmit('note')
-        }
-        // Ctrl+Enter = LOG IN / SWITCH (starts new session)
-        else if (e.key === 'Enter' && e.ctrlKey && !e.shiftKey) {
+        } else if (e.key === 'Enter' && e.ctrlKey && !e.shiftKey) {
             e.preventDefault()
-            if (!isStreaming) {
-                handleSubmit('logIn')
-            } else {
-                handleSubmit('switch')
-            }
-        }
-        // Ctrl+Shift+Enter = LOG OFF (only when streaming)
-        else if (e.key === 'Enter' && e.ctrlKey && e.shiftKey) {
+            handleSubmit(isStreaming ? 'switch' : 'logIn')
+        } else if (e.key === 'Enter' && e.ctrlKey && e.shiftKey && isStreaming) {
             e.preventDefault()
-            if (isStreaming) {
-                handleSubmit('logOff')
-            }
+            handleSubmit('logOff')
         }
     }
 
-    // Calculate textarea height on input change
     useEffect(() => {
         if (inputRef.current) {
-            // Reset to minimum to get accurate scrollHeight
             inputRef.current.style.height = '24px'
             const scrollHeight = inputRef.current.scrollHeight
             const newHeight = Math.min(Math.max(scrollHeight, 24), 200)
@@ -77,28 +48,52 @@ export function InputPanel({
         }
     }, [input])
 
+    const actionBtnStyle = {
+        fontSize: 10,
+        backgroundColor: 'transparent',
+        border: 'none',
+        cursor: 'pointer',
+        textTransform: 'uppercase',
+        letterSpacing: '0.05em',
+        transition: 'color 150ms ease'
+    }
+
     return (
-        <div className="fixed bottom-6 left-0 right-0 z-300 flex justify-center px-4 pointer-events-none">
-            <div className="w-full max-w-3xl pointer-events-auto">
-                <div className={`
-                    flex flex-col 
-                    bg-[var(--bg-primary)] 
-                    border border-[var(--border-light)] 
-                    rounded-xl 
-                    shadow-2xl 
-                    overflow-hidden 
-                    transition-all duration-300 
-                    ${isFocused ? 'border-[var(--accent)] shadow-[0_0_30px_rgba(0,0,0,0.2)]' : ''}
-                `}>
-                    {/* Input Area with Gutter */}
-                    <div className="flex items-stretch bg-[var(--bg-primary)]">
+        <div
+            className="fixed z-300"
+            style={{ bottom: 24, left: 0, right: 0, display: 'flex', justifyContent: 'center', padding: '0 16px', pointerEvents: 'none' }}
+        >
+            <div style={{ width: '100%', maxWidth: 768, pointerEvents: 'auto' }}>
+                <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    backgroundColor: 'var(--bg-primary)',
+                    border: isFocused ? '1px solid var(--accent)' : '1px solid var(--border-light)',
+                    borderRadius: 12,
+                    boxShadow: isFocused ? '0 0 30px rgba(0,0,0,0.2)' : '0 25px 50px -12px rgba(0,0,0,0.25)',
+                    overflow: 'hidden',
+                    transition: 'all 300ms ease'
+                }}>
+                    {/* Input Area */}
+                    <div className="flex items-stretch" style={{ backgroundColor: 'var(--bg-primary)' }}>
                         {/* Gutter */}
-                        <div className="flex-shrink-0 w-12 pt-3 pr-3 text-right border-r border-[var(--border-subtle)] select-none bg-[var(--bg-secondary)]/30">
-                            <span className="text-[var(--accent)] font-bold text-sm font-mono">{isStreaming ? '➜' : '❯'}</span>
+                        <div style={{
+                            flexShrink: 0,
+                            width: 48,
+                            paddingTop: 12,
+                            paddingRight: 12,
+                            textAlign: 'right',
+                            borderRight: '1px solid var(--border-subtle)',
+                            backgroundColor: 'rgba(26, 26, 36, 0.3)',
+                            userSelect: 'none'
+                        }}>
+                            <span style={{ color: 'var(--accent)', fontWeight: 700, fontSize: 14, fontFamily: 'monospace' }}>
+                                {isStreaming ? '➜' : '❯'}
+                            </span>
                         </div>
 
                         {/* Editor */}
-                        <div className="flex-1 pt-3 pb-3 pl-3">
+                        <div style={{ flex: 1, padding: '12px 0 12px 12px' }}>
                             <textarea
                                 ref={inputRef}
                                 value={input}
@@ -108,54 +103,52 @@ export function InputPanel({
                                 onBlur={() => setIsFocused(false)}
                                 placeholder={isStreaming ? "Add note or switch session..." : "What are you working on?"}
                                 rows={1}
-                                className="w-full bg-transparent text-[var(--text-primary)] font-mono text-[15px] resize-none focus:outline-none placeholder:text-[var(--text-dim)] leading-relaxed overflow-y-auto transition-all duration-200 ease-in-out block"
                                 style={{
+                                    width: '100%',
+                                    backgroundColor: 'transparent',
+                                    color: 'var(--text-primary)',
+                                    fontFamily: 'monospace',
+                                    fontSize: 15,
+                                    resize: 'none',
+                                    border: 'none',
+                                    outline: 'none',
+                                    lineHeight: 1.6,
+                                    overflowY: 'auto',
                                     height: isFocused ? Math.max(textareaHeight, 80) + 'px' : textareaHeight + 'px',
-                                    minHeight: isFocused ? '80px' : '24px',
-                                    maxHeight: '300px'
+                                    minHeight: isFocused ? 80 : 24,
+                                    maxHeight: 300,
+                                    transition: 'height 200ms ease'
                                 }}
                             />
                         </div>
                     </div>
 
-                    {/* Bottom Bar: Actions */}
-                    <div className="flex items-center justify-between pl-4 pr-4 py-2 border-t border-[var(--border-subtle)] bg-[var(--bg-secondary)]/30">
-                        <div className="flex items-center gap-2 text-[10px] text-[var(--text-dim)] font-mono">
-                            <span className="opacity-50">::</span>
+                    {/* Bottom Bar */}
+                    <div className="flex-between" style={{ padding: '8px 16px', borderTop: '1px solid var(--border-subtle)', backgroundColor: 'rgba(26, 26, 36, 0.3)' }}>
+                        <div className="flex items-center gap-2" style={{ fontSize: 10, color: 'var(--text-dim)', fontFamily: 'monospace' }}>
+                            <span style={{ opacity: 0.5 }}>::</span>
                             <span className="uppercase tracking-wider">{isStreaming ? 'ACTIVE' : 'READY'}</span>
                         </div>
 
-                        <div className="flex items-center gap-4 font-mono text-[10px]">
-                            {/* NOTE button */}
+                        <div className="flex items-center gap-4 font-mono">
                             <button
-                                className="text-[var(--text-dim)] hover:text-[var(--text-primary)] cursor-pointer bg-transparent border-none uppercase tracking-wider transition-colors disabled:opacity-30"
+                                style={{ ...actionBtnStyle, color: 'var(--text-dim)', opacity: input.trim() ? 1 : 0.3 }}
                                 onClick={() => handleSubmit('note')}
                                 disabled={!input.trim()}
-                                title="Enter"
-                            >
-                                [ NOTE ]
-                            </button>
+                            >[ NOTE ]</button>
 
-                            {/* LOG OFF button */}
                             {isStreaming && (
                                 <button
-                                    className="text-[var(--error)] hover:text-[var(--error)]/80 cursor-pointer bg-transparent border-none uppercase tracking-wider transition-colors"
+                                    style={{ ...actionBtnStyle, color: 'var(--error)' }}
                                     onClick={() => handleSubmit('logOff')}
-                                    title="Ctrl+Shift+Enter"
-                                >
-                                    [ LOG OFF ]
-                                </button>
+                                >[ LOG OFF ]</button>
                             )}
 
-                            {/* LOG IN / SWITCH button */}
                             <button
-                                className="text-[var(--accent)] hover:text-[var(--accent-light)] cursor-pointer bg-transparent border-none uppercase tracking-wider transition-colors disabled:opacity-30"
+                                style={{ ...actionBtnStyle, color: 'var(--accent)', opacity: input.trim() ? 1 : 0.3 }}
                                 onClick={() => handleSubmit(isStreaming ? 'switch' : 'logIn')}
                                 disabled={!input.trim()}
-                                title="Ctrl+Enter"
-                            >
-                                [ {isStreaming ? 'SWITCH' : 'LOG IN'} ]
-                            </button>
+                            >[ {isStreaming ? 'SWITCH' : 'LOG IN'} ]</button>
                         </div>
                     </div>
                 </div>
@@ -163,4 +156,3 @@ export function InputPanel({
         </div>
     )
 }
-

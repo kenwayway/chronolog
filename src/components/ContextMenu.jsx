@@ -24,75 +24,89 @@ export function ContextMenu({ isOpen, position, entry, onClose, onEdit, onDelete
 
     if (!isOpen || !entry) return null
 
-    const handleEdit = () => {
-        onEdit(entry)
-        onClose()
-    }
-
-    const handleDelete = () => {
-        onDelete(entry)
-        onClose()
-    }
-
-    const handleCopy = () => {
-        onCopy(entry)
-        onClose()
-    }
-
-    const handleToggleTodo = () => {
-        onToggleTodo(entry.id)
-        onClose()
-    }
+    const handleEdit = () => { onEdit(entry); onClose() }
+    const handleDelete = () => { onDelete(entry); onClose() }
+    const handleCopy = () => { onCopy(entry); onClose() }
+    const handleToggleTodo = () => { onToggleTodo(entry.id); onClose() }
 
     const isNote = entry.type === ENTRY_TYPES.NOTE
+
+    const menuItemStyle = {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.75rem',
+        width: '100%',
+        padding: '0.375rem 0.75rem',
+        fontSize: '0.75rem',
+        color: 'var(--text-primary)',
+        backgroundColor: 'transparent',
+        border: 'none',
+        cursor: 'pointer',
+        textAlign: 'left',
+        transition: 'all 150ms ease'
+    }
 
     return (
         <div
             ref={menuRef}
-            className="fixed min-w-[160px] p-1 bg-[var(--bg-secondary)] border border-[var(--border-light)] rounded-lg shadow-lg z-500 animate-slide-in font-mono"
+            className="fixed font-mono animate-slide-in"
             style={{
                 left: position.x,
-                top: position.y
+                top: position.y,
+                minWidth: 160,
+                padding: 4,
+                backgroundColor: 'var(--bg-secondary)',
+                border: '1px solid var(--border-light)',
+                borderRadius: 8,
+                boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)',
+                zIndex: 500
             }}
         >
-            <div className="flex items-center gap-2 px-2 py-1 text-[10px] text-[var(--text-muted)] border-b border-[var(--border-subtle)] mb-1">
+            <div className="flex items-center gap-2 px-2 py-1 border-b mb-1" style={{ fontSize: 10, color: 'var(--text-muted)', borderColor: 'var(--border-subtle)' }}>
                 <span className="uppercase tracking-wider font-bold">ACTION</span>
             </div>
 
-            {/* Toggle TODO - only for notes */}
             {isNote && (
                 <button
-                    className="flex items-center gap-3 w-full px-3 py-1.5 text-xs text-[var(--text-primary)] bg-transparent border-none cursor-pointer transition-colors text-left hover:bg-[var(--bg-tertiary)] hover:text-[var(--accent)]"
+                    style={menuItemStyle}
+                    onMouseEnter={e => { e.target.style.backgroundColor = 'var(--bg-tertiary)'; e.target.style.color = 'var(--accent)' }}
+                    onMouseLeave={e => { e.target.style.backgroundColor = 'transparent'; e.target.style.color = 'var(--text-primary)' }}
                     onClick={handleToggleTodo}
                 >
-                    <span className="opacity-50">[T]</span>
+                    <span style={{ opacity: 0.5 }}>[T]</span>
                     {entry.isTodo ? 'UNMARK TODO' : 'MARK AS TODO'}
                 </button>
             )}
 
             <button
-                className="flex items-center gap-3 w-full px-3 py-1.5 text-xs text-[var(--text-primary)] bg-transparent border-none cursor-pointer transition-colors text-left hover:bg-[var(--bg-tertiary)] hover:text-[var(--accent)]"
+                style={menuItemStyle}
+                onMouseEnter={e => { e.target.style.backgroundColor = 'var(--bg-tertiary)'; e.target.style.color = 'var(--accent)' }}
+                onMouseLeave={e => { e.target.style.backgroundColor = 'transparent'; e.target.style.color = 'var(--text-primary)' }}
                 onClick={handleEdit}
             >
-                <span className="opacity-50">[E]</span>
+                <span style={{ opacity: 0.5 }}>[E]</span>
                 EDIT
             </button>
 
             <button
-                className="flex items-center gap-3 w-full px-3 py-1.5 text-xs text-[var(--text-primary)] bg-transparent border-none cursor-pointer transition-colors text-left hover:bg-[var(--bg-tertiary)] hover:text-[var(--accent)]"
+                style={menuItemStyle}
+                onMouseEnter={e => { e.target.style.backgroundColor = 'var(--bg-tertiary)'; e.target.style.color = 'var(--accent)' }}
+                onMouseLeave={e => { e.target.style.backgroundColor = 'transparent'; e.target.style.color = 'var(--text-primary)' }}
                 onClick={handleCopy}
             >
-                <span className="opacity-50">[Y]</span>
+                <span style={{ opacity: 0.5 }}>[Y]</span>
                 COPY
             </button>
 
-            <div className="h-px mx-1 my-1 bg-[var(--border-subtle)]"></div>
+            <div style={{ height: 1, margin: '4px', backgroundColor: 'var(--border-subtle)' }} />
 
             <button
-                className="flex items-center gap-3 w-full px-3 py-1.5 text-xs text-[var(--error)] bg-transparent border-none cursor-pointer transition-colors text-left hover:bg-[var(--bg-tertiary)]"
+                style={{ ...menuItemStyle, color: 'var(--error)' }}
+                onMouseEnter={e => e.target.style.backgroundColor = 'var(--bg-tertiary)'}
+                onMouseLeave={e => e.target.style.backgroundColor = 'transparent'}
                 onClick={handleDelete}
             >
-                <span className="opacity-50">[D]</span>
+                <span style={{ opacity: 0.5 }}>[D]</span>
                 DELETE
             </button>
         </div>

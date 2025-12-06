@@ -2,73 +2,96 @@ export function Sidebar({ isOpen, onClose, tasks, onCompleteTask }) {
     const pendingTasks = tasks.filter(t => !t.done)
     const completedTasks = tasks.filter(t => t.done)
 
+    const sectionHeaderStyle = {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12,
+        fontSize: 10,
+        color: 'var(--text-muted)',
+        marginBottom: 12,
+        fontFamily: 'monospace'
+    }
+
     return (
         <>
             {/* Backdrop */}
             {isOpen && (
                 <div
-                    className="fixed inset-0 bg-black/50 backdrop-blur-sm z-400 animate-fade-in"
                     onClick={onClose}
+                    style={{
+                        position: 'fixed',
+                        inset: 0,
+                        backgroundColor: 'rgba(0,0,0,0.5)',
+                        backdropFilter: 'blur(4px)',
+                        zIndex: 400
+                    }}
                 />
             )}
 
             {/* Sidebar panel */}
-            <div className={`fixed top-0 right-0 bottom-0 w-80 max-w-[100vw] bg-[var(--bg-secondary)]/90 backdrop-blur-xl border-l border-[var(--border-light)] z-401 flex flex-col transition-transform duration-300 ease-out shadow-[-10px_0_30px_rgba(0,0,0,0.3)] ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
-                <div className="flex-between px-4 py-3 border-b border-[var(--border-subtle)] bg-[var(--bg-primary)]">
-                    <div className="flex items-center gap-3 text-xs text-[var(--text-muted)] font-mono">
-                        <span className="text-[var(--text-dim)] opacity-50">::</span>
+            <div style={{
+                position: 'fixed',
+                top: 0,
+                right: 0,
+                bottom: 0,
+                width: 320,
+                maxWidth: '100vw',
+                backgroundColor: 'rgba(26, 26, 36, 0.9)',
+                backdropFilter: 'blur(24px)',
+                borderLeft: '1px solid var(--border-light)',
+                zIndex: 401,
+                display: 'flex',
+                flexDirection: 'column',
+                transform: isOpen ? 'translateX(0)' : 'translateX(100%)',
+                transition: 'transform 300ms ease-out',
+                boxShadow: '-10px 0 30px rgba(0,0,0,0.3)'
+            }}>
+                {/* Header */}
+                <div className="flex-between" style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-subtle)', backgroundColor: 'var(--bg-primary)' }}>
+                    <div className="flex items-center gap-3" style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: 'monospace' }}>
+                        <span style={{ color: 'var(--text-dim)', opacity: 0.5 }}>::</span>
                         <span className="uppercase tracking-wider font-bold">TASKS</span>
                     </div>
-                    <button
-                        className="text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer bg-transparent border-none text-lg"
-                        onClick={onClose}
-                    >
-                        ×
-                    </button>
+                    <button onClick={onClose} style={{ color: 'var(--text-muted)', backgroundColor: 'transparent', border: 'none', cursor: 'pointer', fontSize: 18 }}>×</button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-4 font-mono">
+                {/* Content */}
+                <div style={{ flex: 1, overflowY: 'auto', padding: 16, fontFamily: 'monospace' }}>
                     {pendingTasks.length === 0 && completedTasks.length === 0 && (
-                        <div className="flex flex-col items-center justify-center h-40 text-[var(--text-muted)] text-center opacity-50">
-                            <div className="text-2xl mb-2">[]</div>
-                            <p className="text-xs">No tasks detected.</p>
+                        <div className="flex flex-col items-center justify-center" style={{ height: 160, color: 'var(--text-muted)', textAlign: 'center', opacity: 0.5 }}>
+                            <div style={{ fontSize: 24, marginBottom: 8 }}>[]</div>
+                            <p style={{ fontSize: 12 }}>No tasks detected.</p>
                         </div>
                     )}
 
-                    {/* Pending tasks */}
+                    {/* Pending */}
                     {pendingTasks.length > 0 && (
-                        <div className="mb-8">
-                            <div className="flex items-center gap-3 text-[10px] text-[var(--text-muted)] mb-3 font-mono">
-                                <span className="text-[var(--text-dim)] opacity-50">»</span>
+                        <div style={{ marginBottom: 32 }}>
+                            <div style={sectionHeaderStyle}>
+                                <span style={{ color: 'var(--text-dim)', opacity: 0.5 }}>»</span>
                                 <span className="uppercase tracking-widest font-bold">PENDING</span>
-                                <span className="text-[var(--accent)]">{pendingTasks.length}</span>
-                                <div className="flex-1 h-px bg-[var(--border-subtle)] opacity-50"></div>
+                                <span style={{ color: 'var(--accent)' }}>{pendingTasks.length}</span>
+                                <div style={{ flex: 1, height: 1, backgroundColor: 'var(--border-subtle)', opacity: 0.5 }} />
                             </div>
                             <div className="flex flex-col gap-2">
                                 {pendingTasks.map(task => (
-                                    <TaskItem
-                                        key={task.id}
-                                        task={task}
-                                        onComplete={() => onCompleteTask(task.id)}
-                                    />
+                                    <TaskItem key={task.id} task={task} onComplete={() => onCompleteTask(task.id)} />
                                 ))}
                             </div>
                         </div>
                     )}
 
-                    {/* Completed tasks */}
+                    {/* Completed */}
                     {completedTasks.length > 0 && (
-                        <div className="mb-8">
-                            <div className="flex items-center gap-3 text-[10px] text-[var(--text-muted)] mb-3 font-mono">
-                                <span className="text-[var(--text-dim)] opacity-50">■</span>
+                        <div style={{ marginBottom: 32 }}>
+                            <div style={sectionHeaderStyle}>
+                                <span style={{ color: 'var(--text-dim)', opacity: 0.5 }}>■</span>
                                 <span className="uppercase tracking-widest font-bold">ARCHIVED</span>
-                                <span className="text-[var(--text-dim)]">{completedTasks.length}</span>
-                                <div className="flex-1 h-px bg-[var(--border-subtle)] opacity-50"></div>
+                                <span style={{ color: 'var(--text-dim)' }}>{completedTasks.length}</span>
+                                <div style={{ flex: 1, height: 1, backgroundColor: 'var(--border-subtle)', opacity: 0.5 }} />
                             </div>
                             <div className="flex flex-col gap-2">
-                                {completedTasks.map(task => (
-                                    <TaskItem key={task.id} task={task} />
-                                ))}
+                                {completedTasks.map(task => <TaskItem key={task.id} task={task} />)}
                             </div>
                         </div>
                     )}
@@ -80,26 +103,52 @@ export function Sidebar({ isOpen, onClose, tasks, onCompleteTask }) {
 
 function TaskItem({ task, onComplete }) {
     return (
-        <div className={`group relative flex gap-3 p-3.5 bg-[var(--bg-primary)] border border-[var(--border-light)] rounded-[4px] transition-all duration-150 ${!task.done ? 'hover:border-[var(--accent)] hover:shadow-[0_2px_8px_rgba(0,0,0,0.1)]' : 'opacity-60 bg-[var(--bg-tertiary)]'}`}>
-            <label className="relative flex items-start pt-0.5 cursor-pointer">
+        <div style={{
+            display: 'flex',
+            gap: 12,
+            padding: 14,
+            backgroundColor: task.done ? 'var(--bg-tertiary)' : 'var(--bg-primary)',
+            border: '1px solid var(--border-light)',
+            borderRadius: 4,
+            opacity: task.done ? 0.6 : 1,
+            transition: 'all 150ms ease'
+        }}>
+            <label style={{ position: 'relative', display: 'flex', alignItems: 'flex-start', paddingTop: 2, cursor: 'pointer' }}>
                 <input
                     type="checkbox"
                     checked={task.done}
                     onChange={onComplete}
                     disabled={task.done}
-                    className="peer absolute opacity-0 w-full h-full cursor-pointer"
+                    style={{ position: 'absolute', opacity: 0, width: '100%', height: '100%', cursor: 'pointer' }}
                 />
-                <div className={`w-4 h-4 border border-[var(--text-muted)] rounded-[3px] flex items-center justify-center transition-colors peer-checked:bg-[var(--done)] peer-checked:border-[var(--done)] peer-hover:border-[var(--accent)]`}>
-                    {task.done && <span className="text-[var(--bg-primary)] text-xs font-bold">✓</span>}
+                <div style={{
+                    width: 16,
+                    height: 16,
+                    border: task.done ? 'none' : '1px solid var(--text-muted)',
+                    borderRadius: 3,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: task.done ? 'var(--done)' : 'transparent',
+                    transition: 'all 150ms ease'
+                }}>
+                    {task.done && <span style={{ color: 'var(--bg-primary)', fontSize: 12, fontWeight: 700 }}>✓</span>}
                 </div>
             </label>
 
-            <div className="flex-1 min-w-0">
-                <p className={`text-[13px] leading-relaxed break-words font-sans ${task.done ? 'line-through text-[var(--text-muted)]' : 'text-[var(--text-primary)]'}`}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{
+                    fontSize: 13,
+                    lineHeight: 1.6,
+                    overflowWrap: 'break-word',
+                    fontFamily: 'Inter, sans-serif',
+                    color: task.done ? 'var(--text-muted)' : 'var(--text-primary)',
+                    textDecoration: task.done ? 'line-through' : 'none'
+                }}>
                     {task.content}
                 </p>
-                <div className="mt-1.5 text-[10px] text-[var(--text-dim)] flex items-center gap-2">
-                    <span className="font-mono opacity-70">ID: {task.id.slice(-4)}</span>
+                <div style={{ marginTop: 6, fontSize: 10, color: 'var(--text-dim)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontFamily: 'monospace', opacity: 0.7 }}>ID: {task.id.slice(-4)}</span>
                     <span>{new Date(task.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
                 </div>
             </div>

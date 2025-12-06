@@ -72,7 +72,7 @@ export function ThemeProvider({ children }) {
     useEffect(() => {
         const root = document.documentElement
         const accent = ACCENT_COLORS[theme.accent] || ACCENT_COLORS.indigo
-        const text = TEXT_VARIANTS[theme.textColor] || TEXT_VARIANTS.default
+        const text = TEXT_VARIANTS[theme.textColor] || TEXT_VARIANTS.neutral
 
         // Set mode
         root.setAttribute('data-theme', theme.mode)
