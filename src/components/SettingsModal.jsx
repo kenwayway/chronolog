@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Moon, Sun } from 'lucide-react'
 import { useTheme, ACCENT_COLORS } from '../hooks/useTheme.jsx'
 
 export function SettingsModal({
@@ -103,9 +104,9 @@ export function SettingsModal({
                                     left: theme.mode === 'dark' ? 26 : 2, transition: 'all 300ms ease'
                                 }}>
                                     {theme.mode === 'dark' ? (
-                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>
+                                        <Moon size={10} stroke="var(--accent)" strokeWidth={2.5} />
                                     ) : (
-                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2.5"><circle cx="12" cy="12" r="4" /></svg>
+                                        <Sun size={10} stroke="var(--text-muted)" strokeWidth={2.5} />
                                     )}
                                 </span>
                             </button>

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { StickyNote, Square, Play, ArrowRightLeft } from 'lucide-react'
 import { SESSION_STATUS } from '../utils/constants'
 
 export function InputPanel({ status, onLogIn, onSwitch, onNote, onLogOff }) {
@@ -72,7 +73,7 @@ export function InputPanel({ status, onLogIn, onSwitch, onNote, onLogOff }) {
                     borderRadius: 12,
                     boxShadow: isFocused ? '0 0 30px rgba(0,0,0,0.2)' : '0 25px 50px -12px rgba(0,0,0,0.25)',
                     overflow: 'hidden',
-                    transition: 'all 300ms ease'
+                    transition: 'all 350ms cubic-bezier(0.4, 0, 0.2, 1)'
                 }}>
                     {/* Input Area */}
                     <div className="flex items-stretch" style={{ backgroundColor: 'var(--bg-primary)' }}>
@@ -114,10 +115,10 @@ export function InputPanel({ status, onLogIn, onSwitch, onNote, onLogOff }) {
                                     outline: 'none',
                                     lineHeight: 1.6,
                                     overflowY: 'auto',
-                                    height: isFocused ? Math.max(textareaHeight, 80) + 'px' : textareaHeight + 'px',
+                                    height: isFocused ? Math.max(textareaHeight, 80) + 'px' : '24px',
                                     minHeight: isFocused ? 80 : 24,
                                     maxHeight: 300,
-                                    transition: 'height 200ms ease'
+                                    transition: 'height 350ms cubic-bezier(0.4, 0, 0.2, 1)'
                                 }}
                             />
                         </div>
@@ -141,14 +142,14 @@ export function InputPanel({ status, onLogIn, onSwitch, onNote, onLogOff }) {
                                 className="btn-action btn-action-secondary"
                                 onClick={() => handleSubmit('note')}
                                 disabled={!input.trim()}
-                            >NOTE</button>
+                            ><StickyNote size={12} /> NOTE</button>
 
                             {/* Log Off button */}
                             {isStreaming && (
                                 <button
                                     className="btn-action btn-action-danger"
                                     onClick={() => handleSubmit('logOff')}
-                                >LOG OFF</button>
+                                ><Square size={12} /> LOG OFF</button>
                             )}
 
                             {/* Primary action button */}
@@ -156,7 +157,7 @@ export function InputPanel({ status, onLogIn, onSwitch, onNote, onLogOff }) {
                                 className="btn-action btn-action-primary"
                                 onClick={() => handleSubmit(isStreaming ? 'switch' : 'logIn')}
                                 disabled={!input.trim()}
-                            >{isStreaming ? 'SWITCH' : 'LOG IN'}</button>
+                            >{isStreaming ? <><ArrowRightLeft size={12} /> SWITCH</> : <><Play size={12} /> LOG IN</>}</button>
                         </div>
                     </div>
                 </div>
