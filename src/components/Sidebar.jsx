@@ -129,7 +129,7 @@ function TaskItem({ task, onComplete }) {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    backgroundColor: task.done ? 'var(--done)' : 'transparent',
+                    backgroundColor: task.done ? 'var(--success)' : 'transparent',
                     transition: 'all 150ms ease'
                 }}>
                     {task.done && <span style={{ color: 'var(--bg-primary)', fontSize: 12, fontWeight: 700 }}>✓</span>}

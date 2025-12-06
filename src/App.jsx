@@ -89,11 +89,11 @@ function App() {
                     <div className="relative flex-center" style={{ width: 12, height: 12 }}>
                         <div
                             className={`absolute w-full h-full rounded-full opacity-75 ${isStreaming ? 'animate-ping' : ''}`}
-                            style={{ backgroundColor: isStreaming ? 'var(--streaming)' : 'var(--text-dim)', transform: isStreaming ? 'none' : 'scale(0.5)' }}
+                            style={{ backgroundColor: isStreaming ? 'var(--success)' : 'var(--text-dim)', transform: isStreaming ? 'none' : 'scale(0.5)' }}
                         />
                         <div
                             className="relative rounded-full"
-                            style={{ width: 8, height: 8, backgroundColor: isStreaming ? 'var(--streaming)' : 'var(--text-dim)' }}
+                            style={{ width: 8, height: 8, backgroundColor: isStreaming ? 'var(--success)' : 'var(--text-dim)' }}
                         />
                     </div>
 

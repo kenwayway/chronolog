@@ -110,13 +110,13 @@ function TimelineEntry({ entry, isFirst, isLast, sessionDuration, categories, on
         const styles = { fontSize: 14 }
         switch (entry.type) {
             case ENTRY_TYPES.SESSION_START:
-                return <span style={{ ...styles, color: 'var(--streaming)', fontWeight: 700, fontSize: 18 }}>»</span>
+                return <span style={{ ...styles, color: 'var(--success)', fontWeight: 700, fontSize: 18 }}>»</span>
             case ENTRY_TYPES.SESSION_END:
                 return <span style={{ ...styles, color: 'var(--text-muted)' }}>■</span>
             case ENTRY_TYPES.NOTE:
                 return <span style={{ ...styles, color: 'var(--text-dim)' }}>{entry.isTodo ? '○' : '·'}</span>
             case ENTRY_TYPES.TASK_DONE:
-                return <span style={{ ...styles, color: 'var(--done)', fontWeight: 700 }}>✓</span>
+                return <span style={{ ...styles, color: 'var(--success)', fontWeight: 700 }}>✓</span>
             default:
                 return <span style={{ ...styles, color: 'var(--text-dim)' }}>·</span>
         }
@@ -150,7 +150,7 @@ function TimelineEntry({ entry, isFirst, isLast, sessionDuration, categories, on
     const getContentColor = () => {
         if (isSessionStart) return 'var(--text-primary)'
         if (isSessionEnd) return 'var(--text-muted)'
-        if (isTodo) return 'var(--todo)'
+        if (isTodo) return 'var(--warning)'
         if (isTaskDone) return 'var(--text-muted)'
         return 'var(--text-secondary)'
     }
@@ -214,8 +214,8 @@ function TimelineEntry({ entry, isFirst, isLast, sessionDuration, categories, on
                         </span>
                     )}
 
-                    {isTaskDone && <span style={{ fontSize: 11, color: 'var(--done)', fontWeight: 700, userSelect: 'none' }}>[DONE]</span>}
-                    {isTodo && <span style={{ fontSize: 11, color: 'var(--todo)', fontWeight: 700, userSelect: 'none' }}>[TODO]</span>}
+                    {isTaskDone && <span style={{ fontSize: 11, color: 'var(--success)', fontWeight: 700, userSelect: 'none' }}>[DONE]</span>}
+                    {isTodo && <span style={{ fontSize: 11, color: 'var(--warning)', fontWeight: 700, userSelect: 'none' }}>[TODO]</span>}
                 </div>
 
                 {category && (
