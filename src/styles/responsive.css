@@ -135,6 +135,13 @@
     font-size: 0.875rem;
   }
 
+  /* Prevent iOS zoom on input focus - inputs must be 16px+ */
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+
   /* Hide on mobile utility */
   .hide-mobile {
     display: none !important;
