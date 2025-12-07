@@ -118,7 +118,8 @@ export function ActivityPanel({
           display: "flex",
           flexDirection: "column",
           transform: isOpen ? "translateX(0)" : "translateX(100%)",
-          transition: "transform 300ms ease-out",
+          visibility: isOpen ? "visible" : "hidden",
+          transition: "transform 300ms ease-out, visibility 0s linear " + (isOpen ? "0s" : "300ms"),
           boxShadow: "-10px 0 30px rgba(0,0,0,0.3)",
           fontFamily: "var(--font-mono)",
         }}

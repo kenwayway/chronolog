@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#0f0f14"/>
+  <text x="256" y="280" text-anchor="middle" fill="#10b981" font-family="monospace" font-size="120" font-weight="bold">C</text>
+  <text x="256" y="380" text-anchor="middle" fill="#8f8880" font-family="monospace" font-size="50">LOG</text>
+</svg>

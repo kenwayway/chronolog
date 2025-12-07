@@ -24,6 +24,7 @@ function FocusMode({ isOpen, onClose, children }) {
 
     return (
         <div
+            className="focus-mode-overlay"
             onMouseDown={handleBackdropClick}
             style={{
                 position: "fixed",
@@ -39,6 +40,7 @@ function FocusMode({ isOpen, onClose, children }) {
             }}
         >
             <div
+                className="focus-mode-content"
                 style={{
                     maxWidth: 900,
                     width: "100%",
@@ -46,6 +48,7 @@ function FocusMode({ isOpen, onClose, children }) {
                 }}
             >
                 <div
+                    className="focus-mode-inner"
                     onMouseDown={(e) => e.stopPropagation()}
                     style={{ pointerEvents: "auto" }}
                 >

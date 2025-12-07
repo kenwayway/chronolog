@@ -74,7 +74,7 @@
   }
 
   /* Hide left timestamp on mobile */
-  .timeline-timestamp {
+  .timeline-time-col {
     display: none !important;
   }
 
@@ -84,7 +84,7 @@
   }
 
   .timeline-content-text {
-    font-size: 14px !important;
+    font-size: 16px !important;
   }
 
   /* Show time above content on mobile */
@@ -100,6 +100,34 @@
 
   .input-panel {
     border-radius: 8px;
+  }
+
+  /* Focus Mode - fullscreen on mobile */
+  .focus-mode-overlay {
+    padding: 0 !important;
+  }
+
+  .focus-mode-content {
+    max-width: 100% !important;
+    height: 100%;
+  }
+
+  .focus-mode-inner {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .focus-mode-inner .input-panel {
+    border-radius: 0 !important;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .focus-mode-inner textarea {
+    flex: 1 !important;
+    min-height: 200px !important;
   }
 
   /* Typography adjustments */
