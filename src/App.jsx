@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react'
 import { useSession } from './hooks/useSession'
 import { useCategories } from './hooks/useCategories'
+import { useTheme } from './hooks/useTheme'
 import { Header } from './components/Header'
 import { Timeline } from './components/Timeline'
 import { InputPanel } from './components/InputPanel'
@@ -12,9 +13,11 @@ import { EditModal } from './components/EditModal'
 function App() {
     const { state, isStreaming, actions } = useSession()
     const { categories, addCategory, deleteCategory, resetToDefaults } = useCategories()
+    const { isDark, toggleTheme } = useTheme()
 
     const [sidebarOpen, setSidebarOpen] = useState(false)
     const [settingsOpen, setSettingsOpen] = useState(false)
+    const [selectedDate, setSelectedDate] = useState(null) // null = today
     const [editModal, setEditModal] = useState({ isOpen: false, entry: null })
     const [contextMenu, setContextMenu] = useState({
         isOpen: false,
@@ -86,6 +89,10 @@ function App() {
             <Header
                 isStreaming={isStreaming}
                 pendingTaskCount={state.tasks.filter(t => !t.done).length}
+                selectedDate={selectedDate}
+                onDateChange={setSelectedDate}
+                isDark={isDark}
+                onToggleTheme={toggleTheme}
                 onOpenSidebar={() => setSidebarOpen(true)}
                 onOpenSettings={() => setSettingsOpen(true)}
             />
@@ -93,7 +100,13 @@ function App() {
             {/* Main content */}
             < main className="flex-1 flex flex-col max-w-4xl w-full mx-auto relative" >
                 <Timeline
-                    entries={state.entries}
+                    entries={state.entries.filter(entry => {
+                        const today = new Date()
+                        today.setHours(0, 0, 0, 0)
+                        const targetDate = selectedDate || today
+                        const entryDate = new Date(entry.timestamp)
+                        return entryDate.toDateString() === targetDate.toDateString()
+                    })}
                     status={state.status}
                     categories={categories}
                     onContextMenu={handleContextMenu}

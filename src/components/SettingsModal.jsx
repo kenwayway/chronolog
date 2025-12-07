@@ -86,32 +86,6 @@ export function SettingsModal({
                 </div>
 
                 <div style={{ padding: 16 }} className="space-y-5">
-                    {/* Theme Mode */}
-                    <div>
-                        <SectionHeader icon="◐" title="MODE" />
-                        <div className="flex-between" style={{ padding: 8, backgroundColor: 'var(--bg-primary)', borderRadius: 8 }}>
-                            <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{theme.mode === 'dark' ? 'Dark' : 'Light'}</span>
-                            <button
-                                onClick={() => setMode(theme.mode === 'dark' ? 'light' : 'dark')}
-                                style={{
-                                    position: 'relative', width: 48, height: 24, borderRadius: 9999, cursor: 'pointer', border: 'none',
-                                    backgroundColor: theme.mode === 'dark' ? 'var(--accent)' : 'var(--border-light)', transition: 'all 300ms ease'
-                                }}
-                            >
-                                <span style={{
-                                    position: 'absolute', top: 2, width: 20, height: 20, borderRadius: 9999, backgroundColor: 'white',
-                                    boxShadow: '0 1px 3px rgba(0,0,0,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    left: theme.mode === 'dark' ? 26 : 2, transition: 'all 300ms ease'
-                                }}>
-                                    {theme.mode === 'dark' ? (
-                                        <Moon size={10} stroke="var(--accent)" strokeWidth={2.5} />
-                                    ) : (
-                                        <Sun size={10} stroke="var(--text-muted)" strokeWidth={2.5} />
-                                    )}
-                                </span>
-                            </button>
-                        </div>
-                    </div>
 
                     {/* Accent Color */}
                     <div>

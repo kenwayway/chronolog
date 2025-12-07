@@ -46,7 +46,7 @@ export function Timeline({ entries, status, categories, onContextMenu }) {
     const isToday = (dateStr) => new Date(dateStr).toDateString() === new Date().toDateString()
 
     return (
-        <div style={{ flex: 1, overflowY: 'auto', padding: '24px 16px 160px', fontFamily: 'monospace' }}>
+        <div className="timeline-container" style={{ flex: 1, overflowY: 'auto', padding: '24px 16px 160px', fontFamily: 'monospace' }}>
             {entries.length === 0 && (
                 <div className="flex flex-col items-center justify-center" style={{ height: 256, color: 'var(--text-muted)', textAlign: 'center', opacity: 0.5 }}>
                     <div style={{ fontSize: 32, marginBottom: 16 }}>_</div>
@@ -55,29 +55,17 @@ export function Timeline({ entries, status, categories, onContextMenu }) {
                 </div>
             )}
 
-            {dateGroups.map(dateKey => (
-                <div key={dateKey} style={{ marginBottom: 32 }}>
-                    <div className="flex items-center gap-4 select-none" style={{ marginBottom: 16, fontSize: 12, color: 'var(--text-muted)', fontFamily: 'monospace' }}>
-                        <span style={{ color: 'var(--text-dim)', opacity: 0.5 }}>::</span>
-                        <span className="uppercase tracking-wider font-bold">{isToday(dateKey) ? 'TODAY' : formatDate(new Date(dateKey).getTime())}</span>
-                        <div style={{ flex: 1, height: 1, backgroundColor: 'var(--border-subtle)', opacity: 0.5 }} />
-                    </div>
-
-                    <div className="space-y-1">
-                        {groupedEntries[dateKey].map((entry, index) => (
-                            <TimelineEntry
-                                key={entry.id}
-                                entry={entry}
-                                isFirst={index === 0}
-                                isLast={index === groupedEntries[dateKey].length - 1}
-                                sessionDuration={sessionDurations[entry.id]}
-                                categories={categories}
-                                onContextMenu={onContextMenu}
-                                lineState={entryLineStates[entry.id]}
-                            />
-                        ))}
-                    </div>
-                </div>
+            {sortedEntries.map((entry, index) => (
+                <TimelineEntry
+                    key={entry.id}
+                    entry={entry}
+                    isFirst={index === 0}
+                    isLast={index === sortedEntries.length - 1}
+                    sessionDuration={sessionDurations[entry.id]}
+                    categories={categories}
+                    onContextMenu={onContextMenu}
+                    lineState={entryLineStates[entry.id]}
+                />
             ))}
         </div>
     )
@@ -130,21 +118,66 @@ function TimelineEntry({ entry, isFirst, isLast, sessionDuration, categories, on
 
     const linkifyContent = (text) => {
         if (!text) return null
-        const urlRegex = /(https?:\/\/[^\s]+)/g
-        const parts = text.split(urlRegex)
-        return parts.map((part, i) => {
-            if (part.match(urlRegex)) {
-                return <a key={i} href={part} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', wordBreak: 'break-all' }} onClick={(e) => e.stopPropagation()}>{part}</a>
+
+        // Split by lines first to handle image lines specially
+        const lines = text.split('\n')
+
+        return lines.map((line, lineIdx) => {
+            // Check if this is an image line (🖼️ prefix)
+            if (line.startsWith('🖼️ ')) {
+                const imageUrl = line.replace('🖼️ ', '').trim()
+                return (
+                    <div key={lineIdx} style={{ marginTop: 8, marginBottom: 4 }}>
+                        <img
+                            src={imageUrl}
+                            alt="attached"
+                            style={{
+                                maxWidth: '100%',
+                                maxHeight: 300,
+                                borderRadius: 8,
+                                border: '1px solid var(--border-subtle)'
+                            }}
+                            onError={(e) => {
+                                e.target.style.display = 'none'
+                                e.target.nextSibling.style.display = 'inline'
+                            }}
+                        />
+                        <a href={imageUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'none', color: 'var(--accent)', fontSize: 12 }}>{imageUrl}</a>
+                    </div>
+                )
             }
-            return part
+
+            // Check if this is a location line (📍 prefix)
+            if (line.startsWith('📍 ')) {
+                return (
+                    <div key={lineIdx} style={{ marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <span style={{ color: 'var(--accent)' }}>📍</span>
+                        <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{line.replace('📍 ', '')}</span>
+                    </div>
+                )
+            }
+
+            // Regular line with URL linkification
+            const urlRegex = /(https?:\/\/[^\s]+)/g
+            const parts = line.split(urlRegex)
+            const linkedParts = parts.map((part, i) => {
+                if (part.match(urlRegex)) {
+                    return <a key={i} href={part} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', wordBreak: 'break-all' }} onClick={(e) => e.stopPropagation()}>{part}</a>
+                }
+                return part
+            })
+
+            return lineIdx < lines.length - 1
+                ? <span key={lineIdx}>{linkedParts}{'\n'}</span>
+                : <span key={lineIdx}>{linkedParts}</span>
         })
     }
 
     const getLineColor = (position) => {
         if (position === 'top') {
-            return (lineState === 'start' || lineState === 'default') ? 'var(--border-subtle)' : 'var(--accent)'
+            return (lineState === 'start' || lineState === 'default') ? 'var(--border-light)' : 'var(--accent)'
         }
-        return (lineState === 'end' || lineState === 'default') ? 'var(--border-subtle)' : 'var(--accent)'
+        return (lineState === 'end' || lineState === 'default') ? 'var(--border-light)' : 'var(--accent)'
     }
 
     const getContentColor = () => {
@@ -157,6 +190,7 @@ function TimelineEntry({ entry, isFirst, isLast, sessionDuration, categories, on
 
     return (
         <div
+            className="timeline-entry"
             style={{
                 display: 'flex',
                 alignItems: 'flex-start',
@@ -177,12 +211,12 @@ function TimelineEntry({ entry, isFirst, isLast, sessionDuration, categories, on
             onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
         >
             {/* Timestamp */}
-            <div style={{ flexShrink: 0, width: 56, fontSize: 12, color: 'var(--text-muted)', textAlign: 'right', paddingTop: 4, fontFamily: 'monospace', opacity: 0.6 }}>
+            <div className="timeline-timestamp" style={{ flexShrink: 0, width: 56, fontSize: 12, color: 'var(--text-muted)', textAlign: 'right', paddingTop: 4, fontFamily: 'monospace', opacity: 0.6 }}>
                 {formatTime(entry.timestamp)}
             </div>
 
             {/* Symbol Column */}
-            <div style={{ position: 'relative', flexShrink: 0, width: 20, textAlign: 'center', fontSize: 14, userSelect: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', alignSelf: 'stretch' }}>
+            <div className="timeline-symbol-col" style={{ position: 'relative', flexShrink: 0, width: 20, textAlign: 'center', fontSize: 14, userSelect: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', alignSelf: 'stretch' }}>
                 {!isFirst && <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', width: 1, height: 24, backgroundColor: getLineColor('top') }} />}
                 {!isLast && <div style={{ position: 'absolute', top: 12, bottom: -12, left: '50%', transform: 'translateX(-50%)', width: 1, backgroundColor: getLineColor('bottom') }} />}
                 <div style={{ position: 'relative', zIndex: 10, width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 9999, backgroundColor: 'var(--bg-primary)' }}>
@@ -191,10 +225,14 @@ function TimelineEntry({ entry, isFirst, isLast, sessionDuration, categories, on
             </div>
 
             {/* Content */}
-            <div style={{ flex: 1, minWidth: 0 }}>
+            <div className="timeline-content-col" style={{ flex: 1, minWidth: 0 }}>
+                {/* Mobile timestamp - visible only on mobile via CSS */}
+                <div className="timeline-mobile-time" style={{ fontSize: 10, color: 'var(--text-dim)', fontFamily: 'monospace', marginBottom: 4, display: 'none' }}>
+                    {formatTime(entry.timestamp)}
+                </div>
                 <div className="flex flex-wrap items-baseline" style={{ gap: '4px 12px', marginBottom: 6 }}>
                     {entry.content && (
-                        <span style={{
+                        <span className="timeline-content-text" style={{
                             fontSize: 15,
                             lineHeight: 1.6,
                             overflowWrap: 'break-word',
@@ -232,7 +270,7 @@ function TimelineEntry({ entry, isFirst, isLast, sessionDuration, categories, on
                             backgroundColor: `${category.color}15`,
                             border: `1px solid ${category.color}30`
                         }}>
-                            {category.label}
+                            #{category.label}
                         </span>
                     </div>
                 )}

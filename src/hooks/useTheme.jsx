@@ -83,5 +83,13 @@ export function useTheme() {
     if (!context) {
         throw new Error('useTheme must be used within ThemeProvider')
     }
-    return context
+    const { theme, setMode, setAccent, toggleMode } = context
+    return {
+        theme,
+        setMode,
+        setAccent,
+        toggleMode,
+        toggleTheme: toggleMode, // alias
+        isDark: theme.mode === 'dark'
+    }
 }

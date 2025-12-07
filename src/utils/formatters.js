@@ -19,11 +19,9 @@ export function formatTime(timestamp) {
  */
 export function formatDate(timestamp) {
     const date = new Date(timestamp)
-    return date.toLocaleDateString('zh-CN', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        weekday: 'long'
+    return date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric'
     })
 }
 

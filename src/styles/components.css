@@ -223,7 +223,6 @@
 /* ===== Timeline ===== */
 .timeline-entry {
     padding: 1rem 1.5rem;
-    border-bottom: 1px solid var(--border-subtle);
     transition: background-color 150ms ease;
 }
 

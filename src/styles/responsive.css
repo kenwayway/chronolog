@@ -60,9 +60,36 @@
         border-radius: 0;
     }
 
-    /* Timeline */
+    /* Timeline - Compact mobile layout */
     .timeline-entry {
-        padding: 0.75rem;
+        flex-wrap: wrap;
+        padding: 10px 8px !important;
+        gap: 8px !important;
+        margin: 0 !important;
+        border-bottom: none !important;
+    }
+
+    .timeline-container {
+        padding: 12px 8px 120px !important;
+    }
+
+    /* Hide left timestamp on mobile */
+    .timeline-timestamp {
+        display: none !important;
+    }
+
+    /* Symbol column - smaller on mobile */
+    .timeline-symbol-col {
+        width: 16px !important;
+    }
+
+    .timeline-content-text {
+        font-size: 14px !important;
+    }
+
+    /* Show time above content on mobile */
+    .timeline-mobile-time {
+        display: block !important;
     }
 
     /* InputPanel */
@@ -119,7 +146,6 @@
 
 /* ===== Desktop (1025px+) ===== */
 @media (min-width: 1025px) {
-    /* Default styles apply - nothing to override */
 
     /* Hover states only on desktop */
     .btn-ghost:hover {
@@ -138,12 +164,16 @@
     .btn-action-primary:hover:not(:disabled) {
         background-color: var(--accent-light);
     }
+
+    /* Hide mobile-only elements on desktop */
+    .timeline-mobile-time {
+        display: none !important;
+    }
 }
 
 /* ===== Touch devices ===== */
 @media (hover: none) and (pointer: coarse) {
 
-    /* Remove hover effects on touch devices */
     .btn:active {
         transform: scale(0.98);
     }
