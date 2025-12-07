@@ -5,138 +5,139 @@
 /* ===== Theme Variables ===== */
 :root,
 [data-theme="dark"] {
-  --bg-primary: #0f0f14;
-  --bg-secondary: #1a1a24;
-  --bg-tertiary: #313143;
-  --bg-glass: rgba(15, 15, 20, 0.8);
+    --bg-primary: #0f0f14;
+    --bg-secondary: #1a1a24;
+    --bg-tertiary: #313143;
+    --bg-glass: rgba(15, 15, 20, 0.8);
 
-  --text-primary: #e8e4e0;
-  --text-secondary: #c4beb8;
-  --text-muted: #8f8880;
-  --text-dim: #8a8983;
+    --text-primary: #e8e4e0;
+    --text-secondary: #c4beb8;
+    --text-muted: #8f8880;
+    --text-dim: #8a8983;
 
-  --accent: #3b82f6;
-  --accent-light: #60a5fa;
-  --accent-glow: rgba(59, 130, 246, 0.15);
-  --accent-subtle: rgba(59, 130, 246, 0.1);
+    --accent: #3b82f6;
+    --accent-light: #60a5fa;
+    --accent-glow: rgba(59, 130, 246, 0.15);
+    --accent-subtle: rgba(59, 130, 246, 0.1);
 
-  --success: #22c55e;
-  --warning: #eab308;
-  --error: #ef4444;
-  --info: #06b6d4;
+    --success: #22c55e;
+    --warning: #eab308;
+    --error: #ef4444;
+    --info: #06b6d4;
 
-  --border-subtle: #1f2335;
-  --border-light: #2a2e42;
+    --border-subtle: #1f2335;
+    --border-light: #2a2e42;
 }
 
 [data-theme="light"] {
-  --bg-primary: #ffffff;
-  --bg-secondary: #f8f9fb;
-  --bg-tertiary: #eef0f4;
-  --bg-glass: rgba(255, 255, 255, 0.85);
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8f9fb;
+    --bg-tertiary: #eef0f4;
+    --bg-glass: rgba(255, 255, 255, 0.85);
 
-  --text-primary: #1a1a2e;
-  --text-secondary: #4a4a5e;
-  --text-muted: #71717a;
-  --text-dim: #a1a1aa;
+    --text-primary: #1a1a2e;
+    --text-secondary: #4a4a5e;
+    --text-muted: #71717a;
+    --text-dim: #a1a1aa;
 
-  --accent: #2563eb;
-  --accent-light: #3b82f6;
-  --accent-glow: rgba(37, 99, 235, 0.12);
-  --accent-subtle: rgba(37, 99, 235, 0.08);
+    --accent: #2563eb;
+    --accent-light: #3b82f6;
+    --accent-glow: rgba(37, 99, 235, 0.12);
+    --accent-subtle: rgba(37, 99, 235, 0.08);
 
-  --success: #16a34a;
-  --warning: #ca8a04;
-  --error: #dc2626;
-  --info: #0891b2;
+    --success: #16a34a;
+    --warning: #ca8a04;
+    --error: #dc2626;
+    --info: #0891b2;
 
-  --border-subtle: #f0f0f5;
-  --border-light: #e0e0e8;
+    --border-subtle: #f0f0f5;
+    --border-light: #e0e0e8;
 }
 
 /* ===== Reset ===== */
 *,
 *::before,
 *::after {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
 html {
-  font-size: 15px;
-  -webkit-font-smoothing: antialiased;
+    font-size: 15px;
+    -webkit-font-smoothing: antialiased;
 }
 
 body {
-  font-family: "Inter", "JetBrains Mono", "Fira Code", "Consolas", sans-serif;
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
-  line-height: 1.6;
-  min-height: 100vh;
-  overflow-x: hidden;
+    font-family: "Inter", "JetBrains Mono", "Fira Code", "Consolas", sans-serif;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.6;
+    min-height: 100vh;
+    overflow-x: hidden;
+    overflow-y: scroll;
 }
 
 /* ===== Scrollbar ===== */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+    width: 6px;
+    height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+    background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--border-light);
-  border-radius: 3px;
+    background: var(--border-light);
+    border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--text-muted);
+    background: var(--text-muted);
 }
 
 /* ===== Selection ===== */
 ::selection {
-  background: var(--accent-subtle);
-  color: var(--accent);
+    background: var(--accent-subtle);
+    color: var(--accent);
 }
 
 /* ===== Links ===== */
 a {
-  color: var(--accent);
-  text-decoration: none;
+    color: var(--accent);
+    text-decoration: none;
 }
 
 a:hover {
-  text-decoration: underline;
+    text-decoration: underline;
 }
 
 /* ===== Typography ===== */
 .font-mono {
-  font-family: "JetBrains Mono", "Fira Code", "Consolas", monospace;
+    font-family: "JetBrains Mono", "Fira Code", "Consolas", monospace;
 }
 
 .font-bold {
-  font-weight: 700;
+    font-weight: 700;
 }
 
 .font-medium {
-  font-weight: 500;
+    font-weight: 500;
 }
 
 .uppercase {
-  text-transform: uppercase;
+    text-transform: uppercase;
 }
 
 .tracking-wider {
-  letter-spacing: 0.05em;
+    letter-spacing: 0.05em;
 }
 
 .tracking-widest {
-  letter-spacing: 0.1em;
+    letter-spacing: 0.1em;
 }
 
 .select-none {
-  user-select: none;
+    user-select: none;
 }

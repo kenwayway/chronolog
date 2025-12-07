@@ -345,3 +345,11 @@
   overflow-y: auto;
   animation: slide-in-right 200ms ease-out;
 }
+
+/* ===== Left Sidebar ===== */
+.left-sidebar {
+    width: 200px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--border-subtle);
+    overflow-y: auto;
+}

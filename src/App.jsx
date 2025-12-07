@@ -1,29 +1,33 @@
-import { useState, useCallback } from 'react'
-import { useSession } from './hooks/useSession'
-import { useCategories } from './hooks/useCategories'
-import { useTheme } from './hooks/useTheme'
-import { Header } from './components/Header'
-import { Timeline } from './components/Timeline'
-import { InputPanel } from './components/InputPanel'
-import { Sidebar } from './components/Sidebar'
-import { ContextMenu } from './components/ContextMenu'
-import { SettingsModal } from './components/SettingsModal'
-import { EditModal } from './components/EditModal'
+import { useState, useCallback } from "react";
+import { useSession } from "./hooks/useSession";
+import { useCategories } from "./hooks/useCategories";
+import { useTheme } from "./hooks/useTheme";
+import { Header } from "./components/Header";
+import { Timeline } from "./components/Timeline";
+import { InputPanel } from "./components/InputPanel";
+import { TasksPanel } from "./components/TasksPanel";
+import { ContextMenu } from "./components/ContextMenu";
+import { SettingsModal } from "./components/SettingsModal";
+import { EditModal } from "./components/EditModal";
+import { ActivityPanel } from "./components/ActivityPanel";
 
 function App() {
-    const { state, isStreaming, actions } = useSession()
-    const { categories, addCategory, deleteCategory, resetToDefaults } = useCategories()
-    const { isDark, toggleTheme } = useTheme()
+    const { state, isStreaming, actions } = useSession();
+    const { categories, addCategory, deleteCategory, resetToDefaults } =
+        useCategories();
+    const { isDark, toggleTheme } = useTheme();
 
-    const [sidebarOpen, setSidebarOpen] = useState(false)
-    const [settingsOpen, setSettingsOpen] = useState(false)
-    const [selectedDate, setSelectedDate] = useState(null) // null = today
-    const [editModal, setEditModal] = useState({ isOpen: false, entry: null })
+    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [leftSidebarOpen, setLeftSidebarOpen] = useState(false);
+    const [settingsOpen, setSettingsOpen] = useState(false);
+    const [selectedDate, setSelectedDate] = useState(null); // null = today
+    const [editModal, setEditModal] = useState({ isOpen: false, entry: null });
+    const [categoryFilter, setCategoryFilter] = useState([]); // empty = show all
     const [contextMenu, setContextMenu] = useState({
         isOpen: false,
         position: { x: 0, y: 0 },
-        entry: null
-    })
+        entry: null,
+    });
 
     const handleLogIn = useCallback((content) => {
         actions.logIn(content)
@@ -94,24 +98,31 @@ function App() {
                 isDark={isDark}
                 onToggleTheme={toggleTheme}
                 onOpenSidebar={() => setSidebarOpen(true)}
+                onOpenLeftSidebar={() => setLeftSidebarOpen(true)}
                 onOpenSettings={() => setSettingsOpen(true)}
             />
 
             {/* Main content */}
-            < main className="flex-1 flex flex-col max-w-4xl w-full mx-auto relative" >
+            <main className="flex-1 flex flex-col max-w-4xl w-full mx-auto relative">
                 <Timeline
                     entries={state.entries.filter(entry => {
                         const today = new Date()
                         today.setHours(0, 0, 0, 0)
                         const targetDate = selectedDate || today
                         const entryDate = new Date(entry.timestamp)
-                        return entryDate.toDateString() === targetDate.toDateString()
+                        const dateMatch = entryDate.toDateString() === targetDate.toDateString()
+
+                        // Category filter
+                        const categoryMatch = categoryFilter.length === 0 ||
+                            categoryFilter.includes(entry.category)
+
+                        return dateMatch && categoryMatch
                     })}
                     status={state.status}
                     categories={categories}
                     onContextMenu={handleContextMenu}
                 />
-            </main >
+            </main>
 
             <InputPanel
                 status={state.status}
@@ -121,11 +132,22 @@ function App() {
                 onLogOff={handleLogOff}
             />
 
-            <Sidebar
+            <TasksPanel
                 isOpen={sidebarOpen}
                 onClose={() => setSidebarOpen(false)}
                 tasks={state.tasks}
                 onCompleteTask={handleCompleteTask}
+            />
+
+            <ActivityPanel
+                isOpen={leftSidebarOpen}
+                onClose={() => setLeftSidebarOpen(false)}
+                entries={state.entries}
+                categories={categories}
+                selectedDate={selectedDate}
+                onDateChange={setSelectedDate}
+                categoryFilter={categoryFilter}
+                onCategoryFilterChange={setCategoryFilter}
             />
 
             <ContextMenu

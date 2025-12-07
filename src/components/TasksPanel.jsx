@@ -1,4 +1,4 @@
-export function Sidebar({ isOpen, onClose, tasks, onCompleteTask }) {
+export function TasksPanel({ isOpen, onClose, tasks, onCompleteTask }) {
   const pendingTasks = tasks.filter((t) => !t.done);
   const completedTasks = tasks.filter((t) => t.done);
 

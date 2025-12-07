@@ -230,3 +230,11 @@
     --text-secondary: #4a4a5e;
   }
 }
+
+/* ===== Hide left sidebar on mobile ===== */
+@media (max-width: 768px) {
+    .left-sidebar,
+    .hide-mobile {
+        display: none !important;
+    }
+}

@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from "react";
 import {
-  ListTodo,
+  ClipboardList,
   Settings,
   ChevronLeft,
   ChevronRight,
   Moon,
   Sun,
+  Activity,
 } from "lucide-react";
 import { useTheme } from "../hooks/useTheme";
 import { formatDate } from "../utils/formatters";
@@ -274,6 +275,7 @@ export function Header({
   isDark,
   onToggleTheme,
   onOpenSidebar,
+  onOpenLeftSidebar,
   onOpenSettings,
 }) {
   const [showCalendar, setShowCalendar] = useState(false);
@@ -388,10 +390,19 @@ export function Header({
         <button
           className="btn btn-ghost relative rounded-lg"
           style={{ width: 36, height: 36, padding: 0 }}
+          onClick={onOpenLeftSidebar}
+          title="Activity & Filters"
+        >
+          <Activity size={20} strokeWidth={1.5} />
+        </button>
+
+        <button
+          className="btn btn-ghost relative rounded-lg"
+          style={{ width: 36, height: 36, padding: 0 }}
           onClick={onOpenSidebar}
           title="Tasks"
         >
-          <ListTodo size={20} strokeWidth={1.5} />
+          <ClipboardList size={20} strokeWidth={1.5} />
           {pendingTaskCount > 0 && (
             <span
               className="absolute rounded-full"
