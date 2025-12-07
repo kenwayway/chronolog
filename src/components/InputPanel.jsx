@@ -169,13 +169,20 @@ export function InputPanel({ status, onLogIn, onSwitch, onNote, onLogOff }) {
 
     useEffect(() => {
         if (inputRef.current) {
-            inputRef.current.style.height = '24px'
-            const scrollHeight = inputRef.current.scrollHeight
-            const newHeight = Math.min(Math.max(scrollHeight, 24), 200)
-            setTextareaHeight(newHeight)
-            inputRef.current.style.height = newHeight + 'px'
+            if (!isFocused) {
+                // When not focused, force height to collapsed state
+                inputRef.current.style.height = '24px'
+                setTextareaHeight(24)
+            } else {
+                // When focused, auto-expand based on content
+                inputRef.current.style.height = '24px'
+                const scrollHeight = inputRef.current.scrollHeight
+                const newHeight = Math.min(Math.max(scrollHeight, 24), 200)
+                setTextareaHeight(newHeight)
+                inputRef.current.style.height = newHeight + 'px'
+            }
         }
-    }, [input])
+    }, [input, isFocused])
 
     // Render the input form (used both in normal and focus mode)
     const renderInputForm = (inFocusMode = false) => (
