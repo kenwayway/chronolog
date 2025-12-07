@@ -553,6 +553,7 @@ function TimelineEntry({
                 {category && (
                     <div style={{ marginTop: 6 }}>
                         <span
+                            className="category-label"
                             style={{
                                 fontSize: 11,
                                 padding: "3px 10px",

@@ -99,3 +99,21 @@
     background: var(--border-light);
     border: 1px solid var(--border-subtle);
 }
+/* ===== Header Indicator - Breathing Light ===== */
+[data-style="spy"] .header-indicator-inner {
+    background-color: var(--success) !important;
+}
+
+/* ===== Category Labels - Stamp Style ===== */
+[data-style="spy"] .category-label {
+    font-family: var(--font-display) !important;
+    font-weight: 700 !important;
+    border: 2px solid currentColor !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    letter-spacing: 0.12em !important;
+    font-size: 9px !important;
+    padding: 2px 8px !important;
+    transform: rotate(-3deg);
+    opacity: 0.9;
+}

@@ -142,6 +142,7 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories }) {
         }}
       >
         <div
+          className="modal-panel"
           onMouseDown={(e) => e.stopPropagation()}
           style={{
             pointerEvents: "auto",
@@ -149,7 +150,6 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories }) {
             border: "1px solid var(--border-light)",
             borderRadius: 4,
             boxShadow: "0 0 80px rgba(0,0,0,0.3)",
-            overflow: "hidden",
             fontFamily: "var(--font-mono)",
           }}
         >

@@ -65,6 +65,7 @@ export function SettingsModal({
         }}
       >
         <div
+          className="modal-panel"
           onMouseDown={(e) => e.stopPropagation()}
           style={{
             pointerEvents: "auto",
@@ -72,7 +73,6 @@ export function SettingsModal({
             border: "1px solid var(--border-light)",
             borderRadius: 4,
             boxShadow: "0 0 80px rgba(0,0,0,0.3)",
-            overflow: "hidden",
             fontFamily: "var(--font-mono)",
           }}
         >
