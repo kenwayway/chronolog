@@ -105,22 +105,26 @@ function App() {
             {/* Main content */}
             <main className="flex-1 flex flex-col max-w-4xl w-full mx-auto relative">
                 <Timeline
-                    entries={state.entries.filter(entry => {
+                    entries={(() => {
+                        // When category filter is active, show ALL matching entries (ignore date)
+                        if (categoryFilter.length > 0) {
+                            return state.entries
+                                .filter(entry => categoryFilter.includes(entry.category))
+                                .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+                        }
+                        // Otherwise, filter by date
                         const today = new Date()
                         today.setHours(0, 0, 0, 0)
                         const targetDate = selectedDate || today
-                        const entryDate = new Date(entry.timestamp)
-                        const dateMatch = entryDate.toDateString() === targetDate.toDateString()
-
-                        // Category filter
-                        const categoryMatch = categoryFilter.length === 0 ||
-                            categoryFilter.includes(entry.category)
-
-                        return dateMatch && categoryMatch
-                    })}
+                        return state.entries.filter(entry => {
+                            const entryDate = new Date(entry.timestamp)
+                            return entryDate.toDateString() === targetDate.toDateString()
+                        })
+                    })()}
                     status={state.status}
                     categories={categories}
                     onContextMenu={handleContextMenu}
+                    categoryFilter={categoryFilter}
                 />
             </main>
 

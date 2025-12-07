@@ -2,16 +2,6 @@ export function TasksPanel({ isOpen, onClose, tasks, onCompleteTask }) {
   const pendingTasks = tasks.filter((t) => !t.done);
   const completedTasks = tasks.filter((t) => t.done);
 
-  const sectionHeaderStyle = {
-    display: "flex",
-    alignItems: "center",
-    gap: 12,
-    fontSize: 10,
-    color: "var(--text-muted)",
-    marginBottom: 12,
-    fontFamily: "monospace",
-  };
-
   return (
     <>
       {/* Backdrop */}
@@ -57,16 +47,9 @@ export function TasksPanel({ isOpen, onClose, tasks, onCompleteTask }) {
             backgroundColor: "var(--bg-primary)",
           }}
         >
-          <div
-            className="flex items-center gap-3"
-            style={{
-              fontSize: 12,
-              color: "var(--text-muted)",
-              fontFamily: "monospace",
-            }}
-          >
-            <span style={{ color: "var(--text-dim)", opacity: 0.5 }}>::</span>
-            <span className="uppercase tracking-wider font-bold">TASKS</span>
+          <div className="panel-title">
+            <span className="panel-title-prefix">::</span>
+            <span>TASKS</span>
           </div>
           <button
             onClick={onClose}
@@ -109,24 +92,17 @@ export function TasksPanel({ isOpen, onClose, tasks, onCompleteTask }) {
           {/* Pending */}
           {pendingTasks.length > 0 && (
             <div style={{ marginBottom: 32 }}>
-              <div style={sectionHeaderStyle}>
-                <span style={{ color: "var(--text-dim)", opacity: 0.5 }}>
+              <div className="section-header">
+                <span className="panel-title-prefix">
                   »
                 </span>
-                <span className="uppercase tracking-widest font-bold">
+                <span>
                   PENDING
                 </span>
                 <span style={{ color: "var(--accent)" }}>
                   {pendingTasks.length}
                 </span>
-                <div
-                  style={{
-                    flex: 1,
-                    height: 1,
-                    backgroundColor: "var(--border-subtle)",
-                    opacity: 0.5,
-                  }}
-                />
+                <div className="section-line" />
               </div>
               <div className="flex flex-col gap-2">
                 {pendingTasks.map((task) => (
@@ -143,24 +119,17 @@ export function TasksPanel({ isOpen, onClose, tasks, onCompleteTask }) {
           {/* Completed */}
           {completedTasks.length > 0 && (
             <div style={{ marginBottom: 32 }}>
-              <div style={sectionHeaderStyle}>
-                <span style={{ color: "var(--text-dim)", opacity: 0.5 }}>
+              <div className="section-header">
+                <span className="panel-title-prefix">
                   ■
                 </span>
-                <span className="uppercase tracking-widest font-bold">
+                <span>
                   ARCHIVED
                 </span>
                 <span style={{ color: "var(--text-dim)" }}>
                   {completedTasks.length}
                 </span>
-                <div
-                  style={{
-                    flex: 1,
-                    height: 1,
-                    backgroundColor: "var(--border-subtle)",
-                    opacity: 0.5,
-                  }}
-                />
+                <div className="section-line" />
               </div>
               <div className="flex flex-col gap-2">
                 {completedTasks.map((task) => (

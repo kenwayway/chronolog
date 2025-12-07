@@ -16,7 +16,6 @@ export function ActivityPanel({
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        // Count entries per day
         const counts = {};
         entries.forEach((e) => {
             const date = new Date(e.timestamp);
@@ -25,7 +24,6 @@ export function ActivityPanel({
             counts[key] = (counts[key] || 0) + 1;
         });
 
-        // Build 12 weeks of data (84 days)
         for (let week = 11; week >= 0; week--) {
             const weekData = [];
             for (let day = 0; day < 7; day++) {
@@ -56,6 +54,10 @@ export function ActivityPanel({
     const handleCellClick = (date) => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
+        // Clear category filter when clicking heatmap
+        if (categoryFilter.length > 0) {
+            onCategoryFilterChange([]);
+        }
         if (date.toDateString() === today.toDateString()) {
             onDateChange(null);
         } else {
@@ -98,7 +100,7 @@ export function ActivityPanel({
                     top: 0,
                     right: 0,
                     bottom: 0,
-                    width: 320,
+                    width: 340,
                     maxWidth: "100vw",
                     backgroundColor: "var(--bg-glass)",
                     backdropFilter: "blur(24px)",
@@ -121,12 +123,9 @@ export function ActivityPanel({
                         backgroundColor: "var(--bg-primary)",
                     }}
                 >
-                    <div
-                        className="flex items-center gap-3"
-                        style={{ fontSize: 12, color: "var(--text-muted)" }}
-                    >
-                        <span style={{ color: "var(--text-dim)", opacity: 0.5 }}>::</span>
-                        <span className="uppercase tracking-wider font-bold">ACTIVITY</span>
+                    <div className="panel-title">
+                        <span className="panel-title-prefix">::</span>
+                        <span>ACTIVITY</span>
                     </div>
                     <button
                         onClick={onClose}
@@ -146,15 +145,9 @@ export function ActivityPanel({
                 <div style={{ flex: 1, overflowY: "auto", padding: 20 }}>
                     {/* Heatmap Section */}
                     <div style={{ marginBottom: 32 }}>
-                        <div
-                            style={{
-                                fontSize: 10,
-                                color: "var(--text-dim)",
-                                marginBottom: 12,
-                                letterSpacing: "0.05em",
-                            }}
-                        >
+                        <div className="section-header">
                             CONTRIBUTION
+                            <div className="section-line" />
                         </div>
                         <div style={{ display: "flex", gap: 3 }}>
                             {heatmapData.map((week, weekIdx) => (
@@ -211,7 +204,8 @@ export function ActivityPanel({
                                         width: 12,
                                         height: 12,
                                         borderRadius: 2,
-                                        backgroundColor: i === 0 ? "var(--bg-tertiary)" : "var(--accent)",
+                                        backgroundColor:
+                                            i === 0 ? "var(--bg-tertiary)" : "var(--accent)",
                                         opacity: i === 0 ? 0.3 : 0.2 + i * 0.2,
                                     }}
                                 />
@@ -222,16 +216,9 @@ export function ActivityPanel({
 
                     {/* Category Filter Section */}
                     <div>
-                        <div
-                            className="flex-between"
-                            style={{
-                                fontSize: 10,
-                                color: "var(--text-dim)",
-                                marginBottom: 12,
-                                letterSpacing: "0.05em",
-                            }}
-                        >
+                        <div className="section-header">
                             <span>FILTER</span>
+                            <div className="section-line" />
                             {categoryFilter.length > 0 && (
                                 <button
                                     onClick={clearFilter}
@@ -282,7 +269,12 @@ export function ActivityPanel({
                                                 flexShrink: 0,
                                             }}
                                         />
-                                        <span style={{ textTransform: "uppercase", letterSpacing: "0.03em" }}>
+                                        <span
+                                            style={{
+                                                textTransform: "uppercase",
+                                                letterSpacing: "0.03em",
+                                            }}
+                                        >
                                             #{cat.label}
                                         </span>
                                     </button>
