@@ -118,6 +118,9 @@
     padding: 4px 10px !important;
     transform: rotate(-5deg);
     opacity: 0.85;
+    /* Fix Special Elite font vertical offset */
+    position: relative;
+    top: 2px;
     /* Multiply blend mode makes it look like ink on paper */
     mix-blend-mode: multiply;
     /* Rough edges for stamp effect */
@@ -133,6 +136,9 @@
     color: var(--text-primary) !important;
     mix-blend-mode: multiply;
     opacity: 0.9;
+    /* Fix Special Elite font vertical offset */
+    position: relative;
+    top: 2px;
 }
 
 /* ===== Sidebar Panel ===== */
@@ -163,6 +169,9 @@
     letter-spacing: 0.05em !important;
     text-transform: uppercase !important;
     border-bottom: 1px dashed var(--border-subtle) !important;
+    /* Fix Special Elite font vertical offset */
+    position: relative;
+    top: 1px;
 }
 
 [data-style="spy"] .context-menu-item:last-child {
