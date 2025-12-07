@@ -27,6 +27,79 @@
     height: 4px;
   }
 
+  /* Header actions - hide desktop buttons on mobile */
+  .header-actions {
+    display: none !important;
+  }
+
+  /* Mobile hamburger menu */
+  .header-mobile-menu {
+    position: relative;
+  }
+
+  .show-mobile-only {
+    display: flex !important;
+  }
+
+  .mobile-menu-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 8px;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+    min-width: 160px;
+    padding: 8px 0;
+    z-index: 500;
+    animation: slide-in 150ms ease-out;
+  }
+
+  .mobile-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 10px 16px;
+    background: none;
+    border: none;
+    color: var(--text-primary);
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 150ms ease;
+  }
+
+  .mobile-menu-item:hover {
+    background-color: var(--bg-tertiary);
+  }
+
+  .mobile-menu-item svg {
+    color: var(--text-muted);
+  }
+
+  .mobile-menu-badge {
+    margin-left: auto;
+    padding: 2px 6px;
+    font-size: 10px;
+    font-weight: 600;
+    background-color: var(--accent);
+    color: white;
+    border-radius: 10px;
+  }
+
+  @keyframes slide-in {
+    from {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
   /* Layout utilities */
   .px-6 {
     padding-left: 0.75rem;
@@ -44,9 +117,15 @@
   }
 
   .btn-action {
-    padding: 4px 8px;
-    font-size: 10px;
-    gap: 4px;
+    padding: 8px 12px;
+    font-size: 12px;
+    gap: 6px;
+  }
+
+  /* Input panel icon buttons bigger on mobile */
+  .icon-btn {
+    width: 36px;
+    height: 36px;
   }
 
   /* Sidebar - full screen on mobile */
@@ -100,6 +179,34 @@
 
   .input-panel {
     border-radius: 8px;
+  }
+
+  /* Mobile input - expand when focused */
+  [data-input-panel][data-mobile-expanded="true"] {
+    position: fixed !important;
+    inset: 0 !important;
+    max-width: 100% !important;
+    border-radius: 0 !important;
+    z-index: 1000 !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  [data-input-panel][data-mobile-expanded="true"] textarea {
+    flex: 1 !important;
+    min-height: 200px !important;
+  }
+
+  /* Show close button when expanded on mobile */
+  [data-input-panel][data-mobile-expanded="true"] .mobile-close-btn {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Let input area stretch */
+  [data-input-panel][data-mobile-expanded="true"] .input-area {
+    flex: 1 !important;
   }
 
   /* Focus Mode - fullscreen on mobile */
@@ -276,5 +383,18 @@
   .left-sidebar,
   .hide-mobile {
     display: none !important;
+  }
+}
+
+/* ===== Desktop - hide mobile-only elements ===== */
+@media (min-width: 641px) {
+  .show-mobile-only {
+    display: none !important;
+  }
+
+  .header-actions {
+    display: flex !important;
+    align-items: center;
+    gap: 8px;
   }
 }

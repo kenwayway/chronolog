@@ -41,8 +41,7 @@
   --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
 }
 
-html[data-theme="light"],
-html[data-theme="light"] :root {
+[data-theme="light"] {
   --bg-primary: #ffffff;
   --bg-secondary: #f8f9fb;
   --bg-tertiary: #eef0f4;

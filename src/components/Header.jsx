@@ -7,6 +7,8 @@ import {
   Moon,
   Sun,
   Activity,
+  Menu,
+  X,
 } from "lucide-react";
 import { useTheme } from "../hooks/useTheme";
 import { formatDate } from "../utils/formatters";
@@ -280,6 +282,7 @@ export function Header({
 }) {
   const { canToggleMode } = useTheme();
   const [showCalendar, setShowCalendar] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -388,7 +391,8 @@ export function Header({
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
+      {/* Desktop buttons - hidden on mobile */}
+      <div className="header-actions hide-mobile">
         <button
           className="btn btn-ghost relative rounded-lg"
           style={{ width: 36, height: 36, padding: 0 }}
@@ -447,6 +451,71 @@ export function Header({
         >
           <Settings size={20} strokeWidth={1.5} />
         </button>
+      </div>
+
+      {/* Mobile hamburger menu */}
+      <div className="header-mobile-menu show-mobile-only">
+        <button
+          className="btn btn-ghost rounded-lg"
+          style={{ width: 36, height: 36, padding: 0 }}
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+        >
+          {mobileMenuOpen ? (
+            <X size={22} strokeWidth={1.5} />
+          ) : (
+            <Menu size={22} strokeWidth={1.5} />
+          )}
+          {!mobileMenuOpen && pendingTaskCount > 0 && (
+            <span
+              className="absolute rounded-full"
+              style={{
+                top: 5,
+                right: 5,
+                width: 5,
+                height: 5,
+                backgroundColor: "var(--accent)",
+              }}
+            />
+          )}
+        </button>
+
+        {/* Mobile dropdown menu */}
+        {mobileMenuOpen && (
+          <div className="mobile-menu-dropdown">
+            <button
+              className="mobile-menu-item"
+              onClick={() => { onOpenLeftSidebar(); setMobileMenuOpen(false); }}
+            >
+              <Activity size={18} />
+              <span>Activity</span>
+            </button>
+            <button
+              className="mobile-menu-item"
+              onClick={() => { onOpenSidebar(); setMobileMenuOpen(false); }}
+            >
+              <ClipboardList size={18} />
+              <span>Tasks</span>
+              {pendingTaskCount > 0 && (
+                <span className="mobile-menu-badge">{pendingTaskCount}</span>
+              )}
+            </button>
+            <button
+              className="mobile-menu-item"
+              onClick={() => { if (canToggleMode) { onToggleTheme(); setMobileMenuOpen(false); } }}
+              style={{ opacity: canToggleMode ? 1 : 0.4 }}
+            >
+              {isDark ? <Sun size={18} /> : <Moon size={18} />}
+              <span>{isDark ? "Light mode" : "Dark mode"}</span>
+            </button>
+            <button
+              className="mobile-menu-item"
+              onClick={() => { onOpenSettings(); setMobileMenuOpen(false); }}
+            >
+              <Settings size={18} />
+              <span>Settings</span>
+            </button>
+          </div>
+        )}
       </div>
     </header>
   );
