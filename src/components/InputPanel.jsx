@@ -273,7 +273,7 @@ export function InputPanel({ status, onLogIn, onSwitch, onNote, onLogOff }) {
                             width: "100%",
                             backgroundColor: "transparent",
                             color: "var(--text-primary)",
-                            fontFamily: "monospace",
+                            fontFamily: "var(--font-mono)",
                             fontSize: inFocusMode ? 16 : 15,
                             resize: "none",
                             border: "none",
@@ -479,7 +479,7 @@ export function InputPanel({ status, onLogIn, onSwitch, onNote, onLogOff }) {
                         style={{
                             fontSize: 11,
                             color: "var(--text-muted)",
-                            fontFamily: "monospace",
+                            fontFamily: "var(--font-mono)",
                             marginRight: 8,
                         }}
                     >

@@ -86,7 +86,7 @@ function Calendar({ selectedDate, onSelect, onClose }) {
           border: "none",
           cursor: isFuture ? "default" : "pointer",
           fontSize: 12,
-          fontFamily: "'JetBrains Mono', monospace",
+          fontFamily: "var(--font-mono)",
           backgroundColor: isSelected
             ? "var(--accent)"
             : isToday
@@ -165,7 +165,7 @@ function Calendar({ selectedDate, onSelect, onClose }) {
         </button>
         <span
           style={{
-            fontFamily: "'JetBrains Mono', monospace",
+            fontFamily: "var(--font-mono)",
             fontSize: 12,
             fontWeight: 600,
             color: "var(--text-primary)",
@@ -217,7 +217,7 @@ function Calendar({ selectedDate, onSelect, onClose }) {
               justifyContent: "center",
               fontSize: 10,
               color: "var(--text-dim)",
-              fontFamily: "'JetBrains Mono', monospace",
+              fontFamily: "var(--font-mono)",
             }}
           >
             {d}
@@ -251,7 +251,7 @@ function Calendar({ selectedDate, onSelect, onClose }) {
           backgroundColor: "transparent",
           color: "var(--accent)",
           fontSize: 11,
-          fontFamily: "'JetBrains Mono', monospace",
+          fontFamily: "var(--font-mono)",
           fontWeight: 600,
           cursor: "pointer",
           transition: "all 150ms ease",
@@ -353,7 +353,7 @@ export function Header({
               height: 28,
               padding: "0 8px",
               fontSize: 11,
-              fontFamily: "'JetBrains Mono', monospace",
+              fontFamily: "var(--font-mono)",
               color: isToday ? "var(--accent)" : "var(--text-secondary)",
             }}
             onClick={() => setShowCalendar(!showCalendar)}

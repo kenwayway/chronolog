@@ -66,7 +66,7 @@ export function ContextMenu({
         borderRadius: 6,
         boxShadow: "0 8px 24px rgba(0,0,0,0.25)",
         zIndex: 500,
-        fontFamily: "'JetBrains Mono', monospace",
+        fontFamily: "var(--font-mono)",
       }}
     >
       {isNote && (

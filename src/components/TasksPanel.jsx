@@ -74,7 +74,7 @@ export function TasksPanel({ isOpen, onClose, tasks, onCompleteTask }) {
             flex: 1,
             overflowY: "auto",
             padding: 16,
-            fontFamily: "monospace",
+            fontFamily: "var(--font-mono)",
           }}
         >
           {pendingTasks.length === 0 && completedTasks.length === 0 && (
@@ -216,7 +216,7 @@ function TaskItem({ task, onComplete }) {
             fontSize: 13,
             lineHeight: 1.6,
             overflowWrap: "break-word",
-            fontFamily: "Inter, sans-serif",
+            fontFamily: "var(--font-primary)",
             color: task.done ? "var(--text-muted)" : "var(--text-primary)",
             textDecoration: task.done ? "line-through" : "none",
           }}
@@ -233,7 +233,7 @@ function TaskItem({ task, onComplete }) {
             gap: 8,
           }}
         >
-          <span style={{ fontFamily: "monospace", opacity: 0.7 }}>
+          <span style={{ fontFamily: "var(--font-mono)", opacity: 0.7 }}>
             ID: {task.id.slice(-4)}
           </span>
           <span>

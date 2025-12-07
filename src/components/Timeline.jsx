@@ -66,7 +66,7 @@ export function Timeline({ entries, status, categories, onContextMenu, categoryF
                 flex: 1,
                 overflowY: "auto",
                 padding: "24px 16px 160px",
-                fontFamily: "monospace",
+                fontFamily: "var(--font-mono)",
             }}
         >
             {/* Filter mode header with pagination */}
@@ -400,7 +400,7 @@ function TimelineEntry({
                     color: "var(--text-dim)",
                     paddingRight: 8,
                     paddingTop: 4,
-                    fontFamily: "monospace",
+                    fontFamily: "var(--font-mono)",
                     opacity: 0.6,
                 }}
             >
@@ -479,7 +479,7 @@ function TimelineEntry({
                     style={{
                         fontSize: 10,
                         color: "var(--text-dim)",
-                        fontFamily: "monospace",
+                        fontFamily: "var(--font-mono)",
                         marginBottom: 4,
                         display: "none",
                     }}
@@ -497,7 +497,7 @@ function TimelineEntry({
                                 fontSize: 15,
                                 lineHeight: 1.6,
                                 overflowWrap: "break-word",
-                                fontFamily: "Inter, sans-serif",
+                                fontFamily: "var(--font-primary)",
                                 whiteSpace: "pre-wrap",
                                 color: getContentColor(),
                                 fontStyle: isSessionEnd ? "italic" : "normal",

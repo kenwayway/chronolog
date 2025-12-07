@@ -113,7 +113,7 @@ export function ActivityPanel({
                     transform: isOpen ? "translateX(0)" : "translateX(100%)",
                     transition: "transform 300ms ease-out",
                     boxShadow: "-10px 0 30px rgba(0,0,0,0.3)",
-                    fontFamily: "'JetBrains Mono', monospace",
+                    fontFamily: "var(--font-mono)",
                 }}
             >
                 {/* Header */}

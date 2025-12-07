@@ -150,7 +150,7 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories }) {
             borderRadius: 4,
             boxShadow: "0 0 80px rgba(0,0,0,0.3)",
             overflow: "hidden",
-            fontFamily: "'JetBrains Mono', monospace",
+            fontFamily: "var(--font-mono)",
           }}
         >
           {/* Header */}
@@ -195,7 +195,7 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories }) {
                 minHeight: 300,
                 padding: 16,
                 fontSize: 15,
-                fontFamily: "monospace",
+                fontFamily: "var(--font-mono)",
                 lineHeight: 1.6,
                 color: "var(--text-primary)",
                 backgroundColor: "transparent",

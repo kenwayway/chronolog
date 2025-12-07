@@ -73,7 +73,7 @@ export function SettingsModal({
             borderRadius: 4,
             boxShadow: "0 0 80px rgba(0,0,0,0.3)",
             overflow: "hidden",
-            fontFamily: "'JetBrains Mono', monospace",
+            fontFamily: "var(--font-mono)",
           }}
         >
           {/* Header */}
@@ -127,7 +127,7 @@ export function SettingsModal({
                     style={{
                       padding: "6px 12px",
                       fontSize: 11,
-                      fontFamily: "'JetBrains Mono', monospace",
+                      fontFamily: "var(--font-mono)",
                       borderRadius: 4,
                       cursor: "pointer",
                       backgroundColor:

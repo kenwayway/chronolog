@@ -27,6 +27,11 @@
 
     --border-subtle: #1f2335;
     --border-light: #2a2e42;
+
+    /* Fonts */
+    --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-display: 'JetBrains Mono', 'Fira Code', monospace;
+    --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
 }
 
 [data-theme="light"] {
