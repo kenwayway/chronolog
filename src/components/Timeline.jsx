@@ -176,6 +176,7 @@ function TimelineEntry({
     isLightMode,
     showDate = false,
 }) {
+    const { symbols } = useTheme();
     const [pressTimer, setPressTimer] = useState(null);
 
     const handleContextMenu = (e) => {
@@ -211,25 +212,25 @@ function TimelineEntry({
                             fontSize: 18,
                         }}
                     >
-                        »
+                        {symbols.sessionStart}
                     </span>
                 );
             case ENTRY_TYPES.SESSION_END:
-                return <span style={{ ...styles, color: "var(--text-muted)" }}>■</span>;
+                return <span style={{ ...styles, color: "var(--text-muted)" }}>{symbols.sessionEnd}</span>;
             case ENTRY_TYPES.NOTE:
                 return (
                     <span style={{ ...styles, color: "var(--text-dim)" }}>
-                        {entry.isTodo ? "○" : "·"}
+                        {entry.isTodo ? symbols.todo : symbols.note}
                     </span>
                 );
             case ENTRY_TYPES.TASK_DONE:
                 return (
                     <span style={{ ...styles, color: "var(--success)", fontWeight: 700 }}>
-                        ✓
+                        {symbols.done}
                     </span>
                 );
             default:
-                return <span style={{ ...styles, color: "var(--text-dim)" }}>·</span>;
+                return <span style={{ ...styles, color: "var(--text-dim)" }}>{symbols.note}</span>;
         }
     };
 

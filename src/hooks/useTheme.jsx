@@ -1,9 +1,9 @@
 import { createContext, useContext, useState, useEffect } from 'react'
+import { getTheme, getThemeList } from '../themes'
 
 const THEME_STORAGE_KEY = 'chronolog_theme'
 
 // ===== Accent Color Palette =====
-// User can switch between these via Settings
 export const ACCENT_COLORS = {
     blue: { name: 'Blue', value: '#3b82f6', light: '#60a5fa' },
     indigo: { name: 'Indigo', value: '#6366f1', light: '#818cf8' },
@@ -14,16 +14,17 @@ export const ACCENT_COLORS = {
     cyan: { name: 'Cyan', value: '#06b6d4', light: '#22d3ee' },
 }
 
-// ===== Theme Config =====
-const defaultTheme = {
-    mode: 'dark',      // 'dark' | 'light'
-    accent: 'emerald'// key from ACCENT_COLORS
+// ===== Theme State =====
+const defaultThemeState = {
+    mode: 'dark',           // 'dark' | 'light'
+    accent: 'emerald',      // key from ACCENT_COLORS
+    style: 'terminal',      // theme style id
 }
 
 const ThemeContext = createContext(null)
 
 export function ThemeProvider({ children }) {
-    const [theme, setTheme] = useState(defaultTheme)
+    const [themeState, setThemeState] = useState(defaultThemeState)
 
     // Load from localStorage
     useEffect(() => {
@@ -31,7 +32,7 @@ export function ThemeProvider({ children }) {
         if (saved) {
             try {
                 const parsed = JSON.parse(saved)
-                setTheme({ ...defaultTheme, ...parsed })
+                setThemeState({ ...defaultThemeState, ...parsed })
             } catch (e) {
                 console.error('Failed to parse theme:', e)
             }
@@ -41,38 +42,60 @@ export function ThemeProvider({ children }) {
     // Apply theme to document
     useEffect(() => {
         const root = document.documentElement
-        const accent = ACCENT_COLORS[theme.accent] || ACCENT_COLORS.blue
+        const accent = ACCENT_COLORS[themeState.accent] || ACCENT_COLORS.blue
 
         // Set mode (triggers CSS variable switch)
-        root.setAttribute('data-theme', theme.mode)
+        root.setAttribute('data-theme', themeState.mode)
+        root.setAttribute('data-style', themeState.style)
 
         // Set dynamic accent color
         root.style.setProperty('--accent', accent.value)
         root.style.setProperty('--accent-light', accent.light)
-        root.style.setProperty('--accent-glow', `${accent.value}26`) // 15% opacity
-        root.style.setProperty('--accent-subtle', `${accent.value}1a`) // 10% opacity
+        root.style.setProperty('--accent-glow', `${accent.value}26`)
+        root.style.setProperty('--accent-subtle', `${accent.value}1a`)
 
         // Save to localStorage
-        localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(theme))
-    }, [theme])
+        localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(themeState))
+    }, [themeState])
 
     const setMode = (mode) => {
-        setTheme(prev => ({ ...prev, mode }))
+        setThemeState(prev => ({ ...prev, mode }))
     }
 
     const setAccent = (accent) => {
-        setTheme(prev => ({ ...prev, accent }))
+        setThemeState(prev => ({ ...prev, accent }))
+    }
+
+    const setStyle = (style) => {
+        const newThemeConfig = getTheme(style)
+        // Force light mode for lightModeOnly themes
+        if (newThemeConfig.lightModeOnly) {
+            setThemeState(prev => ({ ...prev, style, mode: 'light' }))
+        } else {
+            setThemeState(prev => ({ ...prev, style }))
+        }
     }
 
     const toggleMode = () => {
-        setTheme(prev => ({
+        setThemeState(prev => ({
             ...prev,
             mode: prev.mode === 'dark' ? 'light' : 'dark'
         }))
     }
 
+    // Get the current theme config object
+    const themeConfig = getTheme(themeState.style)
+
     return (
-        <ThemeContext.Provider value={{ theme, setMode, setAccent, toggleMode }}>
+        <ThemeContext.Provider value={{
+            themeState,
+            themeConfig,
+            setMode,
+            setAccent,
+            setStyle,
+            toggleMode,
+            availableStyles: getThemeList(),
+        }}>
             {children}
         </ThemeContext.Provider>
     )
@@ -83,13 +106,26 @@ export function useTheme() {
     if (!context) {
         throw new Error('useTheme must be used within ThemeProvider')
     }
-    const { theme, setMode, setAccent, toggleMode } = context
+    const { themeState, themeConfig, setMode, setAccent, setStyle, toggleMode, availableStyles } = context
     return {
-        theme,
+        // Legacy API (backward compatible)
+        theme: themeState,
         setMode,
         setAccent,
         toggleMode,
-        toggleTheme: toggleMode, // alias
-        isDark: theme.mode === 'dark'
+        toggleTheme: toggleMode,
+        isDark: themeState.mode === 'dark',
+
+        // New theme style API
+        themeConfig,
+        setStyle,
+        availableStyles,
+        canToggleMode: !themeConfig.lightModeOnly,
+
+        // Shortcuts to config
+        symbols: themeConfig.symbols,
+        tokens: themeConfig.tokens,
+        fonts: themeConfig.fonts,
     }
 }
+

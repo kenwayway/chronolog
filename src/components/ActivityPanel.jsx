@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useTheme } from "../hooks/useTheme";
 
 export function ActivityPanel({
     isOpen,
@@ -10,6 +11,7 @@ export function ActivityPanel({
     categoryFilter,
     onCategoryFilterChange,
 }) {
+    const { tokens } = useTheme();
     // Generate heatmap data for last 12 weeks
     const heatmapData = useMemo(() => {
         const weeks = [];
@@ -124,7 +126,7 @@ export function ActivityPanel({
                     }}
                 >
                     <div className="panel-title">
-                        <span className="panel-title-prefix">::</span>
+                        <span className="panel-title-prefix">{tokens.panelTitlePrefix}</span>
                         <span>ACTIVITY</span>
                     </div>
                     <button

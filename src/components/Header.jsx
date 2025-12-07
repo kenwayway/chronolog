@@ -278,6 +278,7 @@ export function Header({
   onOpenLeftSidebar,
   onOpenSettings,
 }) {
+  const { canToggleMode } = useTheme();
   const [showCalendar, setShowCalendar] = useState(false);
 
   const today = new Date();
@@ -419,9 +420,16 @@ export function Header({
 
         <button
           className="btn btn-ghost rounded-lg"
-          style={{ width: 36, height: 36, padding: 0 }}
-          onClick={onToggleTheme}
-          title={isDark ? "Light mode" : "Dark mode"}
+          style={{
+            width: 36,
+            height: 36,
+            padding: 0,
+            opacity: canToggleMode ? 1 : 0.3,
+            cursor: canToggleMode ? 'pointer' : 'not-allowed',
+          }}
+          onClick={canToggleMode ? onToggleTheme : undefined}
+          disabled={!canToggleMode}
+          title={canToggleMode ? (isDark ? "Light mode" : "Dark mode") : "Theme locked to light mode"}
         >
           {isDark ? (
             <Sun size={20} strokeWidth={1.5} />

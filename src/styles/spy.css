@@ -1,0 +1,105 @@
+/* ==========================================================================
+   spy.css - Operation Theme (WW2 Spy Aesthetic)
+   ========================================================================== */
+
+/* ===== Operation Theme Variables ===== */
+[data-style="spy"] {
+    /* Paper/Document colors */
+    --bg-primary: #f4efe6;
+    --bg-secondary: #ebe4d8;
+    --bg-tertiary: #ddd5c6;
+    --bg-glass: rgba(244, 239, 230, 0.95);
+
+    /* Ink/Text colors */
+    --text-primary: #2a2520;
+    --text-secondary: #4a4540;
+    --text-muted: #6a6560;
+    --text-dim: #8a8580;
+
+    /* Accent - aged brass/copper */
+    --accent: #8b6914;
+    --accent-light: #a67c00;
+    --accent-glow: rgba(139, 105, 20, 0.15);
+    --accent-subtle: rgba(139, 105, 20, 0.08);
+
+    /* Status colors - muted vintage */
+    --success: #4a6741;
+    --warning: #8b7355;
+    --error: #8b2500;
+    --info: #3d5a80;
+
+    /* Borders - aged paper edges */
+    --border-subtle: #d4cdc0;
+    --border-light: #c4baa8;
+}
+
+/* ===== Typography ===== */
+[data-style="spy"] body {
+    font-family: 'Special Elite', 'Courier New', Courier, monospace;
+}
+
+[data-style="spy"] .panel-title,
+[data-style="spy"] .section-header {
+    font-family: 'Special Elite', 'Courier New', monospace;
+    letter-spacing: 0.1em;
+}
+
+/* ===== Paper texture overlay ===== */
+[data-style="spy"]::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 9999;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    opacity: 0.03;
+}
+
+/* ===== Component Overrides ===== */
+
+/* Buttons - typewriter key style */
+[data-style="spy"] .btn-action {
+    font-family: 'Special Elite', monospace;
+    border-radius: 0;
+    border: 2px solid var(--text-dim);
+    box-shadow: 2px 2px 0 var(--text-dim);
+    text-transform: uppercase;
+}
+
+[data-style="spy"] .btn-action:hover {
+    transform: translate(1px, 1px);
+    box-shadow: 1px 1px 0 var(--text-dim);
+}
+
+/* Panels - document folder style */
+[data-style="spy"] .panel-title {
+    border-bottom: 2px double var(--border-light);
+    padding-bottom: 8px;
+}
+
+/* Input - typewriter paper */
+[data-style="spy"] textarea {
+    font-family: 'Special Elite', 'Courier New', monospace;
+    letter-spacing: 0.05em;
+    line-height: 1.8;
+}
+
+/* Section headers - stamp style */
+[data-style="spy"] .section-header {
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+}
+
+/* Scrollbar - aged wood */
+[data-style="spy"] ::-webkit-scrollbar {
+    width: 10px;
+}
+
+[data-style="spy"] ::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+}
+
+[data-style="spy"] ::-webkit-scrollbar-thumb {
+    background: var(--border-light);
+    border: 1px solid var(--border-subtle);
+}

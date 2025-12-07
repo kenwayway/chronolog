@@ -1,4 +1,7 @@
+import { useTheme } from "../hooks/useTheme";
+
 export function TasksPanel({ isOpen, onClose, tasks, onCompleteTask }) {
+  const { tokens, symbols } = useTheme();
   const pendingTasks = tasks.filter((t) => !t.done);
   const completedTasks = tasks.filter((t) => t.done);
 
@@ -48,7 +51,7 @@ export function TasksPanel({ isOpen, onClose, tasks, onCompleteTask }) {
           }}
         >
           <div className="panel-title">
-            <span className="panel-title-prefix">::</span>
+            <span className="panel-title-prefix">{tokens.panelTitlePrefix}</span>
             <span>TASKS</span>
           </div>
           <button
@@ -94,7 +97,7 @@ export function TasksPanel({ isOpen, onClose, tasks, onCompleteTask }) {
             <div style={{ marginBottom: 32 }}>
               <div className="section-header">
                 <span className="panel-title-prefix">
-                  »
+                  {symbols.pending}
                 </span>
                 <span>
                   PENDING
@@ -121,7 +124,7 @@ export function TasksPanel({ isOpen, onClose, tasks, onCompleteTask }) {
             <div style={{ marginBottom: 32 }}>
               <div className="section-header">
                 <span className="panel-title-prefix">
-                  ■
+                  {symbols.archived}
                 </span>
                 <span>
                   ARCHIVED

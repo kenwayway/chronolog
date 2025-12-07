@@ -16,7 +16,7 @@ export function SettingsModal({
   const [saved, setSaved] = useState(false);
   const [newCatLabel, setNewCatLabel] = useState("");
   const [newCatColor, setNewCatColor] = useState("#7aa2f7");
-  const { theme, setAccent } = useTheme();
+  const { theme, setAccent, setStyle, availableStyles } = useTheme();
 
   if (!isOpen) return null;
 
@@ -107,6 +107,50 @@ export function SettingsModal({
 
           {/* Content */}
           <div style={{ padding: 20 }} className="space-y-5">
+            {/* Theme Style */}
+            <div>
+              <div
+                style={{
+                  fontSize: 10,
+                  color: "var(--text-dim)",
+                  marginBottom: 8,
+                  letterSpacing: "0.05em",
+                }}
+              >
+                THEME STYLE
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {availableStyles.map((style) => (
+                  <button
+                    key={style.id}
+                    onClick={() => setStyle(style.id)}
+                    style={{
+                      padding: "6px 12px",
+                      fontSize: 11,
+                      fontFamily: "'JetBrains Mono', monospace",
+                      borderRadius: 4,
+                      cursor: "pointer",
+                      backgroundColor:
+                        theme.style === style.id
+                          ? "var(--accent)"
+                          : "var(--bg-secondary)",
+                      color:
+                        theme.style === style.id
+                          ? "white"
+                          : "var(--text-secondary)",
+                      border:
+                        theme.style === style.id
+                          ? "1px solid var(--accent)"
+                          : "1px solid var(--border-light)",
+                      transition: "all 100ms ease",
+                    }}
+                  >
+                    {style.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Accent Color */}
             <div>
               <div
