@@ -4,193 +4,190 @@
 
 /* ===== Operation Theme Variables ===== */
 [data-style="spy"] {
-    /* Paper/Document colors */
-    --bg-primary: #f4efe6;
-    --bg-secondary: #ebe4d8;
-    --bg-tertiary: #ddd5c6;
-    --bg-glass: rgba(244, 239, 230, 0.95);
+  /* Paper/Document colors */
+  --bg-primary: #f4efe6;
+  --bg-secondary: #ebe4d8;
+  --bg-tertiary: #ddd5c6;
+  --bg-glass: rgba(244, 239, 230, 0.95);
 
-    /* Ink/Text colors */
-    --text-primary: #2a2520;
-    --text-secondary: #4a4540;
-    --text-muted: #6a6560;
-    --text-dim: #8a8580;
+  /* Ink/Text colors */
+  --text-primary: #2a2520;
+  --text-secondary: #4a4540;
+  --text-muted: #6a6560;
+  --text-dim: #8a8580;
 
-    /* Accent - aged brass/copper */
-    --accent: #8b6914;
-    --accent-light: #a67c00;
-    --accent-glow: rgba(139, 105, 20, 0.15);
-    --accent-subtle: rgba(139, 105, 20, 0.08);
+  /* Accent - aged brass/copper */
+  --accent: #8b6914;
+  --accent-light: #a67c00;
+  --accent-glow: rgba(139, 105, 20, 0.15);
+  --accent-subtle: rgba(139, 105, 20, 0.08);
 
-    /* Status colors - muted vintage */
-    --success: #2fa90a;
-    --warning: #8b7355;
-    --error: #8b2500;
-    --info: #3d5a80;
+  /* Status colors - muted vintage */
+  --success: #2fa90a;
+  --warning: #8b7355;
+  --error: #8b2500;
+  --info: #3d5a80;
 
-    /* Borders - aged paper edges */
-    --border-subtle: #d4cdc0;
-    --border-light: #c4baa8;
+  /* Borders - aged paper edges */
+  --border-subtle: #d4cdc0;
+  --border-light: #c4baa8;
 
-    /* Fonts - readable body, typewriter for headings */
-    --font-primary: 'Georgia', 'Times New Roman', serif;
-    --font-display: 'Special Elite', 'Courier New', monospace;
-    --font-mono: 'Courier Prime', 'Special Elite', monospace;
+  /* Fonts - readable body, typewriter for headings */
+  --font-primary: 'Georgia', 'Times New Roman', serif;
+  --font-display: 'Special Elite', 'Courier New', monospace;
+  --font-mono: 'Courier Prime', 'Special Elite', monospace;
 }
 
 /* ===== Typography & Paper texture ===== */
 [data-style="spy"] body {
-    font-family: var(--font-primary) !important;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E") !important;
-    background-blend-mode: overlay;
+  font-family: var(--font-primary) !important;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E") !important;
+  background-blend-mode: overlay;
 }
 
 [data-style="spy"] .panel-title,
 [data-style="spy"] .section-header {
-    font-family: var(--font-display) !important;
-    letter-spacing: 0.1em;
+  font-family: var(--font-display) !important;
+  letter-spacing: 0.1em;
+  /* Fix Special Elite font baseline offset internally */
+  padding-top: 2px;
 }
 
 /* ===== Component Overrides ===== */
 
 /* Buttons - typewriter key style */
 [data-style="spy"] .btn-action {
-    font-family: var(--font-display) !important;
-    border-radius: 0;
-    border: 2px solid var(--text-dim);
-    box-shadow: 2px 2px 0 var(--text-dim);
-    text-transform: uppercase;
+  font-family: var(--font-display) !important;
+  border-radius: 0;
+  border: 2px solid var(--text-dim);
+  box-shadow: 2px 2px 0 var(--text-dim);
+  text-transform: uppercase;
 }
 
 [data-style="spy"] .btn-action:hover {
-    transform: translate(1px, 1px);
-    box-shadow: 1px 1px 0 var(--text-dim);
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 var(--text-dim);
 }
 
 /* Panels - document folder style */
 [data-style="spy"] .panel-title {
-    border-bottom: 2px double var(--border-light);
-    padding-bottom: 8px;
+  border-bottom: 2px double var(--border-light);
+  padding-bottom: 8px;
 }
 
 /* Input - typewriter paper */
 [data-style="spy"] textarea {
-    font-family: var(--font-mono) !important;
-    letter-spacing: 0.05em;
-    line-height: 1.8;
+  font-family: var(--font-mono) !important;
+  letter-spacing: 0.05em;
+  line-height: 1.8;
 }
 
 /* Section headers - stamp style */
 [data-style="spy"] .section-header {
-    text-transform: uppercase;
-    letter-spacing: 0.15em;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
 }
 
 /* Scrollbar - aged wood */
 [data-style="spy"] ::-webkit-scrollbar {
-    width: 10px;
+  width: 10px;
 }
 
 [data-style="spy"] ::-webkit-scrollbar-track {
-    background: var(--bg-secondary);
+  background: var(--bg-secondary);
 }
 
 [data-style="spy"] ::-webkit-scrollbar-thumb {
-    background: var(--border-light);
-    border: 1px solid var(--border-subtle);
+  background: var(--border-light);
+  border: 1px solid var(--border-subtle);
 }
 
 /* ===== Header Indicator - Breathing Light ===== */
 [data-style="spy"] .header-indicator-inner {
-    background-color: var(--success) !important;
+  background-color: var(--success) !important;
 }
 
 /* ===== Category Labels - Stamp Style ===== */
 [data-style="spy"] .category-label {
-    font-family: var(--font-display) !important;
-    font-weight: 700 !important;
-    /* Stamp border: double line style */
-    border: 3px double currentColor !important;
-    border-radius: 2px !important;
-    background: transparent !important;
-    letter-spacing: 0.15em !important;
-    font-size: 10px !important;
-    padding: 4px 10px !important;
-    transform: rotate(-5deg);
-    opacity: 0.85;
-    /* Fix Special Elite font vertical offset */
-    position: relative;
-    top: 2px;
-    /* Multiply blend mode makes it look like ink on paper */
-    mix-blend-mode: multiply;
-    /* Rough edges for stamp effect */
-    mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' fill='black'/%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.4' style='mix-blend-mode:screen'/%3E%3C/svg%3E");
-    -webkit-mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' fill='black'/%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.4' style='mix-blend-mode:screen'/%3E%3C/svg%3E");
+  font-family: var(--font-display) !important;
+  font-weight: 700 !important;
+  /* Stamp border: double line style */
+  border: 3px double currentColor !important;
+  border-radius: 2px !important;
+  background: transparent !important;
+  letter-spacing: 0.15em !important;
+  font-size: 10px !important;
+  padding: 6px 10px 4px 10px !important;
+  /* Extra top padding for font baseline */
+  transform: rotate(-5deg);
+  opacity: 0.85;
+  /* Multiply blend mode makes it look like ink on paper */
+  mix-blend-mode: multiply;
+  /* Rough edges for stamp effect */
+  mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' fill='black'/%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.4' style='mix-blend-mode:screen'/%3E%3C/svg%3E");
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' fill='black'/%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.4' style='mix-blend-mode:screen'/%3E%3C/svg%3E");
 }
 
 /* ===== Header Date - Ink Style ===== */
 [data-style="spy"] .header button[title="Select date"] {
-    font-family: var(--font-display) !important;
-    font-weight: 600 !important;
-    letter-spacing: 0.1em !important;
-    color: var(--text-primary) !important;
-    mix-blend-mode: multiply;
-    opacity: 0.9;
-    /* Fix Special Elite font vertical offset */
-    position: relative;
-    top: 2px;
+  font-family: var(--font-display) !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.1em !important;
+  mix-blend-mode: multiply;
+  opacity: 0.9;
+  /* Fix Special Elite font baseline offset internally */
+  padding-top: 4px !important;
 }
 
 /* ===== Sidebar Panel ===== */
 [data-style="spy"] .sidebar-panel {
-    background: var(--bg-secondary) !important;
-    border-left: 1px solid var(--border-light) !important;
-    box-shadow: -4px 0 12px var(--paper-shadow) !important;
-    font-family: var(--font-primary) !important;
+  background: var(--bg-secondary) !important;
+  border-left: 1px solid var(--border-light) !important;
+  box-shadow: -4px 0 12px var(--paper-shadow) !important;
+  font-family: var(--font-primary) !important;
 }
 
 [data-style="spy"] .sidebar-overlay {
-    background: rgba(30, 25, 20, 0.6) !important;
-    backdrop-filter: blur(2px) sepia(30%) !important;
+  background: rgba(30, 25, 20, 0.6) !important;
+  backdrop-filter: blur(2px) sepia(30%) !important;
 }
 
 /* ===== Context Menu ===== */
 [data-style="spy"] .context-menu {
-    background: var(--bg-primary) !important;
-    border: 1px solid var(--border-light) !important;
-    border-radius: 0 !important;
-    box-shadow: 4px 4px 0 var(--paper-shadow) !important;
-    font-family: var(--font-display) !important;
+  background: var(--bg-primary) !important;
+  border: 1px solid var(--border-light) !important;
+  border-radius: 0 !important;
+  box-shadow: 4px 4px 0 var(--paper-shadow) !important;
+  font-family: var(--font-display) !important;
 }
 
 [data-style="spy"] .context-menu-item {
-    font-family: var(--font-display) !important;
-    font-size: 10px !important;
-    letter-spacing: 0.05em !important;
-    text-transform: uppercase !important;
-    border-bottom: 1px dashed var(--border-subtle) !important;
-    /* Fix Special Elite font vertical offset */
-    position: relative;
-    top: 1px;
+  font-family: var(--font-display) !important;
+  font-size: 10px !important;
+  letter-spacing: 0.05em !important;
+  text-transform: uppercase !important;
+  border-bottom: 1px dashed var(--border-subtle) !important;
+  /* Fix Special Elite font baseline offset internally */
+  padding-top: 2px;
 }
 
 [data-style="spy"] .context-menu-item:last-child {
-    border-bottom: none !important;
+  border-bottom: none !important;
 }
 
 [data-style="spy"] .context-menu-item:hover {
-    background: var(--accent-subtle) !important;
+  background: var(--accent-subtle) !important;
 }
 
 /* ===== Input Panel ===== */
 [data-style="spy"] [data-input-panel] {
-    background: var(--bg-primary) !important;
-    border: 1px solid var(--border-light) !important;
-    border-radius: 0 !important;
-    box-shadow: 0 -4px 12px var(--paper-shadow) !important;
+  background: var(--bg-primary) !important;
+  border: 1px solid var(--border-light) !important;
+  border-radius: 0 !important;
+  box-shadow: 0 -4px 12px var(--paper-shadow) !important;
 }
 
 [data-style="spy"] [data-input-panel] textarea {
-    font-family: var(--font-mono) !important;
-    color: var(--text-primary) !important;
+  font-family: var(--font-mono) !important;
+  color: var(--text-primary) !important;
 }

@@ -28,6 +28,13 @@
     --border-subtle: #1f2335;
     --border-light: #2a2e42;
 
+    /* Heatmap colors (default for dark mode) */
+    --heatmap-empty: var(--bg-tertiary);
+    --heatmap-opacity-1: 0.4;
+    --heatmap-opacity-2: 0.6;
+    --heatmap-opacity-3: 0.8;
+    --heatmap-opacity-4: 1;
+
     /* Fonts */
     --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     --font-display: 'JetBrains Mono', 'Fira Code', monospace;
@@ -57,6 +64,13 @@
 
     --border-subtle: #f0f0f5;
     --border-light: #e0e0e8;
+
+    /* Heatmap colors for light mode (higher contrast) */
+    --heatmap-empty: var(--bg-primary);
+    --heatmap-opacity-1: 0.4;
+    --heatmap-opacity-2: 0.55;
+    --heatmap-opacity-3: 0.7;
+    --heatmap-opacity-4: 0.85;
 }
 
 /* ===== Reset ===== */
