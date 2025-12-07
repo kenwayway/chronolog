@@ -42,42 +42,40 @@
     }
 }
 
-/* ===== Data Button Icon Animations ===== */
-.btn-data-export .icon-animate,
-.btn-data-import .icon-animate {
-    transition: transform 200ms ease;
+/* ===== Data Button Icon Swap Animation ===== */
+.icon-swap {
+    position: relative;
+    display: inline-flex;
+    width: 14px;
+    height: 14px;
 }
 
-.btn-data-export:hover .icon-animate {
-    animation: bounce-down 400ms ease;
+.icon-swap .icon-default,
+.icon-swap .icon-hover {
+    position: absolute;
+    transition: opacity 200ms ease, transform 200ms ease;
 }
 
-.btn-data-import:hover .icon-animate {
-    animation: bounce-up 400ms ease;
+.icon-swap .icon-default {
+    opacity: 1;
+    transform: scale(1);
 }
 
-@keyframes bounce-down {
-
-    0%,
-    100% {
-        transform: translateY(0);
-    }
-
-    50% {
-        transform: translateY(3px);
-    }
+.icon-swap .icon-hover {
+    opacity: 0;
+    transform: scale(0.5);
 }
 
-@keyframes bounce-up {
+.btn-data-export:hover .icon-swap .icon-default,
+.btn-data-import:hover .icon-swap .icon-default {
+    opacity: 0;
+    transform: scale(0.5);
+}
 
-    0%,
-    100% {
-        transform: translateY(0);
-    }
-
-    50% {
-        transform: translateY(-3px);
-    }
+.btn-data-export:hover .icon-swap .icon-hover,
+.btn-data-import:hover .icon-swap .icon-hover {
+    opacity: 1;
+    transform: scale(1);
 }
 
 /* ===== Section Header ===== */

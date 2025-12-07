@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Settings, Download, Upload } from "lucide-react";
+import { Settings, Download, Upload, Check, FolderOpen } from "lucide-react";
 import { useTheme, ACCENT_COLORS } from "../hooks/useTheme.jsx";
 
 export function SettingsModal({
@@ -377,7 +377,10 @@ export function SettingsModal({
                   className="btn-action btn-action-secondary btn-data-export"
                   style={{ flex: 1, justifyContent: "center", margin: "0 8px" }}
                 >
-                  <Download size={14} className="icon-animate" />
+                  <span className="icon-swap">
+                    <Download size={14} className="icon-default" />
+                    <Check size={14} className="icon-hover" />
+                  </span>
                   EXPORT
                 </button>
                 <button
@@ -385,7 +388,10 @@ export function SettingsModal({
                   className="btn-action btn-action-secondary btn-data-import"
                   style={{ flex: 1, justifyContent: "center", margin: "0 8px" }}
                 >
-                  <Upload size={14} className="icon-animate" />
+                  <span className="icon-swap">
+                    <Upload size={14} className="icon-default" />
+                    <FolderOpen size={14} className="icon-hover" />
+                  </span>
                   IMPORT
                 </button>
                 <input
