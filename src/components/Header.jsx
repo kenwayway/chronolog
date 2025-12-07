@@ -352,7 +352,8 @@ export function Header({
             style={{
               height: 28,
               padding: "0 8px",
-              fontSize: 11,
+              fontSize: 12,
+              fontWeight: 400,
               fontFamily: "var(--font-mono)",
               color: isToday ? "var(--accent)" : "var(--text-secondary)",
             }}

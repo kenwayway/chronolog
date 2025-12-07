@@ -114,15 +114,15 @@
   margin-bottom: 0.5rem;
 }
 
-.space-y-1 > * + * {
+.space-y-1>*+* {
   margin-top: 0.25rem;
 }
 
-.space-y-4 > * + * {
+.space-y-4>*+* {
   margin-top: 1rem;
 }
 
-.space-y-5 > * + * {
+.space-y-5>*+* {
   margin-top: 1.25rem;
 }
 

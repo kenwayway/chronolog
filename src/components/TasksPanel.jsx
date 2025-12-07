@@ -10,6 +10,7 @@ export function TasksPanel({ isOpen, onClose, tasks, onCompleteTask }) {
       {/* Backdrop */}
       {isOpen && (
         <div
+          className="sidebar-overlay"
           onClick={onClose}
           style={{
             position: "fixed",
@@ -23,6 +24,7 @@ export function TasksPanel({ isOpen, onClose, tasks, onCompleteTask }) {
 
       {/* Sidebar panel */}
       <div
+        className="sidebar-panel"
         style={{
           position: "fixed",
           top: 0,

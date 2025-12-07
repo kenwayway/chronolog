@@ -5,6 +5,7 @@
 
 /* ===== Mobile (max-width: 640px) ===== */
 @media (max-width: 640px) {
+
   /* Header */
   .header {
     padding: 0 0.75rem;
@@ -114,6 +115,7 @@
 
 /* ===== Tablet (641px - 1024px) ===== */
 @media (min-width: 641px) and (max-width: 1024px) {
+
   /* Header */
   .header {
     padding: 0 1rem;
@@ -144,6 +146,7 @@
 
 /* ===== Desktop (1025px+) ===== */
 @media (min-width: 1025px) {
+
   /* Hover states only on desktop */
   .btn-ghost:hover {
     background-color: var(--bg-tertiary);
@@ -197,6 +200,7 @@
 
 /* ===== Reduced motion ===== */
 @media (prefers-reduced-motion: reduce) {
+
   *,
   *::before,
   *::after {
@@ -233,8 +237,9 @@
 
 /* ===== Hide left sidebar on mobile ===== */
 @media (max-width: 768px) {
-    .left-sidebar,
-    .hide-mobile {
-        display: none !important;
-    }
+
+  .left-sidebar,
+  .hide-mobile {
+    display: none !important;
+  }
 }

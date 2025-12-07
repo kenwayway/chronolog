@@ -84,6 +84,7 @@ export function ActivityPanel({
             {/* Backdrop */}
             {isOpen && (
                 <div
+                    className="sidebar-overlay"
                     onClick={onClose}
                     style={{
                         position: "fixed",
@@ -97,6 +98,7 @@ export function ActivityPanel({
 
             {/* Panel */}
             <div
+                className="sidebar-panel"
                 style={{
                     position: "fixed",
                     top: 0,

@@ -55,7 +55,7 @@ export function ContextMenu({
   return (
     <div
       ref={menuRef}
-      className="fixed animate-slide-in"
+      className="fixed animate-slide-in context-menu"
       style={{
         left: position.x,
         top: position.y,

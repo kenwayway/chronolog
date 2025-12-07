@@ -124,13 +124,64 @@
     mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' fill='black'/%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.4' style='mix-blend-mode:screen'/%3E%3C/svg%3E");
     -webkit-mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' fill='black'/%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.4' style='mix-blend-mode:screen'/%3E%3C/svg%3E");
 }
+
 /* ===== Header Date - Ink Style ===== */
 [data-style="spy"] .header button[title="Select date"] {
     font-family: var(--font-display) !important;
-    font-size: 14px !important;
-    font-weight: 700 !important;
+    font-weight: 600 !important;
     letter-spacing: 0.1em !important;
     color: var(--text-primary) !important;
     mix-blend-mode: multiply;
     opacity: 0.9;
+}
+
+/* ===== Sidebar Panel ===== */
+[data-style="spy"] .sidebar-panel {
+    background: var(--bg-secondary) !important;
+    border-left: 1px solid var(--border-light) !important;
+    box-shadow: -4px 0 12px var(--paper-shadow) !important;
+    font-family: var(--font-primary) !important;
+}
+
+[data-style="spy"] .sidebar-overlay {
+    background: rgba(30, 25, 20, 0.6) !important;
+    backdrop-filter: blur(2px) sepia(30%) !important;
+}
+
+/* ===== Context Menu ===== */
+[data-style="spy"] .context-menu {
+    background: var(--bg-primary) !important;
+    border: 1px solid var(--border-light) !important;
+    border-radius: 0 !important;
+    box-shadow: 4px 4px 0 var(--paper-shadow) !important;
+    font-family: var(--font-display) !important;
+}
+
+[data-style="spy"] .context-menu-item {
+    font-family: var(--font-display) !important;
+    font-size: 10px !important;
+    letter-spacing: 0.05em !important;
+    text-transform: uppercase !important;
+    border-bottom: 1px dashed var(--border-subtle) !important;
+}
+
+[data-style="spy"] .context-menu-item:last-child {
+    border-bottom: none !important;
+}
+
+[data-style="spy"] .context-menu-item:hover {
+    background: var(--accent-subtle) !important;
+}
+
+/* ===== Input Panel ===== */
+[data-style="spy"] [data-input-panel] {
+    background: var(--bg-primary) !important;
+    border: 1px solid var(--border-light) !important;
+    border-radius: 0 !important;
+    box-shadow: 0 -4px 12px var(--paper-shadow) !important;
+}
+
+[data-style="spy"] [data-input-panel] textarea {
+    font-family: var(--font-mono) !important;
+    color: var(--text-primary) !important;
 }
