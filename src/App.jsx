@@ -182,6 +182,9 @@ function App() {
                 onAddCategory={addCategory}
                 onDeleteCategory={deleteCategory}
                 onResetCategories={resetToDefaults}
+                entries={state.entries}
+                tasks={state.tasks}
+                onImportData={actions.importData}
             />
         </div >
     )

@@ -42,6 +42,44 @@
     }
 }
 
+/* ===== Data Button Icon Animations ===== */
+.btn-data-export .icon-animate,
+.btn-data-import .icon-animate {
+    transition: transform 200ms ease;
+}
+
+.btn-data-export:hover .icon-animate {
+    animation: bounce-down 400ms ease;
+}
+
+.btn-data-import:hover .icon-animate {
+    animation: bounce-up 400ms ease;
+}
+
+@keyframes bounce-down {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(3px);
+    }
+}
+
+@keyframes bounce-up {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-3px);
+    }
+}
+
 /* ===== Section Header ===== */
 .section-header {
     display: flex;

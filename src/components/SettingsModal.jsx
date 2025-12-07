@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Settings } from "lucide-react";
+import { useState, useRef } from "react";
+import { Settings, Download, Upload } from "lucide-react";
 import { useTheme, ACCENT_COLORS } from "../hooks/useTheme.jsx";
 
 export function SettingsModal({
@@ -11,12 +11,16 @@ export function SettingsModal({
   onAddCategory,
   onDeleteCategory,
   onResetCategories,
+  entries,
+  tasks,
+  onImportData,
 }) {
   const [key, setKey] = useState(apiKey || "");
   const [saved, setSaved] = useState(false);
   const [newCatLabel, setNewCatLabel] = useState("");
   const [newCatColor, setNewCatColor] = useState("#7aa2f7");
   const { theme, setAccent, setStyle, availableStyles } = useTheme();
+  const fileInputRef = useRef(null);
 
   if (!isOpen) return null;
 
@@ -39,6 +43,45 @@ export function SettingsModal({
       setNewCatLabel("");
       setNewCatColor("#7aa2f7");
     }
+  };
+
+  const handleExport = () => {
+    const data = {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      entries,
+      tasks,
+      categories,
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `log-backup-${new Date().toISOString().split("T")[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImport = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const data = JSON.parse(event.target.result);
+        if (data.entries && Array.isArray(data.entries)) {
+          onImportData(data);
+          alert("导入成功！");
+        } else {
+          alert("无效的备份文件格式");
+        }
+      } catch (err) {
+        alert("导入失败：" + err.message);
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
   };
 
   return (
@@ -313,6 +356,50 @@ export function SettingsModal({
                 >
                   Get from Google AI Studio →
                 </a>
+              </p>
+            </div>
+
+            {/* Import/Export */}
+            <div>
+              <div
+                style={{
+                  fontSize: 10,
+                  color: "var(--text-dim)",
+                  marginBottom: 8,
+                  letterSpacing: "0.05em",
+                }}
+              >
+                DATA
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleExport}
+                  className="btn-action btn-action-secondary btn-data-export"
+                  style={{ flex: 1, justifyContent: "center", margin: "0 8px" }}
+                >
+                  <Download size={14} className="icon-animate" />
+                  EXPORT
+                </button>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="btn-action btn-action-secondary btn-data-import"
+                  style={{ flex: 1, justifyContent: "center", margin: "0 8px" }}
+                >
+                  <Upload size={14} className="icon-animate" />
+                  IMPORT
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".json"
+                  onChange={handleImport}
+                  style={{ display: "none" }}
+                />
+              </div>
+              <p
+                style={{ fontSize: 10, color: "var(--text-dim)", marginTop: 8 }}
+              >
+                {entries?.length || 0} 条记录 · {tasks?.length || 0} 个任务
               </p>
             </div>
           </div>
