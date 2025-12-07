@@ -31,82 +31,40 @@ export function ContextMenu({ isOpen, position, entry, onClose, onEdit, onDelete
 
     const isNote = entry.type === ENTRY_TYPES.NOTE
 
-    const menuItemStyle = {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '0.75rem',
-        width: '100%',
-        padding: '0.375rem 0.75rem',
-        fontSize: '0.75rem',
-        color: 'var(--text-primary)',
-        backgroundColor: 'transparent',
-        border: 'none',
-        cursor: 'pointer',
-        textAlign: 'left',
-        transition: 'all 150ms ease'
-    }
-
     return (
         <div
             ref={menuRef}
-            className="fixed font-mono animate-slide-in"
+            className="fixed animate-slide-in"
             style={{
                 left: position.x,
                 top: position.y,
-                minWidth: 160,
-                padding: 4,
-                backgroundColor: 'var(--bg-secondary)',
+                minWidth: 120,
+                padding: '4px 0',
+                backgroundColor: 'var(--bg-primary)',
                 border: '1px solid var(--border-light)',
-                borderRadius: 8,
-                boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)',
-                zIndex: 500
+                borderRadius: 6,
+                boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
+                zIndex: 500,
+                fontFamily: "'JetBrains Mono', monospace"
             }}
         >
-            <div className="flex items-center gap-2 px-2 py-1 border-b mb-1" style={{ fontSize: 10, color: 'var(--text-muted)', borderColor: 'var(--border-subtle)' }}>
-                <span className="uppercase tracking-wider font-bold">ACTION</span>
-            </div>
-
             {isNote && (
-                <button
-                    style={menuItemStyle}
-                    onMouseEnter={e => { e.target.style.backgroundColor = 'var(--bg-tertiary)'; e.target.style.color = 'var(--accent)' }}
-                    onMouseLeave={e => { e.target.style.backgroundColor = 'transparent'; e.target.style.color = 'var(--text-primary)' }}
-                    onClick={handleToggleTodo}
-                >
-                    <span style={{ opacity: 0.5 }}>[T]</span>
-                    {entry.isTodo ? 'UNMARK TODO' : 'MARK AS TODO'}
+                <button className="context-menu-item" onClick={handleToggleTodo}>
+                    {entry.isTodo ? 'UNMARK TODO' : 'MARK TODO'}
                 </button>
             )}
 
-            <button
-                style={menuItemStyle}
-                onMouseEnter={e => { e.target.style.backgroundColor = 'var(--bg-tertiary)'; e.target.style.color = 'var(--accent)' }}
-                onMouseLeave={e => { e.target.style.backgroundColor = 'transparent'; e.target.style.color = 'var(--text-primary)' }}
-                onClick={handleEdit}
-            >
-                <span style={{ opacity: 0.5 }}>[E]</span>
+            <button className="context-menu-item" onClick={handleEdit}>
                 EDIT
             </button>
 
-            <button
-                style={menuItemStyle}
-                onMouseEnter={e => { e.target.style.backgroundColor = 'var(--bg-tertiary)'; e.target.style.color = 'var(--accent)' }}
-                onMouseLeave={e => { e.target.style.backgroundColor = 'transparent'; e.target.style.color = 'var(--text-primary)' }}
-                onClick={handleCopy}
-            >
-                <span style={{ opacity: 0.5 }}>[Y]</span>
+            <button className="context-menu-item" onClick={handleCopy}>
                 COPY
             </button>
 
-            <div style={{ height: 1, margin: '4px', backgroundColor: 'var(--border-subtle)' }} />
+            <div style={{ height: 1, margin: '4px 8px', backgroundColor: 'var(--border-subtle)' }} />
 
-            <button
-                style={{ ...menuItemStyle, color: 'var(--error)' }}
-                onMouseEnter={e => e.target.style.backgroundColor = 'var(--bg-tertiary)'}
-                onMouseLeave={e => e.target.style.backgroundColor = 'transparent'}
-                onClick={handleDelete}
-            >
-                <span style={{ opacity: 0.5 }}>[D]</span>
+            <button className="context-menu-item context-menu-item-danger" onClick={handleDelete}>
                 DELETE
             </button>
         </div>

@@ -116,6 +116,30 @@ const defaultTestData = {
             isTodo: true,
             taskId: 'task-4',
         },
+        // Test entries with images and locations
+        {
+            id: 'test-15',
+            type: ENTRY_TYPES.NOTE,
+            content: '今天下午在咖啡店拍的照片，光线很好 ☕\n📍 Starbucks Reserve, 南京西路\n🖼️ https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800',
+            timestamp: now - 0.2 * 60 * 60 * 1000,
+            isTodo: false,
+            category: 'explore',
+        },
+        {
+            id: 'test-16',
+            type: ENTRY_TYPES.NOTE,
+            content: '发现一家很棒的书店，推荐！\n📍 上海图书馆, 淮海中路1555号',
+            timestamp: now - 0.15 * 60 * 60 * 1000,
+            isTodo: false,
+        },
+        {
+            id: 'test-17',
+            type: ENTRY_TYPES.NOTE,
+            content: '这个UI设计太好看了，保存参考\n🖼️ https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800',
+            timestamp: now - 0.1 * 60 * 60 * 1000,
+            isTodo: false,
+            category: 'explore',
+        },
     ],
     tasks: [
         {

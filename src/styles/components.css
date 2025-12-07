@@ -190,7 +190,7 @@
     flex-direction: column;
     background-color: var(--bg-primary);
     border: 1px solid var(--border-light);
-    border-radius: 12px;
+    border-radius: 4px;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
     overflow: hidden;
     transition: all 350ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -214,7 +214,7 @@
     width: 420px;
     max-width: 100%;
     height: 100%;
-    background-color: var(--bg-secondary);
+    background-color: var(--bg-tertiary);
     border-left: 1px solid var(--border-light);
     overflow-y: auto;
     animation: slide-in-right 200ms ease-out;
@@ -227,7 +227,7 @@
 }
 
 .timeline-entry:hover {
-    background-color: var(--bg-secondary);
+    background-color: var(--bg-tertiary);
 }
 
 /* ===== Modal ===== */
@@ -247,7 +247,148 @@
     max-width: 480px;
     max-height: 85vh;
     background-color: var(--bg-secondary);
-    border: 1px solid var(--border-light);
-    border-radius: 12px;
-    overflow: hidden;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+}
+
+.edit-modal-textarea {
+    width: 100%;
+    min-height: 200px;
+    padding: 10px;
+    font-size: 13px;
+    font-family: inherit;
+    line-height: 1.5;
+    color: var(--text-primary);
+    background-color: var(--bg-tertiary);
+    border: 1px solid var(--border-subtle);
+    border-radius: 4px;
+    resize: vertical;
+    outline: none;
+}
+
+.edit-modal-textarea:focus {
+    border-color: var(--accent);
+}
+
+.edit-modal-input,
+.edit-modal-select {
+    width: 100%;
+    height: 32px;
+    padding: 0 10px;
+    font-size: 12px;
+    font-family: inherit;
+    color: var(--text-primary);
+    background-color: var(--bg-tertiary);
+    border: 1px solid var(--border-subtle);
+    border-radius: 4px;
+    outline: none;
+}
+
+.edit-modal-input:focus,
+.edit-modal-select:focus {
+    border-color: var(--accent);
+}
+
+.edit-modal-close {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    color: var(--text-dim);
+    background-color: transparent;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.edit-modal-close:hover {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.edit-modal-btn-cancel {
+    height: 28px;
+    padding: 0 12px;
+    font-size: 11px;
+    font-family: inherit;
+    color: var(--text-muted);
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+}
+
+.edit-modal-btn-cancel:hover {
+    color: var(--text-primary);
+}
+
+.edit-modal-btn-save {
+    height: 28px;
+    padding: 0 14px;
+    font-size: 11px;
+    font-family: inherit;
+    font-weight: 500;
+    color: white;
+    background-color: var(--accent);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.edit-modal-btn-save:hover {
+    background-color: var(--accent-light);
+}
+
+/* ===== Icon Button ===== */
+.icon-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    color: var(--text-dim);
+    background-color: transparent;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 100ms ease;
+}
+
+.icon-btn:hover {
+    background-color: var(--bg-tertiary);
+    color: var(--text-secondary);
+}
+
+.icon-btn.active {
+    background-color: var(--accent-subtle);
+    color: var(--accent);
+}
+/* ===== Context Menu Items ===== */
+.context-menu-item {
+    display: block;
+    width: 100%;
+    padding: 8px 14px;
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.04em;
+    color: var(--text-secondary);
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    transition: all 100ms ease;
+}
+
+.context-menu-item:hover {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.context-menu-item-danger {
+    color: var(--error);
+}
+
+.context-menu-item-danger:hover {
+    background-color: rgba(239, 68, 68, 0.1);
 }

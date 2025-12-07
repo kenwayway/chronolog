@@ -1,8 +1,11 @@
 import { useState } from 'react'
+import { MapPin } from 'lucide-react'
 import { ENTRY_TYPES } from '../utils/constants'
 import { formatTime, formatDuration, formatDate } from '../utils/formatters'
+import { useTheme } from '../hooks/useTheme.jsx'
 
 export function Timeline({ entries, status, categories, onContextMenu }) {
+    const { theme } = useTheme()
     const sortedEntries = [...entries].sort((a, b) => a.timestamp - b.timestamp)
 
     // Build session durations map
@@ -65,13 +68,14 @@ export function Timeline({ entries, status, categories, onContextMenu }) {
                     categories={categories}
                     onContextMenu={onContextMenu}
                     lineState={entryLineStates[entry.id]}
+                    isLightMode={theme.mode === 'light'}
                 />
             ))}
         </div>
     )
 }
 
-function TimelineEntry({ entry, isFirst, isLast, sessionDuration, categories, onContextMenu, lineState }) {
+function TimelineEntry({ entry, isFirst, isLast, sessionDuration, categories, onContextMenu, lineState, isLightMode }) {
     const [pressTimer, setPressTimer] = useState(null)
 
     const handleContextMenu = (e) => {
@@ -110,7 +114,17 @@ function TimelineEntry({ entry, isFirst, isLast, sessionDuration, categories, on
         }
     }
 
+    // Darken color for light mode visibility
+    const darkenColor = (hex, percent) => {
+        const num = parseInt(hex.slice(1), 16)
+        const r = Math.max(0, (num >> 16) - Math.round(255 * percent / 100))
+        const g = Math.max(0, ((num >> 8) & 0xff) - Math.round(255 * percent / 100))
+        const b = Math.max(0, (num & 0xff) - Math.round(255 * percent / 100))
+        return `#${(r << 16 | g << 8 | b).toString(16).padStart(6, '0')}`
+    }
+
     const category = categories?.find(c => c.id === entry.category)
+    const categoryTextColor = category ? (isLightMode ? darkenColor(category.color, 10) : category.color) : null
     const isSessionStart = entry.type === ENTRY_TYPES.SESSION_START
     const isSessionEnd = entry.type === ENTRY_TYPES.SESSION_END
     const isTaskDone = entry.type === ENTRY_TYPES.TASK_DONE
@@ -150,8 +164,8 @@ function TimelineEntry({ entry, isFirst, isLast, sessionDuration, categories, on
             // Check if this is a location line (📍 prefix)
             if (line.startsWith('📍 ')) {
                 return (
-                    <div key={lineIdx} style={{ marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <span style={{ color: 'var(--accent)' }}>📍</span>
+                    <div key={lineIdx} style={{ marginTop: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <MapPin size={12} style={{ color: 'var(--accent)', flexShrink: 0 }} />
                         <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{line.replace('📍 ', '')}</span>
                     </div>
                 )
@@ -207,8 +221,6 @@ function TimelineEntry({ entry, isFirst, isLast, sessionDuration, categories, on
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
             onTouchCancel={handleTouchEnd}
-            onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)'}
-            onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
         >
             {/* Timestamp */}
             <div className="timeline-timestamp" style={{ flexShrink: 0, width: 56, fontSize: 12, color: 'var(--text-muted)', textAlign: 'right', paddingTop: 4, fontFamily: 'monospace', opacity: 0.6 }}>
@@ -259,16 +271,16 @@ function TimelineEntry({ entry, isFirst, isLast, sessionDuration, categories, on
                 {category && (
                     <div style={{ marginTop: 6 }}>
                         <span style={{
-                            fontSize: 10,
-                            padding: '2px 8px',
+                            fontSize: 11,
+                            padding: '3px 10px',
                             borderRadius: 3,
-                            fontWeight: 700,
+                            fontWeight: 600,
                             textTransform: 'uppercase',
                             userSelect: 'none',
                             letterSpacing: '0.05em',
-                            color: category.color,
-                            backgroundColor: `${category.color}15`,
-                            border: `1px solid ${category.color}30`
+                            color: categoryTextColor,
+                            backgroundColor: `${category.color}20`,
+                            border: `1px solid ${category.color}40`
                         }}>
                             #{category.label}
                         </span>

@@ -1,24 +1,10 @@
 import { useState, useRef, useEffect } from 'react'
-import { StickyNote, Square, Play, ArrowRightLeft, Image, MapPin, Maximize2 } from 'lucide-react'
+import { StickyNote, Square, Play, ArrowRightLeft, Image, MapPin, Maximize2, Terminal } from 'lucide-react'
 import { SESSION_STATUS } from '../utils/constants'
 
 // Focus Mode (Zen) Component - click outside to close
 function FocusMode({ isOpen, onClose, children }) {
-    const [isVisible, setIsVisible] = useState(false)
-    const [isAnimating, setIsAnimating] = useState(false)
-
-    useEffect(() => {
-        if (isOpen) {
-            setIsVisible(true)
-            requestAnimationFrame(() => setIsAnimating(true))
-        } else {
-            setIsAnimating(false)
-            const timer = setTimeout(() => setIsVisible(false), 300)
-            return () => clearTimeout(timer)
-        }
-    }, [isOpen])
-
-    if (!isVisible) return null
+    if (!isOpen) return null
 
     const handleBackdropClick = (e) => {
         if (e.target === e.currentTarget) {
@@ -40,15 +26,10 @@ function FocusMode({ isOpen, onClose, children }) {
                 alignItems: 'center',
                 justifyContent: 'center',
                 padding: 40,
-                opacity: isAnimating ? 1 : 0,
-                transition: 'opacity 300ms ease-out',
                 cursor: 'default'
             }}
         >
             <div style={{
-                transform: isAnimating ? 'scale(1)' : 'scale(0.95)',
-                opacity: isAnimating ? 1 : 0,
-                transition: 'all 300ms cubic-bezier(0.4, 0, 0.2, 1)',
                 maxWidth: 900,
                 width: '100%',
                 pointerEvents: 'none'
@@ -195,7 +176,7 @@ export function InputPanel({ status, onLogIn, onSwitch, onNote, onLogOff }) {
                 flexDirection: 'column',
                 backgroundColor: 'var(--bg-primary)',
                 border: '1px solid var(--border-light)',
-                borderRadius: 12,
+                borderRadius: 4,
                 boxShadow: inFocusMode ? '0 0 80px rgba(0,0,0,0.3)' : (isFocused ? '0 0 30px rgba(0,0,0,0.2)' : '0 25px 50px -12px rgba(0,0,0,0.25)'),
                 overflow: 'hidden',
                 transition: 'all 350ms cubic-bezier(0.4, 0, 0.2, 1)'
@@ -213,9 +194,7 @@ export function InputPanel({ status, onLogIn, onSwitch, onNote, onLogOff }) {
                     backgroundColor: 'var(--bg-secondary)',
                     userSelect: 'none'
                 }}>
-                    <span style={{ color: 'var(--accent)', fontWeight: 700, fontSize: inFocusMode ? 18 : 14, fontFamily: 'monospace' }}>
-                        {isStreaming ? '➜' : '❯'}
-                    </span>
+                    <Terminal size={inFocusMode ? 16 : 14} style={{ color: 'var(--accent)' }} />
                 </div>
 
                 {/* Editor */}
@@ -379,36 +358,14 @@ export function InputPanel({ status, onLogIn, onSwitch, onNote, onLogOff }) {
                     <button
                         onClick={() => setShowImageInput(!showImageInput)}
                         title="Add image URL"
-                        style={{
-                            width: 28,
-                            height: 28,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            backgroundColor: showImageInput || imageUrl ? 'var(--accent-subtle)' : 'transparent',
-                            color: showImageInput || imageUrl ? 'var(--accent)' : 'var(--text-dim)',
-                            border: 'none',
-                            borderRadius: 4,
-                            cursor: 'pointer'
-                        }}
+                        className={`icon-btn ${showImageInput || imageUrl ? 'active' : ''}`}
                     >
                         <Image size={14} />
                     </button>
                     <button
                         onClick={() => setShowLocationInput(!showLocationInput)}
                         title="Add location"
-                        style={{
-                            width: 28,
-                            height: 28,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            backgroundColor: showLocationInput || location ? 'var(--accent-subtle)' : 'transparent',
-                            color: showLocationInput || location ? 'var(--accent)' : 'var(--text-dim)',
-                            border: 'none',
-                            borderRadius: 4,
-                            cursor: 'pointer'
-                        }}
+                        className={`icon-btn ${showLocationInput || location ? 'active' : ''}`}
                     >
                         <MapPin size={14} />
                     </button>
@@ -416,18 +373,7 @@ export function InputPanel({ status, onLogIn, onSwitch, onNote, onLogOff }) {
                         <button
                             onClick={() => setFocusMode(true)}
                             title="Focus mode (Zen)"
-                            style={{
-                                width: 28,
-                                height: 28,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                backgroundColor: 'transparent',
-                                color: 'var(--text-dim)',
-                                border: 'none',
-                                borderRadius: 4,
-                                cursor: 'pointer'
-                            }}
+                            className="icon-btn"
                         >
                             <Maximize2 size={14} />
                         </button>

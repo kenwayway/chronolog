@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Moon, Sun } from 'lucide-react'
+import { Settings } from 'lucide-react'
 import { useTheme, ACCENT_COLORS } from '../hooks/useTheme.jsx'
 
 export function SettingsModal({
@@ -16,14 +16,14 @@ export function SettingsModal({
     const [saved, setSaved] = useState(false)
     const [newCatLabel, setNewCatLabel] = useState('')
     const [newCatColor, setNewCatColor] = useState('#7aa2f7')
-    const { theme, setMode, setAccent } = useTheme()
+    const { theme, setAccent } = useTheme()
 
     if (!isOpen) return null
 
     const handleSave = () => {
         onSaveApiKey(key)
         setSaved(true)
-        setTimeout(() => { setSaved(false); onClose() }, 1000)
+        setTimeout(() => { setSaved(false); onClose() }, 800)
     }
 
     const handleBackdropClick = (e) => {
@@ -38,113 +38,165 @@ export function SettingsModal({
         }
     }
 
-    const inputStyle = {
-        height: 32,
-        padding: '0 12px',
-        fontSize: 12,
-        backgroundColor: 'var(--bg-tertiary)',
-        color: 'var(--text-primary)',
-        border: 'none',
-        borderRadius: 6,
-        outline: 'none',
-        width: '100%'
-    }
-
-    const SectionHeader = ({ icon, title, action }) => (
-        <div className="flex-between mb-2">
-            <div className="flex items-center gap-2" style={{ fontSize: 10, color: 'var(--text-muted)' }}>
-                <span style={{ color: 'var(--accent)' }}>{icon}</span>
-                <span className="uppercase tracking-widest font-medium">{title}</span>
-            </div>
-            {action}
-        </div>
-    )
-
     return (
         <div
-            className="fixed inset-0 flex-center font-mono"
-            style={{ padding: 16, backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', zIndex: 400 }}
-            onClick={handleBackdropClick}
+            onMouseDown={handleBackdropClick}
+            style={{
+                position: 'fixed',
+                inset: 0,
+                backgroundColor: 'var(--bg-primary)',
+                zIndex: 1000,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 40,
+                cursor: 'default'
+            }}
         >
             <div style={{
+                maxWidth: 500,
                 width: '100%',
-                maxWidth: 380,
-                maxHeight: '85vh',
-                overflowY: 'auto',
-                backgroundColor: 'var(--bg-secondary)',
-                border: '1px solid var(--border-light)',
-                borderRadius: 12,
-                boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)'
+                pointerEvents: 'none'
             }}>
-                {/* Header */}
-                <div className="flex-between" style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-subtle)' }}>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>CONFIG</span>
-                    <button
-                        onClick={onClose}
-                        style={{ width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', backgroundColor: 'transparent', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 18 }}
-                    >×</button>
-                </div>
+                <div
+                    onMouseDown={(e) => e.stopPropagation()}
+                    style={{
+                        pointerEvents: 'auto',
+                        backgroundColor: 'var(--bg-primary)',
+                        border: '1px solid var(--border-light)',
+                        borderRadius: 4,
+                        boxShadow: '0 0 80px rgba(0,0,0,0.3)',
+                        overflow: 'hidden',
+                        fontFamily: "'JetBrains Mono', monospace"
+                    }}
+                >
+                    {/* Header */}
+                    <div className="flex-between" style={{
+                        padding: '16px 20px',
+                        borderBottom: '1px solid var(--border-subtle)',
+                        backgroundColor: 'var(--bg-secondary)',
+                        userSelect: 'none'
+                    }}>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '0.05em' }}>
+                            CONFIG
+                        </span>
+                        <button
+                            onClick={onClose}
+                            className="edit-modal-close"
+                            style={{ fontSize: 20 }}
+                        >×</button>
+                    </div>
 
-                <div style={{ padding: 16 }} className="space-y-5">
+                    {/* Content */}
+                    <div style={{ padding: 20 }} className="space-y-5">
 
-                    {/* Accent Color */}
-                    <div>
-                        <SectionHeader icon="●" title="ACCENT" />
-                        <div className="flex flex-wrap gap-1-5">
-                            {Object.entries(ACCENT_COLORS).map(([colorKey, color]) => (
+                        {/* Accent Color */}
+                        <div>
+                            <div style={{ fontSize: 10, color: 'var(--text-dim)', marginBottom: 8, letterSpacing: '0.05em' }}>ACCENT COLOR</div>
+                            <div className="flex flex-wrap gap-2">
+                                {Object.entries(ACCENT_COLORS).map(([colorKey, color]) => (
+                                    <button
+                                        key={colorKey}
+                                        onClick={() => setAccent(colorKey)}
+                                        title={color.name}
+                                        style={{
+                                            width: 28,
+                                            height: 28,
+                                            borderRadius: 4,
+                                            cursor: 'pointer',
+                                            backgroundColor: color.value,
+                                            border: theme.accent === colorKey ? '2px solid var(--text-primary)' : '2px solid transparent',
+                                            transition: 'all 100ms ease'
+                                        }}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Categories */}
+                        <div>
+                            <div className="flex-between" style={{ marginBottom: 8 }}>
+                                <span style={{ fontSize: 10, color: 'var(--text-dim)', letterSpacing: '0.05em' }}>CATEGORIES</span>
                                 <button
-                                    key={colorKey}
-                                    onClick={() => setAccent(colorKey)}
-                                    title={color.name}
-                                    style={{
-                                        width: 24, height: 24, borderRadius: 6, cursor: 'pointer', backgroundColor: color.value, border: 'none',
-                                        boxShadow: theme.accent === colorKey ? '0 0 0 2px rgba(255,255,255,0.5)' : 'none',
-                                        transition: 'all 150ms ease'
-                                    }}
+                                    onClick={onResetCategories}
+                                    style={{ fontSize: 10, color: 'var(--text-dim)', backgroundColor: 'transparent', border: 'none', cursor: 'pointer' }}
+                                >RESET</button>
+                            </div>
+                            <div className="space-y-1 mb-3">
+                                {categories?.map(cat => (
+                                    <div key={cat.id} className="flex items-center gap-3" style={{
+                                        padding: '8px 12px',
+                                        backgroundColor: 'var(--bg-secondary)',
+                                        borderRadius: 4
+                                    }}>
+                                        <span style={{ width: 12, height: 12, borderRadius: 2, backgroundColor: cat.color, flexShrink: 0 }} />
+                                        <span style={{ flex: 1, fontSize: 12, color: 'var(--text-primary)' }}>{cat.label}</span>
+                                        <button
+                                            onClick={() => onDeleteCategory(cat.id)}
+                                            className="icon-btn"
+                                            style={{ width: 20, height: 20, opacity: 0.5 }}
+                                        >×</button>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="flex gap-2">
+                                <input
+                                    type="color"
+                                    value={newCatColor}
+                                    onChange={(e) => setNewCatColor(e.target.value)}
+                                    style={{ width: 32, height: 32, padding: 0, border: 'none', borderRadius: 4, cursor: 'pointer' }}
                                 />
-                            ))}
+                                <input
+                                    type="text"
+                                    value={newCatLabel}
+                                    onChange={(e) => setNewCatLabel(e.target.value)}
+                                    placeholder="New category..."
+                                    className="edit-modal-input"
+                                    style={{ flex: 1, height: 32 }}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleAddCategory()}
+                                />
+                                <button
+                                    onClick={handleAddCategory}
+                                    className="edit-modal-btn-save"
+                                    style={{ height: 32, padding: '0 14px' }}
+                                >+</button>
+                            </div>
+                        </div>
+
+                        {/* API Key */}
+                        <div>
+                            <div style={{ fontSize: 10, color: 'var(--text-dim)', marginBottom: 8, letterSpacing: '0.05em' }}>API KEY</div>
+                            <input
+                                type="password"
+                                value={key}
+                                onChange={(e) => setKey(e.target.value)}
+                                placeholder="Gemini API key..."
+                                className="edit-modal-input"
+                            />
+                            <p style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 8 }}>
+                                <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)' }}>
+                                    Get from Google AI Studio →
+                                </a>
+                            </p>
                         </div>
                     </div>
 
-                    {/* Categories */}
-                    <div>
-                        <SectionHeader
-                            icon="◇"
-                            title="CATEGORIES"
-                            action={<button onClick={onResetCategories} style={{ fontSize: 10, color: 'var(--text-dim)', backgroundColor: 'transparent', border: 'none', cursor: 'pointer' }}>reset</button>}
-                        />
-                        <div className="space-y-1 mb-2">
-                            {categories?.map(cat => (
-                                <div key={cat.id} className="flex items-center gap-2 group" style={{ padding: '6px 8px', backgroundColor: 'var(--bg-primary)', borderRadius: 6 }}>
-                                    <span style={{ width: 10, height: 10, borderRadius: 2, backgroundColor: cat.color, flexShrink: 0 }} />
-                                    <span style={{ flex: 1, fontSize: 12, color: 'var(--text-primary)' }}>{cat.label}</span>
-                                    <button onClick={() => onDeleteCategory(cat.id)} style={{ opacity: 0.3, color: 'var(--text-dim)', backgroundColor: 'transparent', border: 'none', cursor: 'pointer', fontSize: 14 }}>×</button>
-                                </div>
-                            ))}
-                        </div>
-                        <div className="flex gap-2">
-                            <input type="color" value={newCatColor} onChange={(e) => setNewCatColor(e.target.value)} style={{ width: 32, height: 32, padding: 0, border: 'none', borderRadius: 6, cursor: 'pointer' }} />
-                            <input type="text" value={newCatLabel} onChange={(e) => setNewCatLabel(e.target.value)} placeholder="New category..." style={{ ...inputStyle, flex: 1 }} onKeyDown={(e) => e.key === 'Enter' && handleAddCategory()} />
-                            <button onClick={handleAddCategory} style={{ height: 32, padding: '0 12px', fontSize: 12, fontWeight: 500, color: 'white', backgroundColor: 'var(--accent)', border: 'none', borderRadius: 6, cursor: 'pointer' }}>+</button>
-                        </div>
+                    {/* Footer */}
+                    <div className="flex-between" style={{
+                        padding: '12px 20px',
+                        borderTop: '1px solid var(--border-subtle)',
+                        backgroundColor: 'var(--bg-secondary)'
+                    }}>
+                        <span style={{ fontSize: 10, color: 'var(--text-dim)', userSelect: 'none' }}>Esc to close</span>
+                        <button
+                            onClick={handleSave}
+                            className="edit-modal-btn-save"
+                            style={{ backgroundColor: saved ? '#22c55e' : undefined }}
+                        >
+                            {saved ? 'SAVED ✓' : 'SAVE'}
+                        </button>
                     </div>
-
-                    {/* API Key */}
-                    <div>
-                        <SectionHeader icon="⚿" title="API KEY" />
-                        <input type="password" value={key} onChange={(e) => setKey(e.target.value)} placeholder="Gemini API key..." style={inputStyle} />
-                        <p style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 6 }}>
-                            <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)' }}>Get from Google AI Studio →</a>
-                        </p>
-                    </div>
-                </div>
-
-                {/* Footer */}
-                <div className="flex justify-end gap-2" style={{ padding: '12px 16px', borderTop: '1px solid var(--border-subtle)' }}>
-                    <button onClick={onClose} style={{ height: 32, padding: '0 16px', fontSize: 12, color: 'var(--text-muted)', backgroundColor: 'transparent', border: 'none', cursor: 'pointer' }}>Cancel</button>
-                    <button onClick={handleSave} style={{ height: 32, padding: '0 16px', fontSize: 12, fontWeight: 500, color: 'white', backgroundColor: saved ? '#22c55e' : 'var(--accent)', border: 'none', borderRadius: 6, cursor: 'pointer' }}>
-                        {saved ? 'Saved ✓' : 'Save'}
-                    </button>
                 </div>
             </div>
         </div>

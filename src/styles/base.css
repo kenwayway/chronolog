@@ -7,13 +7,13 @@
 [data-theme="dark"] {
     --bg-primary: #0f0f14;
     --bg-secondary: #1a1a24;
-    --bg-tertiary: #242432;
+    --bg-tertiary: #313143;
     --bg-glass: rgba(15, 15, 20, 0.8);
 
     --text-primary: #e8e4e0;
     --text-secondary: #c4beb8;
     --text-muted: #8f8880;
-    --text-dim: #5c564f;
+    --text-dim: #8a8983;
 
     --accent: #3b82f6;
     --accent-light: #60a5fa;
