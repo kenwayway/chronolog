@@ -1,81 +1,100 @@
 import { useState, useCallback } from 'react'
 
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent'
+const CATEGORY_PROMPT = `You are analyzing a log entry to suggest the best category for it.
 
-const INTENT_PROMPT = `You are analyzing a log entry to detect if it contains a TODO or task intent.
+Available categories:
+{CATEGORIES}
 
-Analyze this entry: "{INPUT}"
+Entry to analyze: "{INPUT}"
 
 Rules:
-1. Look for task-like language: "need to", "should", "have to", "must", "得", "要", "需要", "应该", "记得"
-2. Look for action items or things that need to be done in the future
-3. Don't mark observations or status updates as TODOs
+1. Analyze the content and context of the entry
+2. Choose the most appropriate category from the available list
+3. If no category fits well, return null
+4. Be confident in common cases like: meetings, coding, reading, exercise, etc.
 
 Respond ONLY with valid JSON (no markdown, no code blocks):
-{"isTodo": boolean, "taskDescription": "concise task description or null", "confidence": number between 0 and 1}`
+{"categoryId": "the category id or null", "confidence": number between 0 and 1}`
 
-export function useAI(apiKey) {
-    const [loading, setLoading] = useState(false)
-    const [error, setError] = useState(null)
+export function useAI(config) {
+  const { apiKey, baseUrl, model } = config || {}
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
 
-    const detectIntent = useCallback(async (input) => {
-        if (!apiKey) {
-            return { isTodo: false, taskDescription: null, confidence: 0 }
-        }
-
-        setLoading(true)
-        setError(null)
-
-        try {
-            const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    contents: [{
-                        parts: [{
-                            text: INTENT_PROMPT.replace('{INPUT}', input)
-                        }]
-                    }],
-                    generationConfig: {
-                        temperature: 0.1,
-                        maxOutputTokens: 150
-                    }
-                })
-            })
-
-            if (!response.ok) {
-                throw new Error(`API error: ${response.status}`)
-            }
-
-            const data = await response.json()
-            const text = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
-
-            // Parse JSON response
-            const jsonMatch = text.match(/\{[\s\S]*\}/)
-            if (jsonMatch) {
-                const result = JSON.parse(jsonMatch[0])
-                return {
-                    isTodo: result.isTodo || false,
-                    taskDescription: result.taskDescription || null,
-                    confidence: result.confidence || 0
-                }
-            }
-
-            return { isTodo: false, taskDescription: null, confidence: 0 }
-        } catch (err) {
-            console.error('AI detection error:', err)
-            setError(err.message)
-            return { isTodo: false, taskDescription: null, confidence: 0 }
-        } finally {
-            setLoading(false)
-        }
-    }, [apiKey])
-
-    return {
-        detectIntent,
-        loading,
-        error
+  const suggestCategory = useCallback(async (input, categories) => {
+    if (!apiKey || !baseUrl || !model || !input?.trim() || !categories?.length) {
+      return { categoryId: null, confidence: 0 }
     }
+
+    setLoading(true)
+    setError(null)
+
+    try {
+      // Format categories for the prompt
+      const categoriesText = categories
+        .map(c => `- id: "${c.id}", label: "${c.label}"`)
+        .join('\n')
+
+      const prompt = CATEGORY_PROMPT
+        .replace('{CATEGORIES}', categoriesText)
+        .replace('{INPUT}', input.replace(/"/g, '\\"'))
+
+      // Normalize base URL
+      const normalizedBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl
+      const endpoint = `${normalizedBaseUrl}/chat/completions`
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: model,
+          messages: [
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          temperature: 0.1,
+          max_tokens: 100
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error?.message || `API error: ${response.status}`)
+      }
+
+      const data = await response.json()
+      const text = data.choices?.[0]?.message?.content || ''
+
+      // Parse JSON response
+      const jsonMatch = text.match(/\{[\s\S]*\}/)
+      if (jsonMatch) {
+        const result = JSON.parse(jsonMatch[0])
+        // Validate that the category exists
+        const validCategory = categories.find(c => c.id === result.categoryId)
+        return {
+          categoryId: validCategory ? result.categoryId : null,
+          confidence: result.confidence || 0
+        }
+      }
+
+      return { categoryId: null, confidence: 0 }
+    } catch (err) {
+      console.error('AI category suggestion error:', err)
+      setError(err.message)
+      return { categoryId: null, confidence: 0 }
+    } finally {
+      setLoading(false)
+    }
+  }, [apiKey, baseUrl, model])
+
+  return {
+    suggestCategory,
+    loading,
+    error
+  }
 }

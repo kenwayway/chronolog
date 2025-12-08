@@ -9,7 +9,9 @@ const initialState = {
   sessionStart: null,
   entries: [],
   tasks: [],
-  apiKey: null
+  apiKey: null,
+  aiBaseUrl: 'https://api.openai.com/v1',
+  aiModel: 'gpt-4o-mini'
 }
 
 // Reducer function
@@ -209,6 +211,15 @@ function sessionReducer(state, action) {
       }
     }
 
+    case ACTIONS.SET_AI_CONFIG: {
+      return {
+        ...state,
+        apiKey: action.payload.apiKey ?? state.apiKey,
+        aiBaseUrl: action.payload.aiBaseUrl ?? state.aiBaseUrl,
+        aiModel: action.payload.aiModel ?? state.aiModel
+      }
+    }
+
     case ACTIONS.SET_ENTRY_CATEGORY: {
       const { entryId, category } = action.payload
       return {
@@ -294,6 +305,8 @@ export function useSession() {
   useEffect(() => {
     const savedState = localStorage.getItem(STORAGE_KEYS.STATE)
     const savedApiKey = localStorage.getItem(STORAGE_KEYS.API_KEY)
+    const savedBaseUrl = localStorage.getItem(STORAGE_KEYS.AI_BASE_URL)
+    const savedModel = localStorage.getItem(STORAGE_KEYS.AI_MODEL)
 
     if (savedState) {
       try {
@@ -304,8 +317,15 @@ export function useSession() {
       }
     }
 
-    if (savedApiKey) {
-      dispatch({ type: ACTIONS.SET_API_KEY, payload: { apiKey: savedApiKey } })
+    if (savedApiKey || savedBaseUrl || savedModel) {
+      dispatch({
+        type: ACTIONS.SET_AI_CONFIG,
+        payload: {
+          apiKey: savedApiKey || null,
+          aiBaseUrl: savedBaseUrl || 'https://api.openai.com/v1',
+          aiModel: savedModel || 'gpt-4o-mini'
+        }
+      })
     }
   }, [])
 
@@ -360,6 +380,14 @@ export function useSession() {
     dispatch({ type: ACTIONS.SET_API_KEY, payload: { apiKey } })
   }, [])
 
+  const setAIConfig = useCallback((config) => {
+    const { apiKey, aiBaseUrl, aiModel } = config
+    if (apiKey !== undefined) localStorage.setItem(STORAGE_KEYS.API_KEY, apiKey)
+    if (aiBaseUrl !== undefined) localStorage.setItem(STORAGE_KEYS.AI_BASE_URL, aiBaseUrl)
+    if (aiModel !== undefined) localStorage.setItem(STORAGE_KEYS.AI_MODEL, aiModel)
+    dispatch({ type: ACTIONS.SET_AI_CONFIG, payload: config })
+  }, [])
+
   const setEntryCategory = useCallback((entryId, category) => {
     dispatch({ type: ACTIONS.SET_ENTRY_CATEGORY, payload: { entryId, category } })
   }, [])
@@ -393,6 +421,7 @@ export function useSession() {
       deleteEntry,
       editEntry,
       setApiKey,
+      setAIConfig,
       setEntryCategory,
       toggleTodo,
       updateEntry,

@@ -1,8 +1,9 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useSession } from "./hooks/useSession";
 import { useCategories } from "./hooks/useCategories";
 import { useTheme } from "./hooks/useTheme";
 import { useCloudSync } from "./hooks/useCloudSync";
+import { useAI } from "./hooks/useAI";
 import { Header } from "./components/Header";
 import { Timeline } from "./components/Timeline";
 import { InputPanel } from "./components/InputPanel";
@@ -18,6 +19,15 @@ function App() {
         useCategories();
     const { isDark, toggleTheme } = useTheme();
 
+    // AI for auto category suggestion
+    const aiConfig = {
+        apiKey: state.apiKey,
+        baseUrl: state.aiBaseUrl,
+        model: state.aiModel
+    };
+    const { suggestCategory } = useAI(aiConfig);
+    const lastEntryCountRef = useRef(state.entries.length);
+
     // Cloud sync
     const cloudSync = useCloudSync({
         entries: state.entries,
@@ -25,6 +35,23 @@ function App() {
         categories,
         onImportData: actions.importData,
     });
+
+    // Auto-suggest category for new entries
+    useEffect(() => {
+        const currentCount = state.entries.length;
+        if (currentCount > lastEntryCountRef.current && state.apiKey && state.aiBaseUrl && state.aiModel) {
+            const newEntry = state.entries[state.entries.length - 1];
+            // Only suggest for notes and session starts with content, and without existing category
+            if (newEntry && newEntry.content && !newEntry.category) {
+                suggestCategory(newEntry.content, categories).then(result => {
+                    if (result.categoryId && result.confidence > 0.5) {
+                        actions.updateEntry(newEntry.id, { category: result.categoryId });
+                    }
+                });
+            }
+        }
+        lastEntryCountRef.current = currentCount;
+    }, [state.entries.length, state.apiKey, state.aiBaseUrl, state.aiModel, categories, suggestCategory, actions]);
 
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [leftSidebarOpen, setLeftSidebarOpen] = useState(false);
@@ -204,7 +231,9 @@ function App() {
                 isOpen={settingsOpen}
                 onClose={() => setSettingsOpen(false)}
                 apiKey={state.apiKey}
-                onSaveApiKey={actions.setApiKey}
+                aiBaseUrl={state.aiBaseUrl}
+                aiModel={state.aiModel}
+                onSaveAIConfig={actions.setAIConfig}
                 categories={categories}
                 onAddCategory={addCategory}
                 onDeleteCategory={deleteCategory}

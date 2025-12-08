@@ -25,6 +25,7 @@ export const ACTIONS = {
     TOGGLE_TODO: 'TOGGLE_TODO',
     LOAD_STATE: 'LOAD_STATE',
     SET_API_KEY: 'SET_API_KEY',
+    SET_AI_CONFIG: 'SET_AI_CONFIG',
     ADD_TASK: 'ADD_TASK',
     SET_CATEGORIES: 'SET_CATEGORIES',
     SET_ENTRY_CATEGORY: 'SET_ENTRY_CATEGORY',
@@ -35,6 +36,8 @@ export const ACTIONS = {
 export const STORAGE_KEYS = {
     STATE: 'chronolog_state',
     API_KEY: 'chronolog_api_key',
+    AI_BASE_URL: 'chronolog_ai_base_url',
+    AI_MODEL: 'chronolog_ai_model',
     CATEGORIES: 'chronolog_categories'
 }
 
