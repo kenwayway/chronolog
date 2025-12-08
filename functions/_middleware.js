@@ -1,0 +1,63 @@
+// Middleware for CORS and auth
+export async function onRequest(context) {
+    const { request, env, next } = context;
+
+    // Handle CORS preflight
+    if (request.method === 'OPTIONS') {
+        return new Response(null, {
+            headers: {
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+                'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+                'Access-Control-Max-Age': '86400',
+            },
+        });
+    }
+
+    // Skip auth for auth endpoint
+    const url = new URL(request.url);
+    if (url.pathname === '/api/auth') {
+        const response = await next();
+        return addCorsHeaders(response);
+    }
+
+    // Check auth for all other API routes
+    if (url.pathname.startsWith('/api/')) {
+        const authHeader = request.headers.get('Authorization');
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+                status: 401,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*',
+                },
+            });
+        }
+
+        const token = authHeader.slice(7);
+        // Simple token validation - in production use JWT
+        const validToken = await env.CHRONOLOG_KV.get('auth_token');
+        if (token !== validToken) {
+            return new Response(JSON.stringify({ error: 'Invalid token' }), {
+                status: 401,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*',
+                },
+            });
+        }
+    }
+
+    const response = await next();
+    return addCorsHeaders(response);
+}
+
+function addCorsHeaders(response) {
+    const newHeaders = new Headers(response.headers);
+    newHeaders.set('Access-Control-Allow-Origin', '*');
+    return new Response(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: newHeaders,
+    });
+}

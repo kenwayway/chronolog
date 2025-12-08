@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { useSession } from "./hooks/useSession";
 import { useCategories } from "./hooks/useCategories";
 import { useTheme } from "./hooks/useTheme";
+import { useCloudSync } from "./hooks/useCloudSync";
 import { Header } from "./components/Header";
 import { Timeline } from "./components/Timeline";
 import { InputPanel } from "./components/InputPanel";
@@ -16,6 +17,14 @@ function App() {
     const { categories, addCategory, deleteCategory, resetToDefaults } =
         useCategories();
     const { isDark, toggleTheme } = useTheme();
+
+    // Cloud sync
+    const cloudSync = useCloudSync({
+        entries: state.entries,
+        tasks: state.tasks,
+        categories,
+        onImportData: actions.importData,
+    });
 
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [leftSidebarOpen, setLeftSidebarOpen] = useState(false);
@@ -100,6 +109,7 @@ function App() {
                 onOpenSidebar={() => setSidebarOpen(true)}
                 onOpenLeftSidebar={() => setLeftSidebarOpen(true)}
                 onOpenSettings={() => setSettingsOpen(true)}
+                cloudSync={cloudSync}
             />
 
             {/* Main content */}
@@ -185,6 +195,7 @@ function App() {
                 entries={state.entries}
                 tasks={state.tasks}
                 onImportData={actions.importData}
+                cloudSync={cloudSync}
             />
         </div >
     )

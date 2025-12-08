@@ -8,7 +8,6 @@ import {
   MapPin,
   Maximize2,
   Terminal,
-  X,
 } from "lucide-react";
 import { SESSION_STATUS } from "../utils/constants";
 
@@ -45,6 +44,7 @@ export function InputPanel({ status, onLogIn, onSwitch, onNote, onLogOff }) {
   const [location, setLocation] = useState("");
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [focusMode, setFocusMode] = useState(false);
+  const [viewportHeight, setViewportHeight] = useState(null);
   const inputRef = useRef(null);
   const focusInputRef = useRef(null);
   const isStreaming = status === SESSION_STATUS.STREAMING;
@@ -52,6 +52,30 @@ export function InputPanel({ status, onLogIn, onSwitch, onNote, onLogOff }) {
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
+
+  // Handle mobile keyboard visibility using visualViewport API
+  useEffect(() => {
+    if (!window.visualViewport) return;
+
+    const handleViewportResize = () => {
+      // When keyboard opens, visualViewport.height < window.innerHeight
+      const vv = window.visualViewport;
+      if (mobileExpanded && vv.height < window.innerHeight * 0.9) {
+        // Keyboard is open, set the viewport height
+        setViewportHeight(vv.height);
+      } else {
+        setViewportHeight(null);
+      }
+    };
+
+    window.visualViewport.addEventListener("resize", handleViewportResize);
+    window.visualViewport.addEventListener("scroll", handleViewportResize);
+
+    return () => {
+      window.visualViewport.removeEventListener("resize", handleViewportResize);
+      window.visualViewport.removeEventListener("scroll", handleViewportResize);
+    };
+  }, [mobileExpanded]);
 
   // Handle Esc to exit focus mode
   useEffect(() => {
@@ -178,23 +202,31 @@ export function InputPanel({ status, onLogIn, onSwitch, onNote, onLogOff }) {
       className={`input-panel ${isFocused ? "focused" : ""} ${inFocusMode ? "focus-mode" : ""}`}
       data-input-panel
       data-mobile-expanded={mobileExpanded ? "true" : undefined}
-      style={{ maxWidth: inFocusMode ? 900 : 768 }}
+      style={{
+        maxWidth: inFocusMode ? 900 : 768,
+        ...(viewportHeight && mobileExpanded && !inFocusMode
+          ? {
+            height: viewportHeight,
+            top: window.visualViewport?.offsetTop || 0,
+            bottom: "auto",
+          }
+          : {}),
+      }}
     >
       {/* Input Area */}
       <div className="input-area" style={{ display: "flex", flex: 1 }}>
-        {/* Gutter */}
-        <div className={`input-panel-gutter ${inFocusMode ? "focus-mode" : ""}`}>
-          {/* Mobile close button */}
-          <button
-            className="mobile-close-btn"
-            onClick={() => {
+        {/* Gutter - tap to exit on mobile */}
+        <div
+          className={`input-panel-gutter ${inFocusMode ? "focus-mode" : ""}`}
+          onClick={() => {
+            if (mobileExpanded && !inFocusMode) {
               setMobileExpanded(false);
               setIsFocused(false);
               inputRef.current?.blur();
-            }}
-          >
-            <X size={20} />
-          </button>
+            }
+          }}
+          style={{ cursor: mobileExpanded && !inFocusMode ? "pointer" : "default" }}
+        >
           <Terminal
             size={inFocusMode ? 16 : 14}
             className="terminal-icon"

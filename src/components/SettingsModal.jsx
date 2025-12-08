@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Settings, Download, Upload, Check, FolderOpen } from "lucide-react";
+import { Settings, Download, Upload, Check, FolderOpen, Cloud, CloudOff, RefreshCw } from "lucide-react";
 import { useTheme, ACCENT_COLORS } from "../hooks/useTheme.jsx";
 
 export function SettingsModal({
@@ -14,11 +14,14 @@ export function SettingsModal({
   entries,
   tasks,
   onImportData,
+  cloudSync,
 }) {
   const [key, setKey] = useState(apiKey || "");
   const [saved, setSaved] = useState(false);
   const [newCatLabel, setNewCatLabel] = useState("");
   const [newCatColor, setNewCatColor] = useState("#7aa2f7");
+  const [cloudPassword, setCloudPassword] = useState("");
+  const [cloudLoginError, setCloudLoginError] = useState("");
   const { theme, setAccent, setStyle, availableStyles } = useTheme();
   const fileInputRef = useRef(null);
 
@@ -357,6 +360,111 @@ export function SettingsModal({
                   Get from Google AI Studio →
                 </a>
               </p>
+            </div>
+
+            {/* Cloud Sync */}
+            <div>
+              <div
+                style={{
+                  fontSize: 10,
+                  color: "var(--text-dim)",
+                  marginBottom: 8,
+                  letterSpacing: "0.05em",
+                }}
+              >
+                CLOUD SYNC
+              </div>
+              {cloudSync?.isLoggedIn ? (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2" style={{ padding: "8px 12px", backgroundColor: "var(--bg-secondary)", borderRadius: 4 }}>
+                    <Cloud size={14} style={{ color: "var(--success)" }} />
+                    <span style={{ flex: 1, fontSize: 12, color: "var(--text-primary)" }}>
+                      已连接
+                    </span>
+                    {cloudSync.isSyncing && (
+                      <RefreshCw size={14} style={{ color: "var(--accent)", animation: "spin 1s linear infinite" }} />
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => cloudSync.sync()}
+                      disabled={cloudSync.isSyncing}
+                      className="btn-action btn-action-secondary"
+                      style={{ flex: 1, justifyContent: "center" }}
+                    >
+                      <RefreshCw size={14} />
+                      同步
+                    </button>
+                    <button
+                      onClick={() => cloudSync.logout()}
+                      className="btn-action btn-action-secondary"
+                      style={{ flex: 1, justifyContent: "center", color: "var(--error)" }}
+                    >
+                      <CloudOff size={14} />
+                      登出
+                    </button>
+                  </div>
+                  {cloudSync.lastSynced && (
+                    <p style={{ fontSize: 10, color: "var(--text-dim)" }}>
+                      上次同步: {new Date(cloudSync.lastSynced).toLocaleTimeString()}
+                    </p>
+                  )}
+                  {cloudSync.error && (
+                    <p style={{ fontSize: 10, color: "var(--error)" }}>
+                      错误: {cloudSync.error}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <input
+                    type="password"
+                    value={cloudPassword}
+                    onChange={(e) => setCloudPassword(e.target.value)}
+                    placeholder="输入同步密码..."
+                    className="edit-modal-input"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && cloudPassword) {
+                        cloudSync?.login(cloudPassword).then(result => {
+                          if (!result.success) {
+                            setCloudLoginError(result.error);
+                          } else {
+                            setCloudPassword("");
+                            setCloudLoginError("");
+                          }
+                        });
+                      }
+                    }}
+                  />
+                  <button
+                    onClick={async () => {
+                      if (cloudPassword) {
+                        const result = await cloudSync?.login(cloudPassword);
+                        if (!result.success) {
+                          setCloudLoginError(result.error);
+                        } else {
+                          setCloudPassword("");
+                          setCloudLoginError("");
+                        }
+                      }
+                    }}
+                    disabled={!cloudPassword || cloudSync?.isSyncing}
+                    className="btn-action btn-action-primary"
+                    style={{ width: "100%", justifyContent: "center" }}
+                  >
+                    <Cloud size={14} />
+                    连接云端
+                  </button>
+                  {cloudLoginError && (
+                    <p style={{ fontSize: 10, color: "var(--error)" }}>
+                      {cloudLoginError}
+                    </p>
+                  )}
+                  <p style={{ fontSize: 10, color: "var(--text-dim)" }}>
+                    部署后在 Cloudflare 设置 AUTH_PASSWORD 环境变量
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Import/Export */}

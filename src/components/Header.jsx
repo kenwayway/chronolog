@@ -9,6 +9,8 @@ import {
   Activity,
   Menu,
   X,
+  Cloud,
+  CloudOff,
 } from "lucide-react";
 import { useTheme } from "../hooks/useTheme";
 import { formatDate } from "../utils/formatters";
@@ -279,10 +281,30 @@ export function Header({
   onOpenSidebar,
   onOpenLeftSidebar,
   onOpenSettings,
+  cloudSync,
 }) {
   const { canToggleMode } = useTheme();
   const [showCalendar, setShowCalendar] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const mobileMenuRef = useRef(null);
+
+  // Close mobile menu when clicking outside
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+
+    const handleClickOutside = (e) => {
+      if (mobileMenuRef.current && !mobileMenuRef.current.contains(e.target)) {
+        setMobileMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
+  }, [mobileMenuOpen]);
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -334,6 +356,18 @@ export function Header({
             />
           </div>
           <span className="header-title">CHRONOLOG</span>
+          {/* Cloud sync indicator */}
+          {cloudSync?.isLoggedIn && (
+            <Cloud
+              size={12}
+              style={{
+                color: cloudSync.isSyncing ? "var(--accent)" : "var(--success)",
+                opacity: 0.7,
+                animation: cloudSync.isSyncing ? "spin 1s linear infinite" : "none",
+              }}
+              title={cloudSync.isSyncing ? "同步中..." : "云端已连接"}
+            />
+          )}
         </div>
 
         {/* Date Navigation */}
@@ -454,7 +488,7 @@ export function Header({
       </div>
 
       {/* Mobile hamburger menu */}
-      <div className="header-mobile-menu show-mobile-only">
+      <div className="header-mobile-menu show-mobile-only" ref={mobileMenuRef}>
         <button
           className="btn btn-ghost rounded-lg"
           style={{ width: 36, height: 36, padding: 0 }}
