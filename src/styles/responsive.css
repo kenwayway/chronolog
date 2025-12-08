@@ -224,6 +224,68 @@
     flex: 1 !important;
   }
 
+  /* Edit Modal - fullscreen on mobile */
+  .modal-panel {
+    position: fixed !important;
+    inset: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    height: 100% !important;
+    border-radius: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .modal-panel .modal-header {
+    flex-shrink: 0;
+  }
+
+  .modal-panel .modal-body {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+  }
+
+  .modal-panel .modal-footer {
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 12px !important;
+  }
+
+  /* Make footer children flexible */
+  .modal-panel .modal-footer>div {
+    flex-wrap: wrap;
+    gap: 8px !important;
+  }
+
+  /* Time input smaller on mobile */
+  .modal-panel .modal-footer input[type="datetime-local"] {
+    width: 140px !important;
+    font-size: 11px !important;
+  }
+
+  /* Category select smaller on mobile */
+  .modal-panel .modal-footer select {
+    width: 90px !important;
+    font-size: 11px !important;
+  }
+
+  /* Hide labels on very small screens */
+  .modal-panel .modal-footer span:not(:last-child) {
+    display: none;
+  }
+
+  /* Icon buttons in footer */
+  .modal-panel .modal-footer .icon-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  .modal-panel textarea {
+    min-height: 150px !important;
+  }
+
   /* Focus Mode - fullscreen on mobile */
   .focus-mode-overlay {
     padding: 0 !important;

@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Image, MapPin } from "lucide-react";
+import { Dropdown } from "./Dropdown";
 
 export function EditModal({ isOpen, entry, onSave, onClose, categories }) {
   const [content, setContent] = useState("");
@@ -127,7 +128,6 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories }) {
         backgroundColor: "var(--bg-primary)",
         zIndex: 1000,
         display: "flex",
-        flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
         padding: 40,
@@ -135,248 +135,176 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories }) {
       }}
     >
       <div
+        className="modal-panel"
+        onMouseDown={(e) => e.stopPropagation()}
         style={{
           maxWidth: 900,
           width: "100%",
-          pointerEvents: "none",
+          pointerEvents: "auto",
+          backgroundColor: "var(--bg-primary)",
+          border: "1px solid var(--border-light)",
+          borderRadius: 4,
+          boxShadow: "0 0 80px rgba(0,0,0,0.3)",
+          fontFamily: "var(--font-mono)",
         }}
       >
+        {/* Header */}
         <div
-          className="modal-panel"
-          onMouseDown={(e) => e.stopPropagation()}
+          className="modal-header flex-between"
           style={{
-            pointerEvents: "auto",
-            backgroundColor: "var(--bg-primary)",
-            border: "1px solid var(--border-light)",
-            borderRadius: 4,
-            boxShadow: "0 0 80px rgba(0,0,0,0.3)",
-            fontFamily: "var(--font-mono)",
+            padding: "16px 20px",
+            borderBottom: "1px solid var(--border-subtle)",
+            backgroundColor: "var(--bg-secondary)",
+            userSelect: "none",
           }}
         >
-          {/* Header */}
-          <div
-            className="flex-between"
+          <span
             style={{
-              padding: "16px 20px",
-              borderBottom: "1px solid var(--border-subtle)",
-              backgroundColor: "var(--bg-secondary)",
-              userSelect: "none",
+              fontSize: 13,
+              fontWeight: 600,
+              color: "var(--text-muted)",
+              letterSpacing: "0.05em",
+              textTransform: "uppercase",
             }}
           >
-            <span
-              style={{
-                fontSize: 13,
-                fontWeight: 600,
-                color: "var(--text-muted)",
-                letterSpacing: "0.05em",
-                textTransform: "uppercase",
-              }}
-            >
-              EDIT ENTRY
-            </span>
-            <button
-              onClick={onClose}
-              className="edit-modal-close"
-              style={{ fontSize: 20 }}
-            >
-              ×
-            </button>
-          </div>
+            EDIT ENTRY
+          </span>
+          <button
+            onClick={onClose}
+            className="edit-modal-close"
+            style={{ fontSize: 20 }}
+          >
+            ×
+          </button>
+        </div>
 
-          {/* Main Content */}
-          <div style={{ padding: 20 }}>
-            <textarea
-              ref={textareaRef}
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="Enter content..."
-              style={{
-                width: "100%",
-                minHeight: 300,
-                padding: 16,
-                fontSize: 15,
-                fontFamily: "var(--font-mono)",
-                lineHeight: 1.6,
-                color: "var(--text-primary)",
-                backgroundColor: "transparent",
-                border: "none",
-                resize: "none",
-                outline: "none",
-              }}
-            />
-          </div>
-
-          {/* Attachments */}
-          {(imageUrl || location || showImageInput || showLocationInput) && (
-            <div
-              style={{
-                padding: "8px 20px",
-                borderTop: "1px solid var(--border-subtle)",
-                backgroundColor: "var(--bg-secondary)",
-              }}
-            >
-              {/* Image URL Input */}
-              {showImageInput && (
-                <div className="flex items-center gap-2 mb-2">
-                  <Image
-                    size={14}
-                    style={{ color: "var(--text-dim)", flexShrink: 0 }}
-                  />
-                  <input
-                    type="text"
-                    value={imageUrl}
-                    onChange={(e) => setImageUrl(e.target.value)}
-                    placeholder="Paste image URL..."
-                    className="edit-modal-input"
-                    style={{ flex: 1, height: 28, fontSize: 12 }}
-                  />
-                  <button
-                    onClick={() => {
-                      setShowImageInput(false);
-                      setImageUrl("");
-                    }}
-                    style={{
-                      color: "var(--text-dim)",
-                      backgroundColor: "transparent",
-                      border: "none",
-                      cursor: "pointer",
-                      fontSize: 16,
-                    }}
-                  >
-                    ×
-                  </button>
-                </div>
-              )}
-
-              {/* Location Input */}
-              {showLocationInput && (
-                <div className="flex items-center gap-2">
-                  <MapPin
-                    size={14}
-                    style={{ color: "var(--text-dim)", flexShrink: 0 }}
-                  />
-                  <input
-                    type="text"
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    placeholder="Enter location..."
-                    className="edit-modal-input"
-                    style={{ flex: 1, height: 28, fontSize: 12 }}
-                  />
-                  <button
-                    onClick={getCurrentLocation}
-                    disabled={isGettingLocation}
-                    style={{
-                      padding: "4px 8px",
-                      fontSize: 10,
-                      backgroundColor: "var(--accent-subtle)",
-                      color: "var(--accent)",
-                      border: "none",
-                      borderRadius: 4,
-                      cursor: "pointer",
-                    }}
-                  >
-                    {isGettingLocation ? "..." : "AUTO"}
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowLocationInput(false);
-                      setLocation("");
-                    }}
-                    style={{
-                      color: "var(--text-dim)",
-                      backgroundColor: "transparent",
-                      border: "none",
-                      cursor: "pointer",
-                      fontSize: 16,
-                    }}
-                  >
-                    ×
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Footer */}
-          <div
-            className="flex-between"
+        {/* Main Content */}
+        <div className="modal-body" style={{ padding: 20 }}>
+          <textarea
+            ref={textareaRef}
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder="Enter content..."
             style={{
-              padding: "12px 20px",
+              width: "100%",
+              minHeight: 300,
+              padding: 16,
+              fontSize: 15,
+              fontFamily: "var(--font-mono)",
+              lineHeight: 1.6,
+              color: "var(--text-primary)",
+              backgroundColor: "transparent",
+              border: "none",
+              resize: "none",
+              outline: "none",
+            }}
+          />
+        </div>
+
+        {/* Attachments */}
+        {(imageUrl || location || showImageInput || showLocationInput) && (
+          <div
+            style={{
+              padding: "8px 20px",
               borderTop: "1px solid var(--border-subtle)",
               backgroundColor: "var(--bg-secondary)",
             }}
           >
-            <div className="flex items-center gap-4">
-              {/* Time */}
-              <div className="flex items-center gap-2">
-                <span
-                  style={{
-                    fontSize: 10,
-                    color: "var(--text-dim)",
-                    userSelect: "none",
-                  }}
-                >
-                  TIME
-                </span>
-                <input
-                  type="datetime-local"
-                  value={timestamp}
-                  onChange={(e) => setTimestamp(e.target.value)}
-                  className="edit-modal-input"
-                  style={{ width: 180 }}
+            {/* Image URL Input */}
+            {showImageInput && (
+              <div className="flex items-center gap-2 mb-2">
+                <Image
+                  size={14}
+                  style={{ color: "var(--text-dim)", flexShrink: 0 }}
                 />
-              </div>
-
-              {/* Category */}
-              <div className="flex items-center gap-2">
-                <span
+                <input
+                  type="text"
+                  value={imageUrl}
+                  onChange={(e) => setImageUrl(e.target.value)}
+                  placeholder="Paste image URL..."
+                  className="edit-modal-input"
+                  style={{ flex: 1, height: 28, fontSize: 12 }}
+                />
+                <button
+                  onClick={() => {
+                    setShowImageInput(false);
+                    setImageUrl("");
+                  }}
                   style={{
-                    fontSize: 10,
                     color: "var(--text-dim)",
-                    userSelect: "none",
+                    backgroundColor: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                    fontSize: 16,
                   }}
                 >
-                  CATEGORY
-                </span>
-                <select
-                  value={category || ""}
-                  onChange={(e) => setCategory(e.target.value || null)}
-                  className="edit-modal-select"
-                  style={{
-                    width: 120,
-                    color: selectedCategory
-                      ? selectedCategory.color
-                      : "var(--text-secondary)",
-                  }}
-                >
-                  <option value="">None</option>
-                  {categories?.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.label}
-                    </option>
-                  ))}
-                </select>
+                  ×
+                </button>
               </div>
+            )}
 
-              {/* Attachment buttons */}
-              <button
-                onClick={() => setShowImageInput(!showImageInput)}
-                title="Add image URL"
-                className={`icon-btn ${showImageInput || imageUrl ? "active" : ""}`}
-              >
-                <Image size={14} />
-              </button>
-              <button
-                onClick={() => setShowLocationInput(!showLocationInput)}
-                title="Add location"
-                className={`icon-btn ${showLocationInput || location ? "active" : ""}`}
-              >
-                <MapPin size={14} />
-              </button>
-            </div>
+            {/* Location Input */}
+            {showLocationInput && (
+              <div className="flex items-center gap-2">
+                <MapPin
+                  size={14}
+                  style={{ color: "var(--text-dim)", flexShrink: 0 }}
+                />
+                <input
+                  type="text"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  placeholder="Enter location..."
+                  className="edit-modal-input"
+                  style={{ flex: 1, height: 28, fontSize: 12 }}
+                />
+                <button
+                  onClick={getCurrentLocation}
+                  disabled={isGettingLocation}
+                  style={{
+                    padding: "4px 8px",
+                    fontSize: 10,
+                    backgroundColor: "var(--accent-subtle)",
+                    color: "var(--accent)",
+                    border: "none",
+                    borderRadius: 4,
+                    cursor: "pointer",
+                  }}
+                >
+                  {isGettingLocation ? "..." : "AUTO"}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowLocationInput(false);
+                    setLocation("");
+                  }}
+                  style={{
+                    color: "var(--text-dim)",
+                    backgroundColor: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                    fontSize: 16,
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
-            <div className="flex items-center gap-3">
+        {/* Footer */}
+        <div
+          className="modal-footer flex-between"
+          style={{
+            padding: "12px 20px",
+            borderTop: "1px solid var(--border-subtle)",
+            backgroundColor: "var(--bg-secondary)",
+          }}
+        >
+          <div className="flex items-center gap-4">
+            {/* Time */}
+            <div className="flex items-center gap-2">
               <span
                 style={{
                   fontSize: 10,
@@ -384,12 +312,73 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories }) {
                   userSelect: "none",
                 }}
               >
-                Ctrl+Enter to save
+                TIME
               </span>
-              <button onClick={handleSave} className="edit-modal-btn-save">
-                Save
-              </button>
+              <input
+                type="datetime-local"
+                value={timestamp}
+                onChange={(e) => setTimestamp(e.target.value)}
+                className="edit-modal-input"
+                style={{ width: 180 }}
+              />
             </div>
+
+            {/* Category */}
+            <div className="flex items-center gap-2">
+              <span
+                style={{
+                  fontSize: 10,
+                  color: "var(--text-dim)",
+                  userSelect: "none",
+                }}
+              >
+                CATEGORY
+              </span>
+              <Dropdown
+                value={category}
+                onChange={(val) => setCategory(val || null)}
+                placeholder="None"
+                options={[
+                  { value: "", label: "None" },
+                  ...(categories?.map((cat) => ({
+                    value: cat.id,
+                    label: cat.label,
+                    color: cat.color,
+                  })) || []),
+                ]}
+              />
+            </div>
+
+            {/* Attachment buttons */}
+            <button
+              onClick={() => setShowImageInput(!showImageInput)}
+              title="Add image URL"
+              className={`icon-btn ${showImageInput || imageUrl ? "active" : ""}`}
+            >
+              <Image size={14} />
+            </button>
+            <button
+              onClick={() => setShowLocationInput(!showLocationInput)}
+              title="Add location"
+              className={`icon-btn ${showLocationInput || location ? "active" : ""}`}
+            >
+              <MapPin size={14} />
+            </button>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <span
+              style={{
+                fontSize: 10,
+                color: "var(--text-dim)",
+                userSelect: "none",
+              }}
+            >
+              Ctrl+Enter to save
+            </span>
+            <button onClick={handleSave} className="edit-modal-btn-save">
+              Save
+            </button>
           </div>
         </div>
       </div>

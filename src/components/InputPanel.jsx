@@ -167,16 +167,21 @@ export function InputPanel({ status, onLogIn, onSwitch, onNote, onLogOff }) {
   };
 
   const handleKeyDown = (e) => {
-    if (e.key === "Enter" && !e.shiftKey && !e.ctrlKey) {
+    // Ctrl+Enter: submit note (or logIn if not streaming)
+    if (e.key === "Enter" && e.ctrlKey && !e.shiftKey) {
       e.preventDefault();
-      handleSubmit("note");
-    } else if (e.key === "Enter" && e.ctrlKey && !e.shiftKey) {
-      e.preventDefault();
-      handleSubmit(isStreaming ? "switch" : "logIn");
-    } else if (e.key === "Enter" && e.ctrlKey && e.shiftKey && isStreaming) {
-      e.preventDefault();
-      handleSubmit("logOff");
+      if (isStreaming) {
+        handleSubmit("note");
+      } else {
+        handleSubmit("logIn");
+      }
     }
+    // Ctrl+Shift+Enter: switch session
+    else if (e.key === "Enter" && e.ctrlKey && e.shiftKey && isStreaming) {
+      e.preventDefault();
+      handleSubmit("switch");
+    }
+    // Enter without modifiers: allow default (newline)
   };
 
   useEffect(() => {

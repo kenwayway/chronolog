@@ -185,6 +185,10 @@ function TimelineEntry({
     };
 
     const handleTouchStart = (e) => {
+        // Prevent text selection during long press
+        e.currentTarget.style.userSelect = 'none';
+        e.currentTarget.style.webkitUserSelect = 'none';
+
         const timer = setTimeout(() => {
             const touch = e.touches[0];
             onContextMenu?.(entry, { x: touch.clientX, y: touch.clientY });
@@ -192,7 +196,11 @@ function TimelineEntry({
         setPressTimer(timer);
     };
 
-    const handleTouchEnd = () => {
+    const handleTouchEnd = (e) => {
+        // Restore text selection
+        e.currentTarget.style.userSelect = '';
+        e.currentTarget.style.webkitUserSelect = '';
+
         if (pressTimer) {
             clearTimeout(pressTimer);
             setPressTimer(null);
