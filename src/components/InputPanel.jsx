@@ -33,7 +33,7 @@ function FocusMode({ isOpen, onClose, children }) {
   );
 }
 
-export function InputPanel({ status, onLogIn, onSwitch, onNote, onLogOff }) {
+export function InputPanel({ status, onLogIn, onSwitch, onNote, onLogOff, cloudSync }) {
   const [input, setInput] = useState("");
   const [isFocused, setIsFocused] = useState(false);
   const [mobileExpanded, setMobileExpanded] = useState(false);
@@ -45,8 +45,10 @@ export function InputPanel({ status, onLogIn, onSwitch, onNote, onLogOff }) {
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [focusMode, setFocusMode] = useState(false);
   const [viewportHeight, setViewportHeight] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
   const inputRef = useRef(null);
   const focusInputRef = useRef(null);
+  const fileInputRef = useRef(null);
   const isStreaming = status === SESSION_STATUS.STREAMING;
 
   useEffect(() => {
@@ -127,6 +129,31 @@ export function InputPanel({ status, onLogIn, onSwitch, onNote, onLogOff }) {
     setIsGettingLocation(false);
   };
 
+  const handleImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!cloudSync?.isLoggedIn) {
+      alert("Please connect to cloud sync first to upload images");
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+      const url = await cloudSync.uploadImage(file);
+      setImageUrl(url);
+      setShowImageInput(false);
+    } catch (error) {
+      alert(`Upload failed: ${error.message}`);
+    } finally {
+      setIsUploading(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
   const buildEntryContent = () => {
     let content = input.trim();
     if (location) {
@@ -139,6 +166,10 @@ export function InputPanel({ status, onLogIn, onSwitch, onNote, onLogOff }) {
   };
 
   const handleSubmit = (action) => {
+    if (!cloudSync?.isLoggedIn) {
+      alert('Please connect to cloud sync to edit. Go to Settings > Cloud Sync to login.');
+      return;
+    }
     if (!input.trim() && action !== "logOff") return;
     const content = buildEntryContent();
     switch (action) {
@@ -182,6 +213,38 @@ export function InputPanel({ status, onLogIn, onSwitch, onNote, onLogOff }) {
       handleSubmit("switch");
     }
     // Enter without modifiers: allow default (newline)
+  };
+
+  // Handle paste - auto upload images
+  const handlePaste = async (e) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    for (const item of items) {
+      if (item.type.startsWith('image/')) {
+        e.preventDefault();
+
+        if (!cloudSync?.isLoggedIn) {
+          alert('Please connect to cloud sync to upload images.');
+          return;
+        }
+
+        const file = item.getAsFile();
+        if (!file) return;
+
+        try {
+          setIsUploading(true);
+          const url = await cloudSync.uploadImage(file);
+          setImageUrl(url);
+          setShowImageInput(false);
+        } catch (error) {
+          alert(`Upload failed: ${error.message}`);
+        } finally {
+          setIsUploading(false);
+        }
+        return; // Only handle first image
+      }
+    }
   };
 
   useEffect(() => {
@@ -246,6 +309,7 @@ export function InputPanel({ status, onLogIn, onSwitch, onNote, onLogOff }) {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
+            onPaste={handlePaste}
             onFocus={() => {
               if (!inFocusMode) {
                 setIsFocused(true);
@@ -283,6 +347,32 @@ export function InputPanel({ status, onLogIn, onSwitch, onNote, onLogOff }) {
                 value={imageUrl}
                 onChange={(e) => setImageUrl(e.target.value)}
                 placeholder="Paste image URL..."
+              />
+              {/* Upload button */}
+              <button
+                className="input-panel-upload-btn"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading || !cloudSync?.isLoggedIn}
+                title={cloudSync?.isLoggedIn ? "Upload image" : "Connect to cloud to upload"}
+                style={{
+                  padding: "4px 8px",
+                  fontSize: 10,
+                  backgroundColor: cloudSync?.isLoggedIn ? "var(--accent-subtle)" : "var(--bg-tertiary)",
+                  color: cloudSync?.isLoggedIn ? "var(--accent)" : "var(--text-dim)",
+                  border: "none",
+                  borderRadius: 4,
+                  cursor: cloudSync?.isLoggedIn ? "pointer" : "not-allowed",
+                  opacity: isUploading ? 0.5 : 1,
+                }}
+              >
+                {isUploading ? "..." : "UPLOAD"}
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                style={{ display: "none" }}
+                onChange={handleImageUpload}
               />
               <button
                 className="input-panel-close-btn"

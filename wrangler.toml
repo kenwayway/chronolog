@@ -6,10 +6,10 @@ pages_build_output_dir = "./dist"
 binding = "CHRONOLOG_KV"
 id = "8c09bfd9a30f495dab3e1464bd637f79"
 
-# R2 bucket - uncomment after enabling R2 in Cloudflare dashboard
-# [[r2_buckets]]
-# binding = "CHRONOLOG_R2"
-# bucket_name = "chronolog-images"
+# R2 bucket for image storage
+[[r2_buckets]]
+binding = "CHRONOLOG_R2"
+bucket_name = "chronolog-images"
 
 [vars]
 # Set this in Cloudflare dashboard for security

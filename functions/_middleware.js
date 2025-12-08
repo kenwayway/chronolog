@@ -14,9 +14,16 @@ export async function onRequest(context) {
         });
     }
 
-    // Skip auth for auth endpoint
+    // Skip auth for public endpoints
     const url = new URL(request.url);
-    if (url.pathname === '/api/auth') {
+
+    // Public routes: auth, image serving, and data reading (GET only)
+    const isPublicRoute =
+        url.pathname === '/api/auth' ||
+        url.pathname.startsWith('/api/image/') ||
+        (url.pathname === '/api/data' && request.method === 'GET');
+
+    if (isPublicRoute) {
         const response = await next();
         return addCorsHeaders(response);
     }

@@ -34,23 +34,30 @@ export function useCloudSync({ entries, tasks, categories, onImportData }) {
                     fetchRemoteData(token);
                 } else {
                     localStorage.removeItem(STORAGE_KEY);
+                    // Still fetch public data even if token expired
+                    fetchRemoteData(null);
                 }
             } catch (e) {
                 localStorage.removeItem(STORAGE_KEY);
+                fetchRemoteData(null);
             }
+        } else {
+            // No saved token - fetch public data for all visitors
+            fetchRemoteData(null);
         }
     }, []);
 
-    // Fetch data from cloud
+    // Fetch data from cloud (works with or without token)
     const fetchRemoteData = async (token) => {
         try {
             setSyncState(prev => ({ ...prev, isSyncing: true, error: null }));
 
-            const response = await fetch(`${getApiBase()}/api/data`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                },
-            });
+            const headers = {};
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
+            const response = await fetch(`${getApiBase()}/api/data`, { headers });
 
             if (!response.ok) {
                 throw new Error('Failed to fetch data');

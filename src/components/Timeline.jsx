@@ -388,7 +388,7 @@ function TimelineEntry({
                 margin: "0 -12px",
                 borderRadius: 4,
                 cursor: "default",
-                userSelect: "text",
+                userSelect: "none",
                 opacity: isTaskDone ? 0.7 : 1,
                 transition: "background-color 150ms ease",
             }}

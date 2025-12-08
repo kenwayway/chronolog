@@ -38,21 +38,34 @@ function App() {
         entry: null,
     });
 
+    // Check if user is logged in, show alert if not
+    const requireLogin = useCallback(() => {
+        if (!cloudSync.isLoggedIn) {
+            alert('Please connect to cloud sync to edit. Go to Settings > Cloud Sync to login.');
+            return false;
+        }
+        return true;
+    }, [cloudSync.isLoggedIn]);
+
     const handleLogIn = useCallback((content) => {
+        if (!requireLogin()) return;
         actions.logIn(content)
-    }, [actions])
+    }, [actions, requireLogin])
 
     const handleSwitch = useCallback((content) => {
+        if (!requireLogin()) return;
         actions.switchSession(content)
-    }, [actions])
+    }, [actions, requireLogin])
 
     const handleNote = useCallback((content) => {
+        if (!requireLogin()) return;
         actions.addNote(content)
-    }, [actions])
+    }, [actions, requireLogin])
 
     const handleLogOff = useCallback((content) => {
+        if (!requireLogin()) return;
         actions.logOff(content)
-    }, [actions])
+    }, [actions, requireLogin])
 
     const handleContextMenu = useCallback((entry, position) => {
         setContextMenu({ isOpen: true, position, entry })
@@ -63,27 +76,30 @@ function App() {
     }, [])
 
     const handleEditEntry = useCallback((entry) => {
+        if (!requireLogin()) return;
         setEditModal({ isOpen: true, entry })
-    }, [])
+    }, [requireLogin])
 
     const handleSaveEdit = useCallback((entryId, updates) => {
+        if (!requireLogin()) return;
         const cleanUpdates = Object.fromEntries(
             Object.entries(updates).filter(([, v]) => v !== undefined)
         )
         if (Object.keys(cleanUpdates).length > 0) {
             actions.updateEntry(entryId, cleanUpdates)
         }
-    }, [actions])
+    }, [actions, requireLogin])
 
     const closeEditModal = useCallback(() => {
         setEditModal({ isOpen: false, entry: null })
     }, [])
 
     const handleDeleteEntry = useCallback((entry) => {
+        if (!requireLogin()) return;
         if (confirm('Delete this entry?')) {
             actions.deleteEntry(entry.id)
         }
-    }, [actions])
+    }, [actions, requireLogin])
 
     const handleCopyEntry = useCallback((entry) => {
         navigator.clipboard.writeText(entry.content || '')
@@ -144,6 +160,7 @@ function App() {
                 onSwitch={handleSwitch}
                 onNote={handleNote}
                 onLogOff={handleLogOff}
+                cloudSync={cloudSync}
             />
 
             <TasksPanel
