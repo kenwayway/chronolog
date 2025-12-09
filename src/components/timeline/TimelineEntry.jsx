@@ -108,16 +108,93 @@ export function TimelineEntry({
     const isTaskDone = entry.type === ENTRY_TYPES.TASK_DONE;
     const isTask = entry.type === ENTRY_TYPES.TASK;
 
+    // Parse inline markdown: **bold**, `code`, ==highlight==, URLs
+    const parseInlineMarkdown = (text, keyPrefix = '') => {
+        if (!text) return null;
+
+        // Combined regex for all inline patterns
+        const inlineRegex = /(\*\*[^*]+\*\*|`[^`]+`|==[^=]+=\s*=|https?:\/\/[^\s]+)/g;
+        const parts = text.split(inlineRegex);
+
+        return parts.map((part, i) => {
+            const key = `${keyPrefix}-${i}`;
+
+            // Bold: **text**
+            if (part.startsWith('**') && part.endsWith('**')) {
+                return <strong key={key} className="md-bold">{part.slice(2, -2)}</strong>;
+            }
+
+            // Inline code: `code`
+            if (part.startsWith('`') && part.endsWith('`')) {
+                return <code key={key} className="md-inline-code">{part.slice(1, -1)}</code>;
+            }
+
+            // Highlight: ==text==
+            if (part.startsWith('==') && part.endsWith('==')) {
+                return <mark key={key} className="md-highlight">{part.slice(2, -2)}</mark>;
+            }
+
+            // URL
+            if (part.match(/^https?:\/\//)) {
+                return (
+                    <a
+                        key={key}
+                        href={part}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ color: "var(--accent)", wordBreak: "break-all" }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {part}
+                    </a>
+                );
+            }
+
+            return part;
+        });
+    };
+
     const linkifyContent = (text) => {
         if (!text) return null;
 
         const lines = text.split("\n");
+        const result = [];
+        let inCodeBlock = false;
+        let codeBlockLines = [];
+        let codeBlockLang = '';
 
-        return lines.map((line, lineIdx) => {
+        for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
+            const line = lines[lineIdx];
+
+            // Code block start/end: ```
+            if (line.startsWith('```')) {
+                if (!inCodeBlock) {
+                    inCodeBlock = true;
+                    codeBlockLang = line.slice(3).trim();
+                    codeBlockLines = [];
+                } else {
+                    // End code block
+                    result.push(
+                        <pre key={`code-${lineIdx}`} className="md-code-block">
+                            <code>{codeBlockLines.join('\n')}</code>
+                        </pre>
+                    );
+                    inCodeBlock = false;
+                    codeBlockLines = [];
+                    codeBlockLang = '';
+                }
+                continue;
+            }
+
+            if (inCodeBlock) {
+                codeBlockLines.push(line);
+                continue;
+            }
+
             // Image line
             if (line.startsWith("🖼️ ")) {
                 const imageUrl = line.replace("🖼️ ", "").trim();
-                return (
+                result.push(
                     <div key={lineIdx} className="timeline-image-container">
                         <img
                             src={imageUrl}
@@ -138,11 +215,12 @@ export function TimelineEntry({
                         </a>
                     </div>
                 );
+                continue;
             }
 
             // Location line
             if (line.startsWith("📍 ")) {
-                return (
+                result.push(
                     <div
                         key={lineIdx}
                         style={{
@@ -161,38 +239,38 @@ export function TimelineEntry({
                         </span>
                     </div>
                 );
+                continue;
             }
 
-            // Regular line with URL linkification
-            const urlRegex = /(https?:\/\/[^\s]+)/g;
-            const parts = line.split(urlRegex);
-            const linkedParts = parts.map((part, i) => {
-                if (part.match(urlRegex)) {
-                    return (
-                        <a
-                            key={i}
-                            href={part}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{ color: "var(--accent)", wordBreak: "break-all" }}
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            {part}
-                        </a>
-                    );
-                }
-                return part;
-            });
+            // Blockquote: > text
+            if (line.startsWith("> ")) {
+                result.push(
+                    <blockquote key={lineIdx} className="md-blockquote">
+                        {parseInlineMarkdown(line.slice(2), lineIdx)}
+                    </blockquote>
+                );
+                continue;
+            }
 
-            return lineIdx < lines.length - 1 ? (
+            // Regular line with inline markdown
+            result.push(
                 <span key={lineIdx}>
-                    {linkedParts}
-                    {"\n"}
+                    {parseInlineMarkdown(line, lineIdx)}
+                    {lineIdx < lines.length - 1 ? "\n" : ""}
                 </span>
-            ) : (
-                <span key={lineIdx}>{linkedParts}</span>
             );
-        });
+        }
+
+        // Handle unclosed code block
+        if (inCodeBlock && codeBlockLines.length > 0) {
+            result.push(
+                <pre key="code-unclosed" className="md-code-block">
+                    <code>{codeBlockLines.join('\n')}</code>
+                </pre>
+            );
+        }
+
+        return result;
     };
 
     const getLineColor = (position) => {
