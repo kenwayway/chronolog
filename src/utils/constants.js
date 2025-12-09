@@ -3,7 +3,8 @@ export const ENTRY_TYPES = {
     SESSION_START: 'SESSION_START',  // LOG IN
     NOTE: 'NOTE',                    // Mid-session note
     SESSION_END: 'SESSION_END',      // LOG OFF (includes duration)
-    TASK_DONE: 'TASK_DONE'           // Completed task (time-jumped)
+    TASK: 'TASK',                    // Pending task (synced with Google Tasks)
+    TASK_DONE: 'TASK_DONE'           // Completed task
 }
 
 // Session states
@@ -22,7 +23,7 @@ export const ACTIONS = {
     DELETE_ENTRY: 'DELETE_ENTRY',
     EDIT_ENTRY: 'EDIT_ENTRY',
     UPDATE_ENTRY: 'UPDATE_ENTRY',  // Update content, timestamp, category
-    TOGGLE_TODO: 'TOGGLE_TODO',
+    MARK_AS_TASK: 'MARK_AS_TASK',  // Change entry type to TASK
     LOAD_STATE: 'LOAD_STATE',
     SET_API_KEY: 'SET_API_KEY',
     SET_AI_CONFIG: 'SET_AI_CONFIG',

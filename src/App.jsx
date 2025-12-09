@@ -4,6 +4,7 @@ import { useCategories } from "./hooks/useCategories";
 import { useTheme } from "./hooks/useTheme";
 import { useCloudSync } from "./hooks/useCloudSync";
 import { useAI } from "./hooks/useAI";
+import { useGoogleTasks } from "./hooks/useGoogleTasks";
 import {
     Header,
     Timeline,
@@ -19,6 +20,7 @@ function App() {
     const { state, isStreaming, actions } = useSession();
     const { categories } = useCategories();
     const { isDark, toggleTheme } = useTheme();
+    const googleTasks = useGoogleTasks();
 
     // AI for auto category suggestion
     const aiConfig = {
@@ -132,19 +134,31 @@ function App() {
         navigator.clipboard.writeText(entry.content || '')
     }, [])
 
-    const handleToggleTodo = useCallback((entryId) => {
-        actions.toggleTodo(entryId)
-    }, [actions])
+    const handleMarkAsTask = useCallback(async (entry) => {
+        if (!requireLogin()) return;
 
-    const handleCompleteTask = useCallback((taskId) => {
-        actions.completeTask(taskId)
+        // Mark entry as TASK locally
+        actions.markAsTask(entry.id);
+
+        // Create Google Task if logged in
+        if (googleTasks.isLoggedIn) {
+            try {
+                await googleTasks.createTask(entry.content, entry.id);
+            } catch (err) {
+                console.error('Failed to create Google Task:', err);
+            }
+        }
+    }, [actions, requireLogin, googleTasks]);
+
+    const handleCompleteTask = useCallback((entryId) => {
+        actions.completeTask(entryId)
     }, [actions])
 
     return (
         <div className="min-h-screen flex flex-col font-mono" style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
             <Header
                 isStreaming={isStreaming}
-                pendingTaskCount={state.tasks.filter(t => !t.done).length}
+                pendingTaskCount={0}
                 selectedDate={selectedDate}
                 onDateChange={setSelectedDate}
                 isDark={isDark}
@@ -193,8 +207,8 @@ function App() {
             <TasksPanel
                 isOpen={sidebarOpen}
                 onClose={() => setSidebarOpen(false)}
-                tasks={state.tasks}
                 onCompleteTask={handleCompleteTask}
+                googleTasks={googleTasks}
             />
 
             <ActivityPanel
@@ -216,7 +230,8 @@ function App() {
                 onEdit={handleEditEntry}
                 onDelete={handleDeleteEntry}
                 onCopy={handleCopyEntry}
-                onToggleTodo={handleToggleTodo}
+                onMarkAsTask={handleMarkAsTask}
+                googleTasksEnabled={googleTasks.isLoggedIn}
             />
 
             <EditModal
@@ -239,6 +254,7 @@ function App() {
                 tasks={state.tasks}
                 onImportData={actions.importData}
                 cloudSync={cloudSync}
+                googleTasks={googleTasks}
             />
         </div >
     )

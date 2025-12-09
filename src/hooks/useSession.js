@@ -146,27 +146,30 @@ function sessionReducer(state, action) {
     }
 
     case ACTIONS.COMPLETE_TASK: {
-      const taskId = action.payload.taskId
-      const task = state.tasks.find(t => t.id === taskId)
-      if (!task) return state
+      // For Google Tasks: entryId is passed directly
+      // For legacy: taskId is passed and we find the entry
+      const { entryId, taskId } = action.payload
 
-      const doneEntry = {
-        id: generateId(),
-        type: ENTRY_TYPES.TASK_DONE,
-        content: task.content,
-        timestamp: Date.now(),
-        originalTaskId: taskId,
-        originalCreatedAt: task.createdAt
+      let targetEntryId = entryId
+      if (!targetEntryId && taskId) {
+        // Legacy: find entry by taskId
+        const task = state.tasks.find(t => t.id === taskId)
+        targetEntryId = task?.entryId
       }
 
-      const updatedTasks = state.tasks.map(t =>
-        t.id === taskId ? { ...t, done: true, completedAt: Date.now() } : t
-      )
+      if (!targetEntryId) return state
 
+      const entry = state.entries.find(e => e.id === targetEntryId)
+      if (!entry || entry.type === ENTRY_TYPES.TASK_DONE) return state
+
+      // Update entry: type → TASK_DONE, timestamp → now
       return {
         ...state,
-        entries: [...state.entries, doneEntry],
-        tasks: updatedTasks
+        entries: state.entries.map(e =>
+          e.id === targetEntryId
+            ? { ...e, type: ENTRY_TYPES.TASK_DONE, timestamp: Date.now() }
+            : e
+        )
       }
     }
 
@@ -230,41 +233,17 @@ function sessionReducer(state, action) {
       }
     }
 
-    case ACTIONS.TOGGLE_TODO: {
+    case ACTIONS.MARK_AS_TASK: {
       const { entryId } = action.payload
       const entry = state.entries.find(e => e.id === entryId)
-      if (!entry || entry.type !== 'NOTE') return state
+      if (!entry || entry.type === ENTRY_TYPES.TASK || entry.type === ENTRY_TYPES.TASK_DONE) return state
 
-      const isNowTodo = !entry.isTodo
-      let newTasks = state.tasks
-
-      if (isNowTodo) {
-        // Add to tasks
-        const taskId = generateId()
-        newTasks = [...state.tasks, {
-          id: taskId,
-          content: entry.content,
-          createdAt: entry.timestamp,
-          entryId: entry.id,
-          done: false
-        }]
-        return {
-          ...state,
-          entries: state.entries.map(e =>
-            e.id === entryId ? { ...e, isTodo: true, taskId } : e
-          ),
-          tasks: newTasks
-        }
-      } else {
-        // Remove from tasks
-        newTasks = state.tasks.filter(t => t.entryId !== entryId)
-        return {
-          ...state,
-          entries: state.entries.map(e =>
-            e.id === entryId ? { ...e, isTodo: false, taskId: null } : e
-          ),
-          tasks: newTasks
-        }
+      // Change entry type to TASK
+      return {
+        ...state,
+        entries: state.entries.map(e =>
+          e.id === entryId ? { ...e, type: ENTRY_TYPES.TASK } : e
+        )
       }
     }
 

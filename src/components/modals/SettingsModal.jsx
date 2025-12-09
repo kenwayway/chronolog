@@ -20,6 +20,7 @@ export function SettingsModal({
   tasks,
   onImportData,
   cloudSync,
+  googleTasks,
 }) {
   const [activeTab, setActiveTab] = useState("appearance");
   const [key, setKey] = useState(apiKey || "");
@@ -405,6 +406,42 @@ export function SettingsModal({
                       </button>
                       {cloudLoginError && <p className="settings-error">{cloudLoginError}</p>}
                       <p className="settings-hint">部署后在 Cloudflare 设置 AUTH_PASSWORD 环境变量</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Google Tasks */}
+                <div>
+                  <div className="settings-section-label">GOOGLE TASKS</div>
+                  {googleTasks?.isLoggedIn ? (
+                    <div className="space-y-2">
+                      <div className="settings-sync-status">
+                        <Cloud size={14} style={{ color: "var(--success)" }} />
+                        <span style={{ flex: 1, fontSize: 12, color: "var(--text-primary)" }}>已连接 Google Tasks</span>
+                      </div>
+                      <button
+                        onClick={() => googleTasks.logout()}
+                        className="btn-action btn-action-secondary"
+                        style={{ width: "100%", justifyContent: "center", color: "var(--error)" }}
+                      >
+                        <CloudOff size={14} />
+                        断开连接
+                      </button>
+                      <p className="settings-hint">右键条目选择"MARK TODO"添加到 Google Tasks</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <button
+                        onClick={() => googleTasks?.login()}
+                        disabled={googleTasks?.isLoading}
+                        className="btn-action btn-action-primary"
+                        style={{ width: "100%", justifyContent: "center" }}
+                      >
+                        <Cloud size={14} />
+                        {googleTasks?.isLoading ? "连接中..." : "连接 Google Tasks"}
+                      </button>
+                      {googleTasks?.error && <p className="settings-error">{googleTasks.error}</p>}
+                      <p className="settings-hint">连接后任务会同步到 Google Tasks</p>
                     </div>
                   )}
                 </div>

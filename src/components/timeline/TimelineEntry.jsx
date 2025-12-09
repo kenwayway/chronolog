@@ -65,7 +65,13 @@ export function TimelineEntry({
             case ENTRY_TYPES.NOTE:
                 return (
                     <span style={{ ...styles, color: "var(--text-dim)" }}>
-                        {entry.isTodo ? symbols.todo : symbols.note}
+                        {symbols.note}
+                    </span>
+                );
+            case ENTRY_TYPES.TASK:
+                return (
+                    <span style={{ ...styles, color: "var(--warning)" }}>
+                        {symbols.todo}
                     </span>
                 );
             case ENTRY_TYPES.TASK_DONE:
@@ -100,7 +106,7 @@ export function TimelineEntry({
     const isSessionStart = entry.type === ENTRY_TYPES.SESSION_START;
     const isSessionEnd = entry.type === ENTRY_TYPES.SESSION_END;
     const isTaskDone = entry.type === ENTRY_TYPES.TASK_DONE;
-    const isTodo = entry.isTodo;
+    const isTask = entry.type === ENTRY_TYPES.TASK;
 
     const linkifyContent = (text) => {
         if (!text) return null;
@@ -203,7 +209,7 @@ export function TimelineEntry({
     const getContentColor = () => {
         if (isSessionStart) return "var(--text-primary)";
         if (isSessionEnd) return "var(--text-muted)";
-        if (isTodo) return "var(--warning)";
+        if (isTask) return "var(--warning)";
         if (isTaskDone) return "var(--text-muted)";
         return "var(--text-secondary)";
     };
@@ -375,7 +381,7 @@ export function TimelineEntry({
                             [DONE]
                         </span>
                     )}
-                    {isTodo && (
+                    {isTask && (
                         <span
                             style={{
                                 fontSize: 11,

@@ -1,9 +1,62 @@
+import { useState, useEffect, useCallback } from "react";
+import { RefreshCw } from "lucide-react";
 import { useTheme } from "../../hooks/useTheme";
 
-export function TasksPanel({ isOpen, onClose, tasks, onCompleteTask }) {
+export function TasksPanel({
+  isOpen,
+  onClose,
+  onCompleteTask,
+  googleTasks
+}) {
   const { tokens, symbols } = useTheme();
-  const pendingTasks = tasks.filter((t) => !t.done);
-  const completedTasks = tasks.filter((t) => t.done);
+  const [tasks, setTasks] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  // Fetch tasks when panel opens
+  const fetchTasks = useCallback(async () => {
+    if (!googleTasks?.isLoggedIn) {
+      setTasks([]);
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+    try {
+      const taskList = await googleTasks.listTasks();
+      setTasks(taskList);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [googleTasks]);
+
+  useEffect(() => {
+    if (isOpen && googleTasks?.isLoggedIn) {
+      fetchTasks();
+    }
+  }, [isOpen, googleTasks?.isLoggedIn, fetchTasks]);
+
+  const handleComplete = async (task) => {
+    try {
+      // Parse entry ID from notes
+      const entryId = googleTasks.parseEntryId(task);
+
+      // Complete in Google Tasks
+      await googleTasks.completeTask(task.id);
+
+      // Update local entry if entryId exists
+      if (entryId) {
+        onCompleteTask(entryId);
+      }
+
+      // Remove from local list
+      setTasks(tasks.filter(t => t.id !== task.id));
+    } catch (err) {
+      setError(err.message);
+    }
+  };
 
   return (
     <>
@@ -53,9 +106,32 @@ export function TasksPanel({ isOpen, onClose, tasks, onCompleteTask }) {
             backgroundColor: "var(--bg-primary)",
           }}
         >
-          <div className="panel-title">
+          <div className="panel-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <span className="panel-title-prefix">{tokens.panelTitlePrefix}</span>
             <span>TASKS</span>
+            {googleTasks?.isLoggedIn && (
+              <button
+                onClick={fetchTasks}
+                disabled={isLoading}
+                style={{
+                  padding: 4,
+                  backgroundColor: "transparent",
+                  border: "none",
+                  cursor: isLoading ? "default" : "pointer",
+                  color: "var(--text-dim)",
+                  display: "flex",
+                  alignItems: "center",
+                }}
+                title="Refresh"
+              >
+                <RefreshCw
+                  size={12}
+                  style={{
+                    animation: isLoading ? "spin 1s linear infinite" : "none"
+                  }}
+                />
+              </button>
+            )}
           </div>
           <button
             onClick={onClose}
@@ -80,7 +156,57 @@ export function TasksPanel({ isOpen, onClose, tasks, onCompleteTask }) {
             fontFamily: "var(--font-mono)",
           }}
         >
-          {pendingTasks.length === 0 && completedTasks.length === 0 && (
+          {/* Not logged in */}
+          {!googleTasks?.isLoggedIn && (
+            <div
+              className="flex flex-col items-center justify-center"
+              style={{
+                height: 160,
+                color: "var(--text-muted)",
+                textAlign: "center",
+                opacity: 0.7,
+              }}
+            >
+              <div style={{ fontSize: 24, marginBottom: 8 }}>☁️</div>
+              <p style={{ fontSize: 12, marginBottom: 12 }}>
+                Connect Google Tasks in Settings
+              </p>
+            </div>
+          )}
+
+          {/* Error */}
+          {error && (
+            <div
+              style={{
+                padding: 12,
+                marginBottom: 16,
+                backgroundColor: "var(--danger-subtle)",
+                color: "var(--danger)",
+                borderRadius: 4,
+                fontSize: 12,
+              }}
+            >
+              {error}
+            </div>
+          )}
+
+          {/* Loading */}
+          {isLoading && tasks.length === 0 && (
+            <div
+              className="flex flex-col items-center justify-center"
+              style={{
+                height: 160,
+                color: "var(--text-muted)",
+                textAlign: "center",
+                opacity: 0.5,
+              }}
+            >
+              <div style={{ fontSize: 14 }}>Loading...</div>
+            </div>
+          )}
+
+          {/* Empty state */}
+          {googleTasks?.isLoggedIn && !isLoading && tasks.length === 0 && !error && (
             <div
               className="flex flex-col items-center justify-center"
               style={{
@@ -91,12 +217,15 @@ export function TasksPanel({ isOpen, onClose, tasks, onCompleteTask }) {
               }}
             >
               <div style={{ fontSize: 24, marginBottom: 8 }}>[]</div>
-              <p style={{ fontSize: 12 }}>No tasks detected.</p>
+              <p style={{ fontSize: 12 }}>No pending tasks.</p>
+              <p style={{ fontSize: 10, marginTop: 4, color: "var(--text-dim)" }}>
+                Right-click entries to mark as TODO
+              </p>
             </div>
           )}
 
-          {/* Pending */}
-          {pendingTasks.length > 0 && (
+          {/* Tasks list */}
+          {tasks.length > 0 && (
             <div style={{ marginBottom: 32 }}>
               <div className="section-header">
                 <span className="panel-title-prefix">
@@ -106,40 +235,17 @@ export function TasksPanel({ isOpen, onClose, tasks, onCompleteTask }) {
                   PENDING
                 </span>
                 <span style={{ color: "var(--accent)" }}>
-                  {pendingTasks.length}
+                  {tasks.length}
                 </span>
                 <div className="section-line" />
               </div>
               <div className="flex flex-col gap-2">
-                {pendingTasks.map((task) => (
+                {tasks.map((task) => (
                   <TaskItem
                     key={task.id}
                     task={task}
-                    onComplete={() => onCompleteTask(task.id)}
+                    onComplete={() => handleComplete(task)}
                   />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Completed */}
-          {completedTasks.length > 0 && (
-            <div style={{ marginBottom: 32 }}>
-              <div className="section-header">
-                <span className="panel-title-prefix">
-                  {symbols.archived}
-                </span>
-                <span>
-                  ARCHIVED
-                </span>
-                <span style={{ color: "var(--text-dim)" }}>
-                  {completedTasks.length}
-                </span>
-                <div className="section-line" />
-              </div>
-              <div className="flex flex-col gap-2">
-                {completedTasks.map((task) => (
-                  <TaskItem key={task.id} task={task} />
                 ))}
               </div>
             </div>
@@ -157,10 +263,9 @@ function TaskItem({ task, onComplete }) {
         display: "flex",
         gap: 12,
         padding: 14,
-        backgroundColor: task.done ? "var(--bg-tertiary)" : "var(--bg-primary)",
+        backgroundColor: "var(--bg-primary)",
         border: "1px solid var(--border-light)",
         borderRadius: 4,
-        opacity: task.done ? 0.6 : 1,
         transition: "all 150ms ease",
       }}
     >
@@ -175,9 +280,8 @@ function TaskItem({ task, onComplete }) {
       >
         <input
           type="checkbox"
-          checked={task.done}
+          checked={false}
           onChange={onComplete}
-          disabled={task.done}
           style={{
             position: "absolute",
             opacity: 0,
@@ -190,27 +294,15 @@ function TaskItem({ task, onComplete }) {
           style={{
             width: 16,
             height: 16,
-            border: task.done ? "none" : "1px solid var(--text-muted)",
+            border: "1px solid var(--text-muted)",
             borderRadius: 3,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            backgroundColor: task.done ? "var(--success)" : "transparent",
+            backgroundColor: "transparent",
             transition: "all 150ms ease",
           }}
-        >
-          {task.done && (
-            <span
-              style={{
-                color: "var(--bg-primary)",
-                fontSize: 12,
-                fontWeight: 700,
-              }}
-            >
-              ✓
-            </span>
-          )}
-        </div>
+        />
       </label>
 
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -220,12 +312,23 @@ function TaskItem({ task, onComplete }) {
             lineHeight: 1.6,
             overflowWrap: "break-word",
             fontFamily: "var(--font-primary)",
-            color: task.done ? "var(--text-muted)" : "var(--text-primary)",
-            textDecoration: task.done ? "line-through" : "none",
+            color: "var(--text-primary)",
           }}
         >
-          {task.content}
+          {task.title}
         </p>
+        {task.notes && !task.notes.startsWith('chronolog:') && (
+          <p
+            style={{
+              marginTop: 4,
+              fontSize: 11,
+              color: "var(--text-dim)",
+              lineHeight: 1.4,
+            }}
+          >
+            {task.notes}
+          </p>
+        )}
         <div
           style={{
             marginTop: 6,
@@ -237,15 +340,13 @@ function TaskItem({ task, onComplete }) {
           }}
         >
           <span style={{ fontFamily: "var(--font-mono)", opacity: 0.7 }}>
-            ID: {task.id.slice(-4)}
+            ID: {task.id.slice(-6)}
           </span>
-          <span>
-            {new Date(task.createdAt).toLocaleTimeString("en-US", {
-              hour: "2-digit",
-              minute: "2-digit",
-              hour12: false,
-            })}
-          </span>
+          {task.updated && (
+            <span>
+              {new Date(task.updated).toLocaleDateString()}
+            </span>
+          )}
         </div>
       </div>
     </div>

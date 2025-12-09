@@ -9,7 +9,8 @@ export function ContextMenu({
   onEdit,
   onDelete,
   onCopy,
-  onToggleTodo,
+  onMarkAsTask,
+  googleTasksEnabled = false,
 }) {
   const menuRef = useRef(null);
 
@@ -45,12 +46,18 @@ export function ContextMenu({
     onCopy(entry);
     onClose();
   };
-  const handleToggleTodo = () => {
-    onToggleTodo(entry.id);
+  const handleMarkAsTask = () => {
+    onMarkAsTask(entry);
     onClose();
   };
 
-  const isNote = entry.type === ENTRY_TYPES.NOTE;
+  // Can mark as task: NOTE or SESSION_START, not already TASK or TASK_DONE
+  const canMarkAsTask =
+    (entry.type === ENTRY_TYPES.NOTE || entry.type === ENTRY_TYPES.SESSION_START) &&
+    entry.type !== ENTRY_TYPES.TASK &&
+    entry.type !== ENTRY_TYPES.TASK_DONE;
+
+  const isTask = entry.type === ENTRY_TYPES.TASK;
 
   return (
     <div
@@ -69,10 +76,23 @@ export function ContextMenu({
         fontFamily: "var(--font-mono)",
       }}
     >
-      {isNote && (
-        <button className="context-menu-item" onClick={handleToggleTodo}>
-          {entry.isTodo ? "UNMARK TODO" : "MARK TODO"}
+      {canMarkAsTask && (
+        <button
+          className="context-menu-item"
+          onClick={handleMarkAsTask}
+          title={googleTasksEnabled ? "Adds to Google Tasks" : "Connect Google Tasks in Settings"}
+        >
+          MARK TODO
         </button>
+      )}
+
+      {isTask && (
+        <span
+          className="context-menu-item"
+          style={{ color: "var(--text-dim)", cursor: "default" }}
+        >
+          [PENDING TASK]
+        </span>
       )}
 
       <button className="context-menu-item" onClick={handleEdit}>
