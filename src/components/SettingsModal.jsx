@@ -16,9 +16,6 @@ export function SettingsModal({
   aiModel,
   onSaveAIConfig,
   categories,
-  onAddCategory,
-  onDeleteCategory,
-  onResetCategories,
   entries,
   tasks,
   onImportData,
@@ -29,8 +26,6 @@ export function SettingsModal({
   const [baseUrl, setBaseUrl] = useState(aiBaseUrl || "https://api.openai.com/v1");
   const [model, setModel] = useState(aiModel || "gpt-4o-mini");
   const [saved, setSaved] = useState(false);
-  const [newCatLabel, setNewCatLabel] = useState("");
-  const [newCatColor, setNewCatColor] = useState("#7aa2f7");
   const [cloudPassword, setCloudPassword] = useState("");
   const [cloudLoginError, setCloudLoginError] = useState("");
   const [isCleaningUp, setIsCleaningUp] = useState(false);
@@ -55,12 +50,7 @@ export function SettingsModal({
     if (e.target === e.currentTarget) onClose();
   };
 
-  const handleAddCategory = () => {
-    if (newCatLabel.trim()) {
-      onAddCategory(newCatLabel.trim(), newCatColor);
-      setNewCatLabel("");
-    }
-  };
+
 
   const handleExport = () => {
     const data = {
@@ -146,38 +136,16 @@ export function SettingsModal({
         </div>
       </div>
 
-      {/* Categories */}
+      {/* Categories (read-only display) */}
       <div>
-        <div className="flex-between" style={{ marginBottom: 8 }}>
-          <span className="settings-section-label" style={{ marginBottom: 0 }}>CATEGORIES</span>
-          <button onClick={onResetCategories} className="settings-reset-btn">RESET</button>
-        </div>
-        <div className="space-y-1 mb-3">
+        <span className="settings-section-label">CATEGORIES</span>
+        <div className="space-y-1">
           {categories?.map((cat) => (
             <div key={cat.id} className="settings-category-item">
               <span className="settings-category-dot" style={{ backgroundColor: cat.color }} />
               <span className="settings-category-label">{cat.label}</span>
-              <button onClick={() => onDeleteCategory(cat.id)} className="settings-category-delete">×</button>
             </div>
           ))}
-        </div>
-        <div className="flex gap-2">
-          <input
-            type="color"
-            value={newCatColor}
-            onChange={(e) => setNewCatColor(e.target.value)}
-            className="settings-color-picker"
-          />
-          <input
-            type="text"
-            value={newCatLabel}
-            onChange={(e) => setNewCatLabel(e.target.value)}
-            placeholder="New category..."
-            className="edit-modal-input"
-            style={{ flex: 1, height: 32 }}
-            onKeyDown={(e) => e.key === "Enter" && handleAddCategory()}
-          />
-          <button onClick={handleAddCategory} className="edit-modal-btn-save" style={{ height: 32, padding: "0 14px" }}>+</button>
         </div>
       </div>
     </div>

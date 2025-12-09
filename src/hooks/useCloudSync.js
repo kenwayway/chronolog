@@ -9,7 +9,7 @@ const getApiBase = () => {
     return '';
 };
 
-export function useCloudSync({ entries, tasks, categories, onImportData }) {
+export function useCloudSync({ entries, tasks, onImportData }) {
     const [syncState, setSyncState] = useState({
         isLoggedIn: false,
         isSyncing: false,
@@ -93,7 +93,7 @@ export function useCloudSync({ entries, tasks, categories, onImportData }) {
     const saveToCloud = useCallback(async () => {
         if (!tokenRef.current) return;
 
-        const dataToSync = { entries, tasks, categories };
+        const dataToSync = { entries, tasks };
         const dataString = JSON.stringify(dataToSync);
 
         // Skip if data hasn't changed
@@ -128,7 +128,7 @@ export function useCloudSync({ entries, tasks, categories, onImportData }) {
                 error: error.message
             }));
         }
-    }, [entries, tasks, categories]);
+    }, [entries, tasks]);
 
     // Auto-sync when data changes (debounced)
     useEffect(() => {
@@ -147,7 +147,7 @@ export function useCloudSync({ entries, tasks, categories, onImportData }) {
                 clearTimeout(syncTimeoutRef.current);
             }
         };
-    }, [entries, tasks, categories, syncState.isLoggedIn, saveToCloud]);
+    }, [entries, tasks, syncState.isLoggedIn, saveToCloud]);
 
     // Login with password
     const login = useCallback(async (password) => {

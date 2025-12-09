@@ -15,8 +15,7 @@ import { ActivityPanel } from "./components/ActivityPanel";
 
 function App() {
     const { state, isStreaming, actions } = useSession();
-    const { categories, addCategory, deleteCategory, resetToDefaults } =
-        useCategories();
+    const { categories } = useCategories();
     const { isDark, toggleTheme } = useTheme();
 
     // AI for auto category suggestion
@@ -32,7 +31,6 @@ function App() {
     const cloudSync = useCloudSync({
         entries: state.entries,
         tasks: state.tasks,
-        categories,
         onImportData: actions.importData,
     });
 
@@ -235,9 +233,6 @@ function App() {
                 aiModel={state.aiModel}
                 onSaveAIConfig={actions.setAIConfig}
                 categories={categories}
-                onAddCategory={addCategory}
-                onDeleteCategory={deleteCategory}
-                onResetCategories={resetToDefaults}
                 entries={state.entries}
                 tasks={state.tasks}
                 onImportData={actions.importData}

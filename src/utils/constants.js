@@ -41,11 +41,12 @@ export const STORAGE_KEYS = {
     CATEGORIES: 'chronolog_categories'
 }
 
-// Default categories
-export const DEFAULT_CATEGORIES = [
-    { id: 'work', label: 'Work', color: '#7aa2f7' },
-    { id: 'craft', label: 'Craft', color: '#bb9af7' },
-    { id: 'maintenance', label: 'Maintenance', color: '#9ece6a' },
-    { id: 'explore', label: 'Explore', color: '#e0af68' },
-    { id: 'learning', label: 'Learning', color: '#89ddff' },
+// Fixed categories (not user-editable)
+export const CATEGORIES = [
+    { id: 'hustle', label: 'Hustle', color: '#7aa2f7' },      // Work, 赚钱
+    { id: 'craft', label: 'Craft', color: '#bb9af7' },        // Coding, drawing, 创作
+    { id: 'hardware', label: 'Hardware', color: '#9ece6a' },  // Sleep, eat, workout
+    { id: 'kernel', label: 'Kernel', color: '#89ddff' },      // Learning, philosophy
+    { id: 'barter', label: 'Barter', color: '#e0af68' },      // Friends, social
+    { id: 'wonder', label: 'Wonder', color: '#f7768e' },      // 旅游, 电影, 放松
 ]
