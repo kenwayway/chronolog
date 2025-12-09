@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useTheme } from "../hooks/useTheme";
+import { useTheme } from "../../hooks/useTheme";
 
 export function ActivityPanel({
   isOpen,

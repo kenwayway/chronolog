@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { ENTRY_TYPES } from "../utils/constants";
+import { ENTRY_TYPES } from "../../utils/constants";
 
 export function ContextMenu({
   isOpen,

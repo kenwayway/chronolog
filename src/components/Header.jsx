@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { useTheme } from "../hooks/useTheme";
 import { formatDate } from "../utils/formatters";
-import { Calendar } from "./Calendar";
+import { Calendar } from "./common/Calendar";
 
 export function Header({
   isStreaming,

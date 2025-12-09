@@ -4,14 +4,16 @@ import { useCategories } from "./hooks/useCategories";
 import { useTheme } from "./hooks/useTheme";
 import { useCloudSync } from "./hooks/useCloudSync";
 import { useAI } from "./hooks/useAI";
-import { Header } from "./components/Header";
-import { Timeline } from "./components/Timeline";
-import { InputPanel } from "./components/InputPanel";
-import { TasksPanel } from "./components/TasksPanel";
-import { ContextMenu } from "./components/ContextMenu";
-import { SettingsModal } from "./components/SettingsModal";
-import { EditModal } from "./components/EditModal";
-import { ActivityPanel } from "./components/ActivityPanel";
+import {
+    Header,
+    Timeline,
+    InputPanel,
+    TasksPanel,
+    ContextMenu,
+    SettingsModal,
+    EditModal,
+    ActivityPanel,
+} from "./components";
 
 function App() {
     const { state, isStreaming, actions } = useSession();

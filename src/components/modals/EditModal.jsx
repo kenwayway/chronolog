@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Image, MapPin } from "lucide-react";
-import { Dropdown } from "./Dropdown";
+import { Dropdown } from "../common/Dropdown";
 
 export function EditModal({ isOpen, entry, onSave, onClose, categories }) {
   const [content, setContent] = useState("");
