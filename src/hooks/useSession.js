@@ -146,30 +146,28 @@ function sessionReducer(state, action) {
     }
 
     case ACTIONS.COMPLETE_TASK: {
-      // For Google Tasks: entryId is passed directly
-      // For legacy: taskId is passed and we find the entry
-      const { entryId, taskId } = action.payload
+      // entryId: the original TASK entry ID (from Google Task notes)
+      // content: the task content (from Google Task title)
+      const { entryId, content } = action.payload
 
-      let targetEntryId = entryId
-      if (!targetEntryId && taskId) {
-        // Legacy: find entry by taskId
-        const task = state.tasks.find(t => t.id === taskId)
-        targetEntryId = task?.entryId
+      // Create new TASK_DONE entry
+      const doneEntry = {
+        id: generateId(),
+        type: ENTRY_TYPES.TASK_DONE,
+        content: content || '',
+        timestamp: Date.now()
       }
 
-      if (!targetEntryId) return state
+      // If there's an original entry, delete it and add done entry
+      // Otherwise just add the done entry
+      let newEntries = [...state.entries, doneEntry]
+      if (entryId) {
+        newEntries = state.entries.filter(e => e.id !== entryId).concat(doneEntry)
+      }
 
-      const entry = state.entries.find(e => e.id === targetEntryId)
-      if (!entry || entry.type === ENTRY_TYPES.TASK_DONE) return state
-
-      // Update entry: type → TASK_DONE, timestamp → now
       return {
         ...state,
-        entries: state.entries.map(e =>
-          e.id === targetEntryId
-            ? { ...e, type: ENTRY_TYPES.TASK_DONE, timestamp: Date.now() }
-            : e
-        )
+        entries: newEntries
       }
     }
 
@@ -362,8 +360,8 @@ export function useSession() {
     dispatch({ type: ACTIONS.ADD_TASK, payload: { content, taskDescription } })
   }, [])
 
-  const completeTask = useCallback((taskId) => {
-    dispatch({ type: ACTIONS.COMPLETE_TASK, payload: { taskId } })
+  const completeTask = useCallback((entryId, content) => {
+    dispatch({ type: ACTIONS.COMPLETE_TASK, payload: { entryId, content } })
   }, [])
 
   const deleteEntry = useCallback((entryId) => {
@@ -391,8 +389,8 @@ export function useSession() {
     dispatch({ type: ACTIONS.SET_ENTRY_CATEGORY, payload: { entryId, category } })
   }, [])
 
-  const toggleTodo = useCallback((entryId) => {
-    dispatch({ type: ACTIONS.TOGGLE_TODO, payload: { entryId } })
+  const markAsTask = useCallback((entryId) => {
+    dispatch({ type: ACTIONS.MARK_AS_TASK, payload: { entryId } })
   }, [])
 
   const updateEntry = useCallback((entryId, updates) => {
@@ -422,7 +420,7 @@ export function useSession() {
       setApiKey,
       setAIConfig,
       setEntryCategory,
-      toggleTodo,
+      markAsTask,
       updateEntry,
       importData
     }

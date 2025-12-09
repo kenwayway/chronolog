@@ -46,10 +46,8 @@ export function TasksPanel({
       // Complete in Google Tasks
       await googleTasks.completeTask(task.id);
 
-      // Update local entry if entryId exists
-      if (entryId) {
-        onCompleteTask(entryId);
-      }
+      // Create TASK_DONE entry (and delete original if exists)
+      onCompleteTask(entryId, task.title);
 
       // Remove from local list
       setTasks(tasks.filter(t => t.id !== task.id));

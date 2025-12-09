@@ -158,6 +158,7 @@ export function InputPanel({ status, onLogIn, onSwitch, onNote, onLogOff, cloudS
         setShowLocationInput(false);
         setTextareaHeight(24);
         setIsFocused(false);
+        setMobileExpanded(false);
         setFocusMode(false);
         inputRef.current?.blur();
     };

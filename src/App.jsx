@@ -150,8 +150,8 @@ function App() {
         }
     }, [actions, requireLogin, googleTasks]);
 
-    const handleCompleteTask = useCallback((entryId) => {
-        actions.completeTask(entryId)
+    const handleCompleteTask = useCallback((entryId, content) => {
+        actions.completeTask(entryId, content)
     }, [actions])
 
     return (
