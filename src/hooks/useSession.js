@@ -203,6 +203,10 @@ function sessionReducer(state, action) {
       return {
         ...initialState,
         ...action.payload,
+        // Preserve AI config from current state (loaded separately)
+        apiKey: state.apiKey ?? action.payload.apiKey ?? initialState.apiKey,
+        aiBaseUrl: state.aiBaseUrl ?? action.payload.aiBaseUrl ?? initialState.aiBaseUrl,
+        aiModel: state.aiModel ?? action.payload.aiModel ?? initialState.aiModel,
         status: action.payload.sessionStart ? SESSION_STATUS.STREAMING : SESSION_STATUS.IDLE
       }
     }
