@@ -239,11 +239,33 @@ export function useCloudSync({ entries, tasks, categories, onImportData }) {
         await saveToCloud();
     }, [saveToCloud]);
 
+    // Cleanup unreferenced images
+    const cleanupImages = useCallback(async () => {
+        if (!tokenRef.current) {
+            throw new Error('Not logged in');
+        }
+
+        const response = await fetch(`${getApiBase()}/api/cleanup`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${tokenRef.current}`,
+            },
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Cleanup failed');
+        }
+
+        return await response.json();
+    }, []);
+
     return {
         ...syncState,
         login,
         logout,
         sync,
         uploadImage,
+        cleanupImages,
     };
 }

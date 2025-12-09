@@ -1,11 +1,11 @@
 import { useState, useRef } from "react";
-import { Settings, Download, Upload, Check, FolderOpen, Cloud, CloudOff, RefreshCw, Palette, Sparkles, Database } from "lucide-react";
+import { Settings, Download, Upload, Check, FolderOpen, Cloud, CloudOff, RefreshCw, Palette, Sparkles, Database, Trash2 } from "lucide-react";
 import { useTheme, ACCENT_COLORS } from "../hooks/useTheme.jsx";
 
 const TABS = [
-  { id: "appearance", label: "外观", icon: Palette },
+  { id: "appearance", label: "Appearance", icon: Palette },
   { id: "ai", label: "AI", icon: Sparkles },
-  { id: "sync", label: "同步", icon: Database },
+  { id: "sync", label: "Sync", icon: Database },
 ];
 
 export function SettingsModal({
@@ -33,6 +33,10 @@ export function SettingsModal({
   const [newCatColor, setNewCatColor] = useState("#7aa2f7");
   const [cloudPassword, setCloudPassword] = useState("");
   const [cloudLoginError, setCloudLoginError] = useState("");
+  const [isCleaningUp, setIsCleaningUp] = useState(false);
+  const [cleanupResult, setCleanupResult] = useState(null);
+  const [aiTestStatus, setAiTestStatus] = useState(null); // 'testing' | 'success' | 'error'
+  const [aiTestError, setAiTestError] = useState("");
   const { theme, setAccent, setStyle, availableStyles } = useTheme();
   const fileInputRef = useRef(null);
 
@@ -219,7 +223,59 @@ export function SettingsModal({
         />
       </div>
 
-      <p className="settings-hint">
+      {/* Test Connection */}
+      <button
+        onClick={async () => {
+          if (!baseUrl || !model || !key) {
+            setAiTestStatus('error');
+            setAiTestError('Please fill in all fields');
+            return;
+          }
+          setAiTestStatus('testing');
+          setAiTestError('');
+          try {
+            const normalizedBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+            const response = await fetch(`${normalizedBaseUrl}/chat/completions`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${key}`
+              },
+              body: JSON.stringify({
+                model: model,
+                messages: [{ role: 'user', content: 'Hi' }],
+                max_tokens: 5
+              })
+            });
+            if (!response.ok) {
+              const data = await response.json().catch(() => ({}));
+              throw new Error(data.error?.message || `HTTP ${response.status}`);
+            }
+            setAiTestStatus('success');
+          } catch (error) {
+            setAiTestStatus('error');
+            setAiTestError(error.message);
+          }
+        }}
+        disabled={aiTestStatus === 'testing'}
+        className="btn-action btn-action-secondary"
+        style={{ width: "100%", justifyContent: "center", marginTop: 8 }}
+      >
+        {aiTestStatus === 'testing' ? 'Testing...' : 'Test Connection'}
+      </button>
+
+      {aiTestStatus === 'success' && (
+        <p className="settings-hint" style={{ color: "var(--success)", marginTop: 8 }}>
+          ✓ Connection successful! AI is ready.
+        </p>
+      )}
+      {aiTestStatus === 'error' && (
+        <p className="settings-error" style={{ marginTop: 8 }}>
+          ✗ {aiTestError}
+        </p>
+      )}
+
+      <p className="settings-hint" style={{ marginTop: 8 }}>
         Supports OpenAI, DeepSeek, Claude, or any OpenAI-compatible API.
         <br />
         Used for auto-categorizing your entries.
@@ -351,6 +407,42 @@ export function SettingsModal({
           {entries?.length || 0} 条记录 · {tasks?.length || 0} 个任务
         </p>
       </div>
+
+      {/* Cleanup Images */}
+      {cloudSync?.isLoggedIn && (
+        <div>
+          <div className="settings-section-label">STORAGE</div>
+          <button
+            onClick={async () => {
+              if (!confirm('确定要清理未引用的图片吗？此操作不可撤销。')) return;
+              setIsCleaningUp(true);
+              setCleanupResult(null);
+              try {
+                const result = await cloudSync.cleanupImages();
+                setCleanupResult(result);
+              } catch (error) {
+                setCleanupResult({ error: error.message });
+              } finally {
+                setIsCleaningUp(false);
+              }
+            }}
+            disabled={isCleaningUp}
+            className="btn-action btn-action-secondary"
+            style={{ width: "100%", justifyContent: "center" }}
+          >
+            <Trash2 size={14} />
+            {isCleaningUp ? "清理中..." : "清理未使用的图片"}
+          </button>
+          {cleanupResult && (
+            <p className={cleanupResult.error ? "settings-error" : "settings-hint"} style={{ marginTop: 8 }}>
+              {cleanupResult.error
+                ? `错误: ${cleanupResult.error}`
+                : `已清理 ${cleanupResult.deletedCount} 张图片 (共 ${cleanupResult.totalImages} 张)`
+              }
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 

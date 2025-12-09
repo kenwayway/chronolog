@@ -51,10 +51,6 @@ export function InputPanel({ status, onLogIn, onSwitch, onNote, onLogOff, cloudS
   const fileInputRef = useRef(null);
   const isStreaming = status === SESSION_STATUS.STREAMING;
 
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
-
   // Handle mobile keyboard visibility using visualViewport API
   useEffect(() => {
     if (!window.visualViewport) return;

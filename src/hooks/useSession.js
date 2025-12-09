@@ -284,13 +284,29 @@ function sessionReducer(state, action) {
     }
 
     case ACTIONS.IMPORT_DATA: {
-      const { entries, tasks } = action.payload
+      const importedEntries = action.payload.entries || []
+      const importedTasks = action.payload.tasks || []
+
+      // Determine if there's an active session by scanning entries
+      let inSession = false
+      let lastSessionStart = null
+
+      for (const entry of importedEntries) {
+        if (entry.type === ENTRY_TYPES.SESSION_START) {
+          inSession = true
+          lastSessionStart = entry.timestamp
+        } else if (entry.type === ENTRY_TYPES.SESSION_END) {
+          inSession = false
+          lastSessionStart = null
+        }
+      }
+
       return {
         ...state,
-        entries: entries || [],
-        tasks: tasks || [],
-        status: SESSION_STATUS.IDLE,
-        sessionStart: null
+        entries: importedEntries,
+        tasks: importedTasks,
+        status: inSession ? SESSION_STATUS.STREAMING : SESSION_STATUS.IDLE,
+        sessionStart: lastSessionStart
       }
     }
 
