@@ -277,12 +277,18 @@
 
 /* ===== Timeline ===== */
 .timeline-entry {
-  padding: 1rem 1.5rem;
+  padding: 12px;
+  margin: 0 -12px;
+  border-radius: 4px;
   transition: background-color 150ms ease;
 }
 
 .timeline-entry:hover {
-  background-color: var(--bg-tertiary);
+  background-color: var(--bg-secondary);
+}
+
+.timeline-entry-done .timeline-content-col {
+  opacity: 0.7;
 }
 
 /* ===== Context Menu ===== */

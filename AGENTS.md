@@ -61,10 +61,11 @@ Categories are **not user-editable**. Defined in `constants.js`:
 |----|-------|-------|--------|
 | `hustle` | Hustle | #7aa2f7 (blue) | Work, 赚钱 |
 | `craft` | Craft | #bb9af7 (purple) | Coding, drawing, 创作 |
-| `hardware` | Hardware | #9ece6a (green) | Sleep, eat, workout |
+| `hardware` | Hardware | #4dcc59 (green) | Sleep, eat, workout |
 | `kernel` | Kernel | #89ddff (cyan) | Learning, philosophy, 整理笔记 |
-| `barter` | Barter | #e0af68 (orange) | Friends, social |
+| `barter` | Barter | #c8e068 (yellow-green) | Friends, social |
 | `wonder` | Wonder | #f7768e (pink) | 旅游, 电影, 放松, 探索 |
+| `beans` | Beans | #ff9e64 (orange) | Small knowledge tidbits △ |
 
 ### Application State
 ```typescript
@@ -132,9 +133,10 @@ interface State {
 │   ├── hooks/
 │   │   ├── useSession.js       # Core state: entries, tasks, reducer
 │   │   ├── useCloudSync.js     # Auth, sync, image upload
-│   │   ├── useCategories.js    # Category CRUD
-│   │   ├── useTheme.jsx        # Theme and dark mode
-│   │   └── useAI.js            # Auto-categorization via AI
+│   │   ├── useCategories.js    # Category constants
+│   │   ├── useTheme.jsx        # Theme, accent colors, dynamic heading colors
+│   │   ├── useAICategories.js  # Auto-categorization via backend API
+│   │   └── useGoogleTasks.js   # Google Tasks integration
 │   ├── styles/
 │   │   ├── base.css            # CSS variables, typography
 │   │   ├── components.css      # Component-specific styles
@@ -150,6 +152,7 @@ interface State {
 │   │   ├── data.js             # GET/PUT /api/data
 │   │   ├── upload.js           # POST /api/upload
 │   │   ├── cleanup.js          # POST /api/cleanup
+│   │   ├── categorize.js       # POST /api/categorize (AI via backend)
 │   │   └── image/[id].js       # GET /api/image/:id
 └── public/                     # PWA manifest, icons
 ```
@@ -243,6 +246,16 @@ Authorization: Bearer <token>
 Response 200: { "deleted": string[], "kept": string[] }
 ```
 
+### AI Categorization
+```http
+POST /api/categorize
+Authorization: Bearer <token>
+Content-Type: application/json
+Body: { "content": "string", "categories": Category[] }
+
+Response 200: { "category": "string|null", "raw": "string" }
+```
+
 ---
 
 ## Component Relationships
@@ -267,6 +280,9 @@ Response 200: { "deleted": string[], "kept": string[] }
 | `AUTH_PASSWORD` | Password for cloud sync authentication |
 | `CHRONOLOG_KV` | KV namespace binding for data storage |
 | `CHRONOLOG_R2` | R2 bucket binding for image storage |
+| `AI_API_KEY` | OpenAI API key for backend categorization |
+| `AI_BASE_URL` | (Optional) Custom AI API base URL |
+| `AI_MODEL` | (Optional) AI model name, default: gpt-4o-mini |
 
 ---
 

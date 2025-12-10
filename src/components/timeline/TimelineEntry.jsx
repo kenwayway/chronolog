@@ -334,18 +334,13 @@ export function TimelineEntry({
 
   return (
     <div
-      className="timeline-entry"
+      className={`timeline-entry ${isTaskDone ? 'timeline-entry-done' : ''}`}
       style={{
         display: "flex",
         alignItems: "flex-start",
         gap: 16,
-        padding: "12px",
-        margin: "0 -12px",
-        borderRadius: 4,
         cursor: "default",
         userSelect: "none",
-        opacity: isTaskDone ? 0.7 : 1,
-        transition: "background-color 150ms ease",
       }}
       onContextMenu={handleContextMenu}
       onTouchStart={handleTouchStart}
