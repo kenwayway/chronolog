@@ -51,13 +51,12 @@ export function ContextMenu({
     onClose();
   };
 
-  // Can mark as task: NOTE or SESSION_START, not already TASK or TASK_DONE
+  // Can mark as task: NOTE or SESSION_START, not already a task
+  const isTask = entry.contentType === 'task';
+  const isTaskDone = isTask && entry.fieldValues?.done;
   const canMarkAsTask =
     (entry.type === ENTRY_TYPES.NOTE || entry.type === ENTRY_TYPES.SESSION_START) &&
-    entry.type !== ENTRY_TYPES.TASK &&
-    entry.type !== ENTRY_TYPES.TASK_DONE;
-
-  const isTask = entry.type === ENTRY_TYPES.TASK;
+    !isTask;
 
   return (
     <div

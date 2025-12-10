@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import type { Entry, CloudData, ImportDataPayload } from '../types'
+import type { Entry, ContentType, CloudData, ImportDataPayload } from '../types'
 
 const STORAGE_KEY = 'chronolog_cloud_auth'
 const SYNC_DEBOUNCE_MS = 2000
@@ -35,6 +35,7 @@ interface CleanupResult {
 
 interface UseCloudSyncProps {
     entries: Entry[]
+    contentTypes: ContentType[]
     onImportData: (data: ImportDataPayload) => void
 }
 
@@ -52,7 +53,7 @@ const getApiBase = (): string => {
     return ''
 }
 
-export function useCloudSync({ entries, onImportData }: UseCloudSyncProps): UseCloudSyncReturn {
+export function useCloudSync({ entries, contentTypes, onImportData }: UseCloudSyncProps): UseCloudSyncReturn {
     const [syncState, setSyncState] = useState<CloudSyncState>({
         isLoggedIn: false,
         isSyncing: false,
@@ -86,6 +87,7 @@ export function useCloudSync({ entries, onImportData }: UseCloudSyncProps): UseC
             if (remoteData && remoteData.entries && remoteData.entries.length > 0) {
                 onImportData({
                     entries: remoteData.entries,
+                    contentTypes: remoteData.contentTypes,
                 })
                 lastDataRef.current = JSON.stringify(remoteData)
             }
@@ -131,7 +133,7 @@ export function useCloudSync({ entries, onImportData }: UseCloudSyncProps): UseC
     const saveToCloud = useCallback(async () => {
         if (!tokenRef.current) return
 
-        const dataToSync = { entries }
+        const dataToSync = { entries, contentTypes }
         const dataString = JSON.stringify(dataToSync)
 
         // Skip if data hasn't changed

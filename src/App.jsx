@@ -29,6 +29,7 @@ function App() {
     // Cloud sync
     const cloudSync = useCloudSync({
         entries: state.entries,
+        contentTypes: state.contentTypes,
         onImportData: actions.importData,
     });
 
@@ -135,8 +136,11 @@ function App() {
     const handleMarkAsTask = useCallback(async (entry) => {
         if (!requireLogin()) return;
 
-        // Mark entry as TASK locally
-        actions.markAsTask(entry.id);
+        // Mark entry as task by setting contentType to 'task'
+        actions.updateEntry(entry.id, {
+            contentType: 'task',
+            fieldValues: { done: false }
+        });
 
         // Create Google Task if logged in
         if (googleTasks.isLoggedIn) {
@@ -149,7 +153,10 @@ function App() {
     }, [actions, requireLogin, googleTasks]);
 
     const handleCompleteTask = useCallback((entryId, content) => {
-        actions.completeTask(entryId, content)
+        // Mark task as done by updating fieldValues
+        if (entryId) {
+            actions.updateEntry(entryId, { fieldValues: { done: true } });
+        }
     }, [actions])
 
     return (
@@ -200,6 +207,7 @@ function App() {
                 onNote={handleNote}
                 onLogOff={handleLogOff}
                 cloudSync={cloudSync}
+                contentTypes={state.contentTypes}
             />
 
             <TasksPanel

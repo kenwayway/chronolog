@@ -56,6 +56,23 @@ export function TimelineEntry({
       );
     }
 
+    // ContentType-based symbols (task)
+    if (entry.contentType === 'task') {
+      const isDone = entry.fieldValues?.done;
+      if (isDone) {
+        return (
+          <span style={{ ...styles, color: "var(--success)", fontWeight: 700 }}>
+            {symbols.done}
+          </span>
+        );
+      }
+      return (
+        <span style={{ ...styles, color: "var(--warning)" }}>
+          {symbols.todo}
+        </span>
+      );
+    }
+
     switch (entry.type) {
       case ENTRY_TYPES.SESSION_START:
         return (
@@ -73,25 +90,12 @@ export function TimelineEntry({
       case ENTRY_TYPES.SESSION_END:
         return <span style={{ ...styles, color: "var(--text-muted)" }}>{symbols.sessionEnd}</span>;
       case ENTRY_TYPES.NOTE:
+      default:
         return (
           <span style={{ ...styles, color: "var(--text-dim)" }}>
             {symbols.note}
           </span>
         );
-      case ENTRY_TYPES.TASK:
-        return (
-          <span style={{ ...styles, color: "var(--warning)" }}>
-            {symbols.todo}
-          </span>
-        );
-      case ENTRY_TYPES.TASK_DONE:
-        return (
-          <span style={{ ...styles, color: "var(--success)", fontWeight: 700 }}>
-            {symbols.done}
-          </span>
-        );
-      default:
-        return <span style={{ ...styles, color: "var(--text-dim)" }}>{symbols.note}</span>;
     }
   };
 
@@ -115,8 +119,8 @@ export function TimelineEntry({
     : null;
   const isSessionStart = entry.type === ENTRY_TYPES.SESSION_START;
   const isSessionEnd = entry.type === ENTRY_TYPES.SESSION_END;
-  const isTaskDone = entry.type === ENTRY_TYPES.TASK_DONE;
-  const isTask = entry.type === ENTRY_TYPES.TASK;
+  const isTask = entry.contentType === 'task';
+  const isTaskDone = isTask && entry.fieldValues?.done;
 
   // Parse inline markdown: **bold**, `code`, ==highlight==, URLs
   const parseInlineMarkdown = (text, keyPrefix = '') => {
@@ -327,8 +331,8 @@ export function TimelineEntry({
   const getContentColor = () => {
     if (isSessionStart) return "var(--text-primary)";
     if (isSessionEnd) return "var(--text-muted)";
-    if (isTask) return "var(--warning)";
     if (isTaskDone) return "var(--text-muted)";
+    if (isTask) return "var(--warning)";
     return "var(--text-secondary)";
   };
 

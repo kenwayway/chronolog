@@ -1,12 +1,16 @@
 import { useState, useRef, useEffect } from "react";
 import { Terminal } from "lucide-react";
-import { SESSION_STATUS } from "../../utils/constants";
+import { SESSION_STATUS, BUILTIN_CONTENT_TYPES } from "../../utils/constants";
 import { FocusMode } from "./FocusMode";
 import { AttachmentPreview } from "./AttachmentPreview";
 import { InputActions } from "./InputActions";
+import { ContentTypeSelector } from "./ContentTypeSelector";
+import { DynamicFieldForm } from "./DynamicFieldForm";
 
-export function InputPanel({ status, onLogIn, onSwitch, onNote, onLogOff, cloudSync }) {
+export function InputPanel({ status, onLogIn, onSwitch, onNote, onLogOff, cloudSync, contentTypes }) {
     const [input, setInput] = useState("");
+    const [selectedContentType, setSelectedContentType] = useState(undefined);
+    const [fieldValues, setFieldValues] = useState({});
     const [isFocused, setIsFocused] = useState(false);
     const [mobileExpanded, setMobileExpanded] = useState(false);
     const [textareaHeight, setTextareaHeight] = useState(24);
@@ -148,12 +152,16 @@ export function InputPanel({ status, onLogIn, onSwitch, onNote, onLogOff, cloudS
         switch (action) {
             case "logIn": onLogIn(content); break;
             case "switch": onSwitch(content); break;
-            case "note": onNote(content); break;
+            case "note":
+                onNote(content, { contentType: selectedContentType, fieldValues });
+                break;
             case "logOff": onLogOff(content); break;
         }
         setInput("");
         setImageUrl("");
         setLocation("");
+        setSelectedContentType(undefined);
+        setFieldValues({});
         setShowImageInput(false);
         setShowLocationInput(false);
         setTextareaHeight(24);
@@ -289,6 +297,27 @@ export function InputPanel({ status, onLogIn, onSwitch, onNote, onLogOff, cloudS
                 onToggleLocation={() => setShowLocationInput(!showLocationInput)}
                 onOpenFocusMode={() => setFocusMode(true)}
             />
+
+            {/* ContentType selector - only show when streaming (adding notes) */}
+            {isStreaming && (isFocused || inFocusMode) && (
+                <>
+                    <ContentTypeSelector
+                        value={selectedContentType}
+                        onChange={(typeId) => {
+                            setSelectedContentType(typeId);
+                            setFieldValues({});
+                        }}
+                        contentTypes={contentTypes || BUILTIN_CONTENT_TYPES}
+                    />
+                    {selectedContentType && (
+                        <DynamicFieldForm
+                            contentType={(contentTypes || BUILTIN_CONTENT_TYPES).find(t => t.id === selectedContentType)}
+                            fieldValues={fieldValues}
+                            onChange={setFieldValues}
+                        />
+                    )}
+                </>
+            )}
         </div>
     );
 

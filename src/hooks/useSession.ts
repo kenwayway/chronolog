@@ -1,8 +1,9 @@
 import { useReducer, useEffect, useCallback } from 'react'
-import { ENTRY_TYPES, SESSION_STATUS, ACTIONS, STORAGE_KEYS } from '../utils/constants'
+import { ENTRY_TYPES, SESSION_STATUS, ACTIONS, STORAGE_KEYS, BUILTIN_CONTENT_TYPES } from '../utils/constants'
 import { generateId } from '../utils/formatters'
 import type {
     Entry,
+    ContentType,
     SessionState,
     SessionAction,
     UseSessionReturn,
@@ -17,6 +18,7 @@ const initialState: SessionState = {
     status: SESSION_STATUS.IDLE,
     sessionStart: null,
     entries: [],
+    contentTypes: [...BUILTIN_CONTENT_TYPES],
     apiKey: null,
     aiBaseUrl: 'https://api.openai.com/v1',
     aiModel: 'gpt-4o-mini'
@@ -79,7 +81,9 @@ function sessionReducer(state: SessionState, action: SessionAction): SessionStat
                 id: generateId(),
                 type: ENTRY_TYPES.NOTE,
                 content: action.payload.content,
-                timestamp: Date.now()
+                timestamp: Date.now(),
+                contentType: action.payload.contentType,
+                fieldValues: action.payload.fieldValues
             }
 
             return {
@@ -109,27 +113,6 @@ function sessionReducer(state: SessionState, action: SessionAction): SessionStat
             }
         }
 
-        case ACTIONS.COMPLETE_TASK: {
-            const { entryId, content } = action.payload
-
-            const doneEntry: Entry = {
-                id: generateId(),
-                type: ENTRY_TYPES.TASK_DONE,
-                content: content || '',
-                timestamp: Date.now()
-            }
-
-            let newEntries = [...state.entries, doneEntry]
-            if (entryId) {
-                newEntries = state.entries.filter(e => e.id !== entryId).concat(doneEntry)
-            }
-
-            return {
-                ...state,
-                entries: newEntries
-            }
-        }
-
         case ACTIONS.DELETE_ENTRY: {
             const entryId = action.payload.entryId
             return {
@@ -149,9 +132,24 @@ function sessionReducer(state: SessionState, action: SessionAction): SessionStat
         }
 
         case ACTIONS.LOAD_STATE: {
+            // Merge built-in content types with loaded ones
+            const loadedContentTypes = action.payload.contentTypes || []
+            const builtInIds = BUILTIN_CONTENT_TYPES.map(ct => ct.id)
+
+            // Use loaded versions of built-in types (user may have edited fields)
+            // Add any custom types the user created
+            const mergedContentTypes = [
+                ...BUILTIN_CONTENT_TYPES.map(builtIn => {
+                    const loaded = loadedContentTypes.find(ct => ct.id === builtIn.id)
+                    return loaded ? { ...loaded, builtIn: true } : builtIn
+                }),
+                ...loadedContentTypes.filter(ct => !builtInIds.includes(ct.id))
+            ]
+
             return {
                 ...initialState,
                 ...action.payload,
+                contentTypes: mergedContentTypes,
                 apiKey: state.apiKey ?? action.payload.apiKey ?? initialState.apiKey,
                 aiBaseUrl: state.aiBaseUrl ?? action.payload.aiBaseUrl ?? initialState.aiBaseUrl,
                 aiModel: state.aiModel ?? action.payload.aiModel ?? initialState.aiModel,
@@ -185,23 +183,8 @@ function sessionReducer(state: SessionState, action: SessionAction): SessionStat
             }
         }
 
-        case ACTIONS.MARK_AS_TASK: {
-            const { entryId } = action.payload
-            const entry = state.entries.find(e => e.id === entryId)
-            if (!entry || entry.type === ENTRY_TYPES.TASK || entry.type === ENTRY_TYPES.TASK_DONE) {
-                return state
-            }
-
-            return {
-                ...state,
-                entries: state.entries.map(e =>
-                    e.id === entryId ? { ...e, type: ENTRY_TYPES.TASK } : e
-                )
-            }
-        }
-
         case ACTIONS.UPDATE_ENTRY: {
-            const { entryId, content, timestamp, category } = action.payload
+            const { entryId, content, timestamp, category, contentType, fieldValues } = action.payload
             return {
                 ...state,
                 entries: state.entries.map(e => {
@@ -210,6 +193,8 @@ function sessionReducer(state: SessionState, action: SessionAction): SessionStat
                     if (content !== undefined) updated.content = content
                     if (timestamp !== undefined) updated.timestamp = timestamp
                     if (category !== undefined) updated.category = category
+                    if (contentType !== undefined) updated.contentType = contentType
+                    if (fieldValues !== undefined) updated.fieldValues = fieldValues
                     return updated
                 })
             }
@@ -217,6 +202,7 @@ function sessionReducer(state: SessionState, action: SessionAction): SessionStat
 
         case ACTIONS.IMPORT_DATA: {
             const importedEntries = action.payload.entries || []
+            const importedContentTypes = action.payload.contentTypes || []
 
             let inSession = false
             let lastSessionStart: number | null = null
@@ -231,11 +217,56 @@ function sessionReducer(state: SessionState, action: SessionAction): SessionStat
                 }
             }
 
+            // Merge content types
+            const builtInIds = BUILTIN_CONTENT_TYPES.map(ct => ct.id)
+            const mergedContentTypes = [
+                ...BUILTIN_CONTENT_TYPES.map(builtIn => {
+                    const imported = importedContentTypes.find(ct => ct.id === builtIn.id)
+                    return imported ? { ...imported, builtIn: true } : builtIn
+                }),
+                ...importedContentTypes.filter(ct => !builtInIds.includes(ct.id))
+            ]
+
             return {
                 ...state,
                 entries: importedEntries,
+                contentTypes: mergedContentTypes.length > 0 ? mergedContentTypes : state.contentTypes,
                 status: inSession ? SESSION_STATUS.STREAMING : SESSION_STATUS.IDLE,
                 sessionStart: lastSessionStart
+            }
+        }
+
+        case ACTIONS.ADD_CONTENT_TYPE: {
+            const newType = action.payload.contentType
+            // Ensure unique ID and set order
+            const maxOrder = Math.max(...state.contentTypes.map(ct => ct.order ?? 0), 0)
+            return {
+                ...state,
+                contentTypes: [...state.contentTypes, { ...newType, order: maxOrder + 1 }]
+            }
+        }
+
+        case ACTIONS.UPDATE_CONTENT_TYPE: {
+            const { id, updates } = action.payload
+            return {
+                ...state,
+                contentTypes: state.contentTypes.map(ct =>
+                    ct.id === id ? { ...ct, ...updates } : ct
+                )
+            }
+        }
+
+        case ACTIONS.DELETE_CONTENT_TYPE: {
+            const { id } = action.payload
+            const typeToDelete = state.contentTypes.find(ct => ct.id === id)
+            // Can't delete built-in types
+            if (typeToDelete?.builtIn) {
+                console.warn('Cannot delete built-in content type')
+                return state
+            }
+            return {
+                ...state,
+                contentTypes: state.contentTypes.filter(ct => ct.id !== id)
             }
         }
 
@@ -278,25 +309,29 @@ export function useSession(): UseSessionReturn {
         const stateToSave = {
             status: state.status,
             sessionStart: state.sessionStart,
-            entries: state.entries
+            entries: state.entries,
+            contentTypes: state.contentTypes
         }
         localStorage.setItem(STORAGE_KEYS.STATE, JSON.stringify(stateToSave))
-    }, [state.status, state.sessionStart, state.entries])
+    }, [state.status, state.sessionStart, state.entries, state.contentTypes])
 
     const logIn = useCallback((content: string) => {
         dispatch({ type: ACTIONS.LOG_IN, payload: { content } })
     }, [])
 
-    const addNote = useCallback((content: string) => {
-        dispatch({ type: ACTIONS.NOTE, payload: { content } })
+    const addNote = useCallback((content: string, options?: { contentType?: string; fieldValues?: Record<string, unknown> }) => {
+        dispatch({
+            type: ACTIONS.NOTE,
+            payload: {
+                content,
+                contentType: options?.contentType,
+                fieldValues: options?.fieldValues
+            }
+        })
     }, [])
 
     const logOff = useCallback((content: string = '') => {
         dispatch({ type: ACTIONS.LOG_OFF, payload: { content } })
-    }, [])
-
-    const completeTask = useCallback((entryId: string | undefined, content: string) => {
-        dispatch({ type: ACTIONS.COMPLETE_TASK, payload: { entryId, content } })
     }, [])
 
     const deleteEntry = useCallback((entryId: string) => {
@@ -324,10 +359,6 @@ export function useSession(): UseSessionReturn {
         dispatch({ type: ACTIONS.SET_ENTRY_CATEGORY, payload: { entryId, category } })
     }, [])
 
-    const markAsTask = useCallback((entryId: string) => {
-        dispatch({ type: ACTIONS.MARK_AS_TASK, payload: { entryId } })
-    }, [])
-
     const updateEntry = useCallback((entryId: string, updates: Omit<UpdateEntryPayload, 'entryId'>) => {
         dispatch({ type: ACTIONS.UPDATE_ENTRY, payload: { entryId, ...updates } })
     }, [])
@@ -340,6 +371,18 @@ export function useSession(): UseSessionReturn {
         dispatch({ type: ACTIONS.IMPORT_DATA, payload: data })
     }, [])
 
+    const addContentType = useCallback((contentType: ContentType) => {
+        dispatch({ type: ACTIONS.ADD_CONTENT_TYPE, payload: { contentType } })
+    }, [])
+
+    const updateContentType = useCallback((id: string, updates: Partial<Omit<ContentType, 'id' | 'builtIn'>>) => {
+        dispatch({ type: ACTIONS.UPDATE_CONTENT_TYPE, payload: { id, updates } })
+    }, [])
+
+    const deleteContentType = useCallback((id: string) => {
+        dispatch({ type: ACTIONS.DELETE_CONTENT_TYPE, payload: { id } })
+    }, [])
+
     return {
         state,
         isStreaming: state.status === SESSION_STATUS.STREAMING,
@@ -348,15 +391,16 @@ export function useSession(): UseSessionReturn {
             switchSession,
             addNote,
             logOff,
-            completeTask,
             deleteEntry,
             editEntry,
             setApiKey,
             setAIConfig,
             setEntryCategory,
-            markAsTask,
             updateEntry,
-            importData
+            importData,
+            addContentType,
+            updateContentType,
+            deleteContentType
         }
     }
 }
