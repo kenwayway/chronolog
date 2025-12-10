@@ -2,7 +2,7 @@ import { useState } from "react";
 import { MapPin } from "lucide-react";
 import { ENTRY_TYPES } from "../../utils/constants";
 import { formatTime, formatDuration, formatDate } from "../../utils/formatters";
-import { useTheme } from "../../hooks/useTheme.jsx";
+import { useTheme } from "../../hooks/useTheme";
 
 export function TimelineEntry({
   entry,

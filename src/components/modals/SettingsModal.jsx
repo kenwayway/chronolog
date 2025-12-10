@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { Settings, Download, Upload, Check, FolderOpen, Cloud, CloudOff, RefreshCw, Palette, Sparkles, Database, Trash2 } from "lucide-react";
-import { useTheme, ACCENT_COLORS } from "../../hooks/useTheme.jsx";
+import { useTheme, ACCENT_COLORS } from "../../hooks/useTheme";
 
 const TABS = [
   { id: "appearance", label: "Appearance", icon: Palette },

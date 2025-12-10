@@ -42,9 +42,9 @@ export async function onRequest(context) {
         }
 
         const token = authHeader.slice(7);
-        // Simple token validation - in production use JWT
-        const validToken = await env.CHRONOLOG_KV.get('auth_token');
-        if (token !== validToken) {
+        // Multi-device token validation: check if this specific token exists
+        const tokenValid = await env.CHRONOLOG_KV.get(`auth_token:${token}`);
+        if (!tokenValid) {
             return new Response(JSON.stringify({ error: 'Invalid token' }), {
                 status: 401,
                 headers: {

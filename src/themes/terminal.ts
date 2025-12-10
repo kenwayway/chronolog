@@ -1,7 +1,9 @@
 // Terminal Theme Configuration
 // The default theme - inspired by code editors and terminal UIs
 
-export const terminalTheme = {
+import type { ThemeConfig } from './index'
+
+export const terminalTheme: ThemeConfig = {
     id: 'terminal',
     name: 'Terminal',
 
@@ -42,6 +44,6 @@ export const terminalTheme = {
         typewriter: false,
         transitions: true,
     },
-};
+}
 
-export default terminalTheme;
+export default terminalTheme

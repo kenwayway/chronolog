@@ -1,10 +1,12 @@
 // WW2 Spy Theme Configuration
 // Inspired by 1940s classified documents and typewriter aesthetics
 
-export const spyTheme = {
+import type { ThemeConfig } from './index'
+
+export const spyTheme: ThemeConfig = {
     id: 'spy',
     name: 'Operation',
-    lightModeOnly: true,  // This theme only supports light mode
+    lightModeOnly: true,
 
     // Typography
     fonts: {
@@ -28,15 +30,14 @@ export const spyTheme = {
         todo: '□',
         done: '☑',
         pending: '▶',
-        archived: '◼',
+        beans: '△',
     },
 
     // Section decorations
     decorations: {
         enabled: true,
         paperTexture: true,
-        stamps: ['TOP SECRET', 'CLASSIFIED', 'CONFIDENTIAL'],
-        coffeeStains: true,
+        stamps: true,
     },
 
     // Animation settings
@@ -44,6 +45,6 @@ export const spyTheme = {
         typewriter: true,
         transitions: true,
     },
-};
+}
 
-export default spyTheme;
+export default spyTheme

@@ -1,10 +1,18 @@
-import { createContext, useContext, useState, useEffect } from 'react'
-import { getTheme, getThemeList } from '../themes'
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { getTheme, getThemeList, ThemeConfig } from '../themes'
 
 const THEME_STORAGE_KEY = 'chronolog_theme'
 
 // ===== Accent Color Palette =====
-export const ACCENT_COLORS = {
+export type AccentColorKey = 'blue' | 'indigo' | 'violet' | 'rose' | 'amber' | 'emerald' | 'cyan'
+
+interface AccentColor {
+    name: string
+    value: string
+    light: string
+}
+
+export const ACCENT_COLORS: Record<AccentColorKey, AccentColor> = {
     blue: { name: 'Blue', value: '#3b82f6', light: '#60a5fa' },
     indigo: { name: 'Indigo', value: '#6366f1', light: '#818cf8' },
     violet: { name: 'Violet', value: '#8b5cf6', light: '#a78bfa' },
@@ -15,16 +23,38 @@ export const ACCENT_COLORS = {
 }
 
 // ===== Theme State =====
-const defaultThemeState = {
-    mode: 'dark',           // 'dark' | 'light'
-    accent: 'emerald',      // key from ACCENT_COLORS
-    style: 'terminal',      // theme style id
+export type ThemeMode = 'dark' | 'light'
+
+interface ThemeState {
+    mode: ThemeMode
+    accent: AccentColorKey
+    style: string
 }
 
-const ThemeContext = createContext(null)
+const defaultThemeState: ThemeState = {
+    mode: 'dark',
+    accent: 'emerald',
+    style: 'terminal',
+}
 
-export function ThemeProvider({ children }) {
-    const [themeState, setThemeState] = useState(defaultThemeState)
+interface ThemeContextValue {
+    themeState: ThemeState
+    themeConfig: ThemeConfig
+    setMode: (mode: ThemeMode) => void
+    setAccent: (accent: AccentColorKey) => void
+    setStyle: (style: string) => void
+    toggleMode: () => void
+    availableStyles: { id: string; name: string }[]
+}
+
+const ThemeContext = createContext<ThemeContextValue | null>(null)
+
+interface ThemeProviderProps {
+    children: ReactNode
+}
+
+export function ThemeProvider({ children }: ThemeProviderProps) {
+    const [themeState, setThemeState] = useState<ThemeState>(defaultThemeState)
 
     // Load from localStorage
     useEffect(() => {
@@ -45,7 +75,7 @@ export function ThemeProvider({ children }) {
         const accent = ACCENT_COLORS[themeState.accent] || ACCENT_COLORS.blue
 
         // Helper: shift hue of hex color
-        const shiftHue = (hex, degrees) => {
+        const shiftHue = (hex: string, degrees: number): string => {
             // Parse hex to RGB
             const r = parseInt(hex.slice(1, 3), 16) / 255
             const g = parseInt(hex.slice(3, 5), 16) / 255
@@ -53,11 +83,9 @@ export function ThemeProvider({ children }) {
 
             // RGB to HSL
             const max = Math.max(r, g, b), min = Math.min(r, g, b)
-            let h, s, l = (max + min) / 2
+            let h = 0, s = 0, l = (max + min) / 2
 
-            if (max === min) {
-                h = s = 0
-            } else {
+            if (max !== min) {
                 const d = max - min
                 s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
                 switch (max) {
@@ -71,7 +99,7 @@ export function ThemeProvider({ children }) {
             h = (h + degrees / 360 + 1) % 1
 
             // HSL to RGB
-            const hue2rgb = (p, q, t) => {
+            const hue2rgb = (p: number, q: number, t: number): number => {
                 if (t < 0) t += 1
                 if (t > 1) t -= 1
                 if (t < 1 / 6) return p + (q - p) * 6 * t
@@ -80,7 +108,7 @@ export function ThemeProvider({ children }) {
                 return p
             }
 
-            let r2, g2, b2
+            let r2: number, g2: number, b2: number
             if (s === 0) {
                 r2 = g2 = b2 = l
             } else {
@@ -113,15 +141,15 @@ export function ThemeProvider({ children }) {
         localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(themeState))
     }, [themeState])
 
-    const setMode = (mode) => {
+    const setMode = (mode: ThemeMode) => {
         setThemeState(prev => ({ ...prev, mode }))
     }
 
-    const setAccent = (accent) => {
+    const setAccent = (accent: AccentColorKey) => {
         setThemeState(prev => ({ ...prev, accent }))
     }
 
-    const setStyle = (style) => {
+    const setStyle = (style: string) => {
         const newThemeConfig = getTheme(style)
         // Force light mode for lightModeOnly themes
         if (newThemeConfig.lightModeOnly) {
@@ -156,7 +184,23 @@ export function ThemeProvider({ children }) {
     )
 }
 
-export function useTheme() {
+export interface UseThemeReturn {
+    theme: ThemeState
+    setMode: (mode: ThemeMode) => void
+    setAccent: (accent: AccentColorKey) => void
+    toggleMode: () => void
+    toggleTheme: () => void
+    isDark: boolean
+    themeConfig: ThemeConfig
+    setStyle: (style: string) => void
+    availableStyles: { id: string; name: string }[]
+    canToggleMode: boolean
+    symbols: ThemeConfig['symbols']
+    tokens: ThemeConfig['tokens']
+    fonts: ThemeConfig['fonts']
+}
+
+export function useTheme(): UseThemeReturn {
     const context = useContext(ThemeContext)
     if (!context) {
         throw new Error('useTheme must be used within ThemeProvider')
@@ -183,4 +227,3 @@ export function useTheme() {
         fonts: themeConfig.fonts,
     }
 }
-

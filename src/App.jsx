@@ -29,7 +29,6 @@ function App() {
     // Cloud sync
     const cloudSync = useCloudSync({
         entries: state.entries,
-        tasks: state.tasks,
         onImportData: actions.importData,
     });
 
@@ -250,7 +249,6 @@ function App() {
                 onSaveAIConfig={actions.setAIConfig}
                 categories={categories}
                 entries={state.entries}
-                tasks={state.tasks}
                 onImportData={actions.importData}
                 cloudSync={cloudSync}
                 googleTasks={googleTasks}

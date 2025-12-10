@@ -27,32 +27,20 @@ npm run build    # Build for production
 ```typescript
 interface Entry {
   id: string                    // UUID, generated via generateId()
-  type: 'SESSION_START' | 'NOTE' | 'SESSION_END' | 'TASK_DONE'
+  type: 'SESSION_START' | 'NOTE' | 'SESSION_END' | 'TASK' | 'TASK_DONE'
   content: string               // User input text
   timestamp: number             // Unix timestamp (ms)
   
   // Optional fields by type:
   sessionId?: string            // SESSION_START only
   duration?: number             // SESSION_END only (ms since session start)
-  isTodo?: boolean              // NOTE only
-  taskId?: string               // NOTE with isTodo=true
   category?: string             // Category ID (e.g., 'work', 'craft')
   originalTaskId?: string       // TASK_DONE only
   originalCreatedAt?: number    // TASK_DONE only
 }
 ```
 
-### Task Object
-```typescript
-interface Task {
-  id: string                    // UUID
-  content: string               // Task description
-  createdAt: number             // Timestamp when created
-  entryId: string               // Reference to the NOTE entry
-  done: boolean                 // Completion status
-  completedAt?: number          // Timestamp when marked done
-}
-```
+
 
 ### Category (Fixed Constants)
 Categories are **not user-editable**. Defined in `constants.js`:
@@ -73,7 +61,6 @@ interface State {
   status: 'IDLE' | 'STREAMING'  // Session status
   sessionStart: number | null   // Active session start time
   entries: Entry[]              // All timeline entries
-  tasks: Task[]                 // Active and completed tasks
   apiKey: string | null         // OpenAI API key
   aiBaseUrl: string             // AI endpoint base URL
   aiModel: string               // AI model name
@@ -188,7 +175,9 @@ interface State {
 
 ## API Reference
 
-### Authentication
+### Authentication (Multi-Device)
+Each device gets its own token. Tokens are stored independently in KV.
+
 ```http
 POST /api/auth
 Content-Type: application/json
@@ -197,6 +186,8 @@ Body: { "password": "string" }
 Response 200: { "success": true, "token": "uuid-timestamp", "expiresAt": number }
 Response 401: { "error": "Invalid password" }
 ```
+
+**Token Storage**: `auth_token:{token}` = `"valid"` (30-day TTL per device)
 
 ### Data CRUD
 ```http
@@ -325,7 +316,7 @@ Edit `useCloudSync.js`. Key constants:
 
 3. **Image References** - Images in entry content use format `🖼️ /api/image/{filename}`. The cleanup endpoint parses content to find referenced images.
 
-4. **Auth Token Storage** - Token stored in memory (`tokenRef`), not in state. Token metadata (including `expiresAt`) persisted to localStorage.
+4. **Auth Token Storage** - Token stored in memory (`tokenRef`), not in state. Token metadata persisted to localStorage. Backend supports multi-device: each token stored as `auth_token:{token}` in KV.
 
 5. **Timestamp Ordering** - SWITCH action uses `now + 1` for new session start to guarantee ordering after session end.
 

@@ -1,4 +1,5 @@
 // POST /api/auth - Authenticate with password
+// Supports multi-device: each login creates a unique token
 export async function onRequestPost(context) {
     const { request, env } = context;
 
@@ -16,11 +17,14 @@ export async function onRequestPost(context) {
             return Response.json({ error: 'Invalid password' }, { status: 401 });
         }
 
-        // Generate a simple token (in production, use JWT)
+        // Generate a unique token for this device
         const token = crypto.randomUUID() + '-' + Date.now();
 
-        // Store token in KV with 30 day expiration
-        await env.CHRONOLOG_KV.put('auth_token', token, { expirationTtl: 30 * 24 * 60 * 60 });
+        // Store token with unique key (supports multiple devices)
+        // Key format: auth_token:{token} - each device gets its own entry
+        await env.CHRONOLOG_KV.put(`auth_token:${token}`, 'valid', {
+            expirationTtl: 30 * 24 * 60 * 60  // 30 days
+        });
 
         return Response.json({
             success: true,

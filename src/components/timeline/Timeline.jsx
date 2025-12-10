@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { ENTRY_TYPES } from "../../utils/constants";
-import { useTheme } from "../../hooks/useTheme.jsx";
+import { useTheme } from "../../hooks/useTheme";
 import { TimelineEntry } from "./TimelineEntry";
 
 const ENTRIES_PER_PAGE = 20;

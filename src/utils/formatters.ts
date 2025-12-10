@@ -1,9 +1,7 @@
 /**
  * Format a timestamp to HH:MM format
- * @param {number} timestamp - Unix timestamp in milliseconds
- * @returns {string} Formatted time string
  */
-export function formatTime(timestamp) {
+export function formatTime(timestamp: number): string {
     const date = new Date(timestamp)
     return date.toLocaleTimeString('en-US', {
         hour: '2-digit',
@@ -14,10 +12,8 @@ export function formatTime(timestamp) {
 
 /**
  * Format a timestamp to full date string
- * @param {number} timestamp - Unix timestamp in milliseconds
- * @returns {string} Formatted date string
  */
-export function formatDate(timestamp) {
+export function formatDate(timestamp: number): string {
     const date = new Date(timestamp)
     return date.toLocaleDateString('en-US', {
         month: 'short',
@@ -27,10 +23,8 @@ export function formatDate(timestamp) {
 
 /**
  * Format duration in milliseconds to human readable format
- * @param {number} durationMs - Duration in milliseconds
- * @returns {string} Formatted duration string
  */
-export function formatDuration(durationMs) {
+export function formatDuration(durationMs: number): string {
     const seconds = Math.floor(durationMs / 1000)
     const minutes = Math.floor(seconds / 60)
     const hours = Math.floor(minutes / 60)
@@ -50,19 +44,15 @@ export function formatDuration(durationMs) {
 
 /**
  * Generate a unique ID
- * @returns {string} Unique identifier
  */
-export function generateId() {
+export function generateId(): string {
     return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
 }
 
 /**
  * Check if two timestamps are on the same day
- * @param {number} ts1 - First timestamp
- * @param {number} ts2 - Second timestamp
- * @returns {boolean} True if same day
  */
-export function isSameDay(ts1, ts2) {
+export function isSameDay(ts1: number, ts2: number): boolean {
     const d1 = new Date(ts1)
     const d2 = new Date(ts2)
     return d1.toDateString() === d2.toDateString()
