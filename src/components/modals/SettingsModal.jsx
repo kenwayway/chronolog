@@ -227,101 +227,33 @@ export function SettingsModal({
             )}
             {activeTab === "ai" && (
               <div className="space-y-4">
-                <div className="settings-section-label">AI SETTINGS (OpenAI Compatible)</div>
+                <div className="settings-section-label">AUTO-CATEGORIZATION</div>
 
-                {/* Base URL */}
-                <div>
-                  <label className="settings-input-label">Base URL</label>
-                  <input
-                    type="text"
-                    value={baseUrl}
-                    onChange={(e) => setBaseUrl(e.target.value)}
-                    placeholder="https://api.openai.com/v1"
-                    className="edit-modal-input"
-                  />
-                </div>
-
-                {/* Model */}
-                <div>
-                  <label className="settings-input-label">Model</label>
-                  <input
-                    type="text"
-                    value={model}
-                    onChange={(e) => setModel(e.target.value)}
-                    placeholder="gpt-4o-mini"
-                    className="edit-modal-input"
-                  />
-                </div>
-
-                {/* API Key */}
-                <div>
-                  <label className="settings-input-label">API Key</label>
-                  <input
-                    type="password"
-                    value={key}
-                    onChange={(e) => setKey(e.target.value)}
-                    placeholder="sk-..."
-                    className="edit-modal-input"
-                  />
-                </div>
-
-                {/* Test Connection */}
-                <button
-                  onClick={async () => {
-                    if (!baseUrl || !model || !key) {
-                      setAiTestStatus('error');
-                      setAiTestError('Please fill in all fields');
-                      return;
-                    }
-                    setAiTestStatus('testing');
-                    setAiTestError('');
-                    try {
-                      const normalizedBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
-                      const response = await fetch(`${normalizedBaseUrl}/chat/completions`, {
-                        method: 'POST',
-                        headers: {
-                          'Content-Type': 'application/json',
-                          'Authorization': `Bearer ${key}`
-                        },
-                        body: JSON.stringify({
-                          model: model,
-                          messages: [{ role: 'user', content: 'Hi' }],
-                          max_tokens: 5
-                        })
-                      });
-                      if (!response.ok) {
-                        const data = await response.json().catch(() => ({}));
-                        throw new Error(data.error?.message || `HTTP ${response.status}`);
-                      }
-                      setAiTestStatus('success');
-                    } catch (error) {
-                      setAiTestStatus('error');
-                      setAiTestError(error.message);
-                    }
-                  }}
-                  disabled={aiTestStatus === 'testing'}
-                  className="btn-action btn-action-secondary"
-                  style={{ width: "100%", justifyContent: "center", marginTop: 8 }}
-                >
-                  {aiTestStatus === 'testing' ? 'Testing...' : 'Test Connection'}
-                </button>
-
-                {aiTestStatus === 'success' && (
-                  <p className="settings-hint" style={{ color: "var(--success)", marginTop: 8 }}>
-                    ✓ Connection successful! AI is ready.
-                  </p>
+                {cloudSync?.isLoggedIn ? (
+                  <div className="space-y-3">
+                    <p className="settings-hint" style={{ color: "var(--success)" }}>
+                      ✓ AI 分类已启用
+                    </p>
+                    <p className="settings-hint">
+                      新 entry 会自动分类。AI 配置在 Cloudflare 后台设置。
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <p className="settings-hint" style={{ color: "var(--text-muted)" }}>
+                      ⚠ 需要先连接 Cloud Sync 才能使用 AI 分类
+                    </p>
+                    <p className="settings-hint">
+                      在 Cloudflare 后台设置以下环境变量：
+                      <br />
+                      • <code style={{ fontSize: 11 }}>AI_API_KEY</code> - OpenAI API Key
+                      <br />
+                      • <code style={{ fontSize: 11 }}>AI_BASE_URL</code> - API Base URL（可选）
+                      <br />
+                      • <code style={{ fontSize: 11 }}>AI_MODEL</code> - 模型名称（可选）
+                    </p>
+                  </div>
                 )}
-                {aiTestStatus === 'error' && (
-                  <p className="settings-error" style={{ marginTop: 8 }}>
-                    ✗ {aiTestError}
-                  </p>
-                )}
-
-                <p className="settings-hint" style={{ marginTop: 8 }}>
-                  Supports OpenAI, DeepSeek, Claude, or any OpenAI-compatible API.
-                  <br />
-                  Used for auto-categorizing your entries.
-                </p>
               </div>
             )}
             {activeTab === "sync" && (

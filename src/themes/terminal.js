@@ -21,13 +21,13 @@ export const terminalTheme = {
 
     // Entry symbols
     symbols: {
-        sessionStart: '»',
+        sessionStart: '▶',
         sessionEnd: '■',
         note: '·',
         todo: '○',
         done: '✓',
         pending: '»',
-        archived: '■',
+        beans: '△',
     },
 
     // Section decorations

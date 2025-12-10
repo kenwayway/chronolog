@@ -3,7 +3,7 @@ import { useSession } from "./hooks/useSession";
 import { useCategories } from "./hooks/useCategories";
 import { useTheme } from "./hooks/useTheme";
 import { useCloudSync } from "./hooks/useCloudSync";
-import { useAI } from "./hooks/useAI";
+import { useAICategories } from "./hooks/useAICategories";
 import { useGoogleTasks } from "./hooks/useGoogleTasks";
 import {
     Header,
@@ -22,13 +22,8 @@ function App() {
     const { isDark, toggleTheme } = useTheme();
     const googleTasks = useGoogleTasks();
 
-    // AI for auto category suggestion
-    const aiConfig = {
-        apiKey: state.apiKey,
-        baseUrl: state.aiBaseUrl,
-        model: state.aiModel
-    };
-    const { suggestCategory } = useAI(aiConfig);
+    // AI categorization via backend API
+    const { categorize } = useAICategories();
     const lastEntryCountRef = useRef(state.entries.length);
 
     // Cloud sync
@@ -38,22 +33,26 @@ function App() {
         onImportData: actions.importData,
     });
 
-    // Auto-suggest category for new entries
+    // Auto-suggest category for new entries (via backend API)
     useEffect(() => {
         const currentCount = state.entries.length;
-        if (currentCount > lastEntryCountRef.current && state.apiKey && state.aiBaseUrl && state.aiModel) {
+        if (currentCount > lastEntryCountRef.current && cloudSync.isLoggedIn) {
             const newEntry = state.entries[state.entries.length - 1];
             // Only suggest for notes and session starts with content, and without existing category
             if (newEntry && newEntry.content && !newEntry.category) {
-                suggestCategory(newEntry.content, categories).then(result => {
-                    if (result.categoryId && result.confidence > 0.5) {
-                        actions.updateEntry(newEntry.id, { category: result.categoryId });
-                    }
-                });
+                // Get token from cloudSync
+                const token = localStorage.getItem('chronolog_cloud_token');
+                if (token) {
+                    categorize(newEntry.content, token).then(categoryId => {
+                        if (categoryId) {
+                            actions.updateEntry(newEntry.id, { category: categoryId });
+                        }
+                    });
+                }
             }
         }
         lastEntryCountRef.current = currentCount;
-    }, [state.entries.length, state.apiKey, state.aiBaseUrl, state.aiModel, categories, suggestCategory, actions]);
+    }, [state.entries.length, cloudSync.isLoggedIn, categorize, actions]);
 
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [leftSidebarOpen, setLeftSidebarOpen] = useState(false);

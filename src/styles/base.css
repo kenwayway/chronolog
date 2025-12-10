@@ -229,3 +229,46 @@ a:hover {
   color: var(--text-secondary);
   font-style: italic;
 }
+
+/* Headings - CLI aesthetic, same font size */
+.md-h1 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0 8px;
+  color: var(--heading-h1);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+.md-h1-deco {
+  color: var(--heading-h1);
+  opacity: 0.5;
+}
+
+.md-h2 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 10px 0 6px;
+  color: var(--heading-h2);
+  font-weight: 500;
+}
+
+.md-h2-prefix {
+  color: var(--heading-h2);
+  opacity: 0.7;
+}
+
+.md-h3 {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 8px 0 4px;
+  color: var(--heading-h3);
+}
+
+.md-h3-prefix {
+  color: var(--heading-h3);
+  font-weight: 600;
+}

@@ -88,7 +88,8 @@ export function useGoogleTasks() {
 
     const login = useCallback(() => {
         if (tokenClient) {
-            tokenClient.requestAccessToken({ prompt: 'consent' });
+            // prompt: '' will use cached consent if available
+            tokenClient.requestAccessToken({ prompt: '' });
         }
     }, [tokenClient]);
 
