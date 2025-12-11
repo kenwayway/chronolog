@@ -35,13 +35,13 @@ export const ACTIONS = {
 
 // Fixed categories (life areas, not user-editable)
 export const CATEGORIES: Category[] = [
-  { id: 'hustle', label: 'Hustle', color: '#7aa2f7' },
-  { id: 'craft', label: 'Craft', color: '#bb9af7' },
-  { id: 'hardware', label: 'Hardware', color: '#4dcc59' },
-  { id: 'sparks', label: 'Sparks', color: '#89ddff' },
-  { id: 'barter', label: 'Barter', color: '#c8e068' },
-  { id: 'wander', label: 'Wander', color: '#f7768e' },
-  { id: 'beans', label: 'Beans', color: '#ff9e64' },
+  { id: 'hustle', label: 'Hustle', color: '#7aa2f7', description: 'Work, career, making money, business' },
+  { id: 'craft', label: 'Craft', color: '#bb9af7', description: 'Coding, drawing, creating, building projects' },
+  { id: 'hardware', label: 'Hardware', color: '#4dcc59', description: 'Sleep, eating, workout, physical health' },
+  { id: 'sparks', label: 'Sparks', color: '#89ddff', description: 'Internalized ideas, insights, personal thoughts, reflections' },
+  { id: 'barter', label: 'Barter', color: '#c8e068', description: 'Friends, social activities, relationships' },
+  { id: 'wander', label: 'Wander', color: '#f7768e', description: 'Travel, movies, relaxation, exploration' },
+  { id: 'beans', label: 'Beans', color: '#ff9e64', description: 'External knowledge, fun facts, trivia learned from others' },
 ]
 
 // Built-in content types (user can't delete, but can edit fields/options)
@@ -85,6 +85,17 @@ export const BUILTIN_CONTENT_TYPES: ContentType[] = [
     ],
     builtIn: true,
     order: 3
+  },
+  {
+    id: 'mood',
+    name: 'Mood',
+    fields: [
+      { id: 'feeling', name: 'Feeling', type: 'dropdown', options: ['Happy', 'Calm', 'Tired', 'Anxious', 'Sad', 'Angry'], default: 'Calm' },
+      { id: 'energy', name: 'Energy', type: 'number', default: 3 },
+      { id: 'trigger', name: 'Trigger', type: 'dropdown', options: ['Work', 'Health', 'Social', 'Money', 'Family', 'Sleep', 'Weather', 'Other'] }
+    ],
+    builtIn: true,
+    order: 4
   }
 ]
 

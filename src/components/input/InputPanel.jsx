@@ -166,10 +166,6 @@ export const InputPanel = forwardRef(function InputPanel({
   };
 
   const handleSubmit = (action) => {
-    if (!cloudSync?.isLoggedIn) {
-      alert('Please connect to cloud sync to edit. Go to Settings > Cloud Sync to login.');
-      return;
-    }
     if (!input.trim() && action !== "logOff") return;
     const content = buildEntryContent();
 

@@ -134,6 +134,28 @@ function App() {
     pendingLinkRef.current = null; // Clear pending link
   }, []);
 
+  // Navigate to an entry (switch date if needed)
+  const navigateToEntry = useCallback((targetEntry) => {
+    if (!targetEntry) return;
+    const targetDate = new Date(targetEntry.timestamp);
+    targetDate.setHours(0, 0, 0, 0);
+
+    // Switch to the target date
+    setSelectedDate(targetDate);
+
+    // After a short delay, scroll to the entry
+    setTimeout(() => {
+      const entryElement = document.querySelector(`[data-entry-id="${targetEntry.id}"]`);
+      if (entryElement) {
+        entryElement.scrollIntoView({ behavior: "smooth", block: "center" });
+        entryElement.style.backgroundColor = "var(--accent-subtle)";
+        setTimeout(() => {
+          entryElement.style.backgroundColor = "";
+        }, 1500);
+      }
+    }, 100);
+  }, []);
+
   // Filtered entries for timeline
   const getFilteredEntries = () => {
     // When category filter is active, show ALL matching entries (ignore date)
@@ -175,6 +197,7 @@ function App() {
           categories={categories}
           onContextMenu={handleContextMenu}
           categoryFilter={categoryFilter}
+          onNavigateToEntry={navigateToEntry}
         />
       </main>
 
@@ -227,6 +250,7 @@ function App() {
         categories={categories}
         onSave={handlers.handleSaveEdit}
         onClose={closeEditModal}
+        allEntries={state.entries}
       />
 
       <SettingsModal

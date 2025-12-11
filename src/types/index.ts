@@ -16,6 +16,7 @@ export interface Category {
   id: CategoryId
   label: string
   color: string
+  description: string  // Description for AI categorization
 }
 
 // ============================================

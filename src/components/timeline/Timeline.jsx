@@ -6,7 +6,7 @@ import { TimelineEntry } from "./TimelineEntry";
 
 const ENTRIES_PER_PAGE = 20;
 
-export function Timeline({ entries, allEntries, status, categories, onContextMenu, categoryFilter = [] }) {
+export function Timeline({ entries, allEntries, status, categories, onContextMenu, categoryFilter = [], onNavigateToEntry }) {
     const { theme } = useTheme();
     const [currentPage, setCurrentPage] = useState(0);
 
@@ -160,6 +160,7 @@ export function Timeline({ entries, allEntries, status, categories, onContextMen
                     lineState={entryLineStates[entry.id]}
                     isLightMode={theme.mode === "light"}
                     showDate={isFilterMode}
+                    onNavigateToEntry={onNavigateToEntry}
                 />
             ))}
         </div>

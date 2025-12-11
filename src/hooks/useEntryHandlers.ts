@@ -44,39 +44,33 @@ export function useEntryHandlers({
     }, [isLoggedIn])
 
     const handleLogIn = useCallback((content: string) => {
-        if (!requireLogin()) return
         actions.logIn(content)
-    }, [actions, requireLogin])
+    }, [actions])
 
     const handleSwitch = useCallback((content: string) => {
-        if (!requireLogin()) return
         actions.switchSession(content)
-    }, [actions, requireLogin])
+    }, [actions])
 
     const handleNote = useCallback((content: string) => {
-        if (!requireLogin()) return
         actions.addNote(content)
-    }, [actions, requireLogin])
+    }, [actions])
 
     const handleLogOff = useCallback((content: string) => {
-        if (!requireLogin()) return
         actions.logOff(content)
-    }, [actions, requireLogin])
+    }, [actions])
 
     const handleEditEntry = useCallback((entry: Entry, openModal: (entry: Entry) => void) => {
-        if (!requireLogin()) return
         openModal(entry)
-    }, [requireLogin])
+    }, [])
 
     const handleSaveEdit = useCallback((entryId: string, updates: UpdateEntryPayload) => {
-        if (!requireLogin()) return
         const cleanUpdates = Object.fromEntries(
             Object.entries(updates).filter(([, v]) => v !== undefined)
         ) as UpdateEntryPayload
         if (Object.keys(cleanUpdates).length > 0) {
             actions.updateEntry(entryId, cleanUpdates)
         }
-    }, [actions, requireLogin])
+    }, [actions])
 
     const handleDeleteEntry = useCallback((entry: Entry) => {
         if (!requireLogin()) return

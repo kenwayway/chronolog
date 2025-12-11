@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect } from "react";
-import { Image, MapPin } from "lucide-react";
+import { Image, MapPin, Link2, X, Search } from "lucide-react";
 import { Dropdown } from "../common/Dropdown";
+import { DynamicFieldForm } from "../input/DynamicFieldForm";
 import { BUILTIN_CONTENT_TYPES } from "../../utils/constants";
 
-export function EditModal({ isOpen, entry, onSave, onClose, categories, contentTypes }) {
+export function EditModal({ isOpen, entry, onSave, onClose, categories, contentTypes, allEntries = [] }) {
   const [content, setContent] = useState("");
   const [timestamp, setTimestamp] = useState("");
   const [category, setCategory] = useState(null);
@@ -13,6 +14,9 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
   const [location, setLocation] = useState("");
   const [showImageInput, setShowImageInput] = useState(false);
   const [showLocationInput, setShowLocationInput] = useState(false);
+  const [linkedEntries, setLinkedEntries] = useState([]);
+  const [linkSearch, setLinkSearch] = useState("");
+  const [showLinkSearch, setShowLinkSearch] = useState(false);
 
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const textareaRef = useRef(null);
@@ -55,6 +59,9 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
       setCategory(entry.category || null);
       setContentType(entry.contentType || null);
       setFieldValues(entry.fieldValues || {});
+      setLinkedEntries(entry.linkedEntries || []);
+      setLinkSearch("");
+      setShowLinkSearch(false);
       setTimeout(() => textareaRef.current?.focus(), 50);
     }
   }, [isOpen, entry]);
@@ -112,6 +119,7 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
       category: category !== entry.category ? category : undefined,
       contentType: contentType !== entry.contentType ? contentType : undefined,
       fieldValues: JSON.stringify(fieldValues) !== JSON.stringify(entry.fieldValues) ? fieldValues : undefined,
+      linkedEntries: JSON.stringify(linkedEntries) !== JSON.stringify(entry.linkedEntries || []) ? linkedEntries : undefined,
     });
     onClose();
   };
@@ -131,6 +139,30 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
   const handleFieldChange = (fieldId, value) => {
     setFieldValues(prev => ({ ...prev, [fieldId]: value }));
   };
+
+  // Linked entries helpers
+  const addLinkedEntry = (entryId) => {
+    if (!linkedEntries.includes(entryId)) {
+      setLinkedEntries(prev => [...prev, entryId]);
+    }
+    setLinkSearch("");
+    setShowLinkSearch(false);
+  };
+
+  const removeLinkedEntry = (entryId) => {
+    setLinkedEntries(prev => prev.filter(id => id !== entryId));
+  };
+
+  const getEntryPreview = (content) => {
+    if (!content) return "(empty)";
+    const firstLine = content.split("\n")[0];
+    return firstLine.length > 40 ? firstLine.slice(0, 40) + "..." : firstLine;
+  };
+
+  const searchableEntries = allEntries
+    .filter(e => e.id !== entry?.id && !linkedEntries.includes(e.id))
+    .filter(e => linkSearch.trim() === "" || e.content?.toLowerCase().includes(linkSearch.toLowerCase()))
+    .slice(0, 8);
 
   return (
     <div
@@ -215,150 +247,13 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
           />
         </div>
 
-        {/* ContentType Fields (if expense) */}
-        {contentType === 'expense' && (
-          <div
-            style={{
-              padding: "12px 20px",
-              borderTop: "1px solid var(--border-subtle)",
-              backgroundColor: "var(--bg-secondary)",
-            }}
-          >
-            <div className="flex items-center gap-4 flex-wrap" style={{ fontSize: 12 }}>
-              {/* Amount */}
-              <div className="flex items-center gap-2">
-                <span style={{ color: "var(--text-dim)", fontSize: 10 }}>AMOUNT</span>
-                <input
-                  type="number"
-                  value={fieldValues.amount || ''}
-                  onChange={(e) => handleFieldChange('amount', e.target.value ? Number(e.target.value) : '')}
-                  placeholder="0"
-                  className="edit-modal-input"
-                  style={{ width: 80 }}
-                />
-              </div>
-
-              {/* Currency */}
-              <div className="flex items-center gap-2">
-                <span style={{ color: "var(--text-dim)", fontSize: 10 }}>CURRENCY</span>
-                <select
-                  value={fieldValues.currency || 'USD'}
-                  onChange={(e) => handleFieldChange('currency', e.target.value)}
-                  className="edit-modal-input"
-                  style={{ width: 70 }}
-                >
-                  <option value="USD">USD</option>
-                  <option value="CNY">CNY</option>
-                  <option value="EUR">EUR</option>
-                  <option value="GBP">GBP</option>
-                  <option value="JPY">JPY</option>
-                </select>
-              </div>
-
-              {/* Category */}
-              <div className="flex items-center gap-2">
-                <span style={{ color: "var(--text-dim)", fontSize: 10 }}>TYPE</span>
-                <select
-                  value={fieldValues.category || ''}
-                  onChange={(e) => handleFieldChange('category', e.target.value)}
-                  className="edit-modal-input"
-                  style={{ width: 120 }}
-                >
-                  <option value="">--</option>
-                  <option value="Food">Food</option>
-                  <option value="Transport">Transport</option>
-                  <option value="Entertainment">Entertainment</option>
-                  <option value="Shopping">Shopping</option>
-                  <option value="Health">Health</option>
-                  <option value="Bills">Bills</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
-
-              {/* Subcategory */}
-              <div className="flex items-center gap-2">
-                <span style={{ color: "var(--text-dim)", fontSize: 10 }}>SUB</span>
-                <input
-                  type="text"
-                  value={fieldValues.subcategory || ''}
-                  onChange={(e) => handleFieldChange('subcategory', e.target.value)}
-                  placeholder="e.g. Cafe"
-                  className="edit-modal-input"
-                  style={{ width: 100 }}
-                />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ContentType Fields (if bookmark) */}
-        {contentType === 'bookmark' && (
-          <div
-            style={{
-              padding: "12px 20px",
-              borderTop: "1px solid var(--border-subtle)",
-              backgroundColor: "var(--bg-secondary)",
-            }}
-          >
-            <div className="flex items-center gap-4 flex-wrap" style={{ fontSize: 12 }}>
-              {/* URL */}
-              <div className="flex items-center gap-2" style={{ flex: 1, minWidth: 200 }}>
-                <span style={{ color: "var(--text-dim)", fontSize: 10 }}>URL</span>
-                <input
-                  type="text"
-                  value={fieldValues.url || ''}
-                  onChange={(e) => handleFieldChange('url', e.target.value)}
-                  placeholder="https://..."
-                  className="edit-modal-input"
-                  style={{ flex: 1 }}
-                />
-              </div>
-
-              {/* Title */}
-              <div className="flex items-center gap-2" style={{ flex: 1, minWidth: 150 }}>
-                <span style={{ color: "var(--text-dim)", fontSize: 10 }}>TITLE</span>
-                <input
-                  type="text"
-                  value={fieldValues.title || ''}
-                  onChange={(e) => handleFieldChange('title', e.target.value)}
-                  placeholder="Title"
-                  className="edit-modal-input"
-                  style={{ flex: 1 }}
-                />
-              </div>
-
-              {/* Type */}
-              <div className="flex items-center gap-2">
-                <span style={{ color: "var(--text-dim)", fontSize: 10 }}>TYPE</span>
-                <select
-                  value={fieldValues.type || 'Article'}
-                  onChange={(e) => handleFieldChange('type', e.target.value)}
-                  className="edit-modal-input"
-                  style={{ width: 90 }}
-                >
-                  <option value="Article">Article</option>
-                  <option value="Video">Video</option>
-                  <option value="Tool">Tool</option>
-                  <option value="Paper">Paper</option>
-                </select>
-              </div>
-
-              {/* Status */}
-              <div className="flex items-center gap-2">
-                <span style={{ color: "var(--text-dim)", fontSize: 10 }}>STATUS</span>
-                <select
-                  value={fieldValues.status || 'Inbox'}
-                  onChange={(e) => handleFieldChange('status', e.target.value)}
-                  className="edit-modal-input"
-                  style={{ width: 100 }}
-                >
-                  <option value="Inbox">📥 Inbox</option>
-                  <option value="Reading">📖 Reading</option>
-                  <option value="Archived">✅ Archived</option>
-                </select>
-              </div>
-            </div>
-          </div>
+        {/* ContentType Fields - Dynamic form based on schema */}
+        {contentType && contentType !== 'note' && (
+          <DynamicFieldForm
+            contentType={types.find(t => t.id === contentType)}
+            fieldValues={fieldValues}
+            onChange={setFieldValues}
+          />
         )}
 
         {/* Attachments */}
@@ -453,6 +348,153 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
           </div>
         )}
 
+        {/* Linked Entries */}
+        <div
+          style={{
+            padding: "12px 20px",
+            borderTop: "1px solid var(--border-subtle)",
+            backgroundColor: "var(--bg-secondary)",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+            <Link2 size={12} style={{ color: "var(--text-dim)" }} />
+            <span style={{ fontSize: 10, color: "var(--text-dim)", fontWeight: 600 }}>LINKED ENTRIES</span>
+            <button
+              onClick={() => setShowLinkSearch(!showLinkSearch)}
+              style={{
+                fontSize: 10,
+                padding: "2px 8px",
+                backgroundColor: showLinkSearch ? "var(--accent)" : "var(--bg-tertiary)",
+                color: showLinkSearch ? "white" : "var(--text-secondary)",
+                border: "none",
+                borderRadius: 3,
+                cursor: "pointer",
+              }}
+            >
+              + ADD
+            </button>
+          </div>
+
+          {/* Current linked entries */}
+          {linkedEntries.length > 0 && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: showLinkSearch ? 8 : 0 }}>
+              {linkedEntries.map(linkId => {
+                const linkedEntry = allEntries.find(e => e.id === linkId);
+                if (!linkedEntry) return null;
+                const isOlder = linkedEntry.timestamp < entry.timestamp;
+                return (
+                  <div
+                    key={linkId}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      padding: "4px 8px",
+                      backgroundColor: "var(--bg-tertiary)",
+                      borderRadius: 4,
+                      fontSize: 11,
+                      fontFamily: "var(--font-mono)",
+                    }}
+                  >
+                    <span style={{ color: isOlder ? "var(--accent)" : "var(--warning)", fontWeight: 600 }}>
+                      {isOlder ? "↑" : "↓"}
+                    </span>
+                    <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "var(--text-secondary)" }}>
+                      {getEntryPreview(linkedEntry.content)}
+                    </span>
+                    <span style={{ fontSize: 9, color: "var(--text-dim)" }}>
+                      {new Date(linkedEntry.timestamp).toLocaleDateString()}
+                    </span>
+                    <button
+                      onClick={() => removeLinkedEntry(linkId)}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        padding: 2,
+                        color: "var(--text-muted)",
+                        display: "flex",
+                        alignItems: "center",
+                      }}
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Search input */}
+          {showLinkSearch && (
+            <div style={{ position: "relative" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                <Search size={12} style={{ color: "var(--text-dim)" }} />
+                <input
+                  type="text"
+                  value={linkSearch}
+                  onChange={(e) => setLinkSearch(e.target.value)}
+                  placeholder="Search entries..."
+                  autoFocus
+                  className="edit-modal-input"
+                  style={{ flex: 1, height: 28, fontSize: 12 }}
+                />
+              </div>
+
+              {/* Search results */}
+              <div style={{ maxHeight: 150, overflowY: "auto" }}>
+                {searchableEntries.map(e => {
+                  const isOlder = e.timestamp < entry.timestamp;
+                  return (
+                    <button
+                      key={e.id}
+                      onClick={() => addLinkedEntry(e.id)}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        padding: "6px 8px",
+                        backgroundColor: "transparent",
+                        border: "none",
+                        borderRadius: 4,
+                        cursor: "pointer",
+                        width: "100%",
+                        textAlign: "left",
+                        fontSize: 11,
+                        fontFamily: "var(--font-mono)",
+                        color: "var(--text-secondary)",
+                      }}
+                      onMouseOver={(ev) => ev.currentTarget.style.backgroundColor = "var(--bg-tertiary)"}
+                      onMouseOut={(ev) => ev.currentTarget.style.backgroundColor = "transparent"}
+                    >
+                      <span style={{ color: isOlder ? "var(--accent)" : "var(--warning)", fontWeight: 600 }}>
+                        {isOlder ? "↑" : "↓"}
+                      </span>
+                      <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {getEntryPreview(e.content)}
+                      </span>
+                      <span style={{ fontSize: 9, color: "var(--text-dim)" }}>
+                        {new Date(e.timestamp).toLocaleDateString()}
+                      </span>
+                    </button>
+                  );
+                })}
+                {searchableEntries.length === 0 && linkSearch.trim() && (
+                  <div style={{ fontSize: 11, color: "var(--text-dim)", padding: 8, textAlign: "center" }}>
+                    No matching entries
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {linkedEntries.length === 0 && !showLinkSearch && (
+            <div style={{ fontSize: 11, color: "var(--text-dim)", fontStyle: "italic" }}>
+              No linked entries
+            </div>
+          )}
+        </div>
+
         {/* Footer */}
         <div
           className="modal-footer flex-between"
@@ -532,6 +574,8 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
                     setFieldValues({ done: false });
                   } else if (newType === 'bookmark') {
                     setFieldValues({ type: 'Article', status: 'Inbox' });
+                  } else if (newType === 'mood') {
+                    setFieldValues({ feeling: 'Calm', energy: 3 });
                   } else {
                     setFieldValues({});
                   }
@@ -543,6 +587,7 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
                 <option value="task">Task</option>
                 <option value="expense">Expense</option>
                 <option value="bookmark">Bookmark</option>
+                <option value="mood">Mood</option>
               </select>
             </div>
 
