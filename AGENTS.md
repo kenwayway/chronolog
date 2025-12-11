@@ -43,17 +43,16 @@ interface Entry {
 ### ContentType System
 ContentTypes define schemas for structured entries. Built-in types:
 
-| ID | Name | Icon | Fields |
-|----|------|------|--------|
-| `note` | Note | 📝 | (none) |
-| `task` | Task | ☐ | `done: boolean` |
-| `expense` | Expense | 💰 | `amount, currency, category, subcategory` |
+| ID | Name | Fields |
+|----|------|------|
+| `note` | Note | (none) |
+| `task` | Task | `done: boolean` |
+| `expense` | Expense | `amount, currency, category, subcategory` |
 
 ```typescript
 interface ContentType {
   id: string
   name: string
-  icon: string
   fields: FieldDefinition[]
   builtIn?: boolean
 }

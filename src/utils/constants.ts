@@ -56,7 +56,6 @@ export const BUILTIN_CONTENT_TYPES: ContentType[] = [
     {
         id: 'note',
         name: 'Note',
-        icon: '📝',
         fields: [],
         builtIn: true,
         order: 0
@@ -64,7 +63,6 @@ export const BUILTIN_CONTENT_TYPES: ContentType[] = [
     {
         id: 'task',
         name: 'Task',
-        icon: '☐',
         fields: [
             { id: 'done', name: 'Done', type: 'boolean', default: false }
         ],
@@ -74,7 +72,6 @@ export const BUILTIN_CONTENT_TYPES: ContentType[] = [
     {
         id: 'expense',
         name: 'Expense',
-        icon: '💰',
         fields: [
             { id: 'amount', name: 'Amount', type: 'number', required: true },
             { id: 'currency', name: 'Currency', type: 'dropdown', options: ['USD', 'CNY', 'EUR', 'GBP', 'JPY'], default: 'USD' },
@@ -85,3 +82,4 @@ export const BUILTIN_CONTENT_TYPES: ContentType[] = [
         order: 2
     }
 ]
+
