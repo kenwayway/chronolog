@@ -61,16 +61,28 @@ Entry: "${content}"
 Return ONLY a valid JSON object with these fields:
 - category: the category ID that best matches (or null if unsure)
 - contentType: the content type ID (default to "note" if unsure)
-- fieldValues: For expenses, extract {amount: number, currency: "USD"|"CNY"|"EUR"|"GBP"|"JPY", category: string, subcategory: string}. For tasks, use {done: false}. For notes, use null.
+- fieldValues: Extract relevant fields based on content type
 
-Currency detection hints: $ = USD, ¥/元/块/刀 = CNY, € = EUR, £ = GBP, 円 = JPY
+Content type detection rules:
+- If entry contains a URL (http/https), it's likely a "bookmark"
+- If entry mentions spending/buying/paying money or has currency symbols, it's "expense"
+- If entry is a todo/reminder/action item (买/记得/要/todo), it's "task"
+- Otherwise, it's "note"
+
+FieldValues by content type:
+- expense: {amount: number, currency: "USD"|"CNY"|"EUR"|"GBP"|"JPY", category: string, subcategory: string}
+- task: {done: false}
+- bookmark: {url: "extracted URL", title: "title from content", type: "Article"|"Video"|"Tool"|"Paper", status: "Inbox"}
+- note: null
+
+Currency hints: $ = USD, ¥/元/块/刀 = CNY, € = EUR, £ = GBP, 円 = JPY
 Expense categories: Food, Transport, Entertainment, Shopping, Health, Bills, Other
-Subcategory examples: Food > Cafe, Food > Grocery, Transport > Uber, Entertainment > Movie
 
 Example responses:
 {"category":"hustle","contentType":"note","fieldValues":null}
 {"category":"beans","contentType":"expense","fieldValues":{"amount":35,"currency":"CNY","category":"Food","subcategory":"Cafe"}}
-{"category":"craft","contentType":"task","fieldValues":{"done":false}}`;
+{"category":"craft","contentType":"task","fieldValues":{"done":false}}
+{"category":"kernel","contentType":"bookmark","fieldValues":{"url":"https://example.com/article","title":"Great Article","type":"Article","status":"Inbox"}}`;
 
     // Call AI API
     const response = await fetch(`${aiBaseUrl}/chat/completions`, {

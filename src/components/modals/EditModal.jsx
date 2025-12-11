@@ -291,6 +291,76 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
           </div>
         )}
 
+        {/* ContentType Fields (if bookmark) */}
+        {contentType === 'bookmark' && (
+          <div
+            style={{
+              padding: "12px 20px",
+              borderTop: "1px solid var(--border-subtle)",
+              backgroundColor: "var(--bg-secondary)",
+            }}
+          >
+            <div className="flex items-center gap-4 flex-wrap" style={{ fontSize: 12 }}>
+              {/* URL */}
+              <div className="flex items-center gap-2" style={{ flex: 1, minWidth: 200 }}>
+                <span style={{ color: "var(--text-dim)", fontSize: 10 }}>URL</span>
+                <input
+                  type="text"
+                  value={fieldValues.url || ''}
+                  onChange={(e) => handleFieldChange('url', e.target.value)}
+                  placeholder="https://..."
+                  className="edit-modal-input"
+                  style={{ flex: 1 }}
+                />
+              </div>
+
+              {/* Title */}
+              <div className="flex items-center gap-2" style={{ flex: 1, minWidth: 150 }}>
+                <span style={{ color: "var(--text-dim)", fontSize: 10 }}>TITLE</span>
+                <input
+                  type="text"
+                  value={fieldValues.title || ''}
+                  onChange={(e) => handleFieldChange('title', e.target.value)}
+                  placeholder="Title"
+                  className="edit-modal-input"
+                  style={{ flex: 1 }}
+                />
+              </div>
+
+              {/* Type */}
+              <div className="flex items-center gap-2">
+                <span style={{ color: "var(--text-dim)", fontSize: 10 }}>TYPE</span>
+                <select
+                  value={fieldValues.type || 'Article'}
+                  onChange={(e) => handleFieldChange('type', e.target.value)}
+                  className="edit-modal-input"
+                  style={{ width: 90 }}
+                >
+                  <option value="Article">Article</option>
+                  <option value="Video">Video</option>
+                  <option value="Tool">Tool</option>
+                  <option value="Paper">Paper</option>
+                </select>
+              </div>
+
+              {/* Status */}
+              <div className="flex items-center gap-2">
+                <span style={{ color: "var(--text-dim)", fontSize: 10 }}>STATUS</span>
+                <select
+                  value={fieldValues.status || 'Inbox'}
+                  onChange={(e) => handleFieldChange('status', e.target.value)}
+                  className="edit-modal-input"
+                  style={{ width: 100 }}
+                >
+                  <option value="Inbox">📥 Inbox</option>
+                  <option value="Reading">📖 Reading</option>
+                  <option value="Archived">✅ Archived</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Attachments */}
         {(imageUrl || location || showImageInput || showLocationInput) && (
           <div
@@ -460,6 +530,8 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
                     setFieldValues({ currency: 'USD' });
                   } else if (newType === 'task') {
                     setFieldValues({ done: false });
+                  } else if (newType === 'bookmark') {
+                    setFieldValues({ type: 'Article', status: 'Inbox' });
                   } else {
                     setFieldValues({});
                   }
@@ -470,6 +542,7 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
                 <option value="">Note</option>
                 <option value="task">Task</option>
                 <option value="expense">Expense</option>
+                <option value="bookmark">Bookmark</option>
               </select>
             </div>
 

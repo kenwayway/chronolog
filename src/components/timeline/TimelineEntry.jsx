@@ -532,6 +532,26 @@ export function TimelineEntry({
               })()}
             </span>
           )}
+          {entry.contentType === 'bookmark' && entry.fieldValues && (
+            <span
+              style={{
+                fontSize: 11,
+                color: "#22d3ee",
+                backgroundColor: "rgba(34, 211, 238, 0.1)",
+                padding: "2px 8px",
+                borderRadius: 3,
+                fontWeight: 500,
+                userSelect: "none",
+              }}
+            >
+              {(() => {
+                const { type, status } = entry.fieldValues;
+                const statusIcons = { Inbox: '📥', Reading: '📖', Archived: '✅' };
+                const icon = statusIcons[status] || '🔖';
+                return `${icon} ${type || 'Link'}`;
+              })()}
+            </span>
+          )}
         </div>
 
         {category && (

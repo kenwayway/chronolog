@@ -73,6 +73,18 @@ export const BUILTIN_CONTENT_TYPES: ContentType[] = [
     ],
     builtIn: true,
     order: 2
+  },
+  {
+    id: 'bookmark',
+    name: 'Bookmark',
+    fields: [
+      { id: 'url', name: 'URL', type: 'text' },
+      { id: 'title', name: 'Title', type: 'text' },
+      { id: 'type', name: 'Type', type: 'dropdown', options: ['Article', 'Video', 'Tool', 'Paper'], default: 'Article' },
+      { id: 'status', name: 'Status', type: 'dropdown', options: ['Inbox', 'Reading', 'Archived'], default: 'Inbox' }
+    ],
+    builtIn: true,
+    order: 3
   }
 ]
 
