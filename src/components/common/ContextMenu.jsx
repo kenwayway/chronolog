@@ -10,6 +10,7 @@ export function ContextMenu({
   onDelete,
   onCopy,
   onMarkAsTask,
+  onLink,
   googleTasksEnabled = false,
 }) {
   const menuRef = useRef(null);
@@ -48,6 +49,10 @@ export function ContextMenu({
   };
   const handleMarkAsTask = () => {
     onMarkAsTask(entry);
+    onClose();
+  };
+  const handleLink = () => {
+    onLink?.(entry);
     onClose();
   };
 
@@ -96,6 +101,10 @@ export function ContextMenu({
 
       <button className="context-menu-item" onClick={handleEdit}>
         EDIT
+      </button>
+
+      <button className="context-menu-item" onClick={handleLink}>
+        🔗 LINK
       </button>
 
       <button className="context-menu-item" onClick={handleCopy}>

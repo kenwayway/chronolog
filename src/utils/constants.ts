@@ -38,9 +38,9 @@ export const CATEGORIES: Category[] = [
   { id: 'hustle', label: 'Hustle', color: '#7aa2f7' },
   { id: 'craft', label: 'Craft', color: '#bb9af7' },
   { id: 'hardware', label: 'Hardware', color: '#4dcc59' },
-  { id: 'kernel', label: 'Kernel', color: '#89ddff' },
+  { id: 'sparks', label: 'Sparks', color: '#89ddff' },
   { id: 'barter', label: 'Barter', color: '#c8e068' },
-  { id: 'wonder', label: 'Wonder', color: '#f7768e' },
+  { id: 'wander', label: 'Wander', color: '#f7768e' },
   { id: 'beans', label: 'Beans', color: '#ff9e64' },
 ]
 

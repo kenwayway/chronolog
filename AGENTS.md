@@ -37,6 +37,7 @@ interface Entry {
   category?: CategoryId         // Life area category
   contentType?: string          // 'note' | 'task' | 'expense' | custom
   fieldValues?: Record<string, unknown>  // Dynamic field values
+  linkedEntries?: string[]      // Bidirectional linked entry IDs
 }
 ```
 
@@ -85,9 +86,9 @@ Categories are **not user-editable**. Defined in `constants.ts`:
 | `hustle` | Hustle | #7aa2f7 (blue) | Work, 赚钱 |
 | `craft` | Craft | #bb9af7 (purple) | Coding, drawing, 创作 |
 | `hardware` | Hardware | #4dcc59 (green) | Sleep, eat, workout |
-| `kernel` | Kernel | #89ddff (cyan) | Learning, philosophy, 整理笔记 |
+| `sparks` | Sparks | #89ddff (cyan) | Learning, philosophy, 整理笔记 |
 | `barter` | Barter | #c8e068 (yellow-green) | Friends, social |
-| `wonder` | Wonder | #f7768e (pink) | 旅游, 电影, 放松, 探索 |
+| `wander` | Wander | #f7768e (pink) | 旅游, 电影, 放松, 探索 |
 | `beans` | Beans | #ff9e64 (orange) | Small knowledge tidbits △ |
 
 ### Application State

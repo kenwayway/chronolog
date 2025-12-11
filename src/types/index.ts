@@ -9,7 +9,7 @@ export type EntryType = 'SESSION_START' | 'NOTE' | 'SESSION_END'
 export type SessionStatus = 'IDLE' | 'STREAMING'
 
 /** Category IDs (fixed, not user-editable) - life areas */
-export type CategoryId = 'hustle' | 'craft' | 'hardware' | 'kernel' | 'barter' | 'wonder' | 'beans'
+export type CategoryId = 'hustle' | 'craft' | 'hardware' | 'sparks' | 'barter' | 'wander' | 'beans'
 
 /** Category definition */
 export interface Category {
@@ -60,6 +60,7 @@ export interface Entry {
   category?: CategoryId           // Life area category
   contentType?: string            // References ContentType.id
   fieldValues?: Record<string, unknown>  // Dynamic field values
+  linkedEntries?: string[]        // Bidirectional linked entry IDs
 }
 
 // ============================================
@@ -112,6 +113,7 @@ export interface UpdateEntryPayload {
   category?: CategoryId
   contentType?: string
   fieldValues?: Record<string, unknown>
+  linkedEntries?: string[]
 }
 
 export interface SetEntryCategoryPayload {

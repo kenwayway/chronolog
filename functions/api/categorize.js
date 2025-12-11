@@ -82,7 +82,7 @@ Example responses:
 {"category":"hustle","contentType":"note","fieldValues":null}
 {"category":"beans","contentType":"expense","fieldValues":{"amount":35,"currency":"CNY","category":"Food","subcategory":"Cafe"}}
 {"category":"craft","contentType":"task","fieldValues":{"done":false}}
-{"category":"kernel","contentType":"bookmark","fieldValues":{"url":"https://example.com/article","title":"Great Article","type":"Article","status":"Inbox"}}`;
+{"category":"sparks","contentType":"bookmark","fieldValues":{"url":"https://example.com/article","title":"Great Article","type":"Article","status":"Inbox"}}`;
 
     // Call AI API
     const response = await fetch(`${aiBaseUrl}/chat/completions`, {

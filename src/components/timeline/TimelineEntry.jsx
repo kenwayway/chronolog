@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { MapPin } from "lucide-react";
+import { MapPin, Link2 } from "lucide-react";
 import { ENTRY_TYPES } from "../../utils/constants";
 import { formatTime, formatDuration, formatDate } from "../../utils/formatters";
 import { useTheme } from "../../hooks/useTheme";
 
 export function TimelineEntry({
   entry,
+  allEntries,
   isFirst,
   isLast,
   sessionDuration,
@@ -336,246 +337,311 @@ export function TimelineEntry({
     return "var(--text-secondary)";
   };
 
-  return (
+  // Resolve linked entries and split by timestamp
+  const linkedEntryData = (entry.linkedEntries || [])
+    .map(id => allEntries?.find(e => e.id === id))
+    .filter(Boolean);
+
+  const beforeLinks = linkedEntryData.filter(e => e.timestamp < entry.timestamp);
+  const afterLinks = linkedEntryData.filter(e => e.timestamp >= entry.timestamp);
+
+  const getPreview = (content) => {
+    if (!content) return "(empty)";
+    const firstLine = content.split("\n")[0];
+    return firstLine.length > 40 ? firstLine.slice(0, 40) + "..." : firstLine;
+  };
+
+  const LinkedEntryPreview = ({ linkedEntry, direction }) => (
     <div
-      className={`timeline-entry ${isTaskDone ? 'timeline-entry-done' : ''}`}
+      className="linked-entry-preview"
       style={{
         display: "flex",
-        alignItems: "flex-start",
-        gap: 16,
-        cursor: "default",
-        userSelect: "none",
+        alignItems: "center",
+        gap: 8,
+        padding: "4px 8px",
+        marginLeft: 86,
+        marginBottom: direction === "before" ? 4 : 0,
+        marginTop: direction === "after" ? 4 : 0,
+        fontSize: 11,
+        color: "var(--text-muted)",
+        backgroundColor: "var(--bg-tertiary)",
+        borderRadius: 4,
+        border: "1px solid var(--border-subtle)",
       }}
-      onContextMenu={handleContextMenu}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-      onTouchCancel={handleTouchEnd}
     >
-      {/* Time Column */}
-      <div
-        className="timeline-time-col"
-        style={{
-          flexShrink: 0,
-          width: 50,
-          textAlign: "right",
-          fontSize: 10,
-          color: "var(--text-dim)",
-          paddingRight: 8,
-          paddingTop: 4,
-          fontFamily: "var(--font-mono)",
-          opacity: 0.6,
-        }}
-      >
-        {showDate && (
-          <div style={{ marginBottom: 2, fontSize: 9, color: "var(--text-muted)" }}>
-            {formatDate(new Date(entry.timestamp))}
-          </div>
-        )}
-        {formatTime(entry.timestamp)}
-      </div>
+      <span style={{ color: direction === "before" ? "var(--accent)" : "var(--warning)", fontWeight: 600 }}>
+        {direction === "before" ? "↑" : "↓"}
+      </span>
+      <Link2 size={10} style={{ color: "var(--text-dim)", flexShrink: 0 }} />
+      <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        {getPreview(linkedEntry.content)}
+      </span>
+      <span style={{ fontSize: 9, color: "var(--text-dim)", fontFamily: "var(--font-mono)", flexShrink: 0 }}>
+        {formatTime(linkedEntry.timestamp)}
+      </span>
+    </div>
+  );
 
-      {/* Symbol Column */}
-      <div
-        className="timeline-symbol-col"
-        style={{
-          position: "relative",
-          flexShrink: 0,
-          width: 20,
-          textAlign: "center",
-          fontSize: 14,
-          userSelect: "none",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          alignSelf: "stretch",
-        }}
-      >
-        {!isFirst && (
-          <div
-            style={{
-              position: "absolute",
-              top: -12,
-              left: "50%",
-              transform: "translateX(-50%)",
-              width: 1,
-              height: 24,
-              backgroundColor: getLineColor("top"),
-            }}
-          />
-        )}
-        {!isLast && (
-          <div
-            style={{
-              position: "absolute",
-              top: 12,
-              bottom: -12,
-              left: "50%",
-              transform: "translateX(-50%)",
-              width: 1,
-              backgroundColor: getLineColor("bottom"),
-            }}
-          />
-        )}
-        <div
-          style={{
-            position: "relative",
-            zIndex: 10,
-            width: 20,
-            height: 20,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            borderRadius: 9999,
-            backgroundColor: "var(--bg-primary)",
-          }}
-        >
-          {getEntrySymbol()}
+  return (
+    <>
+      {/* Linked entries before (older) */}
+      {beforeLinks.length > 0 && (
+        <div className="linked-entries-before" style={{ marginBottom: 4 }}>
+          {beforeLinks.map(linked => (
+            <LinkedEntryPreview key={linked.id} linkedEntry={linked} direction="before" />
+          ))}
         </div>
-      </div>
+      )}
 
-      {/* Content */}
-      <div className="timeline-content-col" style={{ flex: 1, minWidth: 0 }}>
-        {/* Mobile timestamp */}
+      <div
+        className={`timeline-entry ${isTaskDone ? 'timeline-entry-done' : ''}`}
+        style={{
+          display: "flex",
+          alignItems: "flex-start",
+          gap: 16,
+          cursor: "default",
+          userSelect: "none",
+        }}
+        onContextMenu={handleContextMenu}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchEnd}
+      >
+        {/* Time Column */}
         <div
-          className="timeline-mobile-time"
+          className="timeline-time-col"
           style={{
+            flexShrink: 0,
+            width: 50,
+            textAlign: "right",
             fontSize: 10,
             color: "var(--text-dim)",
+            paddingRight: 8,
+            paddingTop: 4,
             fontFamily: "var(--font-mono)",
-            marginBottom: 4,
-            display: "none",
+            opacity: 0.6,
           }}
         >
+          {showDate && (
+            <div style={{ marginBottom: 2, fontSize: 9, color: "var(--text-muted)" }}>
+              {formatDate(new Date(entry.timestamp))}
+            </div>
+          )}
           {formatTime(entry.timestamp)}
         </div>
+
+        {/* Symbol Column */}
         <div
-          className="flex flex-wrap items-baseline"
-          style={{ gap: "4px 12px", marginBottom: 6 }}
+          className="timeline-symbol-col"
+          style={{
+            position: "relative",
+            flexShrink: 0,
+            width: 20,
+            textAlign: "center",
+            fontSize: 14,
+            userSelect: "none",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            alignSelf: "stretch",
+          }}
         >
-          {entry.content && (
-            <span
-              className="timeline-content-text"
+          {!isFirst && (
+            <div
               style={{
-                fontSize: 15,
-                lineHeight: 1.6,
-                overflowWrap: "break-word",
-                fontFamily: "var(--font-primary)",
-                whiteSpace: "pre-wrap",
-                color: getContentColor(),
-                fontStyle: isSessionEnd ? "italic" : "normal",
-                textDecoration: isTaskDone ? "line-through" : "none",
+                position: "absolute",
+                top: -12,
+                left: "50%",
+                transform: "translateX(-50%)",
+                width: 1,
+                height: 24,
+                backgroundColor: getLineColor("top"),
               }}
-            >
-              {linkifyContent(entry.content)}
-            </span>
+            />
           )}
-
-          {isSessionStart && sessionDuration && (
-            <span
+          {!isLast && (
+            <div
               style={{
-                fontSize: 11,
-                color: "var(--accent)",
-                backgroundColor: "var(--accent-subtle)",
-                padding: "2px 6px",
-                borderRadius: 3,
-                userSelect: "none",
-                fontWeight: 500,
+                position: "absolute",
+                top: 12,
+                bottom: -12,
+                left: "50%",
+                transform: "translateX(-50%)",
+                width: 1,
+                backgroundColor: getLineColor("bottom"),
               }}
-            >
-              {formatDuration(sessionDuration)}
-            </span>
+            />
           )}
-
-          {isTaskDone && (
-            <span
-              style={{
-                fontSize: 11,
-                color: "var(--success)",
-                fontWeight: 700,
-                userSelect: "none",
-              }}
-            >
-              [DONE]
-            </span>
-          )}
-          {isTask && !isTaskDone && (
-            <span
-              style={{
-                fontSize: 11,
-                color: "var(--warning)",
-                fontWeight: 700,
-                userSelect: "none",
-              }}
-            >
-              [TODO]
-            </span>
-          )}
-          {entry.contentType === 'expense' && entry.fieldValues && (
-            <span
-              style={{
-                fontSize: 11,
-                color: "var(--accent)",
-                backgroundColor: "var(--accent-subtle)",
-                padding: "2px 8px",
-                borderRadius: 3,
-                fontWeight: 500,
-                userSelect: "none",
-              }}
-            >
-              {(() => {
-                const { amount, currency, category, subcategory, expenseType } = entry.fieldValues;
-                const currencySymbols = { USD: '$', CNY: '¥', EUR: '€', GBP: '£', JPY: '¥' };
-                const symbol = currencySymbols[currency] || '$';
-                const cat = category || expenseType || '';
-                const sub = subcategory ? ` › ${subcategory}` : '';
-                return `${symbol}${amount}${cat ? ` · ${cat}${sub}` : ''}`;
-              })()}
-            </span>
-          )}
-          {entry.contentType === 'bookmark' && entry.fieldValues && (
-            <span
-              style={{
-                fontSize: 11,
-                color: "#22d3ee",
-                backgroundColor: "rgba(34, 211, 238, 0.1)",
-                padding: "2px 8px",
-                borderRadius: 3,
-                fontWeight: 500,
-                userSelect: "none",
-              }}
-            >
-              {(() => {
-                const { type, status } = entry.fieldValues;
-                const statusIcons = { Inbox: '📥', Reading: '📖', Archived: '✅' };
-                const icon = statusIcons[status] || '🔖';
-                return `${icon} ${type || 'Link'}`;
-              })()}
-            </span>
-          )}
+          <div
+            style={{
+              position: "relative",
+              zIndex: 10,
+              width: 20,
+              height: 20,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: 9999,
+              backgroundColor: "var(--bg-primary)",
+            }}
+          >
+            {getEntrySymbol()}
+          </div>
         </div>
 
-        {category && (
-          <div style={{ marginTop: 6 }}>
-            <span
-              className="category-label"
-              style={{
-                fontSize: 11,
-                padding: "3px 10px",
-                borderRadius: 3,
-                fontWeight: 600,
-                textTransform: "uppercase",
-                userSelect: "none",
-                letterSpacing: "0.05em",
-                color: categoryTextColor,
-                backgroundColor: `${category.color}20`,
-                border: `1px solid ${category.color}40`,
-              }}
-            >
-              #{category.label}
-            </span>
+        {/* Content */}
+        <div className="timeline-content-col" style={{ flex: 1, minWidth: 0 }}>
+          {/* Mobile timestamp */}
+          <div
+            className="timeline-mobile-time"
+            style={{
+              fontSize: 10,
+              color: "var(--text-dim)",
+              fontFamily: "var(--font-mono)",
+              marginBottom: 4,
+              display: "none",
+            }}
+          >
+            {formatTime(entry.timestamp)}
           </div>
-        )}
+          <div
+            className="flex flex-wrap items-baseline"
+            style={{ gap: "4px 12px", marginBottom: 6 }}
+          >
+            {entry.content && (
+              <span
+                className="timeline-content-text"
+                style={{
+                  fontSize: 15,
+                  lineHeight: 1.6,
+                  overflowWrap: "break-word",
+                  fontFamily: "var(--font-primary)",
+                  whiteSpace: "pre-wrap",
+                  color: getContentColor(),
+                  fontStyle: isSessionEnd ? "italic" : "normal",
+                  textDecoration: isTaskDone ? "line-through" : "none",
+                }}
+              >
+                {linkifyContent(entry.content)}
+              </span>
+            )}
+
+            {isSessionStart && sessionDuration && (
+              <span
+                style={{
+                  fontSize: 11,
+                  color: "var(--accent)",
+                  backgroundColor: "var(--accent-subtle)",
+                  padding: "2px 6px",
+                  borderRadius: 3,
+                  userSelect: "none",
+                  fontWeight: 500,
+                }}
+              >
+                {formatDuration(sessionDuration)}
+              </span>
+            )}
+
+            {isTaskDone && (
+              <span
+                style={{
+                  fontSize: 11,
+                  color: "var(--success)",
+                  fontWeight: 700,
+                  userSelect: "none",
+                }}
+              >
+                [DONE]
+              </span>
+            )}
+            {isTask && !isTaskDone && (
+              <span
+                style={{
+                  fontSize: 11,
+                  color: "var(--warning)",
+                  fontWeight: 700,
+                  userSelect: "none",
+                }}
+              >
+                [TODO]
+              </span>
+            )}
+            {entry.contentType === 'expense' && entry.fieldValues && (
+              <span
+                style={{
+                  fontSize: 11,
+                  color: "var(--accent)",
+                  backgroundColor: "var(--accent-subtle)",
+                  padding: "2px 8px",
+                  borderRadius: 3,
+                  fontWeight: 500,
+                  userSelect: "none",
+                }}
+              >
+                {(() => {
+                  const { amount, currency, category, subcategory, expenseType } = entry.fieldValues;
+                  const currencySymbols = { USD: '$', CNY: '¥', EUR: '€', GBP: '£', JPY: '¥' };
+                  const symbol = currencySymbols[currency] || '$';
+                  const cat = category || expenseType || '';
+                  const sub = subcategory ? ` › ${subcategory}` : '';
+                  return `${symbol}${amount}${cat ? ` · ${cat}${sub}` : ''}`;
+                })()}
+              </span>
+            )}
+            {entry.contentType === 'bookmark' && entry.fieldValues && (
+              <span
+                style={{
+                  fontSize: 11,
+                  color: "#22d3ee",
+                  backgroundColor: "rgba(34, 211, 238, 0.1)",
+                  padding: "2px 8px",
+                  borderRadius: 3,
+                  fontWeight: 500,
+                  userSelect: "none",
+                }}
+              >
+                {(() => {
+                  const { type, status } = entry.fieldValues;
+                  const statusIcons = { Inbox: '📥', Reading: '📖', Archived: '✅' };
+                  const icon = statusIcons[status] || '🔖';
+                  return `${icon} ${type || 'Link'}`;
+                })()}
+              </span>
+            )}
+          </div>
+
+          {category && (
+            <div style={{ marginTop: 6 }}>
+              <span
+                className="category-label"
+                style={{
+                  fontSize: 11,
+                  padding: "3px 10px",
+                  borderRadius: 3,
+                  fontWeight: 600,
+                  textTransform: "uppercase",
+                  userSelect: "none",
+                  letterSpacing: "0.05em",
+                  color: categoryTextColor,
+                  backgroundColor: `${category.color}20`,
+                  border: `1px solid ${category.color}40`,
+                }}
+              >
+                #{category.label}
+              </span>
+            </div>
+          )}
+
+          {/* Linked entries after (newer) */}
+          {afterLinks.length > 0 && (
+            <div className="linked-entries-after" style={{ marginTop: 8 }}>
+              {afterLinks.map(linked => (
+                <LinkedEntryPreview key={linked.id} linkedEntry={linked} direction="after" />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }

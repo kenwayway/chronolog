@@ -6,7 +6,7 @@ import { TimelineEntry } from "./TimelineEntry";
 
 const ENTRIES_PER_PAGE = 20;
 
-export function Timeline({ entries, status, categories, onContextMenu, categoryFilter = [] }) {
+export function Timeline({ entries, allEntries, status, categories, onContextMenu, categoryFilter = [] }) {
     const { theme } = useTheme();
     const [currentPage, setCurrentPage] = useState(0);
 
@@ -151,6 +151,7 @@ export function Timeline({ entries, status, categories, onContextMenu, categoryF
                 <TimelineEntry
                     key={entry.id}
                     entry={entry}
+                    allEntries={allEntries || entries}
                     isFirst={index === 0}
                     isLast={index === sortedEntries.length - 1}
                     sessionDuration={sessionDurations[entry.id]}
