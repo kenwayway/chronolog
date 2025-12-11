@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useSession } from "./hooks/useSession";
 import { useCategories } from "./hooks/useCategories";
 import { useTheme } from "./hooks/useTheme";
@@ -16,7 +16,6 @@ import {
   SettingsModal,
   EditModal,
   ActivityPanel,
-  LinkSelector,
 } from "./components";
 
 function App() {
@@ -55,13 +54,16 @@ function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
   const [editModal, setEditModal] = useState({ isOpen: false, entry: null });
-  const [linkSelector, setLinkSelector] = useState({ isOpen: false, entry: null });
+  const [followUpEntry, setFollowUpEntry] = useState(null); // Entry to follow up on
   const [categoryFilter, setCategoryFilter] = useState([]);
   const [contextMenu, setContextMenu] = useState({
     isOpen: false,
     position: { x: 0, y: 0 },
     entry: null,
   });
+
+  // Ref to focus input panel
+  const inputPanelRef = useRef(null);
 
   // Context menu handlers
   const handleContextMenu = useCallback((entry, position) => {
@@ -81,48 +83,38 @@ function App() {
     setEditModal({ isOpen: false, entry: null });
   }, []);
 
-  // Link selector handlers
-  const openLinkSelector = useCallback((entry) => {
-    setLinkSelector({ isOpen: true, entry });
+  // Follow up handler - set entry to follow up and focus input
+  const handleFollowUp = useCallback((entry) => {
+    setFollowUpEntry(entry);
+    // Focus input panel after state update
+    setTimeout(() => {
+      inputPanelRef.current?.focus();
+    }, 100);
   }, []);
 
-  const closeLinkSelector = useCallback(() => {
-    setLinkSelector({ isOpen: false, entry: null });
+  // Clear follow up
+  const clearFollowUp = useCallback(() => {
+    setFollowUpEntry(null);
   }, []);
 
-  // Bidirectional link handler
-  const handleLink = useCallback((sourceId, newLinkedIds) => {
-    const sourceEntry = state.entries.find(e => e.id === sourceId);
-    if (!sourceEntry) return;
+  // Add bidirectional link between two entries
+  const addBidirectionalLink = useCallback((entryId1, entryId2) => {
+    const entry1 = state.entries.find(e => e.id === entryId1);
+    const entry2 = state.entries.find(e => e.id === entryId2);
 
-    const oldLinkedIds = sourceEntry.linkedEntries || [];
-
-    // Update source entry
-    actions.updateEntry(sourceId, { linkedEntries: newLinkedIds });
-
-    // Find entries to add/remove backlinks
-    const addedIds = newLinkedIds.filter(id => !oldLinkedIds.includes(id));
-    const removedIds = oldLinkedIds.filter(id => !newLinkedIds.includes(id));
-
-    // Add backlinks to newly linked entries
-    addedIds.forEach(targetId => {
-      const targetEntry = state.entries.find(e => e.id === targetId);
-      if (targetEntry) {
-        const targetLinks = targetEntry.linkedEntries || [];
-        if (!targetLinks.includes(sourceId)) {
-          actions.updateEntry(targetId, { linkedEntries: [...targetLinks, sourceId] });
-        }
+    if (entry1) {
+      const links1 = entry1.linkedEntries || [];
+      if (!links1.includes(entryId2)) {
+        actions.updateEntry(entryId1, { linkedEntries: [...links1, entryId2] });
       }
-    });
+    }
 
-    // Remove backlinks from unlinked entries
-    removedIds.forEach(targetId => {
-      const targetEntry = state.entries.find(e => e.id === targetId);
-      if (targetEntry) {
-        const targetLinks = targetEntry.linkedEntries || [];
-        actions.updateEntry(targetId, { linkedEntries: targetLinks.filter(id => id !== sourceId) });
+    if (entry2) {
+      const links2 = entry2.linkedEntries || [];
+      if (!links2.includes(entryId1)) {
+        actions.updateEntry(entryId2, { linkedEntries: [...links2, entryId1] });
       }
-    });
+    }
   }, [state.entries, actions]);
 
   // Filtered entries for timeline
@@ -170,12 +162,17 @@ function App() {
       </main>
 
       <InputPanel
+        ref={inputPanelRef}
         status={state.status}
         onLogIn={handlers.handleLogIn}
         onSwitch={handlers.handleSwitch}
         onNote={handlers.handleNote}
         onLogOff={handlers.handleLogOff}
         cloudSync={cloudSync}
+        followUpEntry={followUpEntry}
+        onClearFollowUp={clearFollowUp}
+        onLinkCreated={addBidirectionalLink}
+        entries={state.entries}
       />
 
       <TasksPanel
@@ -205,16 +202,8 @@ function App() {
         onDelete={handlers.handleDeleteEntry}
         onCopy={handlers.handleCopyEntry}
         onMarkAsTask={handlers.handleMarkAsTask}
-        onLink={openLinkSelector}
+        onLink={handleFollowUp}
         googleTasksEnabled={googleTasks.isLoggedIn}
-      />
-
-      <LinkSelector
-        isOpen={linkSelector.isOpen}
-        sourceEntry={linkSelector.entry}
-        entries={state.entries}
-        onLink={handleLink}
-        onClose={closeLinkSelector}
       />
 
       <EditModal
@@ -243,4 +232,5 @@ function App() {
 }
 
 export default App;
+
 

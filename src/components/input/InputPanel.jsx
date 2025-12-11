@@ -1,11 +1,22 @@
-import { useState, useRef, useEffect } from "react";
-import { Terminal } from "lucide-react";
+import { useState, useRef, useEffect, forwardRef, useImperativeHandle } from "react";
+import { Terminal, X, Link2 } from "lucide-react";
 import { SESSION_STATUS } from "../../utils/constants";
 import { FocusMode } from "./FocusMode";
 import { AttachmentPreview } from "./AttachmentPreview";
 import { InputActions } from "./InputActions";
 
-export function InputPanel({ status, onLogIn, onSwitch, onNote, onLogOff, cloudSync }) {
+export const InputPanel = forwardRef(function InputPanel({
+  status,
+  onLogIn,
+  onSwitch,
+  onNote,
+  onLogOff,
+  cloudSync,
+  followUpEntry,
+  onClearFollowUp,
+  onLinkCreated,
+  entries
+}, ref) {
   const [input, setInput] = useState("");
   const [isFocused, setIsFocused] = useState(false);
   const [mobileExpanded, setMobileExpanded] = useState(false);
@@ -22,6 +33,24 @@ export function InputPanel({ status, onLogIn, onSwitch, onNote, onLogOff, cloudS
   const focusInputRef = useRef(null);
   const fileInputRef = useRef(null);
   const isStreaming = status === SESSION_STATUS.STREAMING;
+
+  // Expose focus method to parent
+  useImperativeHandle(ref, () => ({
+    focus: () => {
+      inputRef.current?.focus();
+      setIsFocused(true);
+      setMobileExpanded(true);
+    }
+  }));
+
+  // Focus input when followUpEntry is set
+  useEffect(() => {
+    if (followUpEntry && inputRef.current) {
+      inputRef.current.focus();
+      setIsFocused(true);
+      setMobileExpanded(true);
+    }
+  }, [followUpEntry]);
 
   // Handle mobile keyboard visibility
   useEffect(() => {
@@ -145,12 +174,33 @@ export function InputPanel({ status, onLogIn, onSwitch, onNote, onLogOff, cloudS
     }
     if (!input.trim() && action !== "logOff") return;
     const content = buildEntryContent();
+
+    // Get the follow-up entry ID before clearing
+    const followUpId = followUpEntry?.id;
+
     switch (action) {
       case "logIn": onLogIn(content); break;
       case "switch": onSwitch(content); break;
       case "note": onNote(content); break;
       case "logOff": onLogOff(content); break;
     }
+
+    // After the note is added, create the bidirectional link
+    // We need to find the newly created entry and link it
+    if (followUpId && (action === "note" || action === "logIn")) {
+      // Delay to allow state to update with new entry
+      setTimeout(() => {
+        // Find the most recent entry (the one we just created)
+        const latestEntry = entries?.length > 0
+          ? [...entries].sort((a, b) => b.timestamp - a.timestamp)[0]
+          : null;
+
+        if (latestEntry && onLinkCreated) {
+          onLinkCreated(followUpId, latestEntry.id);
+        }
+      }, 100);
+    }
+
     setInput("");
     setImageUrl("");
     setLocation("");
@@ -161,6 +211,9 @@ export function InputPanel({ status, onLogIn, onSwitch, onNote, onLogOff, cloudS
     setMobileExpanded(false);
     setFocusMode(false);
     inputRef.current?.blur();
+
+    // Clear follow-up after submission
+    onClearFollowUp?.();
   };
 
   const handleKeyDown = (e) => {
@@ -201,6 +254,12 @@ export function InputPanel({ status, onLogIn, onSwitch, onNote, onLogOff, cloudS
     }
   };
 
+  const getFollowUpPreview = (content) => {
+    if (!content) return "(empty)";
+    const firstLine = content.split("\n")[0];
+    return firstLine.length > 30 ? firstLine.slice(0, 30) + "..." : firstLine;
+  };
+
   const renderInputForm = (inFocusMode = false) => (
     <div
       className={`input-panel ${isFocused ? "focused" : ""} ${inFocusMode ? "focus-mode" : ""}`}
@@ -217,6 +276,42 @@ export function InputPanel({ status, onLogIn, onSwitch, onNote, onLogOff, cloudS
           : {}),
       }}
     >
+      {/* Follow-up indicator */}
+      {followUpEntry && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            padding: "6px 12px",
+            backgroundColor: "var(--accent-subtle)",
+            borderBottom: "1px solid var(--border-subtle)",
+            fontSize: 11,
+            color: "var(--accent)",
+          }}
+        >
+          <Link2 size={12} />
+          <span style={{ fontWeight: 600 }}>FOLLOW UP:</span>
+          <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "var(--text-secondary)" }}>
+            {getFollowUpPreview(followUpEntry.content)}
+          </span>
+          <button
+            onClick={() => onClearFollowUp?.()}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: 2,
+              color: "var(--text-muted)",
+              display: "flex",
+              alignItems: "center",
+            }}
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
       {/* Input Area */}
       <div className="input-area" style={{ display: "flex", flex: 1 }}>
         <div
@@ -253,7 +348,7 @@ export function InputPanel({ status, onLogIn, onSwitch, onNote, onLogOff, cloudS
               if (panel && panel.contains(e.relatedTarget)) return;
               setIsFocused(false);
             }}
-            placeholder={isStreaming ? "Add note or switch session..." : "What are you working on?"}
+            placeholder={followUpEntry ? "Add follow-up..." : (isStreaming ? "Add note or switch session..." : "What are you working on?")}
             rows={1}
           />
         </div>
@@ -307,4 +402,5 @@ export function InputPanel({ status, onLogIn, onSwitch, onNote, onLogOff, cloudS
       </FocusMode>
     </>
   );
-}
+});
+

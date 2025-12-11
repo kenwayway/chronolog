@@ -104,7 +104,7 @@ export function ContextMenu({
       </button>
 
       <button className="context-menu-item" onClick={handleLink}>
-        🔗 LINK
+        ↪ FOLLOW UP
       </button>
 
       <button className="context-menu-item" onClick={handleCopy}>
