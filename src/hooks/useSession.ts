@@ -1,5 +1,6 @@
 import { useReducer, useEffect, useCallback } from 'react'
-import { ENTRY_TYPES, SESSION_STATUS, ACTIONS, STORAGE_KEYS, BUILTIN_CONTENT_TYPES } from '../utils/constants'
+import { ENTRY_TYPES, SESSION_STATUS, ACTIONS, BUILTIN_CONTENT_TYPES } from '../utils/constants'
+import { STORAGE_KEYS, getStorage, getStorageRaw, setStorage, setStorageRaw } from '../utils/storageService'
 import { generateId } from '../utils/formatters'
 import type {
     Entry,
@@ -279,18 +280,13 @@ export function useSession(): UseSessionReturn {
     const [state, dispatch] = useReducer(sessionReducer, initialState)
 
     useEffect(() => {
-        const savedState = localStorage.getItem(STORAGE_KEYS.STATE)
-        const savedApiKey = localStorage.getItem(STORAGE_KEYS.API_KEY)
-        const savedBaseUrl = localStorage.getItem(STORAGE_KEYS.AI_BASE_URL)
-        const savedModel = localStorage.getItem(STORAGE_KEYS.AI_MODEL)
+        const savedState = getStorage<Partial<SessionState>>(STORAGE_KEYS.STATE)
+        const savedApiKey = getStorageRaw(STORAGE_KEYS.API_KEY)
+        const savedBaseUrl = getStorageRaw(STORAGE_KEYS.AI_BASE_URL)
+        const savedModel = getStorageRaw(STORAGE_KEYS.AI_MODEL)
 
         if (savedState) {
-            try {
-                const parsed = JSON.parse(savedState)
-                dispatch({ type: ACTIONS.LOAD_STATE, payload: parsed })
-            } catch (e) {
-                console.error('Failed to parse saved state:', e)
-            }
+            dispatch({ type: ACTIONS.LOAD_STATE, payload: savedState })
         }
 
         if (savedApiKey || savedBaseUrl || savedModel) {
@@ -312,7 +308,7 @@ export function useSession(): UseSessionReturn {
             entries: state.entries,
             contentTypes: state.contentTypes
         }
-        localStorage.setItem(STORAGE_KEYS.STATE, JSON.stringify(stateToSave))
+        setStorage(STORAGE_KEYS.STATE, stateToSave)
     }, [state.status, state.sessionStart, state.entries, state.contentTypes])
 
     const logIn = useCallback((content: string) => {
@@ -343,15 +339,15 @@ export function useSession(): UseSessionReturn {
     }, [])
 
     const setApiKey = useCallback((apiKey: string) => {
-        localStorage.setItem(STORAGE_KEYS.API_KEY, apiKey)
+        setStorageRaw(STORAGE_KEYS.API_KEY, apiKey)
         dispatch({ type: ACTIONS.SET_API_KEY, payload: { apiKey } })
     }, [])
 
     const setAIConfig = useCallback((config: SetAIConfigPayload) => {
         const { apiKey, aiBaseUrl, aiModel } = config
-        if (apiKey !== undefined) localStorage.setItem(STORAGE_KEYS.API_KEY, apiKey)
-        if (aiBaseUrl !== undefined) localStorage.setItem(STORAGE_KEYS.AI_BASE_URL, aiBaseUrl)
-        if (aiModel !== undefined) localStorage.setItem(STORAGE_KEYS.AI_MODEL, aiModel)
+        if (apiKey !== undefined) setStorageRaw(STORAGE_KEYS.API_KEY, apiKey)
+        if (aiBaseUrl !== undefined) setStorageRaw(STORAGE_KEYS.AI_BASE_URL, aiBaseUrl)
+        if (aiModel !== undefined) setStorageRaw(STORAGE_KEYS.AI_MODEL, aiModel)
         dispatch({ type: ACTIONS.SET_AI_CONFIG, payload: config })
     }, [])
 

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import type { Entry, ContentType, SessionActions } from '../types'
 import type { CategorizeResult } from './useAICategories'
+import { STORAGE_KEYS, getStorage, type CloudAuthData } from '../utils/storageService'
 
 interface UseAutoCategorizeProps {
     entries: Entry[]
@@ -9,8 +10,6 @@ interface UseAutoCategorizeProps {
     categorize: (content: string, token: string, contentTypes?: ContentType[]) => Promise<CategorizeResult>
     updateEntry: SessionActions['updateEntry']
 }
-
-const AUTH_STORAGE_KEY = 'chronolog_cloud_auth'
 
 /**
  * Custom hook that auto-categorizes new entries using AI
@@ -35,15 +34,8 @@ export function useAutoCategorize({
             // Only suggest for notes without existing category or contentType
             if (newEntry && newEntry.content && !newEntry.category && !newEntry.contentType) {
                 // Get token from storage
-                const stored = localStorage.getItem(AUTH_STORAGE_KEY)
-                let token: string | null = null
-
-                try {
-                    const auth = JSON.parse(stored || '{}')
-                    token = auth?.token || null
-                } catch {
-                    // ignore parse errors
-                }
+                const auth = getStorage<CloudAuthData>(STORAGE_KEYS.CLOUD_AUTH)
+                const token = auth?.token || null
 
                 if (token) {
                     categorize(newEntry.content, token, contentTypes).then(result => {

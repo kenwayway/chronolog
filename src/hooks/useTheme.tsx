@@ -1,7 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { getTheme, getThemeList, ThemeConfig } from '../themes'
-
-const THEME_STORAGE_KEY = 'chronolog_theme'
+import { STORAGE_KEYS, getStorage, setStorage } from '../utils/storageService'
 
 // ===== Accent Color Palette =====
 export type AccentColorKey = 'blue' | 'indigo' | 'violet' | 'rose' | 'amber' | 'emerald' | 'cyan'
@@ -58,14 +57,9 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
 
     // Load from localStorage
     useEffect(() => {
-        const saved = localStorage.getItem(THEME_STORAGE_KEY)
+        const saved = getStorage<ThemeState>(STORAGE_KEYS.THEME)
         if (saved) {
-            try {
-                const parsed = JSON.parse(saved)
-                setThemeState({ ...defaultThemeState, ...parsed })
-            } catch (e) {
-                console.error('Failed to parse theme:', e)
-            }
+            setThemeState({ ...defaultThemeState, ...saved })
         }
     }, [])
 
@@ -138,7 +132,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
         root.style.setProperty('--heading-h3', shiftHue(accent.light, -15))
 
         // Save to localStorage
-        localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(themeState))
+        setStorage(STORAGE_KEYS.THEME, themeState)
     }, [themeState])
 
     const setMode = (mode: ThemeMode) => {

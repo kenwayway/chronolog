@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import type { Entry, ContentType, CloudData, ImportDataPayload } from '../types'
+import { STORAGE_KEYS, getStorage, setStorage, removeStorage, type CloudAuthData } from '../utils/storageService'
 
-const STORAGE_KEY = 'chronolog_cloud_auth'
 const SYNC_DEBOUNCE_MS = 2000
 
 interface CloudSyncState {
@@ -108,20 +108,14 @@ export function useCloudSync({ entries, contentTypes, onImportData }: UseCloudSy
 
     // Load saved token on mount
     useEffect(() => {
-        const saved = localStorage.getItem(STORAGE_KEY)
+        const saved = getStorage<CloudAuthData>(STORAGE_KEYS.CLOUD_AUTH)
         if (saved) {
-            try {
-                const { token, expiresAt }: CloudAuthStorage = JSON.parse(saved)
-                if (expiresAt > Date.now()) {
-                    tokenRef.current = token
-                    setSyncState(prev => ({ ...prev, isLoggedIn: true }))
-                    fetchRemoteData(token)
-                } else {
-                    localStorage.removeItem(STORAGE_KEY)
-                    fetchRemoteData(null)
-                }
-            } catch (e) {
-                localStorage.removeItem(STORAGE_KEY)
+            if (saved.expiresAt > Date.now()) {
+                tokenRef.current = saved.token
+                setSyncState(prev => ({ ...prev, isLoggedIn: true }))
+                fetchRemoteData(saved.token)
+            } else {
+                removeStorage(STORAGE_KEYS.CLOUD_AUTH)
                 fetchRemoteData(null)
             }
         } else {
@@ -210,10 +204,10 @@ export function useCloudSync({ entries, contentTypes, onImportData }: UseCloudSy
 
             // Save token
             tokenRef.current = data.token
-            localStorage.setItem(STORAGE_KEY, JSON.stringify({
+            setStorage<CloudAuthData>(STORAGE_KEYS.CLOUD_AUTH, {
                 token: data.token,
                 expiresAt: data.expiresAt,
-            }))
+            })
 
             setSyncState(prev => ({
                 ...prev,
@@ -239,7 +233,7 @@ export function useCloudSync({ entries, contentTypes, onImportData }: UseCloudSy
     // Logout
     const logout = useCallback(() => {
         tokenRef.current = null
-        localStorage.removeItem(STORAGE_KEY)
+        removeStorage(STORAGE_KEYS.CLOUD_AUTH)
         setSyncState({
             isLoggedIn: false,
             isSyncing: false,

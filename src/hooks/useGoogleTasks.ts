@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
+import { STORAGE_KEYS, getStorage, setStorage, removeStorage, type GoogleTokenData } from '../utils/storageService'
 
 const GOOGLE_CLIENT_ID = '822449560941-p3fd199i26cadg42h8a4um4sclvl38q3.apps.googleusercontent.com'
 const SCOPES = 'https://www.googleapis.com/auth/tasks'
-const STORAGE_KEY = 'chronolog_google_token'
 
 interface TokenData {
     access_token: string
@@ -73,11 +73,11 @@ export function useGoogleTasks(): UseGoogleTasksReturn {
             return
         }
 
-        const tokenData: TokenData = {
+        const tokenData: GoogleTokenData = {
             access_token: response.access_token,
             expires_at: Date.now() + (response.expires_in * 1000),
         }
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(tokenData))
+        setStorage(STORAGE_KEYS.GOOGLE_TOKEN, tokenData)
         setIsLoggedIn(true)
         setError(null)
     }, [])
@@ -97,13 +97,12 @@ export function useGoogleTasks(): UseGoogleTasksReturn {
                 setTokenClient(client)
 
                 // Check for existing token
-                const storedToken = localStorage.getItem(STORAGE_KEY)
-                if (storedToken) {
-                    const tokenData: TokenData = JSON.parse(storedToken)
+                const tokenData = getStorage<GoogleTokenData>(STORAGE_KEYS.GOOGLE_TOKEN)
+                if (tokenData) {
                     if (tokenData.expires_at > Date.now() + 300000) {
                         setIsLoggedIn(true)
                     } else {
-                        localStorage.removeItem(STORAGE_KEY)
+                        removeStorage(STORAGE_KEYS.GOOGLE_TOKEN)
                     }
                 }
                 setIsLoading(false)
@@ -131,11 +130,10 @@ export function useGoogleTasks(): UseGoogleTasksReturn {
     }, [handleTokenResponse])
 
     const getAccessToken = useCallback((): string | null => {
-        const stored = localStorage.getItem(STORAGE_KEY)
-        if (!stored) return null
-        const tokenData: TokenData = JSON.parse(stored)
+        const tokenData = getStorage<GoogleTokenData>(STORAGE_KEYS.GOOGLE_TOKEN)
+        if (!tokenData) return null
         if (tokenData.expires_at < Date.now()) {
-            localStorage.removeItem(STORAGE_KEY)
+            removeStorage(STORAGE_KEYS.GOOGLE_TOKEN)
             setIsLoggedIn(false)
             return null
         }
@@ -153,7 +151,7 @@ export function useGoogleTasks(): UseGoogleTasksReturn {
         if (token) {
             window.google?.accounts?.oauth2?.revoke(token)
         }
-        localStorage.removeItem(STORAGE_KEY)
+        removeStorage(STORAGE_KEYS.GOOGLE_TOKEN)
         setIsLoggedIn(false)
     }, [getAccessToken])
 
