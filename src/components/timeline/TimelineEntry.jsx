@@ -351,36 +351,56 @@ export function TimelineEntry({
     return firstLine.length > 40 ? firstLine.slice(0, 40) + "..." : firstLine;
   };
 
-  const LinkedEntryPreview = ({ linkedEntry, direction }) => (
-    <div
-      className="linked-entry-preview"
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 8,
-        padding: "4px 8px",
-        marginLeft: 86,
-        marginBottom: direction === "before" ? 4 : 0,
-        marginTop: direction === "after" ? 4 : 0,
-        fontSize: 11,
-        color: "var(--text-muted)",
-        backgroundColor: "var(--bg-tertiary)",
-        borderRadius: 4,
-        border: "1px solid var(--border-subtle)",
-      }}
-    >
-      <span style={{ color: direction === "before" ? "var(--accent)" : "var(--warning)", fontWeight: 600 }}>
-        {direction === "before" ? "↑" : "↓"}
-      </span>
-      <Link2 size={10} style={{ color: "var(--text-dim)", flexShrink: 0 }} />
-      <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-        {getPreview(linkedEntry.content)}
-      </span>
-      <span style={{ fontSize: 9, color: "var(--text-dim)", fontFamily: "var(--font-mono)", flexShrink: 0 }}>
-        {formatTime(linkedEntry.timestamp)}
-      </span>
-    </div>
-  );
+  const LinkedEntryPreview = ({ linkedEntry, direction }) => {
+    const handleClick = () => {
+      // Find the entry element and scroll to it
+      const entryElement = document.querySelector(`[data-entry-id="${linkedEntry.id}"]`);
+      if (entryElement) {
+        entryElement.scrollIntoView({ behavior: "smooth", block: "center" });
+        // Highlight briefly
+        entryElement.style.backgroundColor = "var(--accent-subtle)";
+        setTimeout(() => {
+          entryElement.style.backgroundColor = "";
+        }, 1500);
+      }
+    };
+
+    return (
+      <button
+        className="linked-entry-preview"
+        onClick={handleClick}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          padding: "4px 8px",
+          marginLeft: 86,
+          marginBottom: direction === "before" ? 4 : 0,
+          marginTop: direction === "after" ? 4 : 0,
+          fontSize: 11,
+          color: "var(--text-muted)",
+          backgroundColor: "var(--bg-tertiary)",
+          borderRadius: 4,
+          border: "1px solid var(--border-subtle)",
+          cursor: "pointer",
+          width: "calc(100% - 86px)",
+          textAlign: "left",
+          transition: "background-color 100ms ease",
+        }}
+      >
+        <span style={{ color: direction === "before" ? "var(--accent)" : "var(--warning)", fontWeight: 600 }}>
+          {direction === "before" ? "↑" : "↓"}
+        </span>
+        <Link2 size={10} style={{ color: "var(--text-dim)", flexShrink: 0 }} />
+        <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {getPreview(linkedEntry.content)}
+        </span>
+        <span style={{ fontSize: 9, color: "var(--text-dim)", fontFamily: "var(--font-mono)", flexShrink: 0 }}>
+          {formatTime(linkedEntry.timestamp)}
+        </span>
+      </button>
+    );
+  };
 
   return (
     <>
@@ -395,12 +415,14 @@ export function TimelineEntry({
 
       <div
         className={`timeline-entry ${isTaskDone ? 'timeline-entry-done' : ''}`}
+        data-entry-id={entry.id}
         style={{
           display: "flex",
           alignItems: "flex-start",
           gap: 16,
           cursor: "default",
           userSelect: "none",
+          transition: "background-color 300ms ease",
         }}
         onContextMenu={handleContextMenu}
         onTouchStart={handleTouchStart}
@@ -576,37 +598,92 @@ export function TimelineEntry({
                   borderRadius: 3,
                   fontWeight: 500,
                   userSelect: "none",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 4,
                 }}
               >
-                {(() => {
-                  const { amount, currency, category, subcategory, expenseType } = entry.fieldValues;
-                  const currencySymbols = { USD: '$', CNY: '¥', EUR: '€', GBP: '£', JPY: '¥' };
-                  const symbol = currencySymbols[currency] || '$';
-                  const cat = category || expenseType || '';
-                  const sub = subcategory ? ` › ${subcategory}` : '';
-                  return `${symbol}${amount}${cat ? ` · ${cat}${sub}` : ''}`;
-                })()}
+                <span>💰</span>
+                <span>{entry.fieldValues.currency === 'CNY' ? '¥' : '$'}{entry.fieldValues.amount}</span>
+                {entry.fieldValues.category && (
+                  <>
+                    <span style={{ opacity: 0.5 }}>•</span>
+                    <span>{entry.fieldValues.category}</span>
+                  </>
+                )}
+                {entry.fieldValues.subcategory && (
+                  <>
+                    <span style={{ opacity: 0.5 }}>›</span>
+                    <span>{entry.fieldValues.subcategory}</span>
+                  </>
+                )}
               </span>
             )}
+
             {entry.contentType === 'bookmark' && entry.fieldValues && (
-              <span
+              <div
                 style={{
-                  fontSize: 11,
-                  color: "#22d3ee",
-                  backgroundColor: "rgba(34, 211, 238, 0.1)",
-                  padding: "2px 8px",
-                  borderRadius: 3,
-                  fontWeight: 500,
-                  userSelect: "none",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 4,
+                  marginTop: 4,
+                  padding: "8px 12px",
+                  backgroundColor: "var(--bg-secondary)",
+                  borderRadius: 6,
+                  border: "1px solid var(--border-subtle)",
+                  width: "100%",
                 }}
               >
-                {(() => {
-                  const { type, status } = entry.fieldValues;
-                  const statusIcons = { Inbox: '📥', Reading: '📖', Archived: '✅' };
-                  const icon = statusIcons[status] || '🔖';
-                  return `${icon} ${type || 'Link'}`;
-                })()}
-              </span>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
+                  <a
+                    href={entry.fieldValues.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      fontWeight: 600,
+                      color: "var(--text-primary)",
+                      textDecoration: "none",
+                      fontSize: 14,
+                    }}
+                    onMouseEnter={e => e.target.style.textDecoration = "underline"}
+                    onMouseLeave={e => e.target.style.textDecoration = "none"}
+                  >
+                    {entry.fieldValues.title || entry.fieldValues.url || "Untitled Bookmark"}
+                  </a>
+                  {entry.fieldValues.url && (
+                    <span style={{ fontSize: 11, color: "var(--text-dim)" }}>
+                      {new URL(entry.fieldValues.url).hostname.replace('www.', '')}
+                    </span>
+                  )}
+                </div>
+
+                <div style={{ display: "flex", gap: 6 }}>
+                  {entry.fieldValues.type && (
+                    <span style={{
+                      fontSize: 10,
+                      padding: "1px 6px",
+                      borderRadius: 3,
+                      backgroundColor: "var(--bg-tertiary)",
+                      color: "var(--text-secondary)",
+                      border: "1px solid var(--border-subtle)"
+                    }}>
+                      {entry.fieldValues.type}
+                    </span>
+                  )}
+                  {entry.fieldValues.status && (
+                    <span style={{
+                      fontSize: 10,
+                      padding: "1px 6px",
+                      borderRadius: 3,
+                      backgroundColor: entry.fieldValues.status === 'Reading' ? "var(--accent-subtle)" : "var(--bg-tertiary)",
+                      color: entry.fieldValues.status === 'Reading' ? "var(--accent)" : "var(--text-secondary)",
+                      border: "1px solid var(--border-subtle)"
+                    }}>
+                      {entry.fieldValues.status}
+                    </span>
+                  )}
+                </div>
+              </div>
             )}
           </div>
 
@@ -641,7 +718,7 @@ export function TimelineEntry({
             </div>
           )}
         </div>
-      </div>
+      </div >
     </>
   );
 }

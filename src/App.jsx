@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useSession } from "./hooks/useSession";
 import { useCategories } from "./hooks/useCategories";
 import { useTheme } from "./hooks/useTheme";
@@ -65,6 +65,41 @@ function App() {
   // Ref to focus input panel
   const inputPanelRef = useRef(null);
 
+  // Ref to track pending link (entry ID to link the next new entry to)
+  const pendingLinkRef = useRef(null);
+  const prevEntriesLengthRef = useRef(state.entries.length);
+
+  // Watch for new entries and create pending links
+  useEffect(() => {
+    if (state.entries.length > prevEntriesLengthRef.current && pendingLinkRef.current) {
+      // A new entry was added and we have a pending link
+      const newEntry = state.entries[state.entries.length - 1];
+      const linkToId = pendingLinkRef.current;
+
+      if (newEntry && linkToId) {
+        // Create bidirectional link
+        const linkToEntry = state.entries.find(e => e.id === linkToId);
+
+        if (linkToEntry) {
+          // Update the new entry
+          const newLinks = newEntry.linkedEntries || [];
+          if (!newLinks.includes(linkToId)) {
+            actions.updateEntry(newEntry.id, { linkedEntries: [...newLinks, linkToId] });
+          }
+
+          // Update the linked-to entry
+          const existingLinks = linkToEntry.linkedEntries || [];
+          if (!existingLinks.includes(newEntry.id)) {
+            actions.updateEntry(linkToId, { linkedEntries: [...existingLinks, newEntry.id] });
+          }
+        }
+      }
+
+      pendingLinkRef.current = null;
+    }
+    prevEntriesLengthRef.current = state.entries.length;
+  }, [state.entries, actions]);
+
   // Context menu handlers
   const handleContextMenu = useCallback((entry, position) => {
     setContextMenu({ isOpen: true, position, entry });
@@ -86,6 +121,7 @@ function App() {
   // Follow up handler - set entry to follow up and focus input
   const handleFollowUp = useCallback((entry) => {
     setFollowUpEntry(entry);
+    pendingLinkRef.current = entry.id; // Set pending link
     // Focus input panel after state update
     setTimeout(() => {
       inputPanelRef.current?.focus();
@@ -95,27 +131,8 @@ function App() {
   // Clear follow up
   const clearFollowUp = useCallback(() => {
     setFollowUpEntry(null);
+    pendingLinkRef.current = null; // Clear pending link
   }, []);
-
-  // Add bidirectional link between two entries
-  const addBidirectionalLink = useCallback((entryId1, entryId2) => {
-    const entry1 = state.entries.find(e => e.id === entryId1);
-    const entry2 = state.entries.find(e => e.id === entryId2);
-
-    if (entry1) {
-      const links1 = entry1.linkedEntries || [];
-      if (!links1.includes(entryId2)) {
-        actions.updateEntry(entryId1, { linkedEntries: [...links1, entryId2] });
-      }
-    }
-
-    if (entry2) {
-      const links2 = entry2.linkedEntries || [];
-      if (!links2.includes(entryId1)) {
-        actions.updateEntry(entryId2, { linkedEntries: [...links2, entryId1] });
-      }
-    }
-  }, [state.entries, actions]);
 
   // Filtered entries for timeline
   const getFilteredEntries = () => {
@@ -171,8 +188,6 @@ function App() {
         cloudSync={cloudSync}
         followUpEntry={followUpEntry}
         onClearFollowUp={clearFollowUp}
-        onLinkCreated={addBidirectionalLink}
-        entries={state.entries}
       />
 
       <TasksPanel

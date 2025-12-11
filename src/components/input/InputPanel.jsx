@@ -13,9 +13,7 @@ export const InputPanel = forwardRef(function InputPanel({
   onLogOff,
   cloudSync,
   followUpEntry,
-  onClearFollowUp,
-  onLinkCreated,
-  entries
+  onClearFollowUp
 }, ref) {
   const [input, setInput] = useState("");
   const [isFocused, setIsFocused] = useState(false);
@@ -175,30 +173,11 @@ export const InputPanel = forwardRef(function InputPanel({
     if (!input.trim() && action !== "logOff") return;
     const content = buildEntryContent();
 
-    // Get the follow-up entry ID before clearing
-    const followUpId = followUpEntry?.id;
-
     switch (action) {
       case "logIn": onLogIn(content); break;
       case "switch": onSwitch(content); break;
       case "note": onNote(content); break;
       case "logOff": onLogOff(content); break;
-    }
-
-    // After the note is added, create the bidirectional link
-    // We need to find the newly created entry and link it
-    if (followUpId && (action === "note" || action === "logIn")) {
-      // Delay to allow state to update with new entry
-      setTimeout(() => {
-        // Find the most recent entry (the one we just created)
-        const latestEntry = entries?.length > 0
-          ? [...entries].sort((a, b) => b.timestamp - a.timestamp)[0]
-          : null;
-
-        if (latestEntry && onLinkCreated) {
-          onLinkCreated(followUpId, latestEntry.id);
-        }
-      }, 100);
     }
 
     setInput("");
@@ -212,7 +191,7 @@ export const InputPanel = forwardRef(function InputPanel({
     setFocusMode(false);
     inputRef.current?.blur();
 
-    // Clear follow-up after submission
+    // Clear follow-up after submission (linking handled by App.jsx)
     onClearFollowUp?.();
   };
 
