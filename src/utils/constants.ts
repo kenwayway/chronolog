@@ -77,7 +77,9 @@ export const BUILTIN_CONTENT_TYPES: ContentType[] = [
         icon: '💰',
         fields: [
             { id: 'amount', name: 'Amount', type: 'number', required: true },
-            { id: 'expenseType', name: 'Type', type: 'dropdown', options: ['Food', 'Transport', 'Entertainment', 'Shopping', 'Other'] }
+            { id: 'currency', name: 'Currency', type: 'dropdown', options: ['USD', 'CNY', 'EUR', 'GBP', 'JPY'], default: 'USD' },
+            { id: 'category', name: 'Category', type: 'dropdown', options: ['Food', 'Transport', 'Entertainment', 'Shopping', 'Health', 'Bills', 'Other'] },
+            { id: 'subcategory', name: 'Subcategory', type: 'text' }
         ],
         builtIn: true,
         order: 2

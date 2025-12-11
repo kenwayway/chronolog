@@ -33,26 +33,39 @@ function App() {
         onImportData: actions.importData,
     });
 
-    // Auto-suggest category for new entries (via backend API)
+    // Auto-suggest category AND content type for new entries (via backend API)
     useEffect(() => {
         const currentCount = state.entries.length;
         if (currentCount > lastEntryCountRef.current && cloudSync.isLoggedIn) {
             const newEntry = state.entries[state.entries.length - 1];
-            // Only suggest for notes and session starts with content, and without existing category
-            if (newEntry && newEntry.content && !newEntry.category) {
+            // Only suggest for notes without existing category or contentType
+            if (newEntry && newEntry.content && !newEntry.category && !newEntry.contentType) {
                 // Get token from cloudSync
-                const token = localStorage.getItem('chronolog_cloud_token');
-                if (token) {
-                    categorize(newEntry.content, token).then(categoryId => {
-                        if (categoryId) {
-                            actions.updateEntry(newEntry.id, { category: categoryId });
+                const token = localStorage.getItem('chronolog_cloud_auth');
+                let parsedToken = null;
+                try {
+                    const auth = JSON.parse(token);
+                    parsedToken = auth?.token;
+                } catch (e) { /* ignore */ }
+
+                if (parsedToken) {
+                    categorize(newEntry.content, parsedToken, state.contentTypes).then(result => {
+                        const updates = {};
+                        if (result.category) updates.category = result.category;
+                        if (result.contentType && result.contentType !== 'note') {
+                            updates.contentType = result.contentType;
+                        }
+                        if (result.fieldValues) updates.fieldValues = result.fieldValues;
+
+                        if (Object.keys(updates).length > 0) {
+                            actions.updateEntry(newEntry.id, updates);
                         }
                     });
                 }
             }
         }
         lastEntryCountRef.current = currentCount;
-    }, [state.entries.length, cloudSync.isLoggedIn, categorize, actions]);
+    }, [state.entries.length, state.contentTypes, cloudSync.isLoggedIn, categorize, actions]);
 
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [leftSidebarOpen, setLeftSidebarOpen] = useState(false);
@@ -207,7 +220,6 @@ function App() {
                 onNote={handleNote}
                 onLogOff={handleLogOff}
                 cloudSync={cloudSync}
-                contentTypes={state.contentTypes}
             />
 
             <TasksPanel

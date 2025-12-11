@@ -498,7 +498,7 @@ export function TimelineEntry({
               [DONE]
             </span>
           )}
-          {isTask && (
+          {isTask && !isTaskDone && (
             <span
               style={{
                 fontSize: 11,
@@ -508,6 +508,28 @@ export function TimelineEntry({
               }}
             >
               [TODO]
+            </span>
+          )}
+          {entry.contentType === 'expense' && entry.fieldValues && (
+            <span
+              style={{
+                fontSize: 11,
+                color: "var(--accent)",
+                backgroundColor: "var(--accent-subtle)",
+                padding: "2px 8px",
+                borderRadius: 3,
+                fontWeight: 500,
+                userSelect: "none",
+              }}
+            >
+              {(() => {
+                const { amount, currency, category, subcategory, expenseType } = entry.fieldValues;
+                const currencySymbols = { USD: '$', CNY: '¥', EUR: '€', GBP: '£', JPY: '¥' };
+                const symbol = currencySymbols[currency] || '$';
+                const cat = category || expenseType || '';
+                const sub = subcategory ? ` › ${subcategory}` : '';
+                return `${symbol}${amount}${cat ? ` · ${cat}${sub}` : ''}`;
+              })()}
             </span>
           )}
         </div>

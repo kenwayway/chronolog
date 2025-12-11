@@ -1,11 +1,14 @@
 import { useState, useRef, useEffect } from "react";
 import { Image, MapPin } from "lucide-react";
 import { Dropdown } from "../common/Dropdown";
+import { BUILTIN_CONTENT_TYPES } from "../../utils/constants";
 
-export function EditModal({ isOpen, entry, onSave, onClose, categories }) {
+export function EditModal({ isOpen, entry, onSave, onClose, categories, contentTypes }) {
   const [content, setContent] = useState("");
   const [timestamp, setTimestamp] = useState("");
   const [category, setCategory] = useState(null);
+  const [contentType, setContentType] = useState(null);
+  const [fieldValues, setFieldValues] = useState({});
   const [imageUrl, setImageUrl] = useState("");
   const [location, setLocation] = useState("");
   const [showImageInput, setShowImageInput] = useState(false);
@@ -13,6 +16,8 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories }) {
 
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const textareaRef = useRef(null);
+
+  const types = contentTypes || BUILTIN_CONTENT_TYPES;
 
   useEffect(() => {
     if (isOpen && entry) {
@@ -48,6 +53,8 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories }) {
         .slice(0, 16);
       setTimestamp(localISOTime);
       setCategory(entry.category || null);
+      setContentType(entry.contentType || null);
+      setFieldValues(entry.fieldValues || {});
       setTimeout(() => textareaRef.current?.focus(), 50);
     }
   }, [isOpen, entry]);
@@ -103,6 +110,8 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories }) {
       content: newContent !== entry.content ? newContent : undefined,
       timestamp: newTimestamp !== entry.timestamp ? newTimestamp : undefined,
       category: category !== entry.category ? category : undefined,
+      contentType: contentType !== entry.contentType ? contentType : undefined,
+      fieldValues: JSON.stringify(fieldValues) !== JSON.stringify(entry.fieldValues) ? fieldValues : undefined,
     });
     onClose();
   };
@@ -117,6 +126,11 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories }) {
   };
 
   const selectedCategory = categories?.find((c) => c.id === category);
+  const selectedContentType = types.find((ct) => ct.id === contentType);
+
+  const handleFieldChange = (fieldId, value) => {
+    setFieldValues(prev => ({ ...prev, [fieldId]: value }));
+  };
 
   return (
     <div
@@ -187,7 +201,7 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories }) {
             placeholder="Enter content..."
             style={{
               width: "100%",
-              minHeight: 300,
+              minHeight: 200,
               padding: 16,
               fontSize: 15,
               fontFamily: "var(--font-mono)",
@@ -200,6 +214,82 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories }) {
             }}
           />
         </div>
+
+        {/* ContentType Fields (if expense) */}
+        {contentType === 'expense' && (
+          <div
+            style={{
+              padding: "12px 20px",
+              borderTop: "1px solid var(--border-subtle)",
+              backgroundColor: "var(--bg-secondary)",
+            }}
+          >
+            <div className="flex items-center gap-4 flex-wrap" style={{ fontSize: 12 }}>
+              {/* Amount */}
+              <div className="flex items-center gap-2">
+                <span style={{ color: "var(--text-dim)", fontSize: 10 }}>AMOUNT</span>
+                <input
+                  type="number"
+                  value={fieldValues.amount || ''}
+                  onChange={(e) => handleFieldChange('amount', e.target.value ? Number(e.target.value) : '')}
+                  placeholder="0"
+                  className="edit-modal-input"
+                  style={{ width: 80 }}
+                />
+              </div>
+
+              {/* Currency */}
+              <div className="flex items-center gap-2">
+                <span style={{ color: "var(--text-dim)", fontSize: 10 }}>CURRENCY</span>
+                <select
+                  value={fieldValues.currency || 'USD'}
+                  onChange={(e) => handleFieldChange('currency', e.target.value)}
+                  className="edit-modal-input"
+                  style={{ width: 70 }}
+                >
+                  <option value="USD">USD</option>
+                  <option value="CNY">CNY</option>
+                  <option value="EUR">EUR</option>
+                  <option value="GBP">GBP</option>
+                  <option value="JPY">JPY</option>
+                </select>
+              </div>
+
+              {/* Category */}
+              <div className="flex items-center gap-2">
+                <span style={{ color: "var(--text-dim)", fontSize: 10 }}>TYPE</span>
+                <select
+                  value={fieldValues.category || ''}
+                  onChange={(e) => handleFieldChange('category', e.target.value)}
+                  className="edit-modal-input"
+                  style={{ width: 120 }}
+                >
+                  <option value="">--</option>
+                  <option value="Food">Food</option>
+                  <option value="Transport">Transport</option>
+                  <option value="Entertainment">Entertainment</option>
+                  <option value="Shopping">Shopping</option>
+                  <option value="Health">Health</option>
+                  <option value="Bills">Bills</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+
+              {/* Subcategory */}
+              <div className="flex items-center gap-2">
+                <span style={{ color: "var(--text-dim)", fontSize: 10 }}>SUB</span>
+                <input
+                  type="text"
+                  value={fieldValues.subcategory || ''}
+                  onChange={(e) => handleFieldChange('subcategory', e.target.value)}
+                  placeholder="e.g. Cafe"
+                  className="edit-modal-input"
+                  style={{ width: 100 }}
+                />
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Attachments */}
         {(imageUrl || location || showImageInput || showLocationInput) && (
@@ -348,6 +438,52 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories }) {
                 ]}
               />
             </div>
+
+            {/* Content Type */}
+            <div className="flex items-center gap-2">
+              <span
+                style={{
+                  fontSize: 10,
+                  color: "var(--text-dim)",
+                  userSelect: "none",
+                }}
+              >
+                TYPE
+              </span>
+              <select
+                value={contentType || ''}
+                onChange={(e) => {
+                  const newType = e.target.value || null;
+                  setContentType(newType);
+                  // Reset fieldValues when changing type
+                  if (newType === 'expense') {
+                    setFieldValues({ currency: 'USD' });
+                  } else if (newType === 'task') {
+                    setFieldValues({ done: false });
+                  } else {
+                    setFieldValues({});
+                  }
+                }}
+                className="edit-modal-input"
+                style={{ width: 100 }}
+              >
+                <option value="">Note</option>
+                <option value="task">Task</option>
+                <option value="expense">Expense</option>
+              </select>
+            </div>
+
+            {/* Task done checkbox */}
+            {contentType === 'task' && (
+              <label className="flex items-center gap-2" style={{ cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={fieldValues.done || false}
+                  onChange={(e) => handleFieldChange('done', e.target.checked)}
+                />
+                <span style={{ fontSize: 10, color: "var(--text-dim)" }}>DONE</span>
+              </label>
+            )}
 
             {/* Attachment buttons */}
             <button
