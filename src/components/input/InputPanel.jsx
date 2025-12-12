@@ -4,6 +4,7 @@ import { SESSION_STATUS } from "../../utils/constants";
 import { FocusMode } from "./FocusMode";
 import { AttachmentPreview } from "./AttachmentPreview";
 import { InputActions } from "./InputActions";
+import { EntryMetadataInput } from "./EntryMetadataInput";
 
 export const InputPanel = forwardRef(function InputPanel({
   status,
@@ -27,6 +28,11 @@ export const InputPanel = forwardRef(function InputPanel({
   const [focusMode, setFocusMode] = useState(false);
   const [viewportHeight, setViewportHeight] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
+  // Metadata state (for FocusMode)
+  const [showMetadata, setShowMetadata] = useState(false);
+  const [category, setCategory] = useState(null);
+  const [contentType, setContentType] = useState(null);
+  const [tags, setTags] = useState([]);
   const inputRef = useRef(null);
   const focusInputRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -172,7 +178,14 @@ export const InputPanel = forwardRef(function InputPanel({
     switch (action) {
       case "logIn": onLogIn(content); break;
       case "switch": onSwitch(content); break;
-      case "note": onNote(content); break;
+      case "note":
+        // Pass metadata if manually set
+        const options = {};
+        if (contentType) options.contentType = contentType;
+        if (category) options.category = category;
+        if (tags.length > 0) options.tags = tags;
+        onNote(content, Object.keys(options).length > 0 ? options : undefined);
+        break;
       case "logOff": onLogOff(content); break;
     }
 
@@ -185,6 +198,11 @@ export const InputPanel = forwardRef(function InputPanel({
     setIsFocused(false);
     setMobileExpanded(false);
     setFocusMode(false);
+    // Reset metadata
+    setShowMetadata(false);
+    setCategory(null);
+    setContentType(null);
+    setTags([]);
     inputRef.current?.blur();
 
     // Note: Follow-up linking and cleanup is handled by App.jsx's useEffect
@@ -346,6 +364,20 @@ export const InputPanel = forwardRef(function InputPanel({
         onGetLocation={getCurrentLocation}
       />
 
+      {/* Metadata input (category, type, tags) - only in focus mode */}
+      {inFocusMode && (
+        <EntryMetadataInput
+          category={category}
+          setCategory={setCategory}
+          contentType={contentType}
+          setContentType={setContentType}
+          tags={tags}
+          setTags={setTags}
+          isExpanded={showMetadata}
+          onToggle={() => setShowMetadata(!showMetadata)}
+        />
+      )}
+
       <InputActions
         isStreaming={isStreaming}
         input={input}
@@ -353,10 +385,12 @@ export const InputPanel = forwardRef(function InputPanel({
         location={location}
         showImageInput={showImageInput}
         showLocationInput={showLocationInput}
+        showMetadata={showMetadata}
         inFocusMode={inFocusMode}
         onSubmit={handleSubmit}
         onToggleImage={() => setShowImageInput(!showImageInput)}
         onToggleLocation={() => setShowLocationInput(!showLocationInput)}
+        onToggleMetadata={() => setShowMetadata(!showMetadata)}
         onOpenFocusMode={() => setFocusMode(true)}
       />
 

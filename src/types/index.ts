@@ -3,7 +3,7 @@
 // ============================================
 
 /** Entry type discriminator (system-level, controls session flow) */
-export type EntryType = 'SESSION_START' | 'NOTE' | 'SESSION_END' | 'TASK_DONE'
+export type EntryType = 'SESSION_START' | 'NOTE' | 'SESSION_END'
 
 /** Session status */
 export type SessionStatus = 'IDLE' | 'STREAMING'
@@ -93,6 +93,8 @@ export interface NotePayload {
   content: string
   contentType?: string
   fieldValues?: Record<string, unknown>
+  category?: CategoryId
+  tags?: string[]
 }
 
 export interface LogOffPayload {
@@ -116,6 +118,7 @@ export interface UpdateEntryPayload {
   contentType?: string
   fieldValues?: Record<string, unknown>
   linkedEntries?: string[]
+  tags?: string[]
 }
 
 export interface SetEntryCategoryPayload {
@@ -178,7 +181,7 @@ export type SessionAction =
 export interface SessionActions {
   logIn: (content: string) => void
   switchSession: (content: string) => void
-  addNote: (content: string, options?: { contentType?: string; fieldValues?: Record<string, unknown> }) => void
+  addNote: (content: string, options?: { contentType?: string; fieldValues?: Record<string, unknown>; category?: CategoryId; tags?: string[] }) => void
   logOff: (content?: string) => void
   deleteEntry: (entryId: string) => void
   editEntry: (entryId: string, content: string) => void

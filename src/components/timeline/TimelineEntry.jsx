@@ -1,10 +1,119 @@
-import { useState } from "react";
-import { MapPin, Link2 } from "lucide-react";
+import { useState, memo, useMemo } from "react";
+import { MapPin } from "lucide-react";
 import { ENTRY_TYPES } from "../../utils/constants";
 import { formatTime, formatDuration, formatDate } from "../../utils/formatters";
+import { parseContent, darkenColor } from "../../utils/contentParser";
 import { useTheme } from "../../hooks/useTheme";
+import { LinkedEntryPreview } from "./LinkedEntryPreview";
+import { ExpenseDisplay, BookmarkDisplay, MoodDisplay } from "./ContentTypeDisplays";
 
-export function TimelineEntry({
+/**
+ * Renders parsed content with proper markdown elements
+ */
+function ContentRenderer({ content }) {
+  const parsed = useMemo(() => parseContent(content), [content]);
+
+  return parsed.map((item, idx) => {
+    switch (item.type) {
+      case 'codeblock':
+        return (
+          <pre key={item.key} className="md-code-block">
+            <code>{item.content}</code>
+          </pre>
+        );
+
+      case 'image':
+        return (
+          <div key={item.key} className="timeline-image-container">
+            <img
+              src={item.content}
+              alt="attached"
+              className="timeline-image"
+              onError={(e) => {
+                e.target.style.display = "none";
+                e.target.nextSibling.style.display = "inline";
+              }}
+            />
+            <a
+              href={item.content}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="timeline-image-fallback"
+            >
+              {item.content}
+            </a>
+          </div>
+        );
+
+      case 'location':
+        return (
+          <div
+            key={item.key}
+            style={{
+              marginTop: 4,
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+            }}
+          >
+            <MapPin size={12} style={{ color: "var(--accent)", flexShrink: 0 }} />
+            <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
+              {item.content}
+            </span>
+          </div>
+        );
+
+      case 'blockquote':
+        return (
+          <blockquote key={item.key} className="md-blockquote">
+            {item.content}
+          </blockquote>
+        );
+
+      case 'heading': {
+        const { level, text } = item.content;
+        if (level === 1) {
+          return (
+            <div key={item.key} className="md-h1">
+              <span className="md-h1-deco">═══</span>
+              {text}
+              <span className="md-h1-deco">═══</span>
+            </div>
+          );
+        }
+        if (level === 2) {
+          return (
+            <div key={item.key} className="md-h2">
+              <span className="md-h2-prefix">»</span>
+              {text}
+            </div>
+          );
+        }
+        return (
+          <div key={item.key} className="md-h3">
+            <span className="md-h3-prefix">›</span>
+            {text}
+          </div>
+        );
+      }
+
+      case 'text':
+      default:
+        return (
+          <span key={item.key}>
+            {item.content}
+            {idx < parsed.length - 1 && parsed[idx + 1]?.type === 'text' ? "\n" : ""}
+          </span>
+        );
+    }
+  });
+}
+
+/**
+ * Individual timeline entry component
+ * Displays entry content with symbols, categories, and linked entries
+ */
+export const TimelineEntry = memo(function TimelineEntry({
   entry,
   allEntries,
   isFirst,
@@ -20,6 +129,7 @@ export function TimelineEntry({
   const { symbols } = useTheme();
   const [pressTimer, setPressTimer] = useState(null);
 
+  // Event handlers
   const handleContextMenu = (e) => {
     e.preventDefault();
     onContextMenu?.(entry, { x: e.clientX, y: e.clientY });
@@ -28,7 +138,6 @@ export function TimelineEntry({
   const handleTouchStart = (e) => {
     e.currentTarget.style.userSelect = 'none';
     e.currentTarget.style.webkitUserSelect = 'none';
-
     const timer = setTimeout(() => {
       const touch = e.touches[0];
       onContextMenu?.(entry, { x: touch.clientX, y: touch.clientY });
@@ -39,295 +148,81 @@ export function TimelineEntry({
   const handleTouchEnd = (e) => {
     e.currentTarget.style.userSelect = '';
     e.currentTarget.style.webkitUserSelect = '';
-
     if (pressTimer) {
       clearTimeout(pressTimer);
       setPressTimer(null);
     }
   };
 
-  const getEntrySymbol = () => {
-    const styles = { fontSize: 14 };
+  // Computed values
+  const category = useMemo(
+    () => categories?.find((c) => c.id === entry.category),
+    [categories, entry.category]
+  );
 
-    // Special symbol for beans category
-    if (entry.category === 'beans') {
-      return (
-        <span style={{ ...styles, color: '#ff9e64' }}>
-          {symbols.beans}
-        </span>
-      );
-    }
+  const categoryTextColor = useMemo(
+    () => category ? (isLightMode ? darkenColor(category.color, 10) : category.color) : null,
+    [category, isLightMode]
+  );
 
-    // ContentType-based symbols (task)
-    if (entry.contentType === 'task') {
-      const isDone = entry.fieldValues?.done;
-      if (isDone) {
-        return (
-          <span style={{ ...styles, color: "var(--success)", fontWeight: 700 }}>
-            {symbols.done}
-          </span>
-        );
-      }
-      return (
-        <span style={{ ...styles, color: "var(--warning)" }}>
-          {symbols.todo}
-        </span>
-      );
-    }
-
-    switch (entry.type) {
-      case ENTRY_TYPES.SESSION_START:
-        return (
-          <span
-            style={{
-              ...styles,
-              color: "var(--success)",
-              fontWeight: 700,
-              fontSize: 14,
-            }}
-          >
-            {symbols.sessionStart}
-          </span>
-        );
-      case ENTRY_TYPES.SESSION_END:
-        return <span style={{ ...styles, color: "var(--text-muted)" }}>{symbols.sessionEnd}</span>;
-      case ENTRY_TYPES.NOTE:
-      default:
-        return (
-          <span style={{ ...styles, color: "var(--text-dim)" }}>
-            {symbols.note}
-          </span>
-        );
-    }
-  };
-
-  // Darken color for light mode visibility
-  const darkenColor = (hex, percent) => {
-    const num = parseInt(hex.slice(1), 16);
-    const r = Math.max(0, (num >> 16) - Math.round((255 * percent) / 100));
-    const g = Math.max(
-      0,
-      ((num >> 8) & 0xff) - Math.round((255 * percent) / 100),
-    );
-    const b = Math.max(0, (num & 0xff) - Math.round((255 * percent) / 100));
-    return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, "0")}`;
-  };
-
-  const category = categories?.find((c) => c.id === entry.category);
-  const categoryTextColor = category
-    ? isLightMode
-      ? darkenColor(category.color, 10)
-      : category.color
-    : null;
   const isSessionStart = entry.type === ENTRY_TYPES.SESSION_START;
   const isSessionEnd = entry.type === ENTRY_TYPES.SESSION_END;
   const isTask = entry.contentType === 'task';
   const isTaskDone = isTask && entry.fieldValues?.done;
 
-  // Parse inline markdown: **bold**, `code`, ==highlight==, URLs
-  const parseInlineMarkdown = (text, keyPrefix = '') => {
-    if (!text) return null;
+  // Linked entries
+  const linkedEntryData = useMemo(() => {
+    const outgoingLinks = entry.linkedEntries || [];
+    const incomingLinks = allEntries
+      ?.filter(e => e.id !== entry.id && e.linkedEntries?.includes(entry.id))
+      .map(e => e.id) || [];
+    const allLinkedIds = [...new Set([...outgoingLinks, ...incomingLinks])];
+    return allLinkedIds
+      .map(id => allEntries?.find(e => e.id === id))
+      .filter(Boolean);
+  }, [entry.id, entry.linkedEntries, allEntries]);
 
-    // Combined regex for all inline patterns
-    const inlineRegex = /(\*\*[^*]+\*\*|`[^`]+`|==[^=]+=\s*=|https?:\/\/[^\s]+)/g;
-    const parts = text.split(inlineRegex);
+  const beforeLinks = useMemo(
+    () => linkedEntryData.filter(e => e.timestamp < entry.timestamp),
+    [linkedEntryData, entry.timestamp]
+  );
 
-    return parts.map((part, i) => {
-      const key = `${keyPrefix}-${i}`;
+  const afterLinks = useMemo(
+    () => linkedEntryData.filter(e => e.timestamp >= entry.timestamp),
+    [linkedEntryData, entry.timestamp]
+  );
 
-      // Bold: **text**
-      if (part.startsWith('**') && part.endsWith('**')) {
-        return <strong key={key} className="md-bold">{part.slice(2, -2)}</strong>;
-      }
+  const getEntrySymbol = () => {
+    const styles = { fontSize: 14 };
 
-      // Inline code: `code`
-      if (part.startsWith('`') && part.endsWith('`')) {
-        return <code key={key} className="md-inline-code">{part.slice(1, -1)}</code>;
-      }
-
-      // Highlight: ==text==
-      if (part.startsWith('==') && part.endsWith('==')) {
-        return <mark key={key} className="md-highlight">{part.slice(2, -2)}</mark>;
-      }
-
-      // URL
-      if (part.match(/^https?:\/\//)) {
-        return (
-          <a
-            key={key}
-            href={part}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ color: "var(--accent)", wordBreak: "break-all" }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {part}
-          </a>
-        );
-      }
-
-      return part;
-    });
-  };
-
-  const linkifyContent = (text) => {
-    if (!text) return null;
-
-    const lines = text.split("\n");
-    const result = [];
-    let inCodeBlock = false;
-    let codeBlockLines = [];
-    let codeBlockLang = '';
-
-    for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
-      const line = lines[lineIdx];
-
-      // Code block start/end: ```
-      if (line.startsWith('```')) {
-        if (!inCodeBlock) {
-          inCodeBlock = true;
-          codeBlockLang = line.slice(3).trim();
-          codeBlockLines = [];
-        } else {
-          // End code block
-          result.push(
-            <pre key={`code-${lineIdx}`} className="md-code-block">
-              <code>{codeBlockLines.join('\n')}</code>
-            </pre>
-          );
-          inCodeBlock = false;
-          codeBlockLines = [];
-          codeBlockLang = '';
-        }
-        continue;
-      }
-
-      if (inCodeBlock) {
-        codeBlockLines.push(line);
-        continue;
-      }
-
-      // Image line
-      if (line.startsWith("🖼️ ")) {
-        const imageUrl = line.replace("🖼️ ", "").trim();
-        result.push(
-          <div key={lineIdx} className="timeline-image-container">
-            <img
-              src={imageUrl}
-              alt="attached"
-              className="timeline-image"
-              onError={(e) => {
-                e.target.style.display = "none";
-                e.target.nextSibling.style.display = "inline";
-              }}
-            />
-            <a
-              href={imageUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="timeline-image-fallback"
-            >
-              {imageUrl}
-            </a>
-          </div>
-        );
-        continue;
-      }
-
-      // Location line
-      if (line.startsWith("📍 ")) {
-        result.push(
-          <div
-            key={lineIdx}
-            style={{
-              marginTop: 4,
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-            }}
-          >
-            <MapPin
-              size={12}
-              style={{ color: "var(--accent)", flexShrink: 0 }}
-            />
-            <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
-              {line.replace("📍 ", "")}
-            </span>
-          </div>
-        );
-        continue;
-      }
-
-      // Blockquote: > text
-      if (line.startsWith("> ")) {
-        result.push(
-          <blockquote key={lineIdx} className="md-blockquote">
-            {parseInlineMarkdown(line.slice(2), lineIdx)}
-          </blockquote>
-        );
-        continue;
-      }
-
-      // Headings: # ## ### (CLI aesthetic, same font size)
-      if (line.startsWith('### ')) {
-        result.push(
-          <div key={lineIdx} className="md-h3">
-            <span className="md-h3-prefix">›</span>
-            {parseInlineMarkdown(line.slice(4), lineIdx)}
-          </div>
-        );
-        continue;
-      }
-      if (line.startsWith('## ')) {
-        result.push(
-          <div key={lineIdx} className="md-h2">
-            <span className="md-h2-prefix">»</span>
-            {parseInlineMarkdown(line.slice(3), lineIdx)}
-          </div>
-        );
-        continue;
-      }
-      if (line.startsWith('# ')) {
-        result.push(
-          <div key={lineIdx} className="md-h1">
-            <span className="md-h1-deco">═══</span>
-            {parseInlineMarkdown(line.slice(2), lineIdx)}
-            <span className="md-h1-deco">═══</span>
-          </div>
-        );
-        continue;
-      }
-
-      // Regular line with inline markdown
-      result.push(
-        <span key={lineIdx}>
-          {parseInlineMarkdown(line, lineIdx)}
-          {lineIdx < lines.length - 1 ? "\n" : ""}
-        </span>
-      );
+    if (entry.category === 'beans') {
+      return <span style={{ ...styles, color: '#ff9e64' }}>{symbols.beans}</span>;
     }
 
-    // Handle unclosed code block
-    if (inCodeBlock && codeBlockLines.length > 0) {
-      result.push(
-        <pre key="code-unclosed" className="md-code-block">
-          <code>{codeBlockLines.join('\n')}</code>
-        </pre>
-      );
+    if (entry.contentType === 'task') {
+      const isDone = entry.fieldValues?.done;
+      if (isDone) {
+        return <span style={{ ...styles, color: "var(--success)", fontWeight: 700 }}>{symbols.done}</span>;
+      }
+      return <span style={{ ...styles, color: "var(--warning)" }}>{symbols.todo}</span>;
     }
 
-    return result;
+    switch (entry.type) {
+      case ENTRY_TYPES.SESSION_START:
+        return <span style={{ ...styles, color: "var(--success)", fontWeight: 700, fontSize: 14 }}>{symbols.sessionStart}</span>;
+      case ENTRY_TYPES.SESSION_END:
+        return <span style={{ ...styles, color: "var(--text-muted)" }}>{symbols.sessionEnd}</span>;
+      case ENTRY_TYPES.NOTE:
+      default:
+        return <span style={{ ...styles, color: "var(--text-dim)" }}>{symbols.note}</span>;
+    }
   };
 
   const getLineColor = (position) => {
     if (position === "top") {
-      return lineState === "start" || lineState === "default"
-        ? "var(--border-light)"
-        : "var(--accent)";
+      return lineState === "start" || lineState === "default" ? "var(--border-light)" : "var(--accent)";
     }
-    return lineState === "end" || lineState === "default"
-      ? "var(--border-light)"
-      : "var(--accent)";
+    return lineState === "end" || lineState === "default" ? "var(--border-light)" : "var(--accent)";
   };
 
   const getContentColor = () => {
@@ -338,102 +233,7 @@ export function TimelineEntry({
     return "var(--text-secondary)";
   };
 
-  // Resolve linked entries (outgoing) and entries that link to this one (incoming)
-  const outgoingLinks = (entry.linkedEntries || []);
-  const incomingLinks = allEntries
-    ?.filter(e => e.id !== entry.id && e.linkedEntries?.includes(entry.id))
-    .map(e => e.id) || [];
-
-  // Combine and dedupe
-  const allLinkedIds = [...new Set([...outgoingLinks, ...incomingLinks])];
-  const linkedEntryData = allLinkedIds
-    .map(id => allEntries?.find(e => e.id === id))
-    .filter(Boolean);
-
-  const beforeLinks = linkedEntryData.filter(e => e.timestamp < entry.timestamp);
-  const afterLinks = linkedEntryData.filter(e => e.timestamp >= entry.timestamp);
-
-  const getPreview = (content) => {
-    if (!content) return "(empty)";
-    const firstLine = content.split("\n")[0];
-    return firstLine.length > 40 ? firstLine.slice(0, 40) + "..." : firstLine;
-  };
-
-  const LinkedEntryPreview = ({ linkedEntry, direction }) => {
-    const handleClick = () => {
-      // Try to find the element on current page first
-      const entryElement = document.querySelector(`[data-entry-id="${linkedEntry.id}"]`);
-      if (entryElement) {
-        entryElement.scrollIntoView({ behavior: "smooth", block: "center" });
-        entryElement.style.backgroundColor = "var(--accent-subtle)";
-        setTimeout(() => {
-          entryElement.style.backgroundColor = "";
-        }, 1500);
-      } else {
-        // Entry not on current page, navigate to its date
-        onNavigateToEntry?.(linkedEntry);
-      }
-    };
-
-    return (
-      <button
-        className="linked-entry-preview"
-        onClick={handleClick}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          padding: "6px 10px",
-          marginLeft: 86,
-          marginBottom: direction === "before" ? 4 : 0,
-          marginTop: direction === "after" ? 4 : 0,
-          fontSize: 11,
-          color: "var(--text-secondary)",
-          backgroundColor: "transparent", // Keep transparent
-          border: "1px solid var(--border-subtle)",
-          borderRadius: 4,
-          cursor: "pointer",
-          width: "calc(100% - 86px)",
-          textAlign: "left",
-          transition: "all 0.2s ease",
-          fontFamily: "var(--font-mono)",
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.borderColor = "var(--accent)";
-          e.currentTarget.style.color = "var(--text-primary)";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.borderColor = "var(--border-subtle)";
-          e.currentTarget.style.color = "var(--text-secondary)";
-        }}
-      >
-        <span style={{
-          color: "var(--accent)",
-          fontWeight: 600,
-          fontSize: 12,
-          lineHeight: 1,
-          width: 14, // Fixed width for alignment
-          display: "inline-block",
-          textAlign: "center"
-        }}>
-          {direction === 'before' ? '↱' : '↳'}
-        </span>
-
-        <span style={{
-          flex: 1,
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          whiteSpace: "nowrap",
-        }}>
-          {getPreview(linkedEntry.content)}
-        </span>
-      </button>
-    );
-  };
-
   return (
-
-
     <div
       className={`timeline-entry ${isTaskDone ? 'timeline-entry-done' : ''}`}
       data-entry-id={entry.id}
@@ -538,10 +338,16 @@ export function TimelineEntry({
         {beforeLinks.length > 0 && (
           <div className="linked-entries-before" style={{ marginBottom: 8 }}>
             {beforeLinks.map(linked => (
-              <LinkedEntryPreview key={linked.id} linkedEntry={linked} direction="before" />
+              <LinkedEntryPreview
+                key={linked.id}
+                linkedEntry={linked}
+                direction="before"
+                onNavigateToEntry={onNavigateToEntry}
+              />
             ))}
           </div>
         )}
+
         {/* Mobile timestamp */}
         <div
           className="timeline-mobile-time"
@@ -555,10 +361,9 @@ export function TimelineEntry({
         >
           {formatTime(entry.timestamp)}
         </div>
-        <div
-          className="flex flex-wrap items-baseline"
-          style={{ gap: "4px 12px", marginBottom: 6 }}
-        >
+
+        {/* Main content row */}
+        <div className="flex flex-wrap items-baseline" style={{ gap: "4px 12px", marginBottom: 6 }}>
           {entry.content && (
             <span
               className="timeline-content-text"
@@ -573,7 +378,7 @@ export function TimelineEntry({
                 textDecoration: isTaskDone ? "line-through" : "none",
               }}
             >
-              {linkifyContent(entry.content)}
+              <ContentRenderer content={entry.content} />
             </span>
           )}
 
@@ -594,198 +399,25 @@ export function TimelineEntry({
           )}
 
           {isTaskDone && (
-            <span
-              style={{
-                fontSize: 11,
-                color: "var(--success)",
-                fontWeight: 700,
-                userSelect: "none",
-              }}
-            >
+            <span style={{ fontSize: 11, color: "var(--success)", fontWeight: 700, userSelect: "none" }}>
               [DONE]
             </span>
           )}
+
           {isTask && !isTaskDone && (
-            <span
-              style={{
-                fontSize: 11,
-                color: "var(--warning)",
-                fontWeight: 700,
-                userSelect: "none",
-              }}
-            >
+            <span style={{ fontSize: 11, color: "var(--warning)", fontWeight: 700, userSelect: "none" }}>
               [TODO]
             </span>
           )}
-          {entry.contentType === 'expense' && entry.fieldValues && (
-            <span
-              style={{
-                fontSize: 11,
-                color: "var(--accent)",
-                backgroundColor: "var(--accent-subtle)",
-                padding: "2px 8px",
-                borderRadius: 3,
-                fontWeight: 500,
-                userSelect: "none",
-              }}
-            >
-              {(() => {
-                const { amount, currency, category, subcategory, expenseType } = entry.fieldValues;
-                const currencySymbols = { USD: '$', CNY: '¥', EUR: '€', GBP: '£', JPY: '¥' };
-                const symbol = currencySymbols[currency] || '$';
-                const cat = category || expenseType || '';
-                const sub = subcategory ? ` › ${subcategory}` : '';
-                return `${symbol}${amount}${cat ? ` · ${cat}${sub}` : ''}`;
-              })()}
-            </span>
-          )}
+
+          {entry.contentType === 'expense' && <ExpenseDisplay fieldValues={entry.fieldValues} />}
         </div>
 
-        {entry.contentType === 'bookmark' && entry.fieldValues && (
-          <a
-            href={entry.fieldValues.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              marginTop: 6,
-              padding: "6px 10px",
-              backgroundColor: "var(--bg-secondary",
-              border: "1px solid var(--border-subtle)",
-              textDecoration: "none",
-              color: "var(--text-primary)",
-              fontSize: 12,
-              fontFamily: "var(--font-mono)",
-              transition: "all 0.2s ease",
-              width: "fit-content",
-              maxWidth: "100%",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = "var(--accent)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = "var(--border-subtle)";
-            }}
-          >
-            <span style={{
-              color: "var(--accent)",
-              fontWeight: 600,
-              fontSize: 11,
-              flexShrink: 0
-            }}>
-              [MARK]
-            </span>
+        {/* Content type displays */}
+        {entry.contentType === 'bookmark' && <BookmarkDisplay fieldValues={entry.fieldValues} />}
+        {entry.contentType === 'mood' && <MoodDisplay fieldValues={entry.fieldValues} />}
 
-            <span style={{
-              fontWeight: 500,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-            }}>
-              {entry.fieldValues.title || entry.fieldValues.url || "Untitled"}
-            </span>
-
-            {entry.fieldValues.url && (
-              <span style={{
-                color: "var(--text-dim)",
-                fontSize: 11,
-                flexShrink: 0,
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                maxWidth: 150
-              }}>
-                · {(() => {
-                  try {
-                    return new URL(entry.fieldValues.url).hostname.replace(/^www\./, '');
-                  } catch {
-                    return '';
-                  }
-                })()}
-              </span>
-            )}
-          </a>
-        )}
-
-        {entry.contentType === 'mood' && entry.fieldValues && (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              marginTop: 8,
-              padding: "8px 12px",
-              backgroundColor: "var(--bg-secondary)",
-              border: "1px solid var(--border-subtle)",
-              borderRadius: 6,
-              fontSize: 13,
-              fontFamily: "var(--font-mono)",
-              width: "fit-content",
-            }}
-          >
-            <span style={{
-              color: "var(--accent)",
-              fontWeight: 600,
-              fontSize: 11,
-              flexShrink: 0
-            }}>
-              [MOOD]
-            </span>
-
-            {/* Feeling */}
-            <div className="flex items-center gap-2">
-              <span style={{ fontSize: 18, lineHeight: 1 }}>
-                {entry.fieldValues.feeling === 'Happy' ? '😄' :
-                  entry.fieldValues.feeling === 'Calm' ? '😌' :
-                    entry.fieldValues.feeling === 'Tired' ? '😴' :
-                      entry.fieldValues.feeling === 'Anxious' ? '😰' :
-                        entry.fieldValues.feeling === 'Sad' ? '😢' : '😠'}
-              </span>
-              <span style={{ color: "var(--text-primary)" }}>
-                {entry.fieldValues.feeling}
-              </span>
-            </div>
-
-            {/* Energy */}
-            {entry.fieldValues.energy && (
-              <>
-                <span style={{ color: "var(--text-dim)", fontSize: 11 }}>·</span>
-                <div className="flex items-center gap-2" title={`Energy: ${entry.fieldValues.energy}/5`}>
-                  <div style={{ display: "flex", gap: 2 }}>
-                    {[1, 2, 3, 4, 5].map(level => (
-                      <div
-                        key={level}
-                        style={{
-                          width: 4,
-                          height: 8,
-                          borderRadius: 1,
-                          backgroundColor: level <= entry.fieldValues.energy
-                            ? (entry.fieldValues.energy >= 4 ? "var(--success)" : entry.fieldValues.energy >= 3 ? "var(--accent)" : "var(--warning)")
-                            : "var(--text-dim)",
-                          opacity: 0.5,
-                        }}
-                      />
-                    ))}
-                  </div>
-                </div>
-              </>
-            )}
-
-            {/* Trigger */}
-            {entry.fieldValues.trigger && (
-              <>
-                <span style={{ color: "var(--text-dim)", fontSize: 11 }}>·</span>
-                <span style={{ color: "var(--text-dim)", fontSize: 11 }}>
-                  {entry.fieldValues.trigger}
-                </span>
-              </>
-            )}
-          </div>
-        )}
-
+        {/* Category badge */}
         {category && (
           <div style={{ marginTop: 6 }}>
             <span
@@ -824,11 +456,16 @@ export function TimelineEntry({
         {afterLinks.length > 0 && (
           <div className="linked-entries-after" style={{ marginTop: 8 }}>
             {afterLinks.map(linked => (
-              <LinkedEntryPreview key={linked.id} linkedEntry={linked} direction="after" />
+              <LinkedEntryPreview
+                key={linked.id}
+                linkedEntry={linked}
+                direction="after"
+                onNavigateToEntry={onNavigateToEntry}
+              />
             ))}
           </div>
         )}
       </div>
     </div>
   );
-}
+});

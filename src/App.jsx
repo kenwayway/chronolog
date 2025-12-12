@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { useSession } from "./hooks/useSession";
 import { useCategories } from "./hooks/useCategories";
 import { useTheme } from "./hooks/useTheme";
@@ -157,8 +157,8 @@ function App() {
     }, 100);
   }, []);
 
-  // Filtered entries for timeline
-  const getFilteredEntries = () => {
+  // Filtered entries for timeline (memoized for performance)
+  const filteredEntries = useMemo(() => {
     // When category filter is active, show ALL matching entries (ignore date)
     if (categoryFilter.length > 0) {
       return state.entries
@@ -173,7 +173,7 @@ function App() {
       const entryDate = new Date(entry.timestamp);
       return entryDate.toDateString() === targetDate.toDateString();
     });
-  };
+  }, [state.entries, categoryFilter, selectedDate]);
 
   return (
     <div className="min-h-screen flex flex-col font-mono" style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
@@ -192,7 +192,7 @@ function App() {
 
       <main className="flex-1 flex flex-col max-w-4xl w-full mx-auto relative">
         <Timeline
-          entries={getFilteredEntries()}
+          entries={filteredEntries}
           allEntries={state.entries}
           status={state.status}
           categories={categories}

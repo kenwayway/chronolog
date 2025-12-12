@@ -86,7 +86,11 @@ function sessionReducer(state: SessionState, action: SessionAction): SessionStat
     }
 
     case ACTIONS.NOTE: {
-      const { cleanContent, tags } = parseTags(action.payload.content);
+      const { cleanContent, tags: parsedTags } = parseTags(action.payload.content);
+      // Use manually provided tags if present, otherwise use parsed tags from content
+      const finalTags = action.payload.tags && action.payload.tags.length > 0
+        ? action.payload.tags
+        : (parsedTags.length > 0 ? parsedTags : undefined);
       const newEntry: Entry = {
         id: generateId(),
         type: ENTRY_TYPES.NOTE,
@@ -94,7 +98,8 @@ function sessionReducer(state: SessionState, action: SessionAction): SessionStat
         timestamp: Date.now(),
         contentType: action.payload.contentType,
         fieldValues: action.payload.fieldValues,
-        tags: tags.length > 0 ? tags : undefined
+        category: action.payload.category,
+        tags: finalTags
       }
 
       return {
@@ -198,7 +203,7 @@ function sessionReducer(state: SessionState, action: SessionAction): SessionStat
     }
 
     case ACTIONS.UPDATE_ENTRY: {
-      const { entryId, content, timestamp, category, contentType, fieldValues, linkedEntries } = action.payload
+      const { entryId, content, timestamp, category, contentType, fieldValues, linkedEntries, tags } = action.payload
       return {
         ...state,
         entries: state.entries.map(e => {
@@ -210,6 +215,7 @@ function sessionReducer(state: SessionState, action: SessionAction): SessionStat
           if (contentType !== undefined) updated.contentType = contentType
           if (fieldValues !== undefined) updated.fieldValues = fieldValues
           if (linkedEntries !== undefined) updated.linkedEntries = linkedEntries
+          if (tags !== undefined) updated.tags = tags.length > 0 ? tags : undefined
           return updated
         })
       }
@@ -329,13 +335,15 @@ export function useSession(): UseSessionReturn {
     dispatch({ type: ACTIONS.LOG_IN, payload: { content } })
   }, [])
 
-  const addNote = useCallback((content: string, options?: { contentType?: string; fieldValues?: Record<string, unknown> }) => {
+  const addNote = useCallback((content: string, options?: { contentType?: string; fieldValues?: Record<string, unknown>; category?: CategoryId; tags?: string[] }) => {
     dispatch({
       type: ACTIONS.NOTE,
       payload: {
         content,
         contentType: options?.contentType,
-        fieldValues: options?.fieldValues
+        fieldValues: options?.fieldValues,
+        category: options?.category,
+        tags: options?.tags
       }
     })
   }, [])

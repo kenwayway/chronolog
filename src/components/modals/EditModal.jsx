@@ -118,6 +118,11 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
   const handleSave = () => {
     const newTimestamp = new Date(timestamp).getTime();
     const newContent = buildContent();
+
+    // Check if tags changed (compare arrays properly)
+    const originalTags = entry.tags || [];
+    const tagsChanged = JSON.stringify(tags) !== JSON.stringify(originalTags);
+
     onSave(entry.id, {
       content: newContent !== entry.content ? newContent : undefined,
       timestamp: newTimestamp !== entry.timestamp ? newTimestamp : undefined,
@@ -125,7 +130,7 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
       contentType: contentType !== entry.contentType ? contentType : undefined,
       fieldValues: JSON.stringify(fieldValues) !== JSON.stringify(entry.fieldValues) ? fieldValues : undefined,
       linkedEntries: JSON.stringify(linkedEntries) !== JSON.stringify(entry.linkedEntries || []) ? linkedEntries : undefined,
-      tags: JSON.stringify(tags) !== JSON.stringify(entry.tags || []) ? (tags.length > 0 ? tags : undefined) : undefined,
+      tags: tagsChanged ? tags : undefined,
     });
     onClose();
   };

@@ -6,6 +6,7 @@ import {
     Image,
     MapPin,
     Maximize2,
+    Plus,
 } from "lucide-react";
 
 export function InputActions({
@@ -15,10 +16,12 @@ export function InputActions({
     location,
     showImageInput,
     showLocationInput,
+    showMetadata,
     inFocusMode,
     onSubmit,
     onToggleImage,
     onToggleLocation,
+    onToggleMetadata,
     onOpenFocusMode,
 }) {
     return (
@@ -47,6 +50,16 @@ export function InputActions({
                 >
                     <MapPin size={14} />
                 </button>
+                {/* Metadata button (only in focus mode) */}
+                {inFocusMode && (
+                    <button
+                        onClick={onToggleMetadata}
+                        title="Add category, type, tags"
+                        className={`icon-btn ${showMetadata ? "active" : ""}`}
+                    >
+                        <Plus size={14} />
+                    </button>
+                )}
                 {!inFocusMode && (
                     <button
                         onClick={onOpenFocusMode}

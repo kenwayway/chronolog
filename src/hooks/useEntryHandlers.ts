@@ -1,5 +1,5 @@
 import { useCallback } from 'react'
-import type { Entry, SessionActions, UpdateEntryPayload } from '../types'
+import type { Entry, SessionActions, UpdateEntryPayload, CategoryId } from '../types'
 
 interface UseEntryHandlersProps {
     actions: SessionActions
@@ -14,7 +14,7 @@ interface EntryHandlers {
     requireLogin: () => boolean
     handleLogIn: (content: string) => void
     handleSwitch: (content: string) => void
-    handleNote: (content: string) => void
+    handleNote: (content: string, options?: { contentType?: string; category?: CategoryId; tags?: string[] }) => void
     handleLogOff: (content: string) => void
     handleEditEntry: (entry: Entry, openModal: (entry: Entry) => void) => void
     handleSaveEdit: (entryId: string, updates: UpdateEntryPayload) => void
@@ -51,8 +51,8 @@ export function useEntryHandlers({
         actions.switchSession(content)
     }, [actions])
 
-    const handleNote = useCallback((content: string) => {
-        actions.addNote(content)
+    const handleNote = useCallback((content: string, options?: { contentType?: string; category?: CategoryId; tags?: string[] }) => {
+        actions.addNote(content, options)
     }, [actions])
 
     const handleLogOff = useCallback((content: string) => {

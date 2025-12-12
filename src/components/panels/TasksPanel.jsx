@@ -46,7 +46,7 @@ export function TasksPanel({
       // Complete in Google Tasks
       await googleTasks.completeTask(task.id);
 
-      // Create TASK_DONE entry (and delete original if exists)
+      // Mark task as done in timeline (and delete original if exists)
       onCompleteTask(entryId, task.title);
 
       // Remove from local list
