@@ -3,7 +3,7 @@
 // ============================================
 
 /** Entry type discriminator (system-level, controls session flow) */
-export type EntryType = 'SESSION_START' | 'NOTE' | 'SESSION_END'
+export type EntryType = 'SESSION_START' | 'NOTE' | 'SESSION_END' | 'TASK_DONE'
 
 /** Session status */
 export type SessionStatus = 'IDLE' | 'STREAMING'
