@@ -37,7 +37,7 @@ export const ACTIONS = {
 export const CATEGORIES: Category[] = [
   { id: 'hustle', label: 'Hustle', color: '#7aa2f7', description: 'Work, career, making money, business' },
   { id: 'craft', label: 'Craft', color: '#bb9af7', description: 'Coding, drawing, creating, building projects' },
-  { id: 'hardware', label: 'Hardware', color: '#4dcc59', description: 'Sleep, eating, workout, physical health' },
+  { id: 'hardware', label: 'Hardware', color: '#4dcc59', description: 'Sleep, eating, workout, physical health, medical checkups, mental health, doctor visits, therapy' },
   { id: 'sparks', label: 'Sparks', color: '#89ddff', description: 'Internalized ideas, insights, personal thoughts, reflections' },
   { id: 'barter', label: 'Barter', color: '#c8e068', description: 'Friends, social activities, relationships' },
   { id: 'wander', label: 'Wander', color: '#f7768e', description: 'Travel, movies, relaxation, exploration' },

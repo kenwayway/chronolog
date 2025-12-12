@@ -83,7 +83,7 @@ export function TimelineEntry({
               ...styles,
               color: "var(--success)",
               fontWeight: 700,
-              fontSize: 18,
+              fontSize: 14,
             }}
           >
             {symbols.sessionStart}
