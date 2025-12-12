@@ -187,8 +187,8 @@ export const InputPanel = forwardRef(function InputPanel({
     setFocusMode(false);
     inputRef.current?.blur();
 
-    // Clear follow-up after submission (linking handled by App.jsx)
-    onClearFollowUp?.();
+    // Note: Follow-up linking and cleanup is handled by App.jsx's useEffect
+    // Do NOT call onClearFollowUp here - it clears pendingLink before the new entry is added
   };
 
   const handleKeyDown = (e) => {

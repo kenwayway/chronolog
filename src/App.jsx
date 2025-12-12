@@ -96,6 +96,7 @@ function App() {
       }
 
       pendingLinkRef.current = null;
+      setFollowUpEntry(null); // Clear follow-up UI state
     }
     prevEntriesLengthRef.current = state.entries.length;
   }, [state.entries, actions]);

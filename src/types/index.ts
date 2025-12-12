@@ -62,6 +62,7 @@ export interface Entry {
   contentType?: string            // References ContentType.id
   fieldValues?: Record<string, unknown>  // Dynamic field values
   linkedEntries?: string[]        // Bidirectional linked entry IDs
+  tags?: string[]                 // Free-form tags (without # prefix)
 }
 
 // ============================================

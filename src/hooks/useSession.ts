@@ -2,6 +2,7 @@ import { useReducer, useEffect, useCallback } from 'react'
 import { ENTRY_TYPES, SESSION_STATUS, ACTIONS, BUILTIN_CONTENT_TYPES } from '../utils/constants'
 import { STORAGE_KEYS, getStorage, getStorageRaw, setStorage, setStorageRaw } from '../utils/storageService'
 import { generateId } from '../utils/formatters'
+import { parseTags } from '../utils/tagParser'
 import type {
   Entry,
   ContentType,
@@ -29,12 +30,14 @@ const initialState: SessionState = {
 function sessionReducer(state: SessionState, action: SessionAction): SessionState {
   switch (action.type) {
     case ACTIONS.LOG_IN: {
+      const { cleanContent, tags } = parseTags(action.payload.content);
       const newEntry: Entry = {
         id: generateId(),
         type: ENTRY_TYPES.SESSION_START,
-        content: action.payload.content,
+        content: cleanContent,
         timestamp: Date.now(),
-        sessionId: generateId()
+        sessionId: generateId(),
+        tags: tags.length > 0 ? tags : undefined
       }
       return {
         ...state,
@@ -49,23 +52,28 @@ function sessionReducer(state: SessionState, action: SessionAction): SessionStat
       const newSessionId = generateId()
       let newEntries = [...state.entries]
 
-      if (state.status === SESSION_STATUS.STREAMING && state.sessionStart) {
+      // Add session end entry
+      if (state.status === SESSION_STATUS.STREAMING) {
+        const duration = now - (state.sessionStart ?? 0)
         const endEntry: Entry = {
           id: generateId(),
           type: ENTRY_TYPES.SESSION_END,
           content: '',
           timestamp: now,
-          duration: now - state.sessionStart
+          duration
         }
         newEntries.push(endEntry)
       }
 
+      // Add new session start entry
+      const { cleanContent, tags } = parseTags(action.payload.content);
       const startEntry: Entry = {
         id: generateId(),
         type: ENTRY_TYPES.SESSION_START,
-        content: action.payload.content,
-        timestamp: now + 1,
-        sessionId: newSessionId
+        content: cleanContent,
+        timestamp: now,
+        sessionId: newSessionId,
+        tags: tags.length > 0 ? tags : undefined
       }
       newEntries.push(startEntry)
 
@@ -78,13 +86,15 @@ function sessionReducer(state: SessionState, action: SessionAction): SessionStat
     }
 
     case ACTIONS.NOTE: {
+      const { cleanContent, tags } = parseTags(action.payload.content);
       const newEntry: Entry = {
         id: generateId(),
         type: ENTRY_TYPES.NOTE,
-        content: action.payload.content,
+        content: cleanContent,
         timestamp: Date.now(),
         contentType: action.payload.contentType,
-        fieldValues: action.payload.fieldValues
+        fieldValues: action.payload.fieldValues,
+        tags: tags.length > 0 ? tags : undefined
       }
 
       return {
@@ -99,12 +109,15 @@ function sessionReducer(state: SessionState, action: SessionAction): SessionStat
         return state
       }
       const duration = Date.now() - (state.sessionStart ?? 0)
+      const originalContent = action.payload?.content || '';
+      const { cleanContent, tags } = parseTags(originalContent);
       const newEntry: Entry = {
         id: generateId(),
         type: ENTRY_TYPES.SESSION_END,
-        content: action.payload?.content || '',
+        content: cleanContent,
         timestamp: Date.now(),
-        duration
+        duration,
+        tags: tags.length > 0 ? tags : undefined
       }
       return {
         ...state,

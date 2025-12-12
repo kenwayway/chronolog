@@ -3,6 +3,7 @@ import { Image, MapPin, Link2, X, Search } from "lucide-react";
 import { Dropdown } from "../common/Dropdown";
 import { DynamicFieldForm } from "../input/DynamicFieldForm";
 import { BUILTIN_CONTENT_TYPES } from "../../utils/constants";
+import { parseTags } from "../../utils/tagParser";
 
 export function EditModal({ isOpen, entry, onSave, onClose, categories, contentTypes, allEntries = [] }) {
   const [content, setContent] = useState("");
@@ -17,6 +18,8 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
   const [linkedEntries, setLinkedEntries] = useState([]);
   const [linkSearch, setLinkSearch] = useState("");
   const [showLinkSearch, setShowLinkSearch] = useState(false);
+  const [tags, setTags] = useState([]);
+  const [tagInput, setTagInput] = useState("");
 
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const textareaRef = useRef(null);
@@ -62,6 +65,8 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
       setLinkedEntries(entry.linkedEntries || []);
       setLinkSearch("");
       setShowLinkSearch(false);
+      setTags(entry.tags || []);
+      setTagInput("");
       setTimeout(() => textareaRef.current?.focus(), 50);
     }
   }, [isOpen, entry]);
@@ -120,8 +125,28 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
       contentType: contentType !== entry.contentType ? contentType : undefined,
       fieldValues: JSON.stringify(fieldValues) !== JSON.stringify(entry.fieldValues) ? fieldValues : undefined,
       linkedEntries: JSON.stringify(linkedEntries) !== JSON.stringify(entry.linkedEntries || []) ? linkedEntries : undefined,
+      tags: JSON.stringify(tags) !== JSON.stringify(entry.tags || []) ? (tags.length > 0 ? tags : undefined) : undefined,
     });
     onClose();
+  };
+
+  const handleAddTag = () => {
+    const tag = tagInput.trim().toLowerCase().replace(/^#/, ''); // Remove # if present
+    if (tag && !tags.includes(tag)) {
+      setTags([...tags, tag]);
+      setTagInput("");
+    }
+  };
+
+  const handleRemoveTag = (tagToRemove) => {
+    setTags(tags.filter(t => t !== tagToRemove));
+  };
+
+  const handleTagKeyDown = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleAddTag();
+    }
   };
 
   const handleKeyDown = (e) => {
@@ -493,6 +518,76 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
               No linked entries
             </div>
           )}
+        </div>
+
+        {/* Tags */}
+        <div
+          style={{
+            padding: "12px 20px",
+            borderTop: "1px solid var(--border-subtle)",
+            backgroundColor: "var(--bg-secondary)",
+          }}
+        >
+          <div style={{ fontSize: 10, color: "var(--text-dim)", marginBottom: 8 }}>TAGS</div>
+
+          {/* Tag Input */}
+          <div className="flex items-center gap-2 mb-2">
+            <input
+              type="text"
+              value={tagInput}
+              onChange={(e) => setTagInput(e.target.value)}
+              onKeyDown={handleTagKeyDown}
+              placeholder="Add tag..."
+              className="edit-modal-input"
+              style={{ flex: 1, fontSize: 11 }}
+            />
+            <button
+              onClick={handleAddTag}
+              style={{
+                padding: "4px 8px",
+                fontSize: 10,
+                backgroundColor: "var(--accent)",
+                color: "white",
+                border: "none",
+                borderRadius: 3,
+                cursor: "pointer"
+              }}
+            >
+              Add
+            </button>
+          </div>
+
+          {/* Tag List */}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+            {tags.map(tag => (
+              <span
+                key={tag}
+                style={{
+                  fontSize: 10,
+                  padding: "2px 6px",
+                  borderRadius: 3,
+                  backgroundColor: "var(--bg-tertiary)",
+                  color: "var(--text-secondary)",
+                  fontFamily: "var(--font-mono)",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 4
+                }}
+              >
+                #{tag}
+                <X
+                  size={10}
+                  style={{ cursor: "pointer" }}
+                  onClick={() => handleRemoveTag(tag)}
+                />
+              </span>
+            ))}
+            {tags.length === 0 && (
+              <span style={{ fontSize: 11, color: "var(--text-dim)", fontStyle: "italic" }}>
+                No tags
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Footer */}

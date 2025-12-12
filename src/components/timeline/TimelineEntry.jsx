@@ -808,6 +808,31 @@ export function TimelineEntry({
           </div>
         )}
 
+        {/* Tags - CLI style */}
+        {entry.tags && entry.tags.length > 0 && (
+          <div style={{
+            marginTop: 6,
+            fontSize: 11,
+            fontFamily: "var(--font-mono)",
+          }}>
+            {entry.tags.map((tag, i) => (
+              <span key={tag}>
+                <span
+                  style={{
+                    color: "var(--accent)",
+                    cursor: "pointer"
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.opacity = "0.7"}
+                  onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
+                >
+                  #{tag}
+                </span>
+                {i < entry.tags.length - 1 && <span style={{ color: "var(--text-dim)" }}> </span>}
+              </span>
+            ))}
+          </div>
+        )}
+
         {/* Linked entries after (newer) */}
         {afterLinks.length > 0 && (
           <div className="linked-entries-after" style={{ marginTop: 8 }}>
