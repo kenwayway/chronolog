@@ -814,22 +814,9 @@ export function TimelineEntry({
             marginTop: 6,
             fontSize: 11,
             fontFamily: "var(--font-mono)",
+            color: "var(--accent)"
           }}>
-            {entry.tags.map((tag, i) => (
-              <span key={tag}>
-                <span
-                  style={{
-                    color: "var(--accent)",
-                    cursor: "pointer"
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.opacity = "0.7"}
-                  onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
-                >
-                  #{tag}
-                </span>
-                {i < entry.tags.length - 1 && <span style={{ color: "var(--text-dim)" }}> </span>}
-              </span>
-            ))}
+            {entry.tags.map(tag => `#${tag}`).join(' ')}
           </div>
         )}
 
