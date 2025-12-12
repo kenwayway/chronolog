@@ -715,35 +715,73 @@ export function TimelineEntry({
             style={{
               display: "flex",
               alignItems: "center",
-              gap: 8,
-              marginTop: 6,
-              padding: "6px 10px",
+              gap: 12,
+              marginTop: 8,
+              padding: "8px 12px",
               backgroundColor: "var(--bg-secondary)",
               border: "1px solid var(--border-subtle)",
-              fontSize: 12,
+              borderRadius: 6,
+              fontSize: 13,
               fontFamily: "var(--font-mono)",
               width: "fit-content",
             }}
           >
-            <span style={{ fontSize: 16 }}>
-              {entry.fieldValues.feeling === 'Happy' ? '😄' :
-                entry.fieldValues.feeling === 'Calm' ? '😌' :
-                  entry.fieldValues.feeling === 'Tired' ? '😴' :
-                    entry.fieldValues.feeling === 'Anxious' ? '😰' :
-                      entry.fieldValues.feeling === 'Sad' ? '😢' : '😠'}
+            <span style={{
+              color: "var(--accent)",
+              fontWeight: 600,
+              fontSize: 11,
+              flexShrink: 0
+            }}>
+              [MOOD]
             </span>
-            <span style={{ color: "var(--text-secondary)" }}>
-              {entry.fieldValues.feeling}
-            </span>
+
+            {/* Feeling */}
+            <div className="flex items-center gap-2">
+              <span style={{ fontSize: 18, lineHeight: 1 }}>
+                {entry.fieldValues.feeling === 'Happy' ? '😄' :
+                  entry.fieldValues.feeling === 'Calm' ? '😌' :
+                    entry.fieldValues.feeling === 'Tired' ? '😴' :
+                      entry.fieldValues.feeling === 'Anxious' ? '😰' :
+                        entry.fieldValues.feeling === 'Sad' ? '😢' : '😠'}
+              </span>
+              <span style={{ color: "var(--text-primary)" }}>
+                {entry.fieldValues.feeling}
+              </span>
+            </div>
+
+            {/* Energy */}
             {entry.fieldValues.energy && (
-              <span style={{ color: "var(--text-dim)", fontSize: 11 }}>
-                · ⚡{entry.fieldValues.energy}
-              </span>
+              <>
+                <span style={{ color: "var(--text-dim)", fontSize: 11 }}>·</span>
+                <div className="flex items-center gap-2" title={`Energy: ${entry.fieldValues.energy}/5`}>
+                  <div style={{ display: "flex", gap: 2 }}>
+                    {[1, 2, 3, 4, 5].map(level => (
+                      <div
+                        key={level}
+                        style={{
+                          width: 4,
+                          height: 8,
+                          borderRadius: 1,
+                          backgroundColor: level <= entry.fieldValues.energy
+                            ? (entry.fieldValues.energy >= 4 ? "var(--success)" : entry.fieldValues.energy >= 3 ? "var(--accent)" : "var(--warning)")
+                            : "var(--text-dim)",
+                          opacity: 0.5,
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </>
             )}
+
+            {/* Trigger */}
             {entry.fieldValues.trigger && (
-              <span style={{ color: "var(--text-dim)", fontSize: 11 }}>
-                · {entry.fieldValues.trigger}
-              </span>
+              <>
+                <span style={{ color: "var(--text-dim)", fontSize: 11 }}>·</span>
+                <span style={{ color: "var(--text-dim)", fontSize: 11 }}>
+                  {entry.fieldValues.trigger}
+                </span>
+              </>
             )}
           </div>
         )}
