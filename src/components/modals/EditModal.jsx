@@ -554,7 +554,6 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
                 backgroundColor: "var(--accent)",
                 color: "white",
                 border: "none",
-                borderRadius: 3,
                 cursor: "pointer"
               }}
             >
@@ -570,7 +569,6 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
                 style={{
                   fontSize: 10,
                   padding: "2px 6px",
-                  borderRadius: 3,
                   backgroundColor: "var(--bg-tertiary)",
                   color: "var(--text-secondary)",
                   fontFamily: "var(--font-mono)",

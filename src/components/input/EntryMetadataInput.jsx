@@ -1,165 +1,166 @@
-import { useState } from 'react';
-import { X, ChevronDown, ChevronUp } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { X } from 'lucide-react';
 import { Dropdown } from '../common/Dropdown';
-import { CATEGORIES, BUILTIN_CONTENT_TYPES } from '../../utils/constants';
+import { CATEGORIES } from '../../utils/constants';
+
+const CONTENT_TYPE_OPTIONS = [
+  { value: '', label: 'Auto' },
+  { value: 'note', label: 'Note' },
+  { value: 'task', label: 'Task' },
+  { value: 'expense', label: 'Expense' },
+  { value: 'bookmark', label: 'Bookmark' },
+  { value: 'mood', label: 'Mood' },
+];
 
 /**
  * Shared component for entry metadata input
  * Used in FocusMode and can be reused in EditModal
  */
 export function EntryMetadataInput({
-    category,
-    setCategory,
-    contentType,
-    setContentType,
-    tags,
-    setTags,
-    isExpanded,
-    onToggle,
+  category,
+  setCategory,
+  contentType,
+  setContentType,
+  tags,
+  setTags,
+  isExpanded,
 }) {
-    const [tagInput, setTagInput] = useState('');
+  const [tagInput, setTagInput] = useState('');
+  const [height, setHeight] = useState(0);
+  const contentRef = useRef(null);
 
-    const handleAddTag = () => {
-        const tag = tagInput.trim().toLowerCase().replace(/^#/, '');
-        if (tag && !tags.includes(tag)) {
-            setTags([...tags, tag]);
-            setTagInput('');
-        }
-    };
+  // Measure content height for smooth animation
+  useEffect(() => {
+    if (contentRef.current) {
+      setHeight(isExpanded ? contentRef.current.scrollHeight : 0);
+    }
+  }, [isExpanded, tags.length]);
 
-    const handleTagKeyDown = (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            e.stopPropagation();
-            handleAddTag();
-        }
-    };
+  const handleAddTag = () => {
+    const tag = tagInput.trim().toLowerCase().replace(/^#/, '');
+    if (tag && !tags.includes(tag)) {
+      setTags([...tags, tag]);
+      setTagInput('');
+    }
+  };
 
-    const handleRemoveTag = (tagToRemove) => {
-        setTags(tags.filter(t => t !== tagToRemove));
-    };
+  const handleTagKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      e.stopPropagation();
+      handleAddTag();
+    }
+  };
 
-    if (!isExpanded) return null;
+  const handleRemoveTag = (tagToRemove) => {
+    setTags(tags.filter(t => t !== tagToRemove));
+  };
 
-    return (
-        <div
-            className="entry-metadata-input"
-            style={{
-                padding: '12px 16px',
-                borderTop: '1px solid var(--border-subtle)',
-                backgroundColor: 'var(--bg-secondary)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 12,
-            }}
-        >
-            {/* Row 1: Category & Content Type */}
-            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-                {/* Category */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: 10, color: 'var(--text-dim)', fontWeight: 600 }}>
-                        CATEGORY
-                    </span>
-                    <Dropdown
-                        value={category}
-                        onChange={(val) => setCategory(val || null)}
-                        placeholder="Auto"
-                        options={[
-                            { value: '', label: 'Auto (AI)' },
-                            ...CATEGORIES.map(cat => ({
-                                value: cat.id,
-                                label: cat.label,
-                                color: cat.color,
-                            })),
-                        ]}
-                    />
-                </div>
-
-                {/* Content Type */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: 10, color: 'var(--text-dim)', fontWeight: 600 }}>
-                        TYPE
-                    </span>
-                    <select
-                        value={contentType || ''}
-                        onChange={(e) => setContentType(e.target.value || null)}
-                        className="edit-modal-input"
-                        style={{ width: 100, fontSize: 11 }}
-                    >
-                        <option value="">Auto (AI)</option>
-                        <option value="note">Note</option>
-                        <option value="task">Task</option>
-                        <option value="expense">Expense</option>
-                        <option value="bookmark">Bookmark</option>
-                        <option value="mood">Mood</option>
-                    </select>
-                </div>
-            </div>
-
-            {/* Row 2: Tags */}
-            <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                    <span style={{ fontSize: 10, color: 'var(--text-dim)', fontWeight: 600 }}>
-                        TAGS
-                    </span>
-                    <input
-                        type="text"
-                        value={tagInput}
-                        onChange={(e) => setTagInput(e.target.value)}
-                        onKeyDown={handleTagKeyDown}
-                        placeholder="Add tag..."
-                        className="edit-modal-input"
-                        style={{ width: 120, fontSize: 11 }}
-                    />
-                    <button
-                        onClick={handleAddTag}
-                        disabled={!tagInput.trim()}
-                        style={{
-                            padding: '2px 8px',
-                            fontSize: 10,
-                            backgroundColor: tagInput.trim() ? 'var(--accent)' : 'var(--bg-tertiary)',
-                            color: tagInput.trim() ? 'white' : 'var(--text-dim)',
-                            border: 'none',
-                            borderRadius: 3,
-                            cursor: tagInput.trim() ? 'pointer' : 'default',
-                        }}
-                    >
-                        +
-                    </button>
-                </div>
-
-                {/* Tag chips */}
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                    {tags.map(tag => (
-                        <span
-                            key={tag}
-                            style={{
-                                fontSize: 10,
-                                padding: '2px 6px',
-                                borderRadius: 3,
-                                backgroundColor: 'var(--accent-subtle)',
-                                color: 'var(--accent)',
-                                fontFamily: 'var(--font-mono)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 4,
-                            }}
-                        >
-                            #{tag}
-                            <X
-                                size={10}
-                                style={{ cursor: 'pointer' }}
-                                onClick={() => handleRemoveTag(tag)}
-                            />
-                        </span>
-                    ))}
-                    {tags.length === 0 && (
-                        <span style={{ fontSize: 10, color: 'var(--text-dim)', fontStyle: 'italic' }}>
-                            No tags
-                        </span>
-                    )}
-                </div>
-            </div>
+  return (
+    <div
+      className="entry-metadata-input"
+      style={{
+        overflow: 'hidden',
+        height: height,
+        transition: 'height 0.2s ease-out',
+        borderTop: isExpanded ? '1px solid var(--border-subtle)' : 'none',
+      }}
+    >
+      <div
+        ref={contentRef}
+        style={{
+          padding: '8px 16px',
+          backgroundColor: 'var(--bg-secondary)',
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          gap: 12,
+        }}
+      >
+        {/* Category */}
+        <div className="flex items-center gap-2">
+          <span style={{ fontSize: 10, color: 'var(--text-dim)', userSelect: 'none' }}>
+            CATEGORY
+          </span>
+          <Dropdown
+            value={category}
+            onChange={(val) => setCategory(val || null)}
+            placeholder="Auto"
+            options={[
+              { value: '', label: 'Auto' },
+              ...CATEGORIES.map(cat => ({
+                value: cat.id,
+                label: cat.label,
+                color: cat.color,
+              })),
+            ]}
+          />
         </div>
-    );
+
+        {/* Content Type */}
+        <div className="flex items-center gap-2">
+          <span style={{ fontSize: 10, color: 'var(--text-dim)', userSelect: 'none' }}>
+            TYPE
+          </span>
+          <Dropdown
+            value={contentType}
+            onChange={(val) => setContentType(val || null)}
+            placeholder="Auto"
+            options={CONTENT_TYPE_OPTIONS}
+          />
+        </div>
+
+        {/* Tags inline */}
+        <div className="flex items-center gap-2" style={{ flex: 1, minWidth: 150 }}>
+          <span style={{ fontSize: 10, color: 'var(--text-dim)', userSelect: 'none' }}>
+            TAGS
+          </span>
+          <input
+            type="text"
+            value={tagInput}
+            onChange={(e) => setTagInput(e.target.value)}
+            onKeyDown={handleTagKeyDown}
+            placeholder="Add tag..."
+            className="edit-modal-input"
+            style={{ width: 100, fontSize: 11 }}
+          />
+          <button
+            onClick={handleAddTag}
+            style={{
+              padding: '4px 8px',
+              fontSize: 10,
+              backgroundColor: 'var(--accent)',
+              color: 'white',
+              border: 'none',
+              cursor: 'pointer',
+            }}
+          >
+            Add
+          </button>
+          {tags.map(tag => (
+            <span
+              key={tag}
+              style={{
+                fontSize: 10,
+                padding: '2px 6px',
+                backgroundColor: 'var(--bg-tertiary)',
+                color: 'var(--text-secondary)',
+                fontFamily: 'var(--font-mono)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+              }}
+            >
+              #{tag}
+              <X
+                size={10}
+                style={{ cursor: 'pointer' }}
+                onClick={() => handleRemoveTag(tag)}
+              />
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
 }
