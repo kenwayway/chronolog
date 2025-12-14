@@ -2,7 +2,7 @@ import { useState, memo, useMemo, ReactNode, MouseEvent, TouchEvent } from "reac
 import { MapPin } from "lucide-react";
 import { ENTRY_TYPES } from "../../utils/constants";
 import { formatTime, formatDuration, formatDate } from "../../utils/formatters";
-import { parseContent, darkenColor, ParsedContent } from "../../utils/contentParser";
+import { parseContent, darkenColor } from "../../utils/contentParser";
 import { useTheme } from "../../hooks/useTheme";
 import { LinkedEntryPreview } from "./LinkedEntryPreview";
 import { ExpenseDisplay, BookmarkDisplay, MoodDisplay } from "./ContentTypeDisplays";
@@ -23,7 +23,7 @@ interface ContentRendererProps {
 function ContentRenderer({ content }: ContentRendererProps): ReactNode {
     const parsed = useMemo(() => parseContent(content), [content]);
 
-    return parsed.map((item: ParsedContent, idx: number) => {
+    return parsed.map((item: any, idx: number) => {
         switch (item.type) {
             case 'codeblock':
                 return (
@@ -293,7 +293,7 @@ export const TimelineEntry = memo(function TimelineEntry({
             >
                 {showDate && (
                     <div style={{ marginBottom: 2, fontSize: 9, color: "var(--text-muted)" }}>
-                        {formatDate(new Date(entry.timestamp))}
+                        {formatDate(new Date(entry.timestamp).getTime())}
                     </div>
                 )}
                 {formatTime(entry.timestamp)}
@@ -423,7 +423,7 @@ export const TimelineEntry = memo(function TimelineEntry({
 
                     {isTaskDone && (
                         <span style={{ fontSize: 11, color: "var(--success)", fontWeight: 700, userSelect: "none" }}>
-                            [DONE]
+                            {"[DONE]" as any}
                         </span>
                     )}
 

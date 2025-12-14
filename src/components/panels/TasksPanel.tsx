@@ -20,7 +20,7 @@ interface TasksPanelProps {
     isOpen: boolean;
     onClose: () => void;
     onCompleteTask: (entryId: string | null, title: string) => void;
-    googleTasks: GoogleTasks | null;
+    googleTasks: any;
 }
 
 export function TasksPanel({
@@ -84,47 +84,13 @@ export function TasksPanel({
                 <div
                     className="sidebar-overlay"
                     onClick={onClose}
-                    style={{
-                        position: "fixed",
-                        inset: 0,
-                        backgroundColor: "rgba(0,0,0,0.5)",
-                        backdropFilter: "blur(4px)",
-                        zIndex: 400,
-                    }}
                 />
             )}
 
             {/* Sidebar panel */}
-            <div
-                className="sidebar-panel"
-                style={{
-                    position: "fixed",
-                    top: 0,
-                    right: 0,
-                    bottom: 0,
-                    width: 320,
-                    maxWidth: "100vw",
-                    backgroundColor: "var(--bg-glass)",
-                    backdropFilter: "blur(24px)",
-                    borderLeft: "1px solid var(--border-light)",
-                    zIndex: 401,
-                    display: "flex",
-                    flexDirection: "column",
-                    transform: isOpen ? "translateX(0)" : "translateX(100%)",
-                    visibility: isOpen ? "visible" : "hidden",
-                    transition: "transform 300ms ease-out, visibility 0s linear " + (isOpen ? "0s" : "300ms"),
-                    boxShadow: "-10px 0 30px rgba(0,0,0,0.3)",
-                }}
-            >
+            <div className={`sidebar-panel ${isOpen ? '' : 'closed'}`}>
                 {/* Header */}
-                <div
-                    className="flex-between"
-                    style={{
-                        padding: "12px 16px",
-                        borderBottom: "1px solid var(--border-subtle)",
-                        backgroundColor: "var(--bg-primary)",
-                    }}
-                >
+                <div className="panel-header">
                     <div className="panel-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         <span className="panel-title-prefix">{tokens.panelTitlePrefix}</span>
                         <span>TASKS</span>
@@ -152,16 +118,7 @@ export function TasksPanel({
                             </button>
                         )}
                     </div>
-                    <button
-                        onClick={onClose}
-                        style={{
-                            color: "var(--text-muted)",
-                            backgroundColor: "transparent",
-                            border: "none",
-                            cursor: "pointer",
-                            fontSize: 18,
-                        }}
-                    >
+                    <button onClick={onClose} className="modal-close-btn">
                         ×
                     </button>
                 </div>

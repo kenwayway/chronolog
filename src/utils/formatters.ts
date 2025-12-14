@@ -48,12 +48,3 @@ export function formatDuration(durationMs: number): string {
 export function generateId(): string {
     return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
 }
-
-/**
- * Check if two timestamps are on the same day
- */
-export function isSameDay(ts1: number, ts2: number): boolean {
-    const d1 = new Date(ts1)
-    const d2 = new Date(ts2)
-    return d1.toDateString() === d2.toDateString()
-}

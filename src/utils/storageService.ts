@@ -79,14 +79,6 @@ export function removeStorage(key: StorageKey): void {
     localStorage.removeItem(key)
 }
 
-/**
- * Check if a key exists in localStorage
- * @param key - Storage key
- */
-export function hasStorage(key: StorageKey): boolean {
-    return localStorage.getItem(key) !== null
-}
-
 // Type definitions for stored data
 export interface CloudAuthData {
     token: string

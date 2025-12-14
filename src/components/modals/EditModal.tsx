@@ -1,28 +1,48 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, KeyboardEvent, MouseEvent } from "react";
 import { Image, MapPin, Link2, X, Search } from "lucide-react";
 import { Dropdown } from "../common/Dropdown";
 import { DynamicFieldForm } from "../input/DynamicFieldForm";
 import { BUILTIN_CONTENT_TYPES } from "../../utils/constants";
-import { parseTags } from "../../utils/tagParser";
+import type { Entry, Category, ContentType, CategoryId } from "../../types";
 
-export function EditModal({ isOpen, entry, onSave, onClose, categories, contentTypes, allEntries = [] }) {
+interface EntryUpdates {
+  content?: string;
+  timestamp?: number;
+  category?: CategoryId | null;
+  contentType?: string | null;
+  fieldValues?: Record<string, unknown>;
+  linkedEntries?: string[];
+  tags?: string[];
+}
+
+interface EditModalProps {
+  isOpen: boolean;
+  entry: Entry | null;
+  onSave: (entryId: string, updates: EntryUpdates) => void;
+  onClose: () => void;
+  categories: Category[];
+  contentTypes?: ContentType[];
+  allEntries?: Entry[];
+}
+
+export function EditModal({ isOpen, entry, onSave, onClose, categories, contentTypes, allEntries = [] }: EditModalProps) {
   const [content, setContent] = useState("");
   const [timestamp, setTimestamp] = useState("");
-  const [category, setCategory] = useState(null);
-  const [contentType, setContentType] = useState(null);
-  const [fieldValues, setFieldValues] = useState({});
+  const [category, setCategory] = useState<CategoryId | null>(null);
+  const [contentType, setContentType] = useState<string | null>(null);
+  const [fieldValues, setFieldValues] = useState<Record<string, unknown>>({});
   const [imageUrl, setImageUrl] = useState("");
   const [location, setLocation] = useState("");
   const [showImageInput, setShowImageInput] = useState(false);
   const [showLocationInput, setShowLocationInput] = useState(false);
-  const [linkedEntries, setLinkedEntries] = useState([]);
+  const [linkedEntries, setLinkedEntries] = useState<string[]>([]);
   const [linkSearch, setLinkSearch] = useState("");
   const [showLinkSearch, setShowLinkSearch] = useState(false);
-  const [tags, setTags] = useState([]);
+  const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
 
   const [isGettingLocation, setIsGettingLocation] = useState(false);
-  const textareaRef = useRef(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const types = contentTypes || BUILTIN_CONTENT_TYPES;
 
@@ -80,7 +100,7 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
     }
     setIsGettingLocation(true);
     try {
-      const position = await new Promise((resolve, reject) => {
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
         navigator.geolocation.getCurrentPosition(resolve, reject, {
           timeout: 10000,
         });
@@ -98,7 +118,7 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
       } catch {
         setLocation(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
       }
-    } catch (error) {
+    } catch {
       setLocation("Unable to get location");
     }
     setIsGettingLocation(false);
@@ -143,35 +163,32 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
     }
   };
 
-  const handleRemoveTag = (tagToRemove) => {
+  const handleRemoveTag = (tagToRemove: string) => {
     setTags(tags.filter(t => t !== tagToRemove));
   };
 
-  const handleTagKeyDown = (e) => {
+  const handleTagKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       e.preventDefault();
       handleAddTag();
     }
   };
 
-  const handleKeyDown = (e) => {
+  const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     if (e.key === "Escape") onClose();
     else if (e.key === "Enter" && e.ctrlKey) handleSave();
   };
 
-  const handleBackdropClick = (e) => {
+  const handleBackdropClick = (e: MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) onClose();
   };
 
-  const selectedCategory = categories?.find((c) => c.id === category);
-  const selectedContentType = types.find((ct) => ct.id === contentType);
-
-  const handleFieldChange = (fieldId, value) => {
+  const handleFieldChange = (fieldId: string, value: unknown) => {
     setFieldValues(prev => ({ ...prev, [fieldId]: value }));
   };
 
   // Linked entries helpers
-  const addLinkedEntry = (entryId) => {
+  const addLinkedEntry = (entryId: string) => {
     if (!linkedEntries.includes(entryId)) {
       setLinkedEntries(prev => [...prev, entryId]);
     }
@@ -179,11 +196,11 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
     setShowLinkSearch(false);
   };
 
-  const removeLinkedEntry = (entryId) => {
+  const removeLinkedEntry = (entryId: string) => {
     setLinkedEntries(prev => prev.filter(id => id !== entryId));
   };
 
-  const getEntryPreview = (content) => {
+  const getEntryPreview = (content: string | undefined) => {
     if (!content) return "(empty)";
     const firstLine = content.split("\n")[0];
     return firstLine.length > 40 ? firstLine.slice(0, 40) + "..." : firstLine;
@@ -196,84 +213,28 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
 
   return (
     <div
+      className="edit-modal-overlay"
       onMouseDown={handleBackdropClick}
       onKeyDown={handleKeyDown}
-      style={{
-        position: "fixed",
-        inset: 0,
-        backgroundColor: "var(--bg-primary)",
-        zIndex: 1000,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: 40,
-        cursor: "default",
-      }}
     >
       <div
-        className="modal-panel"
+        className="edit-modal-panel"
         onMouseDown={(e) => e.stopPropagation()}
-        style={{
-          maxWidth: 900,
-          width: "100%",
-          pointerEvents: "auto",
-          backgroundColor: "var(--bg-primary)",
-          border: "1px solid var(--border-light)",
-          borderRadius: 4,
-          boxShadow: "0 0 80px rgba(0,0,0,0.3)",
-          fontFamily: "var(--font-mono)",
-        }}
       >
         {/* Header */}
-        <div
-          className="modal-header flex-between"
-          style={{
-            padding: "16px 20px",
-            borderBottom: "1px solid var(--border-subtle)",
-            backgroundColor: "var(--bg-secondary)",
-            userSelect: "none",
-          }}
-        >
-          <span
-            style={{
-              fontSize: 13,
-              fontWeight: 600,
-              color: "var(--text-muted)",
-              letterSpacing: "0.05em",
-              textTransform: "uppercase",
-            }}
-          >
-            EDIT ENTRY
-          </span>
-          <button
-            onClick={onClose}
-            className="edit-modal-close"
-            style={{ fontSize: 20 }}
-          >
-            ×
-          </button>
+        <div className="edit-modal-header">
+          <span className="edit-modal-title">EDIT ENTRY</span>
+          <button onClick={onClose} className="modal-close-btn">×</button>
         </div>
 
         {/* Main Content */}
-        <div className="modal-body" style={{ padding: 20 }}>
+        <div className="edit-modal-body">
           <textarea
             ref={textareaRef}
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder="Enter content..."
-            style={{
-              width: "100%",
-              minHeight: 200,
-              padding: 16,
-              fontSize: 15,
-              fontFamily: "var(--font-mono)",
-              lineHeight: 1.6,
-              color: "var(--text-primary)",
-              backgroundColor: "transparent",
-              border: "none",
-              resize: "none",
-              outline: "none",
-            }}
+            className="edit-modal-content-area"
           />
         </div>
 
@@ -288,13 +249,7 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
 
         {/* Attachments */}
         {(imageUrl || location || showImageInput || showLocationInput) && (
-          <div
-            style={{
-              padding: "8px 20px",
-              borderTop: "1px solid var(--border-subtle)",
-              backgroundColor: "var(--bg-secondary)",
-            }}
-          >
+          <div className="edit-modal-section" style={{ padding: '8px 20px' }}>
             {/* Image URL Input */}
             {showImageInput && (
               <div className="flex items-center gap-2 mb-2">
@@ -379,13 +334,7 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
         )}
 
         {/* Linked Entries */}
-        <div
-          style={{
-            padding: "12px 20px",
-            borderTop: "1px solid var(--border-subtle)",
-            backgroundColor: "var(--bg-secondary)",
-          }}
-        >
+        <div className="edit-modal-section">
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
             <Link2 size={12} style={{ color: "var(--text-dim)" }} />
             <span style={{ fontSize: 10, color: "var(--text-dim)", fontWeight: 600 }}>LINKED ENTRIES</span>
@@ -526,13 +475,7 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
         </div>
 
         {/* Tags */}
-        <div
-          style={{
-            padding: "12px 20px",
-            borderTop: "1px solid var(--border-subtle)",
-            backgroundColor: "var(--bg-secondary)",
-          }}
-        >
+        <div className="edit-modal-section">
           <div style={{ fontSize: 10, color: "var(--text-dim)", marginBottom: 8 }}>TAGS</div>
 
           {/* Tag Input */}
@@ -587,14 +530,7 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
         </div>
 
         {/* Footer */}
-        <div
-          className="modal-footer flex-between"
-          style={{
-            padding: "12px 20px",
-            borderTop: "1px solid var(--border-subtle)",
-            backgroundColor: "var(--bg-secondary)",
-          }}
-        >
+        <div className="edit-modal-footer">
           <div className="flex items-center gap-4">
             {/* Time */}
             <div className="flex items-center gap-2">
@@ -629,7 +565,7 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
               </span>
               <Dropdown
                 value={category}
-                onChange={(val) => setCategory(val || null)}
+                onChange={(val) => setCategory((val || null) as CategoryId | null)}
                 placeholder="None"
                 options={[
                   { value: "", label: "None" },
@@ -687,7 +623,7 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
               <label className="flex items-center gap-2" style={{ cursor: 'pointer' }}>
                 <input
                   type="checkbox"
-                  checked={fieldValues.done || false}
+                  checked={(fieldValues.done as boolean) || false}
                   onChange={(e) => handleFieldChange('done', e.target.checked)}
                 />
                 <span style={{ fontSize: 10, color: "var(--text-dim)" }}>DONE</span>
