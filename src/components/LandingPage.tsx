@@ -52,9 +52,9 @@ export function LandingPage({ onDismiss }: { onDismiss: () => void }) {
 
     },
     cat: {
-      fontSize: "72px",
-      lineHeight: 1,
-      animation: "spin 3s linear infinite",
+      width: "100px",
+      height: "100px",
+      objectFit: "contain",
     },
     // Row 2 Right: Phrase 2
     cell3: {
@@ -121,43 +121,39 @@ export function LandingPage({ onDismiss }: { onDismiss: () => void }) {
   };
 
   return (
-    <>
-      <style>{`
-                @keyframes spin {
-                    from { transform: rotate(0deg); }
-                    to { transform: rotate(360deg); }
-                }
-            `}</style>
-      <div style={styles.page} onClick={onDismiss}>
-        <div style={styles.grid}>
-          {/* Row 1: 我要大肌肉 */}
-          <div style={styles.cell1}>
-            <div style={styles.phrase1}>我要大肌肉 💪</div>
-          </div>
-
-          {/* Row 2 Left: Cat */}
-          <div style={styles.cell2}>
-            <span style={styles.cat}>🐱</span>
-          </div>
-
-          {/* Row 2 Right: Phrase 2 */}
-          <div style={styles.cell3}>
-            <div style={styles.phrase2Label}>MORNING MSG</div>
-            <div style={styles.phrase2}>早上好中国，现在我有冰淇凌 🍦</div>
-          </div>
-
-          {/* Row 3: Countdown */}
-          <div style={styles.cell4}>
-            <span style={styles.countdownLabel}>下一次大冒险还有</span>
-            <div style={styles.countdownValue}>
-              <span style={styles.countdownNumber}>{daysUntilAdventure}</span>
-              <span style={styles.countdownUnit}>天</span>
-            </div>
-          </div>
+    <div style={styles.page} onClick={onDismiss}>
+      <div style={styles.grid}>
+        {/* Row 1: 我要大肌肉 */}
+        <div style={styles.cell1}>
+          <div style={styles.phrase1}>我要大肌肉 💪</div>
         </div>
 
-        <div style={styles.hint}>CLICK TO ENTER</div>
+        {/* Row 2 Left: Cat GIF */}
+        <div style={styles.cell2}>
+          <img
+            src="https://tenor.com/pp9oI08Syt1.gif"
+            alt="cat"
+            style={styles.cat}
+          />
+        </div>
+
+        {/* Row 2 Right: Phrase 2 */}
+        <div style={styles.cell3}>
+          <div style={styles.phrase2Label}>MORNING MSG</div>
+          <div style={styles.phrase2}>早上好中国，现在我有冰淇凌 🍦</div>
+        </div>
+
+        {/* Row 3: Countdown */}
+        <div style={styles.cell4}>
+          <span style={styles.countdownLabel}>下一次大冒险还有</span>
+          <div style={styles.countdownValue}>
+            <span style={styles.countdownNumber}>{daysUntilAdventure}</span>
+            <span style={styles.countdownUnit}>天</span>
+          </div>
+        </div>
       </div>
-    </>
+
+      <div style={styles.hint}>CLICK TO ENTER</div>
+    </div>
   );
 }
