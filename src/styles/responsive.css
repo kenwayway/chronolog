@@ -225,6 +225,102 @@
   }
 
   /* Edit Modal - fullscreen on mobile */
+  .edit-modal-overlay {
+    padding: 0 !important;
+  }
+
+  .edit-modal-panel {
+    position: fixed !important;
+    inset: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    max-height: 100vh !important;
+    border-radius: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+  }
+
+  .edit-modal-header {
+    flex-shrink: 0;
+  }
+
+  .edit-modal-body {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+    padding: 16px !important;
+  }
+
+  .edit-modal-section {
+    padding: 10px 16px !important;
+  }
+
+  .edit-modal-content-area {
+    min-height: 120px !important;
+    padding: 12px !important;
+    font-size: 16px !important;
+  }
+
+  /* Footer - stack vertically on mobile */
+  .edit-modal-footer {
+    flex-shrink: 0;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+    padding: 12px 16px !important;
+    max-height: 40vh;
+    overflow-y: auto;
+  }
+
+  .edit-modal-footer>div {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    justify-content: flex-start !important;
+  }
+
+  /* Time input smaller on mobile */
+  .edit-modal-footer input[type="datetime-local"] {
+    width: 160px !important;
+    font-size: 14px !important;
+  }
+
+  /* Category/Type selects full width row */
+  .edit-modal-footer select,
+  .edit-modal-footer .custom-dropdown-trigger {
+    min-width: 100px !important;
+    font-size: 14px !important;
+  }
+
+  /* Hide labels on mobile - just show inputs */
+  .edit-modal-label {
+    display: none !important;
+  }
+
+  /* Save button - full width at bottom */
+  .edit-modal-footer>div:last-child {
+    width: 100%;
+    justify-content: flex-end !important;
+  }
+
+  .edit-modal-footer .btn-action-primary {
+    padding: 12px 24px !important;
+    font-size: 14px !important;
+  }
+
+  /* Dropdown menu on mobile - better positioning */
+  .custom-dropdown-menu {
+    max-height: 200px !important;
+    overflow-y: auto !important;
+  }
+
+  /* Icon buttons in footer */
+  .edit-modal-footer .icon-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  /* Legacy modal-panel support */
   .modal-panel {
     position: fixed !important;
     inset: 0 !important;

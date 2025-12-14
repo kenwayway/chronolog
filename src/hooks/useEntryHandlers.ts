@@ -21,7 +21,7 @@ interface EntryHandlers {
     handleDeleteEntry: (entry: Entry) => void
     handleCopyEntry: (entry: Entry) => void
     handleMarkAsTask: (entry: Entry) => Promise<void>
-    handleCompleteTask: (entryId: string) => void
+    handleCompleteTask: (entryId: string | null, title: string) => void
 }
 
 /**
@@ -102,7 +102,7 @@ export function useEntryHandlers({
         }
     }, [actions, requireLogin, googleTasks])
 
-    const handleCompleteTask = useCallback((entryId: string) => {
+    const handleCompleteTask = useCallback((entryId: string | null, _title: string) => {
         if (entryId) {
             actions.updateEntry(entryId, { fieldValues: { done: true } })
         }

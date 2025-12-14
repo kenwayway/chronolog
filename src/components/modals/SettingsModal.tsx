@@ -49,7 +49,7 @@ interface ImportData {
 interface SettingsModalProps {
     isOpen: boolean;
     onClose: () => void;
-    apiKey?: string;
+    apiKey?: string | null;
     aiBaseUrl?: string;
     aiModel?: string;
     onSaveAIConfig: (config: AIConfig) => void;
@@ -525,7 +525,7 @@ export function SettingsModal({
                         </span>
                         <button
                             onClick={handleSave}
-                            className="edit-modal-btn-save"
+                            className="btn-action btn-action-primary"
                             style={{ backgroundColor: saved ? "#22c55e" : undefined }}
                         >
                             {saved ? "SAVED ✓" : "SAVE"}

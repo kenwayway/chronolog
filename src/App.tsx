@@ -9,6 +9,7 @@ import { useEntryHandlers } from "./hooks/useEntryHandlers";
 import { useAutoCategorize } from "./hooks/useAutoCategorize";
 import {
     Header,
+    LandingPage,
     Timeline,
     InputPanel,
     TasksPanel,
@@ -74,6 +75,7 @@ function App() {
     const [editModal, setEditModal] = useState<EditModalState>({ isOpen: false, entry: null });
     const [followUpEntry, setFollowUpEntry] = useState<Entry | null>(null); // Entry to follow up on
     const [categoryFilter, setCategoryFilter] = useState<CategoryId[]>([]);
+    const [showLanding, setShowLanding] = useState(true); // Show landing page initially
     const [contextMenu, setContextMenu] = useState<ContextMenuState>({
         isOpen: false,
         position: { x: 0, y: 0 },
@@ -209,15 +211,19 @@ function App() {
             />
 
             <main className="flex-1 flex flex-col max-w-4xl w-full mx-auto relative">
-                <Timeline
-                    entries={filteredEntries}
-                    allEntries={state.entries}
-                    status={state.status}
-                    categories={categories}
-                    onContextMenu={handleContextMenu}
-                    categoryFilter={categoryFilter}
-                    onNavigateToEntry={navigateToEntry}
-                />
+                {showLanding ? (
+                    <LandingPage onDismiss={() => setShowLanding(false)} />
+                ) : (
+                    <Timeline
+                        entries={filteredEntries}
+                        allEntries={state.entries}
+                        status={state.status}
+                        categories={categories}
+                        onContextMenu={handleContextMenu}
+                        categoryFilter={categoryFilter}
+                        onNavigateToEntry={navigateToEntry}
+                    />
+                )}
             </main>
 
             <InputPanel

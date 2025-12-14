@@ -1,5 +1,6 @@
 // Main component exports
-export { Header } from './Header'
+export { Header } from './Header';
+export { LandingPage } from './LandingPage';
 
 // Timeline
 export { Timeline, TimelineEntry } from './timeline'

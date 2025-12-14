@@ -18,7 +18,7 @@ interface EntryUpdates {
 interface EditModalProps {
   isOpen: boolean;
   entry: Entry | null;
-  onSave: (entryId: string, updates: EntryUpdates) => void;
+  onSave: (entryId: string, updates: any) => void;
   onClose: () => void;
   categories: Category[];
   contentTypes?: ContentType[];
@@ -241,7 +241,7 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
         {/* ContentType Fields - Dynamic form based on schema */}
         {contentType && contentType !== 'note' && (
           <DynamicFieldForm
-            contentType={types.find(t => t.id === contentType)}
+            contentType={types.find(t => t.id === contentType) || null}
             fieldValues={fieldValues}
             onChange={setFieldValues}
           />
@@ -340,15 +340,7 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
             <span style={{ fontSize: 10, color: "var(--text-dim)", fontWeight: 600 }}>LINKED ENTRIES</span>
             <button
               onClick={() => setShowLinkSearch(!showLinkSearch)}
-              style={{
-                fontSize: 10,
-                padding: "2px 8px",
-                backgroundColor: showLinkSearch ? "var(--accent)" : "var(--bg-tertiary)",
-                color: showLinkSearch ? "white" : "var(--text-secondary)",
-                border: "none",
-                borderRadius: 3,
-                cursor: "pointer",
-              }}
+              className={`btn-action ${showLinkSearch ? 'btn-action-primary' : 'btn-action-secondary'}`}
             >
               + ADD
             </button>
@@ -657,7 +649,7 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
             >
               Ctrl+Enter to save
             </span>
-            <button onClick={handleSave} className="edit-modal-btn-save">
+            <button onClick={handleSave} className="btn-action btn-action-primary">
               Save
             </button>
           </div>
