@@ -6,13 +6,13 @@
 import React from 'react';
 
 /**
- * Parse inline markdown: **bold**, `code`, ==highlight==, URLs
+ * Parse inline markdown: **bold**, `code`, ==highlight==, ~~strikethrough~~, URLs
  */
 export function parseInlineMarkdown(text: string, keyPrefix: string = ''): React.ReactNode[] {
     if (!text) return [];
 
     // Combined regex for all inline patterns
-    const inlineRegex = /(\*\*[^*]+\*\*|`[^`]+`|==[^=]+=\s*=|https?:\/\/[^\s]+)/g;
+    const inlineRegex = /(\*\*[^*]+\*\*|`[^`]+`|==[^=]+=\s*=|~~[^~]+~~|https?:\/\/[^\s]+)/g;
     const parts = text.split(inlineRegex);
 
     return parts.map((part, i) => {
@@ -31,6 +31,11 @@ export function parseInlineMarkdown(text: string, keyPrefix: string = ''): React
         // Highlight: ==text==
         if (part.startsWith('==') && part.endsWith('==')) {
             return React.createElement('mark', { key, className: 'md-highlight' }, part.slice(2, -2));
+        }
+
+        // Strikethrough: ~~text~~
+        if (part.startsWith('~~') && part.endsWith('~~')) {
+            return React.createElement('del', { key, className: 'md-strikethrough' }, part.slice(2, -2));
         }
 
         // URL
