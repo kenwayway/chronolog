@@ -9,6 +9,22 @@ import {
     Plus,
 } from "lucide-react";
 
+interface InputActionsProps {
+    isStreaming: boolean;
+    input: string;
+    imageUrl: string;
+    location: string;
+    showImageInput: boolean;
+    showLocationInput: boolean;
+    showMetadata: boolean;
+    inFocusMode: boolean;
+    onSubmit: (action: "note" | "logOff" | "switch" | "logIn") => void;
+    onToggleImage: () => void;
+    onToggleLocation: () => void;
+    onToggleMetadata: () => void;
+    onOpenFocusMode: () => void;
+}
+
 export function InputActions({
     isStreaming,
     input,
@@ -23,7 +39,7 @@ export function InputActions({
     onToggleLocation,
     onToggleMetadata,
     onOpenFocusMode,
-}) {
+}: InputActionsProps) {
     return (
         <div className="input-panel-bottom">
             <div className="flex items-center gap-2">

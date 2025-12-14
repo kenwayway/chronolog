@@ -548,16 +548,9 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
             />
             <button
               onClick={handleAddTag}
-              style={{
-                padding: "4px 8px",
-                fontSize: 10,
-                backgroundColor: "var(--accent)",
-                color: "white",
-                border: "none",
-                cursor: "pointer"
-              }}
+              className="btn-action btn-action-primary"
             >
-              Add
+              ADD
             </button>
           </div>
 

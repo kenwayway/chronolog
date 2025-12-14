@@ -2,6 +2,15 @@ import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { X, Search, Link2 } from "lucide-react";
 import { formatTime, formatDate } from "../../utils/formatters";
+import type { Entry } from "../../types";
+
+interface LinkSelectorProps {
+    isOpen: boolean;
+    sourceEntry: Entry | null;
+    entries: Entry[];
+    onLink: (sourceId: string, linkedIds: string[]) => void;
+    onClose: () => void;
+}
 
 export function LinkSelector({
     isOpen,
@@ -9,10 +18,10 @@ export function LinkSelector({
     entries,
     onLink,
     onClose,
-}) {
+}: LinkSelectorProps) {
     const [search, setSearch] = useState("");
-    const [selectedIds, setSelectedIds] = useState([]);
-    const inputRef = useRef(null);
+    const [selectedIds, setSelectedIds] = useState<string[]>([]);
+    const inputRef = useRef<HTMLInputElement>(null);
 
     // Initialize with existing links
     useEffect(() => {
@@ -35,7 +44,7 @@ export function LinkSelector({
         .sort((a, b) => b.timestamp - a.timestamp)
         .slice(0, 20); // Limit for performance
 
-    const toggleLink = (entryId) => {
+    const toggleLink = (entryId: string) => {
         setSelectedIds((prev) =>
             prev.includes(entryId)
                 ? prev.filter((id) => id !== entryId)
@@ -48,7 +57,7 @@ export function LinkSelector({
         onClose();
     };
 
-    const getPreview = (content) => {
+    const getPreview = (content: string | undefined) => {
         if (!content) return "(empty)";
         const firstLine = content.split("\n")[0];
         return firstLine.length > 50 ? firstLine.slice(0, 50) + "..." : firstLine;

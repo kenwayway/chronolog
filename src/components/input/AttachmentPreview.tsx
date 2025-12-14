@@ -1,4 +1,26 @@
+import { RefObject, ChangeEvent } from "react";
 import { Image, MapPin } from "lucide-react";
+
+interface CloudSync {
+    isLoggedIn: boolean;
+}
+
+interface AttachmentPreviewProps {
+    imageUrl: string;
+    setImageUrl: (url: string) => void;
+    location: string;
+    setLocation: (location: string) => void;
+    showImageInput: boolean;
+    setShowImageInput: (show: boolean) => void;
+    showLocationInput: boolean;
+    setShowLocationInput: (show: boolean) => void;
+    isUploading: boolean;
+    isGettingLocation: boolean;
+    fileInputRef: RefObject<HTMLInputElement>;
+    cloudSync: CloudSync | null;
+    onImageUpload: (e: ChangeEvent<HTMLInputElement>) => void;
+    onGetLocation: () => void;
+}
 
 export function AttachmentPreview({
     imageUrl,
@@ -15,7 +37,7 @@ export function AttachmentPreview({
     cloudSync,
     onImageUpload,
     onGetLocation,
-}) {
+}: AttachmentPreviewProps) {
     if (!imageUrl && !location && !showImageInput && !showLocationInput) {
         return null;
     }
@@ -77,7 +99,7 @@ export function AttachmentPreview({
                         src={imageUrl}
                         alt="preview"
                         style={{ height: 40, borderRadius: 4, objectFit: "cover" }}
-                        onError={(e) => (e.target.style.display = "none")}
+                        onError={(e) => ((e.target as HTMLImageElement).style.display = "none")}
                     />
                     <span
                         style={{

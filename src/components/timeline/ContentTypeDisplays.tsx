@@ -1,14 +1,26 @@
-import { memo } from 'react';
+import { memo, MouseEvent } from 'react';
+
+interface ExpenseFieldValues {
+    amount?: number;
+    currency?: string;
+    category?: string;
+    subcategory?: string;
+    expenseType?: string;
+}
+
+interface ExpenseDisplayProps {
+    fieldValues: ExpenseFieldValues | null | undefined;
+}
 
 /**
  * Display component for expense entries
  */
-export const ExpenseDisplay = memo(function ExpenseDisplay({ fieldValues }) {
+export const ExpenseDisplay = memo(function ExpenseDisplay({ fieldValues }: ExpenseDisplayProps) {
     if (!fieldValues) return null;
 
     const { amount, currency, category, subcategory, expenseType } = fieldValues;
-    const currencySymbols = { USD: '$', CNY: '¥', EUR: '€', GBP: '£', JPY: '¥' };
-    const symbol = currencySymbols[currency] || '$';
+    const currencySymbols: Record<string, string> = { USD: '$', CNY: '¥', EUR: '€', GBP: '£', JPY: '¥' };
+    const symbol = currencySymbols[currency || ''] || '$';
     const cat = category || expenseType || '';
     const sub = subcategory ? ` › ${subcategory}` : '';
 
@@ -19,7 +31,6 @@ export const ExpenseDisplay = memo(function ExpenseDisplay({ fieldValues }) {
                 color: 'var(--accent)',
                 backgroundColor: 'var(--accent-subtle)',
                 padding: '2px 8px',
-                borderRadius: 3,
                 fontWeight: 500,
                 userSelect: 'none',
             }}
@@ -29,13 +40,22 @@ export const ExpenseDisplay = memo(function ExpenseDisplay({ fieldValues }) {
     );
 });
 
+interface BookmarkFieldValues {
+    url?: string;
+    title?: string;
+}
+
+interface BookmarkDisplayProps {
+    fieldValues: BookmarkFieldValues | null | undefined;
+}
+
 /**
  * Display component for bookmark entries
  */
-export const BookmarkDisplay = memo(function BookmarkDisplay({ fieldValues }) {
+export const BookmarkDisplay = memo(function BookmarkDisplay({ fieldValues }: BookmarkDisplayProps) {
     if (!fieldValues) return null;
 
-    const getHostname = (url) => {
+    const getHostname = (url: string) => {
         try {
             return new URL(url).hostname.replace(/^www\./, '');
         } catch {
@@ -48,7 +68,7 @@ export const BookmarkDisplay = memo(function BookmarkDisplay({ fieldValues }) {
             href={fieldValues.url}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e: MouseEvent) => e.stopPropagation()}
             style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -107,14 +127,24 @@ export const BookmarkDisplay = memo(function BookmarkDisplay({ fieldValues }) {
     );
 });
 
+interface MoodFieldValues {
+    feeling?: string;
+    energy?: number;
+    trigger?: string;
+}
+
+interface MoodDisplayProps {
+    fieldValues: MoodFieldValues | null | undefined;
+}
+
 /**
  * Display component for mood entries
  */
-export const MoodDisplay = memo(function MoodDisplay({ fieldValues }) {
+export const MoodDisplay = memo(function MoodDisplay({ fieldValues }: MoodDisplayProps) {
     if (!fieldValues) return null;
 
-    const getMoodEmoji = (feeling) => {
-        const emojis = {
+    const getMoodEmoji = (feeling: string | undefined) => {
+        const emojis: Record<string, string> = {
             'Happy': '😄',
             'Calm': '😌',
             'Tired': '😴',
@@ -122,10 +152,10 @@ export const MoodDisplay = memo(function MoodDisplay({ fieldValues }) {
             'Sad': '😢',
             'Angry': '😠',
         };
-        return emojis[feeling] || '😐';
+        return emojis[feeling || ''] || '😐';
     };
 
-    const getEnergyColor = (energy) => {
+    const getEnergyColor = (energy: number) => {
         if (energy >= 4) return 'var(--success)';
         if (energy >= 3) return 'var(--accent)';
         return 'var(--warning)';
@@ -178,8 +208,8 @@ export const MoodDisplay = memo(function MoodDisplay({ fieldValues }) {
                                         width: 4,
                                         height: 8,
                                         borderRadius: 1,
-                                        backgroundColor: level <= fieldValues.energy
-                                            ? getEnergyColor(fieldValues.energy)
+                                        backgroundColor: level <= fieldValues.energy!
+                                            ? getEnergyColor(fieldValues.energy!)
                                             : 'var(--text-dim)',
                                         opacity: 0.5,
                                     }}

@@ -1,6 +1,13 @@
 import { BUILTIN_CONTENT_TYPES } from "../../utils/constants";
+import type { ContentType } from "../../types";
 
-export function ContentTypeSelector({ value, onChange, contentTypes }) {
+interface ContentTypeSelectorProps {
+    value: string | undefined;
+    onChange: (value: string | undefined) => void;
+    contentTypes?: ContentType[];
+}
+
+export function ContentTypeSelector({ value, onChange, contentTypes }: ContentTypeSelectorProps) {
     // Use provided contentTypes or fall back to built-in
     const types = contentTypes || BUILTIN_CONTENT_TYPES;
 

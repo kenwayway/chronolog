@@ -114,7 +114,7 @@ function sessionReducer(state: SessionState, action: SessionAction): SessionStat
         return state
       }
       const duration = Date.now() - (state.sessionStart ?? 0)
-      const originalContent = action.payload?.content || '';
+      const originalContent = action.payload?.content || 'Session ended';
       const { cleanContent, tags } = parseTags(originalContent);
       const newEntry: Entry = {
         id: generateId(),

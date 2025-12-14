@@ -1,13 +1,22 @@
+import { ChangeEvent } from "react";
+import type { ContentType, FieldDefinition } from "../../types";
+
+interface DynamicFieldFormProps {
+    contentType: ContentType | null;
+    fieldValues: Record<string, unknown>;
+    onChange: (values: Record<string, unknown>) => void;
+}
+
 /**
  * DynamicFieldForm - Renders form fields based on ContentType schema
  * Minimal version: only handles dropdown and number fields
  */
-export function DynamicFieldForm({ contentType, fieldValues, onChange }) {
+export function DynamicFieldForm({ contentType, fieldValues, onChange }: DynamicFieldFormProps) {
     if (!contentType || !contentType.fields || contentType.fields.length === 0) {
         return null;
     }
 
-    const handleFieldChange = (fieldId, value) => {
+    const handleFieldChange = (fieldId: string, value: unknown) => {
         onChange({
             ...fieldValues,
             [fieldId]: value
@@ -25,7 +34,7 @@ export function DynamicFieldForm({ contentType, fieldValues, onChange }) {
                 borderTop: "1px solid var(--border-subtle)",
             }}
         >
-            {contentType.fields.map((field) => {
+            {contentType.fields.map((field: FieldDefinition) => {
                 // Skip boolean fields (like 'done' for tasks - handled elsewhere)
                 if (field.type === 'boolean') return null;
 
@@ -52,8 +61,8 @@ export function DynamicFieldForm({ contentType, fieldValues, onChange }) {
 
                         {field.type === 'dropdown' && (
                             <select
-                                value={value}
-                                onChange={(e) => handleFieldChange(field.id, e.target.value)}
+                                value={value as string}
+                                onChange={(e: ChangeEvent<HTMLSelectElement>) => handleFieldChange(field.id, e.target.value)}
                                 style={{
                                     padding: "4px 8px",
                                     fontSize: 12,
@@ -75,8 +84,8 @@ export function DynamicFieldForm({ contentType, fieldValues, onChange }) {
                         {field.type === 'number' && (
                             <input
                                 type="number"
-                                value={value}
-                                onChange={(e) => handleFieldChange(field.id, e.target.value ? Number(e.target.value) : '')}
+                                value={value as number | string}
+                                onChange={(e: ChangeEvent<HTMLInputElement>) => handleFieldChange(field.id, e.target.value ? Number(e.target.value) : '')}
                                 placeholder="0"
                                 style={{
                                     width: 80,
@@ -94,8 +103,8 @@ export function DynamicFieldForm({ contentType, fieldValues, onChange }) {
                         {field.type === 'text' && (
                             <input
                                 type="text"
-                                value={value}
-                                onChange={(e) => handleFieldChange(field.id, e.target.value)}
+                                value={value as string}
+                                onChange={(e: ChangeEvent<HTMLInputElement>) => handleFieldChange(field.id, e.target.value)}
                                 style={{
                                     width: 120,
                                     padding: "4px 8px",

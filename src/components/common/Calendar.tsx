@@ -1,16 +1,22 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, ReactNode } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
-export function Calendar({ selectedDate, onSelect, onClose }) {
+interface CalendarProps {
+    selectedDate: Date | null;
+    onSelect: (date: Date | null) => void;
+    onClose: () => void;
+}
+
+export function Calendar({ selectedDate, onSelect, onClose }: CalendarProps) {
     const [viewDate, setViewDate] = useState(selectedDate || new Date());
-    const calendarRef = useRef(null);
+    const calendarRef = useRef<HTMLDivElement>(null);
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     useEffect(() => {
-        const handleClickOutside = (e) => {
-            if (calendarRef.current && !calendarRef.current.contains(e.target)) {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (calendarRef.current && !calendarRef.current.contains(e.target as Node)) {
                 onClose();
             }
         };
@@ -38,7 +44,7 @@ export function Calendar({ selectedDate, onSelect, onClose }) {
     ];
     const dayNames = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
-    const days = [];
+    const days: ReactNode[] = [];
     for (let i = 0; i < startDayOfWeek; i++) {
         days.push(<div key={`empty-${i}`} className="calendar-day-empty" />);
     }

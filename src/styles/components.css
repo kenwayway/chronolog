@@ -168,7 +168,6 @@
   font-family: "JetBrains Mono", monospace;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  border-radius: 4px;
   cursor: pointer;
   transition: all 150ms ease;
   user-select: none;

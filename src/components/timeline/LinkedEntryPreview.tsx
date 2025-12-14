@@ -1,6 +1,12 @@
-import { memo } from 'react';
-import { formatDate, formatTime } from '../../utils/formatters';
+import { memo, MouseEvent } from 'react';
 import { getPreview } from '../../utils/contentParser';
+import type { Entry } from '../../types';
+
+interface LinkedEntryPreviewProps {
+    linkedEntry: Entry;
+    direction: 'before' | 'after';
+    onNavigateToEntry?: (entry: Entry) => void;
+}
 
 /**
  * Preview of a linked entry with navigation support
@@ -9,10 +15,10 @@ export const LinkedEntryPreview = memo(function LinkedEntryPreview({
     linkedEntry,
     direction,
     onNavigateToEntry,
-}) {
+}: LinkedEntryPreviewProps) {
     const handleClick = () => {
         // Try to find the element on current page first
-        const entryElement = document.querySelector(`[data-entry-id="${linkedEntry.id}"]`);
+        const entryElement = document.querySelector(`[data-entry-id="${linkedEntry.id}"]`) as HTMLElement | null;
         if (entryElement) {
             entryElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
             entryElement.style.backgroundColor = 'var(--accent-subtle)';
@@ -41,18 +47,17 @@ export const LinkedEntryPreview = memo(function LinkedEntryPreview({
                 color: 'var(--text-secondary)',
                 backgroundColor: 'transparent',
                 border: '1px solid var(--border-subtle)',
-                borderRadius: 4,
                 cursor: 'pointer',
                 width: 'calc(100% - 86px)',
                 textAlign: 'left',
                 transition: 'all 0.2s ease',
                 fontFamily: 'var(--font-mono)',
             }}
-            onMouseEnter={(e) => {
+            onMouseEnter={(e: MouseEvent<HTMLButtonElement>) => {
                 e.currentTarget.style.borderColor = 'var(--accent)';
                 e.currentTarget.style.color = 'var(--text-primary)';
             }}
-            onMouseLeave={(e) => {
+            onMouseLeave={(e: MouseEvent<HTMLButtonElement>) => {
                 e.currentTarget.style.borderColor = 'var(--border-subtle)';
                 e.currentTarget.style.color = 'var(--text-secondary)';
             }}

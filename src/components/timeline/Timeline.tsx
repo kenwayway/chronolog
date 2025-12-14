@@ -3,10 +3,26 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { ENTRY_TYPES } from "../../utils/constants";
 import { useTheme } from "../../hooks/useTheme";
 import { TimelineEntry } from "./TimelineEntry";
+import type { Entry, Category, SessionStatus, CategoryId } from "../../types";
 
 const ENTRIES_PER_PAGE = 20;
 
-export function Timeline({ entries, allEntries, status, categories, onContextMenu, categoryFilter = [], onNavigateToEntry }) {
+interface Position {
+    x: number;
+    y: number;
+}
+
+interface TimelineProps {
+    entries: Entry[];
+    allEntries?: Entry[];
+    status: SessionStatus;
+    categories: Category[];
+    onContextMenu: (entry: Entry, position: Position) => void;
+    categoryFilter?: CategoryId[];
+    onNavigateToEntry?: (entry: Entry) => void;
+}
+
+export function Timeline({ entries, allEntries, status, categories, onContextMenu, categoryFilter = [], onNavigateToEntry }: TimelineProps) {
     const { theme } = useTheme();
     const [currentPage, setCurrentPage] = useState(0);
 
@@ -28,11 +44,11 @@ export function Timeline({ entries, allEntries, status, categories, onContextMen
         : [...displayEntries].sort((a, b) => a.timestamp - b.timestamp);
 
     // Build session durations map
-    const sessionDurations = {};
-    let currentSessionStartId = null;
+    const sessionDurations: Record<string, number> = {};
+    let currentSessionStartId: string | null = null;
 
     // Calculate line states
-    const entryLineStates = {};
+    const entryLineStates: Record<string, string> = {};
     let inSession = false;
 
     for (const entry of sortedEntries) {
@@ -42,7 +58,7 @@ export function Timeline({ entries, allEntries, status, categories, onContextMen
             entry.type === ENTRY_TYPES.SESSION_END &&
             currentSessionStartId
         ) {
-            sessionDurations[currentSessionStartId] = entry.duration;
+            sessionDurations[currentSessionStartId] = entry.duration || 0;
             currentSessionStartId = null;
         }
 
