@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import type { Entry, ContentType, CloudData, ImportDataPayload } from '../types'
 import { STORAGE_KEYS, getStorage, setStorage, removeStorage, type CloudAuthData } from '../utils/storageService'
 
-const SYNC_DEBOUNCE_MS = 2000
+const SYNC_DEBOUNCE_MS = 500
 
 interface CloudSyncState {
   isLoggedIn: boolean
@@ -162,7 +162,7 @@ export function useCloudSync({ entries, contentTypes, onImportData }: UseCloudSy
         error: error instanceof Error ? error.message : 'Unknown error'
       }))
     }
-  }, [entries])
+  }, [entries, contentTypes])
 
   // Auto-sync when data changes (debounced)
   useEffect(() => {
