@@ -14,7 +14,7 @@ interface EntryHandlers {
     requireLogin: () => boolean
     handleLogIn: (content: string) => void
     handleSwitch: (content: string) => void
-    handleNote: (content: string, options?: { contentType?: string; category?: CategoryId; tags?: string[] }) => void
+    handleNote: (content: string, options?: { contentType?: string; fieldValues?: Record<string, unknown>; category?: CategoryId; tags?: string[] }) => void
     handleLogOff: (content: string) => void
     handleEditEntry: (entry: Entry, openModal: (entry: Entry) => void) => void
     handleSaveEdit: (entryId: string, updates: UpdateEntryPayload) => void
@@ -51,7 +51,7 @@ export function useEntryHandlers({
         actions.switchSession(content)
     }, [actions])
 
-    const handleNote = useCallback((content: string, options?: { contentType?: string; category?: CategoryId; tags?: string[] }) => {
+    const handleNote = useCallback((content: string, options?: { contentType?: string; fieldValues?: Record<string, unknown>; category?: CategoryId; tags?: string[] }) => {
         actions.addNote(content, options)
     }, [actions])
 

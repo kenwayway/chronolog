@@ -1,0 +1,176 @@
+/* InputPanel Component Styles */
+
+.container {
+    position: fixed;
+    bottom: 24px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    padding: 0 16px;
+    pointer-events: none;
+    z-index: 300;
+}
+
+.wrapper {
+    width: 100%;
+    max-width: 768px;
+    pointer-events: auto;
+}
+
+.panel {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-none);
+    overflow: hidden;
+    transition: all 350ms cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.panel.focused {
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.2);
+}
+
+.panelFocusMode {
+    max-width: 900px;
+    box-shadow: 0 0 80px rgba(0, 0, 0, 0.3);
+}
+
+.gutter {
+    flex-shrink: 0;
+    width: 48px;
+    padding-top: 12px;
+    border-right: 1px solid var(--border-subtle);
+    background-color: var(--bg-secondary);
+    user-select: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 12px;
+}
+
+.gutter .terminalIcon {
+    color: var(--accent);
+}
+
+.editor {
+    flex: 1;
+    padding: 12px;
+}
+
+.editorFocusMode {
+    padding: 24px 16px;
+}
+
+.textarea {
+    display: block;
+    width: 100%;
+    background-color: transparent;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 15px;
+    resize: none;
+    border: none;
+    outline: none;
+    line-height: 1.6;
+    overflow-y: auto;
+    min-height: 24px;
+    max-height: 200px;
+    transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.textareaFocused {
+    min-height: 64px;
+}
+
+.textareaFocusMode {
+    font-size: 16px;
+    min-height: 400px;
+    max-height: 600px;
+}
+
+.attachments {
+    padding: 8px 16px;
+    border-top: 1px solid var(--border-subtle);
+    background-color: var(--bg-secondary);
+}
+
+.attachmentRow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.attachmentRow:last-child {
+    margin-bottom: 0;
+}
+
+.attachmentInput {
+    flex: 1;
+    height: 28px;
+    padding: 0 8px;
+    font-size: 12px;
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: none;
+    border-radius: var(--radius-md);
+    outline: none;
+}
+
+.closeBtn {
+    padding: 4px;
+    color: var(--text-dim);
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+}
+
+.bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 16px;
+    border-top: 1px solid var(--border-subtle);
+    background-color: var(--bg-secondary);
+}
+
+.status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    margin-right: 8px;
+}
+
+.statusDot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--text-dim);
+}
+
+.statusDotActive {
+    background-color: var(--success);
+}
+
+/* Responsive - Mobile */
+@media (max-width: 640px) {
+    .container {
+        padding: 0 0.5rem;
+        bottom: 12px;
+    }
+
+    .panel {
+        border-radius: var(--radius-none);
+        transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+}

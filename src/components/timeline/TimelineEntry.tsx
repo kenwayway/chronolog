@@ -5,7 +5,8 @@ import { formatTime, formatDuration, formatDate } from "../../utils/formatters";
 import { parseContent, darkenColor } from "../../utils/contentParser";
 import { useTheme } from "../../hooks/useTheme";
 import { LinkedEntryPreview } from "./LinkedEntryPreview";
-import { ExpenseDisplay, BookmarkDisplay, MoodDisplay } from "./ContentTypeDisplays";
+import { ExpenseDisplay, BookmarkDisplay, MoodDisplay, WorkoutDisplay } from "./ContentTypeDisplays";
+import styles from "./TimelineEntry.module.css";
 import type { Entry, Category } from "../../types";
 
 interface Position {
@@ -261,7 +262,7 @@ export const TimelineEntry = memo(function TimelineEntry({
 
     return (
         <div
-            className={`timeline-entry ${isTaskDone ? 'timeline-entry-done' : ''}`}
+            className={`${styles.entry} ${isTaskDone ? styles.entryDone : ''}`}
             data-entry-id={entry.id}
             style={{
                 display: "flex",
@@ -278,7 +279,7 @@ export const TimelineEntry = memo(function TimelineEntry({
         >
             {/* Time Column */}
             <div
-                className="timeline-time-col"
+                className={styles.timeCol}
                 style={{
                     flexShrink: 0,
                     width: 50,
@@ -314,7 +315,7 @@ export const TimelineEntry = memo(function TimelineEntry({
 
             {/* Symbol Column */}
             <div
-                className="timeline-symbol-col"
+                className={styles.symbolCol}
                 style={{
                     position: "relative",
                     flexShrink: 0,
@@ -372,7 +373,7 @@ export const TimelineEntry = memo(function TimelineEntry({
             </div>
 
             {/* Content */}
-            <div className="timeline-content-col" style={{ flex: 1, minWidth: 0 }}>
+            <div className={styles.contentCol} style={{ flex: 1, minWidth: 0 }}>
                 {/* Linked entries before (older) */}
                 {beforeLinks.length > 0 && (
                     <div className="linked-entries-before" style={{ marginBottom: 8 }}>
@@ -389,7 +390,7 @@ export const TimelineEntry = memo(function TimelineEntry({
 
                 {/* Mobile timestamp */}
                 <div
-                    className="timeline-mobile-time"
+                    className={styles.mobileTime}
                     style={{
                         fontSize: 10,
                         color: "var(--text-dim)",
@@ -405,7 +406,7 @@ export const TimelineEntry = memo(function TimelineEntry({
                 <div className="flex flex-wrap items-baseline" style={{ gap: "4px 12px", marginBottom: 6 }}>
                     {entry.content && (
                         <span
-                            className="timeline-content-text"
+                            className={styles.contentText}
                             style={{
                                 fontSize: 15,
                                 lineHeight: 1.6,
@@ -446,6 +447,9 @@ export const TimelineEntry = memo(function TimelineEntry({
                     <div style={{ marginTop: 6 }}>
                         <MoodDisplay fieldValues={entry.fieldValues} />
                     </div>
+                )}
+                {entry.contentType === 'workout' && (
+                    <WorkoutDisplay fieldValues={entry.fieldValues} />
                 )}
 
                 {/* Metadata Footer (Tags & Category) */}

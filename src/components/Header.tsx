@@ -14,6 +14,7 @@ import {
 import { useTheme } from "../hooks/useTheme";
 import { formatDate } from "../utils/formatters";
 import { Calendar } from "./common/Calendar";
+import styles from "./Header.module.css";
 
 interface CloudSync {
     isLoggedIn: boolean;
@@ -89,12 +90,11 @@ export function Header({
     };
 
     return (
-        <header className="header">
+        <header className={styles.header}>
             <div className="flex items-center gap-3">
                 {/* Logo + Title */}
                 <div className="flex items-center gap-2 select-none">
-                    {/* Breathing indicator */}
-                    <div className="relative flex-center header-indicator">
+                    <div className={`relative flex-center ${styles.indicator}`}>
                         <div
                             className={isStreaming ? "animate-ping" : ""}
                             style={{
@@ -109,7 +109,7 @@ export function Header({
                             }}
                         />
                         <div
-                            className="header-indicator-inner"
+                            className={styles.indicatorInner}
                             style={{
                                 backgroundColor: isStreaming
                                     ? "var(--success)"
@@ -117,7 +117,7 @@ export function Header({
                             }}
                         />
                     </div>
-                    <span className="header-title">CHRONOLOG</span>
+                    <span className={styles.title}>CHRONOLOG</span>
                     {/* Cloud sync indicator */}
                     {cloudSync?.isLoggedIn && (
                         <span title={cloudSync.isSyncing ? "同步中..." : "云端已连接"}>
@@ -188,8 +188,7 @@ export function Header({
                 </div>
             </div>
 
-            {/* Desktop buttons - hidden on mobile */}
-            <div className="header-actions hide-mobile">
+            <div className={`${styles.actions} hide-mobile`}>
                 <button
                     className="btn btn-ghost relative rounded-lg"
                     style={{ width: 36, height: 36, padding: 0 }}
@@ -250,8 +249,7 @@ export function Header({
                 </button>
             </div>
 
-            {/* Mobile hamburger menu */}
-            <div className="header-mobile-menu show-mobile-only" ref={mobileMenuRef}>
+            <div className={`${styles.mobileMenu} show-mobile-only`} ref={mobileMenuRef}>
                 <button
                     className="btn btn-ghost rounded-lg"
                     style={{ width: 36, height: 36, padding: 0 }}
@@ -278,26 +276,26 @@ export function Header({
 
                 {/* Mobile dropdown menu */}
                 {mobileMenuOpen && (
-                    <div className="mobile-menu-dropdown">
+                    <div className={styles.mobileMenuDropdown}>
                         <button
-                            className="mobile-menu-item"
+                            className={styles.mobileMenuItem}
                             onClick={() => { onOpenLeftSidebar(); setMobileMenuOpen(false); }}
                         >
                             <Activity size={18} />
                             <span>Activity</span>
                         </button>
                         <button
-                            className="mobile-menu-item"
+                            className={styles.mobileMenuItem}
                             onClick={() => { onOpenSidebar(); setMobileMenuOpen(false); }}
                         >
                             <ClipboardList size={18} />
                             <span>Tasks</span>
                             {pendingTaskCount > 0 && (
-                                <span className="mobile-menu-badge">{pendingTaskCount}</span>
+                                <span className={styles.mobileMenuBadge}>{pendingTaskCount}</span>
                             )}
                         </button>
                         <button
-                            className="mobile-menu-item"
+                            className={styles.mobileMenuItem}
                             onClick={() => { if (canToggleMode) { onToggleTheme(); setMobileMenuOpen(false); } }}
                             style={{ opacity: canToggleMode ? 1 : 0.4 }}
                         >
@@ -305,7 +303,7 @@ export function Header({
                             <span>{isDark ? "Light mode" : "Dark mode"}</span>
                         </button>
                         <button
-                            className="mobile-menu-item"
+                            className={styles.mobileMenuItem}
                             onClick={() => { onOpenSettings(); setMobileMenuOpen(false); }}
                         >
                             <Settings size={18} />

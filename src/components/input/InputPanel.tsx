@@ -5,6 +5,7 @@ import { FocusMode } from "./FocusMode";
 import { AttachmentPreview } from "./AttachmentPreview";
 import { InputActions } from "./InputActions";
 import { EntryMetadataInput } from "./EntryMetadataInput";
+import styles from "./InputPanel.module.css";
 import type { Entry, SessionStatus, CategoryId } from "../../types";
 
 interface CloudSync {
@@ -14,6 +15,7 @@ interface CloudSync {
 
 interface NoteOptions {
     contentType?: string;
+    fieldValues?: Record<string, unknown>;
     category?: CategoryId;
     tags?: string[];
 }
@@ -208,7 +210,21 @@ export const InputPanel = forwardRef<InputPanelRef, InputPanelProps>(function In
             case "note": {
                 // Pass metadata if manually set
                 const options: NoteOptions = {};
-                if (contentType) options.contentType = contentType;
+                if (contentType) {
+                    options.contentType = contentType;
+                    // Set default fieldValues based on content type
+                    if (contentType === 'workout') {
+                        options.fieldValues = { workoutType: 'Strength', exercises: '[]' };
+                    } else if (contentType === 'task') {
+                        options.fieldValues = { done: false };
+                    } else if (contentType === 'mood') {
+                        options.fieldValues = { feeling: 'Calm', energy: 3 };
+                    } else if (contentType === 'bookmark') {
+                        options.fieldValues = { type: 'Article', status: 'Inbox' };
+                    } else if (contentType === 'expense') {
+                        options.fieldValues = { currency: 'USD' };
+                    }
+                }
                 if (category) options.category = category;
                 if (tags.length > 0) options.tags = tags;
                 onNote(content, Object.keys(options).length > 0 ? options : undefined);
@@ -283,7 +299,7 @@ export const InputPanel = forwardRef<InputPanelRef, InputPanelProps>(function In
 
     const renderInputForm = (inFocusMode = false) => (
         <div
-            className={`input-panel ${isFocused ? "focused" : ""} ${inFocusMode ? "focus-mode" : ""}`}
+            className={`${styles.panel} ${isFocused ? styles.focused : ""} ${inFocusMode ? styles.panelFocusMode : ""}`}
             data-input-panel
             data-mobile-expanded={mobileExpanded ? "true" : undefined}
             style={{
@@ -336,7 +352,7 @@ export const InputPanel = forwardRef<InputPanelRef, InputPanelProps>(function In
             {/* Input Area */}
             <div className="input-area" style={{ display: "flex", flex: 1 }}>
                 <div
-                    className={`input-panel-gutter ${inFocusMode ? "focus-mode" : ""}`}
+                    className={`${styles.gutter} ${inFocusMode ? styles.gutterFocusMode : ""}`}
                     onClick={() => {
                         if (mobileExpanded && !inFocusMode) {
                             setMobileExpanded(false);
@@ -346,13 +362,13 @@ export const InputPanel = forwardRef<InputPanelRef, InputPanelProps>(function In
                     }}
                     style={{ cursor: mobileExpanded && !inFocusMode ? "pointer" : "default" }}
                 >
-                    <Terminal size={inFocusMode ? 16 : 14} className="terminal-icon" />
+                    <Terminal size={inFocusMode ? 16 : 14} className={styles.terminalIcon} />
                 </div>
 
-                <div className={`input-panel-editor ${inFocusMode ? "focus-mode" : ""}`}>
+                <div className={`${styles.editor} ${inFocusMode ? styles.editorFocusMode : ""}`}>
                     <textarea
                         ref={inFocusMode ? focusInputRef : inputRef}
-                        className={`input-panel-textarea ${isFocused ? "focused" : ""} ${inFocusMode ? "focus-mode" : ""}`}
+                        className={`${styles.textarea} ${isFocused ? styles.textareaFocused : ""} ${inFocusMode ? styles.textareaFocusMode : ""}`}
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         onKeyDown={handleKeyDown}
@@ -427,8 +443,8 @@ export const InputPanel = forwardRef<InputPanelRef, InputPanelProps>(function In
 
     return (
         <>
-            <div className="input-panel-container">
-                <div className="input-panel-wrapper">
+            <div className={styles.container}>
+                <div className={styles.wrapper}>
                     {renderInputForm(false)}
                 </div>
             </div>

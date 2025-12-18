@@ -1,16 +1,13 @@
 import { useState, useRef, useEffect, KeyboardEvent } from 'react';
 import { X } from 'lucide-react';
 import { Dropdown } from '../common/Dropdown';
-import { CATEGORIES } from '../../utils/constants';
+import { CATEGORIES, BUILTIN_CONTENT_TYPES } from '../../utils/constants';
 import type { CategoryId } from '../../types';
 
+// Generate content type options from BUILTIN_CONTENT_TYPES
 const CONTENT_TYPE_OPTIONS = [
     { value: '', label: 'Auto' },
-    { value: 'note', label: 'Note' },
-    { value: 'task', label: 'Task' },
-    { value: 'expense', label: 'Expense' },
-    { value: 'bookmark', label: 'Bookmark' },
-    { value: 'mood', label: 'Mood' },
+    ...BUILTIN_CONTENT_TYPES.map(ct => ({ value: ct.id, label: ct.name }))
 ];
 
 interface EntryMetadataInputProps {

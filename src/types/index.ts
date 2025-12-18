@@ -119,6 +119,7 @@ export interface UpdateEntryPayload {
   fieldValues?: Record<string, unknown>
   linkedEntries?: string[]
   tags?: string[]
+  type?: EntryType
 }
 
 export interface SetEntryCategoryPayload {

@@ -1,0 +1,115 @@
+/* Header Component Styles */
+
+.header {
+    position: sticky;
+    top: 0;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1.5rem;
+    background-color: var(--bg-glass);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border-subtle);
+    z-index: 200;
+}
+
+.title {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 12px;
+    font-weight: 400;
+    letter-spacing: 0.5em;
+    color: var(--text-muted);
+}
+
+.indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.indicatorInner {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+}
+
+.actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.mobileMenu {
+    position: relative;
+}
+
+.mobileMenuDropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 8px;
+    min-width: 160px;
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-sm);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    z-index: 300;
+    padding: 4px 0;
+}
+
+.mobileMenuItem {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 10px 16px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--text-secondary);
+    text-align: left;
+}
+
+.mobileMenuItem:hover {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.mobileMenuBadge {
+    margin-left: auto;
+    padding: 2px 6px;
+    font-size: 10px;
+    font-weight: 600;
+    background-color: var(--accent);
+    color: var(--bg-primary);
+    border-radius: var(--radius-none);
+}
+
+/* Responsive - Mobile */
+@media (max-width: 640px) {
+    .header {
+        padding: 0 0.75rem;
+        height: 44px;
+    }
+
+    .title {
+        font-size: 9px;
+        letter-spacing: 0.3em;
+    }
+
+    .indicator {
+        width: 6px;
+        height: 6px;
+    }
+
+    .indicatorInner {
+        width: 4px;
+        height: 4px;
+    }
+
+    .actions {
+        display: none;
+    }
+}

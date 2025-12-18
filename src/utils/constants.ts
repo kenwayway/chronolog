@@ -90,12 +90,23 @@ export const BUILTIN_CONTENT_TYPES: ContentType[] = [
     id: 'mood',
     name: 'Mood',
     fields: [
-      { id: 'feeling', name: 'Feeling', type: 'dropdown', options: ['Happy', 'Calm', 'Tired', 'Anxious', 'Sad', 'Angry'], default: 'Calm' },
+      { id: 'feeling', name: 'Feeling', type: 'dropdown', options: ['Happy', 'Excited', 'Calm', 'Tired', 'Anxious', 'Sad', 'Angry'], default: 'Calm' },
       { id: 'energy', name: 'Energy', type: 'number', default: 3 },
       { id: 'trigger', name: 'Trigger', type: 'dropdown', options: ['Work', 'Health', 'Social', 'Money', 'Family', 'Sleep', 'Weather', 'Other'] }
     ],
     builtIn: true,
     order: 4
+  },
+  {
+    id: 'workout',
+    name: 'Workout',
+    fields: [
+      { id: 'workoutType', name: 'Type', type: 'dropdown', options: ['Strength', 'Flexibility', 'Mixed'], default: 'Strength' },
+      { id: 'duration', name: 'Duration (min)', type: 'number' },
+      { id: 'exercises', name: 'Exercises', type: 'text' } // Will be JSON string of exercise array
+    ],
+    builtIn: true,
+    order: 5
   }
 ]
 

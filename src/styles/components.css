@@ -137,7 +137,7 @@
   font-size: 0.75rem;
   font-weight: 600;
   border: 1px solid transparent;
-  border-radius: 4px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: all 150ms ease;
   user-select: none;
@@ -224,7 +224,7 @@
   color: var(--text-dim);
   background-color: transparent;
   border: none;
-  border-radius: 4px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: all 100ms ease;
 }
@@ -239,7 +239,7 @@
   color: var(--accent);
 }
 
-/* ===== Header ===== */
+/* ===== Header (MIGRATED TO Header.module.css) =====
 .header {
   position: sticky;
   top: 0;
@@ -273,12 +273,13 @@
   height: 6px;
   border-radius: 50%;
 }
+/* ===== END MIGRATED HEADER ===== */
 
-/* ===== Timeline ===== */
+/* ===== Timeline (MIGRATED TO TimelineEntry.module.css) =====
 .timeline-entry {
   padding: 12px;
   margin: 0 -12px;
-  border-radius: 4px;
+  border-radius: var(--radius-none);
   transition: background-color 150ms ease;
 }
 
@@ -289,6 +290,7 @@
 .timeline-entry-done .timeline-content-col {
   opacity: 0.7;
 }
+/* ===== END MIGRATED TIMELINE ===== */
 
 /* ===== Context Menu ===== */
 .context-menu-item {
@@ -337,11 +339,11 @@
   max-height: 85vh;
   background-color: var(--bg-secondary);
   border: 1px solid var(--border-light);
-  border-radius: 4px;
+  border-radius: var(--radius-none);
   overflow: hidden;
 }
 
-/* ===== Edit Modal ===== */
+/* ===== Edit Modal (MIGRATED TO EditModal.module.css) =====
 .edit-modal-textarea {
   width: 100%;
   min-height: 200px;
@@ -352,7 +354,7 @@
   color: var(--text-primary);
   background-color: var(--bg-tertiary);
   border: 1px solid var(--border-subtle);
-  border-radius: 4px;
+  border-radius: var(--radius-md);
   resize: vertical;
   outline: none;
 }
@@ -371,7 +373,7 @@
   color: var(--text-primary);
   background-color: var(--bg-tertiary);
   border: 1px solid var(--border-subtle);
-  border-radius: 4px;
+  border-radius: var(--radius-md);
   outline: none;
 }
 
@@ -423,7 +425,7 @@
   pointer-events: auto;
   background-color: var(--bg-primary);
   border: 1px solid var(--border-light);
-  border-radius: 4px;
+  border-radius: var(--radius-none);
   box-shadow: 0 0 80px rgba(0, 0, 0, 0.3);
   font-family: var(--font-mono);
 }
@@ -490,6 +492,8 @@
   background-color: var(--bg-secondary);
 }
 
+/* ===== END MIGRATED EDIT MODAL ===== */
+
 /* Linked Entry Item */
 .linked-entry-item {
   display: flex;
@@ -497,7 +501,7 @@
   gap: 8px;
   padding: 4px 8px;
   background-color: var(--bg-tertiary);
-  border-radius: 4px;
+  border-radius: var(--radius-none);
   font-size: 11px;
   font-family: var(--font-mono);
 }
@@ -598,7 +602,7 @@
 .custom-dropdown-color {
   width: 10px;
   height: 10px;
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
   flex-shrink: 0;
 }
 
@@ -616,7 +620,7 @@
   padding: 12px;
   background-color: var(--bg-secondary);
   border: 1px solid var(--border-light);
-  border-radius: 8px;
+  border-radius: var(--radius-none);
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
   z-index: 500;
   min-width: 260px;
@@ -634,7 +638,7 @@
   width: 28px;
   height: 28px;
   border: none;
-  border-radius: 4px;
+  border-radius: var(--radius-md);
   background-color: transparent;
   color: var(--text-secondary);
   cursor: pointer;
@@ -726,7 +730,7 @@
   margin-top: 12px;
   padding: 6px 0;
   border: 1px solid var(--border-light);
-  border-radius: 4px;
+  border-radius: var(--radius-md);
   background-color: transparent;
   color: var(--accent);
   font-size: 11px;
@@ -750,7 +754,7 @@
   color: var(--text-dim);
   background-color: transparent;
   border: none;
-  border-radius: 4px;
+  border-radius: var(--radius-md);
   cursor: pointer;
 }
 
@@ -824,7 +828,7 @@
   flex-direction: column;
   background-color: var(--bg-primary);
   border: 1px solid var(--border-light);
-  border-radius: 4px;
+  border-radius: var(--radius-none);
   overflow: hidden;
   transition: all 350ms cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
@@ -918,7 +922,7 @@
   background-color: var(--bg-tertiary);
   color: var(--text-primary);
   border: none;
-  border-radius: 4px;
+  border-radius: var(--radius-md);
   outline: none;
 }
 
@@ -1049,7 +1053,7 @@
   padding: 6px 12px;
   font-size: 11px;
   font-family: var(--font-mono);
-  border-radius: 4px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: all 100ms ease;
 }
@@ -1058,7 +1062,7 @@
 .settings-color-btn {
   width: 28px;
   height: 28px;
-  border-radius: 4px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: all 100ms ease;
 }
@@ -1070,13 +1074,13 @@
   gap: 12px;
   padding: 8px 12px;
   background-color: var(--bg-secondary);
-  border-radius: 4px;
+  border-radius: var(--radius-none);
 }
 
 .settings-category-dot {
   width: 12px;
   height: 12px;
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
   flex-shrink: 0;
 }
 
@@ -1106,7 +1110,7 @@
   gap: 8px;
   padding: 8px 12px;
   background-color: var(--bg-secondary);
-  border-radius: 4px;
+  border-radius: var(--radius-none);
 }
 
 /* ===== Timeline Images ===== */
@@ -1118,7 +1122,7 @@
 .timeline-image {
   max-width: 100%;
   max-height: 300px;
-  border-radius: 4px;
+  border-radius: var(--radius-none);
   border: 1px solid var(--border-subtle);
 }
 

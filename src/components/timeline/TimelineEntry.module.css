@@ -1,0 +1,109 @@
+/* TimelineEntry Component Styles */
+
+.entry {
+    padding: 12px;
+    margin: 0 -12px;
+    border-radius: var(--radius-none);
+    transition: background-color 150ms ease;
+}
+
+.entry:hover {
+    background-color: var(--bg-secondary);
+}
+
+.entryDone .contentCol {
+    opacity: 0.7;
+}
+
+/* Timeline Images */
+.imageContainer {
+    margin-top: 8px;
+    margin-bottom: 4px;
+}
+
+.image {
+    max-width: 100%;
+    max-height: 300px;
+    border-radius: var(--radius-none);
+    border: 1px solid var(--border-subtle);
+}
+
+.imageFallback {
+    display: none;
+    color: var(--accent);
+    font-size: 12px;
+}
+
+/* Timeline Columns */
+.timeCol {
+    flex-shrink: 0;
+    width: 50px;
+    text-align: right;
+    font-size: 10px;
+    color: var(--text-dim);
+    padding-right: 8px;
+    padding-top: 4px;
+    font-family: var(--font-mono);
+    opacity: 0.6;
+}
+
+.symbolCol {
+    position: relative;
+    flex-shrink: 0;
+    width: 20px;
+    text-align: center;
+    font-size: 14px;
+    user-select: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    align-self: stretch;
+}
+
+.contentCol {
+    flex: 1;
+    min-width: 0;
+}
+
+.contentText {
+    font-size: 15px;
+    line-height: 1.6;
+    overflow-wrap: break-word;
+    font-family: var(--font-primary);
+    white-space: pre-wrap;
+}
+
+.mobileTime {
+    font-size: 10px;
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    margin-bottom: 4px;
+    display: none;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+    .entry {
+        flex-wrap: wrap;
+        padding: 10px 8px !important;
+        gap: 8px !important;
+        margin: 0 !important;
+        border-bottom: none !important;
+    }
+
+    .timeCol {
+        display: none !important;
+    }
+
+    .symbolCol {
+        width: 16px !important;
+    }
+
+    .contentText {
+        font-size: 16px !important;
+    }
+
+    .mobileTime {
+        display: block !important;
+    }
+}

@@ -2,7 +2,8 @@ import { useState, useRef, useEffect, KeyboardEvent, MouseEvent } from "react";
 import { Image, MapPin, Link2, X, Search } from "lucide-react";
 import { Dropdown } from "../common/Dropdown";
 import { DynamicFieldForm } from "../input/DynamicFieldForm";
-import { BUILTIN_CONTENT_TYPES } from "../../utils/constants";
+import { BUILTIN_CONTENT_TYPES, ENTRY_TYPES } from "../../utils/constants";
+import styles from "./EditModal.module.css";
 import type { Entry, Category, ContentType, CategoryId } from "../../types";
 
 interface EntryUpdates {
@@ -13,6 +14,7 @@ interface EntryUpdates {
   fieldValues?: Record<string, unknown>;
   linkedEntries?: string[];
   tags?: string[];
+  type?: string;
 }
 
 interface EditModalProps {
@@ -40,6 +42,7 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
   const [showLinkSearch, setShowLinkSearch] = useState(false);
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
+  const [entryType, setEntryType] = useState<string>(ENTRY_TYPES.NOTE);
 
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -87,6 +90,7 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
       setShowLinkSearch(false);
       setTags(entry.tags || []);
       setTagInput("");
+      setEntryType(entry.type || ENTRY_TYPES.NOTE);
       setTimeout(() => textareaRef.current?.focus(), 50);
     }
   }, [isOpen, entry]);
@@ -151,6 +155,7 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
       fieldValues: JSON.stringify(fieldValues) !== JSON.stringify(entry.fieldValues) ? fieldValues : undefined,
       linkedEntries: JSON.stringify(linkedEntries) !== JSON.stringify(entry.linkedEntries || []) ? linkedEntries : undefined,
       tags: tagsChanged ? tags : undefined,
+      type: entryType !== entry.type ? entryType : undefined,
     });
     onClose();
   };
@@ -213,28 +218,27 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
 
   return (
     <div
-      className="edit-modal-overlay"
+      className={styles.overlay}
       onMouseDown={handleBackdropClick}
       onKeyDown={handleKeyDown}
     >
       <div
-        className="edit-modal-panel"
+        className={styles.panel}
         onMouseDown={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="edit-modal-header">
-          <span className="edit-modal-title">EDIT ENTRY</span>
-          <button onClick={onClose} className="modal-close-btn">×</button>
+        <div className={styles.header}>
+          <span className={styles.title}>EDIT ENTRY</span>
+          <button onClick={onClose} className={styles.closeBtn}>×</button>
         </div>
 
         {/* Main Content */}
-        <div className="edit-modal-body">
+        <div className={styles.body}>
           <textarea
             ref={textareaRef}
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder="Enter content..."
-            className="edit-modal-content-area"
+            className={styles.contentArea}
           />
         </div>
 
@@ -249,7 +253,7 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
 
         {/* Attachments */}
         {(imageUrl || location || showImageInput || showLocationInput) && (
-          <div className="edit-modal-section" style={{ padding: '8px 20px' }}>
+          <div className={styles.section} style={{ padding: '8px 20px' }}>
             {/* Image URL Input */}
             {showImageInput && (
               <div className="flex items-center gap-2 mb-2">
@@ -262,7 +266,7 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
                   value={imageUrl}
                   onChange={(e) => setImageUrl(e.target.value)}
                   placeholder="Paste image URL..."
-                  className="edit-modal-input"
+                  className={styles.input}
                   style={{ flex: 1, height: 28, fontSize: 12 }}
                 />
                 <button
@@ -295,7 +299,7 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
                   placeholder="Enter location..."
-                  className="edit-modal-input"
+                  className={styles.input}
                   style={{ flex: 1, height: 28, fontSize: 12 }}
                 />
                 <button
@@ -334,7 +338,7 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
         )}
 
         {/* Linked Entries */}
-        <div className="edit-modal-section">
+        <div className={styles.section}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
             <Link2 size={12} style={{ color: "var(--text-dim)" }} />
             <span style={{ fontSize: 10, color: "var(--text-dim)", fontWeight: 600 }}>LINKED ENTRIES</span>
@@ -522,7 +526,7 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
         </div>
 
         {/* Footer */}
-        <div className="edit-modal-footer">
+        <div className={styles.footer}>
           <div className="flex items-center gap-4">
             {/* Time */}
             <div className="flex items-center gap-2">
@@ -539,9 +543,33 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
                 type="datetime-local"
                 value={timestamp}
                 onChange={(e) => setTimestamp(e.target.value)}
-                className="edit-modal-input"
+                className={styles.input}
                 style={{ width: 180 }}
+                lang="en-GB"
               />
+            </div>
+
+            {/* Entry Type */}
+            <div className="flex items-center gap-2">
+              <span
+                style={{
+                  fontSize: 10,
+                  color: "var(--text-dim)",
+                  userSelect: "none",
+                }}
+              >
+                ENTRY
+              </span>
+              <select
+                value={entryType}
+                onChange={(e) => setEntryType(e.target.value)}
+                className={styles.input}
+                style={{ width: 120 }}
+              >
+                <option value={ENTRY_TYPES.NOTE}>Note</option>
+                <option value={ENTRY_TYPES.SESSION_START}>Session Start</option>
+                <option value={ENTRY_TYPES.SESSION_END}>Session End</option>
+              </select>
             </div>
 
             {/* Category */}
@@ -595,6 +623,8 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
                     setFieldValues({ type: 'Article', status: 'Inbox' });
                   } else if (newType === 'mood') {
                     setFieldValues({ feeling: 'Calm', energy: 3 });
+                  } else if (newType === 'workout') {
+                    setFieldValues({ workoutType: 'Strength', exercises: '[]' });
                   } else {
                     setFieldValues({});
                   }
@@ -603,10 +633,9 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
                 style={{ width: 100 }}
               >
                 <option value="">Note</option>
-                <option value="task">Task</option>
-                <option value="expense">Expense</option>
-                <option value="bookmark">Bookmark</option>
-                <option value="mood">Mood</option>
+                {BUILTIN_CONTENT_TYPES.filter(ct => ct.id !== 'note').map(ct => (
+                  <option key={ct.id} value={ct.id}>{ct.name}</option>
+                ))}
               </select>
             </div>
 
