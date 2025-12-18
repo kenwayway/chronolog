@@ -68,13 +68,14 @@ export async function onRequestPost(context) {
                 .join('\n');
 
             if (contextEntries) {
-                dayContext = `\n\n---\n今天的其他记录（供参考，不需要逐条回应）:\n${contextEntries}`;
+                dayContext = `\n\n（背景参考，请忽略这些，只是提供今天的上下文：\n${contextEntries}\n）`;
             }
         }
 
-        const userMessage = `"${content}"${dayContext}
+        const userMessage = `【请只回复这条内容】：
+"${content}"
 
-请给出简短评论（1-2句），自然一点，像朋友聊天一样。`;
+请给出简短评论（1-2句），自然一点，像朋友聊天一样。只针对引号内的内容回复。${dayContext}`;
 
         // Call AI API
         const normalizedBaseUrl = (baseUrl || 'https://api.openai.com/v1').replace(/\/$/, '');
