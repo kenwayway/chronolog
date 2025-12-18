@@ -282,6 +282,41 @@ export function SettingsModal({
                         )}
                         {activeTab === "ai" && (
                             <div className="space-y-4">
+                                {/* Local AI Config for AI Comment */}
+                                <div>
+                                    <div className="settings-section-label">AI COMMENT CONFIG</div>
+                                    <p className="settings-hint" style={{ marginBottom: 12 }}>
+                                        右键 Entry → "💭 AI COMMENT" 使用此配置
+                                    </p>
+                                    <div className="space-y-2">
+                                        <input
+                                            type="password"
+                                            value={key}
+                                            onChange={(e) => setKey(e.target.value)}
+                                            placeholder="OpenAI API Key (sk-...)"
+                                            className="edit-modal-input"
+                                            style={{ width: "100%" }}
+                                        />
+                                        <input
+                                            type="text"
+                                            value={baseUrl}
+                                            onChange={(e) => setBaseUrl(e.target.value)}
+                                            placeholder="API Base URL"
+                                            className="edit-modal-input"
+                                            style={{ width: "100%" }}
+                                        />
+                                        <input
+                                            type="text"
+                                            value={model}
+                                            onChange={(e) => setModel(e.target.value)}
+                                            placeholder="Model name"
+                                            className="edit-modal-input"
+                                            style={{ width: "100%" }}
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Auto-categorization info */}
                                 <div className="settings-section-label">AUTO-CATEGORIZATION</div>
 
                                 {cloudSync?.isLoggedIn ? (
@@ -290,7 +325,7 @@ export function SettingsModal({
                                             ✓ AI 分类已启用
                                         </p>
                                         <p className="settings-hint">
-                                            新 entry 会自动分类。AI 配置在 Cloudflare 后台设置。
+                                            新 entry 会自动分类。后端 AI 配置在 Cloudflare 后台设置。
                                         </p>
                                     </div>
                                 ) : (
