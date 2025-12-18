@@ -1,5 +1,6 @@
 // POST /api/comment - AI-powered entry comments
-// Uses AI config stored in KV (separate from auto-categorization)
+// Uses AI_COMMENT_API_KEY from Cloudflare Secrets (env var)
+// Uses KV for non-sensitive config (baseUrl, model, persona)
 
 export async function onRequestPost(context) {
     const { request, env } = context;
@@ -26,18 +27,18 @@ export async function onRequestPost(context) {
             return Response.json({ error: 'Invalid token' }, { status: 401, headers: corsHeaders });
         }
 
-        // Get AI Comment config from KV (separate from auto-categorization)
-        const configStr = await env.CHRONOLOG_KV.get('ai_comment_config');
-        if (!configStr) {
-            return Response.json({ error: 'AI Comment not configured. Set config in Settings.' }, { status: 400, headers: corsHeaders });
-        }
-
-        const config = JSON.parse(configStr);
-        const { apiKey, baseUrl, model, persona } = config;
-
+        // Get API Key from Cloudflare Secrets (environment variable)
+        const apiKey = env.AI_COMMENT_API_KEY;
         if (!apiKey) {
-            return Response.json({ error: 'AI API Key not configured' }, { status: 400, headers: corsHeaders });
+            return Response.json({
+                error: 'AI Comment not configured. Run: wrangler secret put AI_COMMENT_API_KEY'
+            }, { status: 400, headers: corsHeaders });
         }
+
+        // Get non-sensitive config from KV (baseUrl, model, persona)
+        const configStr = await env.CHRONOLOG_KV.get('ai_comment_config');
+        const config = configStr ? JSON.parse(configStr) : {};
+        const { baseUrl, model, persona } = config;
 
         // Get request body
         const { content, todayEntries } = await request.json();

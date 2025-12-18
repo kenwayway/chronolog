@@ -110,29 +110,39 @@
 
 /* AI Comment Bubble */
 .aiComment {
-    margin-top: 10px;
-    margin-left: 8px;
-    padding: 8px 12px;
-    border-left: 2px solid var(--accent);
-    background: linear-gradient(90deg, var(--bg-secondary) 0%, transparent 100%);
-    border-radius: 0 4px 4px 0;
+    margin-top: 12px;
+    padding: 12px 14px;
+    background-color: var(--bg-secondary);
+    border-radius: 8px;
+    border: 1px solid var(--border-subtle);
+    position: relative;
+}
+
+.aiCommentHeader {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.9;
 }
 
 .aiCommentText {
     margin: 0;
-    font-size: 12px;
-    font-style: italic;
-    color: var(--text-muted);
-    line-height: 1.5;
-    letter-spacing: 0.01em;
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.6;
 }
 
 @media (max-width: 640px) {
     .aiComment {
-        margin-left: 4px;
-        padding: 6px 10px;
+        padding: 10px 12px;
     }
-    
+
     .aiCommentText {
         font-size: 13px;
     }

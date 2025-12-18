@@ -1,5 +1,6 @@
-// GET/PUT /api/ai-config - AI Comment configuration stored in KV
-// Separate from auto-categorization (which uses env vars)
+// GET/PUT /api/ai-config - AI Comment configuration
+// API Key is stored as Cloudflare Secret (env.AI_COMMENT_API_KEY)
+// Non-sensitive config (baseUrl, model, persona) stored in KV
 
 export async function onRequestGet(context) {
     const { request, env } = context;
@@ -22,22 +23,15 @@ export async function onRequestGet(context) {
             return Response.json({ error: 'Invalid token' }, { status: 401, headers: corsHeaders });
         }
 
-        // Get config from KV
+        // Check if API Key is configured (from env/secrets)
+        const hasApiKey = !!env.AI_COMMENT_API_KEY;
+
+        // Get non-sensitive config from KV
         const configStr = await env.CHRONOLOG_KV.get('ai_comment_config');
-        if (!configStr) {
-            return Response.json({
-                hasApiKey: false,
-                baseUrl: 'https://api.openai.com/v1',
-                model: 'gpt-4o-mini',
-                persona: ''
-            }, { headers: corsHeaders });
-        }
+        const config = configStr ? JSON.parse(configStr) : {};
 
-        const config = JSON.parse(configStr);
-
-        // Don't return the actual API key, just indicate if it's set
         return Response.json({
-            hasApiKey: !!config.apiKey,
+            hasApiKey,
             baseUrl: config.baseUrl || 'https://api.openai.com/v1',
             model: config.model || 'gpt-4o-mini',
             persona: config.persona || ''
@@ -74,13 +68,12 @@ export async function onRequestPut(context) {
 
         const body = await request.json();
 
-        // Get existing config to preserve apiKey if not provided
+        // Get existing config
         const existingStr = await env.CHRONOLOG_KV.get('ai_comment_config');
         const existing = existingStr ? JSON.parse(existingStr) : {};
 
-        // Update config - only update provided fields
+        // Update non-sensitive config only (API Key is set via wrangler secret)
         const config = {
-            apiKey: body.apiKey !== undefined ? body.apiKey : existing.apiKey,
             baseUrl: body.baseUrl !== undefined ? body.baseUrl : existing.baseUrl,
             model: body.model !== undefined ? body.model : existing.model,
             persona: body.persona !== undefined ? body.persona : existing.persona,
@@ -90,7 +83,7 @@ export async function onRequestPut(context) {
 
         return Response.json({
             success: true,
-            hasApiKey: !!config.apiKey,
+            hasApiKey: !!env.AI_COMMENT_API_KEY,
             baseUrl: config.baseUrl || 'https://api.openai.com/v1',
             model: config.model || 'gpt-4o-mini',
             persona: config.persona || ''

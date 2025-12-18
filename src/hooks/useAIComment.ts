@@ -64,9 +64,8 @@ export function useAIComment(): UseAICommentReturn {
     }
   }, [getAuthToken])
 
-  // Save config to backend
+  // Save config to backend (non-sensitive only, API key is set via CLI)
   const saveConfig = useCallback(async (updates: {
-    apiKey?: string
     baseUrl?: string
     model?: string
     persona?: string

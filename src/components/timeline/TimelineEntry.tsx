@@ -1,5 +1,5 @@
 import { useState, memo, useMemo, ReactNode, MouseEvent, TouchEvent } from "react";
-import { MapPin } from "lucide-react";
+import { MapPin, Sparkles } from "lucide-react";
 import { ENTRY_TYPES } from "../../utils/constants";
 import { formatTime, formatDuration, formatDate } from "../../utils/formatters";
 import { parseContent, darkenColor } from "../../utils/contentParser";
@@ -528,6 +528,10 @@ export const TimelineEntry = memo(function TimelineEntry({
                 {/* AI Comment */}
                 {entry.aiComment && (
                     <div className={styles.aiComment}>
+                        <div className={styles.aiCommentHeader}>
+                            <Sparkles size={12} />
+                            <span>AI Insight</span>
+                        </div>
                         <p className={styles.aiCommentText}>
                             {entry.aiComment}
                         </p>

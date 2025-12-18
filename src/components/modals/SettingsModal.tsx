@@ -51,7 +51,7 @@ interface SettingsModalProps {
     isOpen: boolean;
     onClose: () => void;
     aiCommentConfig?: AICommentConfig | null;
-    onSaveAIConfig: (config: { apiKey?: string; baseUrl?: string; model?: string; persona?: string }) => Promise<boolean>;
+    onSaveAIConfig: (config: { baseUrl?: string; model?: string; persona?: string }) => Promise<boolean>;
     categories?: Category[];
     entries?: Entry[];
     tasks?: unknown[];
@@ -79,7 +79,6 @@ export function SettingsModal({
     googleTasks,
 }: SettingsModalProps) {
     const [activeTab, setActiveTab] = useState("appearance");
-    const [key, setKey] = useState("");
     const [baseUrl, setBaseUrl] = useState(aiCommentConfig?.baseUrl || "https://api.openai.com/v1");
     const [model, setModel] = useState(aiCommentConfig?.model || "gpt-4o-mini");
     const [persona, setPersona] = useState(aiCommentConfig?.persona || "");
@@ -106,14 +105,12 @@ export function SettingsModal({
     const handleSave = async () => {
         setSaving(true);
         const success = await onSaveAIConfig({
-            apiKey: key || undefined, // Only send if user entered a new key
             baseUrl,
             model,
             persona
         });
         setSaving(false);
         if (success) {
-            setKey(""); // Clear the input after saving
             setSaved(true);
             setTimeout(() => {
                 setSaved(false);
@@ -305,34 +302,45 @@ export function SettingsModal({
 
                                     {!cloudSync?.isLoggedIn ? (
                                         <p className="settings-hint" style={{ color: "var(--warning)" }}>
-                                            ⚠ 需要先连接 Cloud Sync 才能配置 AI Comment
+                                            ⚠ 需要先连接 Cloud Sync 才能使用 AI Comment
                                         </p>
                                     ) : (
                                         <>
-                                            <p className="settings-hint" style={{ marginBottom: 12 }}>
-                                                右键 Entry → "💭 AI COMMENT" 使用此配置（存储在云端）
-                                            </p>
-
-                                            {aiCommentConfig?.hasApiKey && (
-                                                <p className="settings-hint" style={{ color: "var(--success)", marginBottom: 8 }}>
-                                                    ✓ API Key 已配置
+                                            {/* API Key status */}
+                                            {aiCommentConfig?.hasApiKey ? (
+                                                <p className="settings-hint" style={{ color: "var(--success)", marginBottom: 12 }}>
+                                                    ✓ API Key 已配置（Cloudflare Secret）
                                                 </p>
+                                            ) : (
+                                                <div style={{ marginBottom: 16, padding: 12, backgroundColor: "var(--bg-secondary)", borderRadius: 4 }}>
+                                                    <p className="settings-hint" style={{ color: "var(--warning)", marginBottom: 8 }}>
+                                                        ⚠ API Key 未配置
+                                                    </p>
+                                                    <p className="settings-hint" style={{ fontSize: 11 }}>
+                                                        运行以下命令设置（加密存储）：
+                                                    </p>
+                                                    <code style={{
+                                                        display: "block",
+                                                        marginTop: 8,
+                                                        padding: "8px 10px",
+                                                        backgroundColor: "var(--bg-primary)",
+                                                        borderRadius: 4,
+                                                        fontSize: 11,
+                                                        fontFamily: "var(--font-mono)",
+                                                        color: "var(--accent)"
+                                                    }}>
+                                                        npx wrangler secret put AI_COMMENT_API_KEY
+                                                    </code>
+                                                </div>
                                             )}
 
+                                            {/* Non-sensitive config */}
                                             <div className="space-y-2">
-                                                <input
-                                                    type="password"
-                                                    value={key}
-                                                    onChange={(e) => setKey(e.target.value)}
-                                                    placeholder={aiCommentConfig?.hasApiKey ? "输入新 Key 替换现有配置..." : "OpenAI API Key (sk-...)"}
-                                                    className="edit-modal-input"
-                                                    style={{ width: "100%" }}
-                                                />
                                                 <input
                                                     type="text"
                                                     value={baseUrl}
                                                     onChange={(e) => setBaseUrl(e.target.value)}
-                                                    placeholder="API Base URL"
+                                                    placeholder="API Base URL (默认: OpenAI)"
                                                     className="edit-modal-input"
                                                     style={{ width: "100%" }}
                                                 />
@@ -340,7 +348,7 @@ export function SettingsModal({
                                                     type="text"
                                                     value={model}
                                                     onChange={(e) => setModel(e.target.value)}
-                                                    placeholder="Model name"
+                                                    placeholder="Model name (默认: gpt-4o-mini)"
                                                     className="edit-modal-input"
                                                     style={{ width: "100%" }}
                                                 />
@@ -351,24 +359,6 @@ export function SettingsModal({
                                                     className="edit-modal-input"
                                                     style={{ width: "100%", minHeight: 80, resize: "vertical" }}
                                                 />
-
-                                                <button
-                                                    onClick={handleSave}
-                                                    disabled={saving}
-                                                    style={{
-                                                        marginTop: 8,
-                                                        padding: "8px 16px",
-                                                        backgroundColor: saved ? "var(--success)" : "var(--accent)",
-                                                        color: "white",
-                                                        border: "none",
-                                                        borderRadius: 4,
-                                                        cursor: saving ? "wait" : "pointer",
-                                                        fontSize: 12,
-                                                        fontWeight: 500,
-                                                    }}
-                                                >
-                                                    {saving ? "保存中..." : saved ? "✓ 已保存" : "保存 AI 配置"}
-                                                </button>
                                             </div>
                                         </>
                                     )}
