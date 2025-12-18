@@ -136,6 +136,8 @@ function App() {
 
     // AI Comment handler
     const handleAIComment = useCallback(async (entry: Entry) => {
+        console.log('[AI Comment] Generating for entry:', entry.id, entry.content?.substring(0, 50));
+
         // Get today's entries for context
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -145,7 +147,10 @@ function App() {
         });
 
         const comment = await aiComment.generateComment(entry, todayEntries);
+        console.log('[AI Comment] Generated comment:', comment?.substring(0, 50), 'for entry:', entry.id);
+
         if (comment) {
+            console.log('[AI Comment] Updating entry:', entry.id);
             actions.updateEntry(entry.id, { aiComment: comment });
         }
         closeContextMenu();
