@@ -239,14 +239,11 @@ function sessionReducer(state: SessionState, action: SessionAction): SessionStat
         }
       }
 
-      // Merge content types
+      // Merge content types - always use latest BUILTIN_CONTENT_TYPES for built-in types
       const builtInIds = BUILTIN_CONTENT_TYPES.map(ct => ct.id)
       const mergedContentTypes = [
-        ...BUILTIN_CONTENT_TYPES.map(builtIn => {
-          const imported = importedContentTypes.find(ct => ct.id === builtIn.id)
-          return imported ? { ...imported, builtIn: true } : builtIn
-        }),
-        ...importedContentTypes.filter(ct => !builtInIds.includes(ct.id))
+        ...BUILTIN_CONTENT_TYPES, // Always use latest built-in definitions
+        ...importedContentTypes.filter(ct => !builtInIds.includes(ct.id)) // Keep user-created types
       ]
 
       return {

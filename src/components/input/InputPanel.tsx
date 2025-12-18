@@ -221,8 +221,6 @@ export const InputPanel = forwardRef<InputPanelRef, InputPanelProps>(function In
                         options.fieldValues = { feeling: 'Calm', energy: 3 };
                     } else if (contentType === 'bookmark') {
                         options.fieldValues = { type: 'Article', status: 'Inbox' };
-                    } else if (contentType === 'expense') {
-                        options.fieldValues = { currency: 'USD' };
                     }
                 }
                 if (category) options.category = category;

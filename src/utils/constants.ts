@@ -63,18 +63,6 @@ export const BUILTIN_CONTENT_TYPES: ContentType[] = [
     order: 1
   },
   {
-    id: 'expense',
-    name: 'Expense',
-    fields: [
-      { id: 'amount', name: 'Amount', type: 'number', required: true },
-      { id: 'currency', name: 'Currency', type: 'dropdown', options: ['USD', 'CNY', 'EUR', 'GBP', 'JPY'], default: 'USD' },
-      { id: 'category', name: 'Category', type: 'dropdown', options: ['Food', 'Transport', 'Entertainment', 'Shopping', 'Health', 'Bills', 'Other'] },
-      { id: 'subcategory', name: 'Subcategory', type: 'text' }
-    ],
-    builtIn: true,
-    order: 2
-  },
-  {
     id: 'bookmark',
     name: 'Bookmark',
     fields: [
@@ -84,7 +72,7 @@ export const BUILTIN_CONTENT_TYPES: ContentType[] = [
       { id: 'status', name: 'Status', type: 'dropdown', options: ['Inbox', 'Reading', 'Archived'], default: 'Inbox' }
     ],
     builtIn: true,
-    order: 3
+    order: 2
   },
   {
     id: 'mood',
@@ -95,7 +83,7 @@ export const BUILTIN_CONTENT_TYPES: ContentType[] = [
       { id: 'trigger', name: 'Trigger', type: 'dropdown', options: ['Work', 'Health', 'Social', 'Money', 'Family', 'Sleep', 'Weather', 'Other'] }
     ],
     builtIn: true,
-    order: 4
+    order: 3
   },
   {
     id: 'workout',
@@ -106,7 +94,7 @@ export const BUILTIN_CONTENT_TYPES: ContentType[] = [
       { id: 'exercises', name: 'Exercises', type: 'text' } // Will be JSON string of exercise array
     ],
     builtIn: true,
-    order: 5
+    order: 4
   }
 ]
 

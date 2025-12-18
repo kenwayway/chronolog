@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect, KeyboardEvent, MouseEvent } from "react";
-import { Image, MapPin, Link2, X, Search } from "lucide-react";
-import { Dropdown } from "../common/Dropdown";
-import { DynamicFieldForm } from "../input/DynamicFieldForm";
+import { Image, MapPin, Plus, ChevronDown } from "lucide-react";
+import { EntryMetadataInput } from "../input/EntryMetadataInput";
 import { BUILTIN_CONTENT_TYPES, ENTRY_TYPES } from "../../utils/constants";
 import styles from "./EditModal.module.css";
 import type { Entry, Category, ContentType, CategoryId } from "../../types";
@@ -20,7 +19,7 @@ interface EntryUpdates {
 interface EditModalProps {
   isOpen: boolean;
   entry: Entry | null;
-  onSave: (entryId: string, updates: any) => void;
+  onSave: (entryId: string, updates: EntryUpdates) => void;
   onClose: () => void;
   categories: Category[];
   contentTypes?: ContentType[];
@@ -28,22 +27,26 @@ interface EditModalProps {
 }
 
 export function EditModal({ isOpen, entry, onSave, onClose, categories, contentTypes, allEntries = [] }: EditModalProps) {
+  // Content state
   const [content, setContent] = useState("");
   const [timestamp, setTimestamp] = useState("");
+  const [entryType, setEntryType] = useState<string>(ENTRY_TYPES.NOTE);
+
+  // Metadata state (passed to EntryMetadataInput)
   const [category, setCategory] = useState<CategoryId | null>(null);
   const [contentType, setContentType] = useState<string | null>(null);
   const [fieldValues, setFieldValues] = useState<Record<string, unknown>>({});
+  const [linkedEntries, setLinkedEntries] = useState<string[]>([]);
+  const [tags, setTags] = useState<string[]>([]);
+
+  // Attachments state
   const [imageUrl, setImageUrl] = useState("");
   const [location, setLocation] = useState("");
   const [showImageInput, setShowImageInput] = useState(false);
   const [showLocationInput, setShowLocationInput] = useState(false);
-  const [linkedEntries, setLinkedEntries] = useState<string[]>([]);
-  const [linkSearch, setLinkSearch] = useState("");
-  const [showLinkSearch, setShowLinkSearch] = useState(false);
-  const [tags, setTags] = useState<string[]>([]);
-  const [tagInput, setTagInput] = useState("");
-  const [entryType, setEntryType] = useState<string>(ENTRY_TYPES.NOTE);
 
+  // UI state
+  const [showMetadata, setShowMetadata] = useState(false);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -86,11 +89,9 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
       setContentType(entry.contentType || null);
       setFieldValues(entry.fieldValues || {});
       setLinkedEntries(entry.linkedEntries || []);
-      setLinkSearch("");
-      setShowLinkSearch(false);
       setTags(entry.tags || []);
-      setTagInput("");
       setEntryType(entry.type || ENTRY_TYPES.NOTE);
+      setShowMetadata(false);
       setTimeout(() => textareaRef.current?.focus(), 50);
     }
   }, [isOpen, entry]);
@@ -160,25 +161,6 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
     onClose();
   };
 
-  const handleAddTag = () => {
-    const tag = tagInput.trim().toLowerCase().replace(/^#/, ''); // Remove # if present
-    if (tag && !tags.includes(tag)) {
-      setTags([...tags, tag]);
-      setTagInput("");
-    }
-  };
-
-  const handleRemoveTag = (tagToRemove: string) => {
-    setTags(tags.filter(t => t !== tagToRemove));
-  };
-
-  const handleTagKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      handleAddTag();
-    }
-  };
-
   const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     if (e.key === "Escape") onClose();
     else if (e.key === "Enter" && e.ctrlKey) handleSave();
@@ -187,34 +169,6 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
   const handleBackdropClick = (e: MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) onClose();
   };
-
-  const handleFieldChange = (fieldId: string, value: unknown) => {
-    setFieldValues(prev => ({ ...prev, [fieldId]: value }));
-  };
-
-  // Linked entries helpers
-  const addLinkedEntry = (entryId: string) => {
-    if (!linkedEntries.includes(entryId)) {
-      setLinkedEntries(prev => [...prev, entryId]);
-    }
-    setLinkSearch("");
-    setShowLinkSearch(false);
-  };
-
-  const removeLinkedEntry = (entryId: string) => {
-    setLinkedEntries(prev => prev.filter(id => id !== entryId));
-  };
-
-  const getEntryPreview = (content: string | undefined) => {
-    if (!content) return "(empty)";
-    const firstLine = content.split("\n")[0];
-    return firstLine.length > 40 ? firstLine.slice(0, 40) + "..." : firstLine;
-  };
-
-  const searchableEntries = allEntries
-    .filter(e => e.id !== entry?.id && !linkedEntries.includes(e.id))
-    .filter(e => linkSearch.trim() === "" || e.content?.toLowerCase().includes(linkSearch.toLowerCase()))
-    .slice(0, 8);
 
   return (
     <div
@@ -226,6 +180,7 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
         className={styles.panel}
         onMouseDown={(e) => e.stopPropagation()}
       >
+        {/* Header */}
         <div className={styles.header}>
           <span className={styles.title}>EDIT ENTRY</span>
           <button onClick={onClose} className={styles.closeBtn}>×</button>
@@ -242,288 +197,67 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
           />
         </div>
 
-        {/* ContentType Fields - Dynamic form based on schema */}
-        {contentType && contentType !== 'note' && (
-          <DynamicFieldForm
-            contentType={types.find(t => t.id === contentType) || null}
-            fieldValues={fieldValues}
-            onChange={setFieldValues}
-          />
-        )}
-
-        {/* Attachments */}
+        {/* Attachments (Image & Location) */}
         {(imageUrl || location || showImageInput || showLocationInput) && (
           <div className={styles.section} style={{ padding: '8px 20px' }}>
             {/* Image URL Input */}
             {showImageInput && (
               <div className="flex items-center gap-2 mb-2">
-                <Image
-                  size={14}
-                  style={{ color: "var(--text-dim)", flexShrink: 0 }}
-                />
+                <Image size={14} style={{ color: "var(--text-dim)" }} />
                 <input
                   type="text"
                   value={imageUrl}
                   onChange={(e) => setImageUrl(e.target.value)}
                   placeholder="Paste image URL..."
                   className={styles.input}
-                  style={{ flex: 1, height: 28, fontSize: 12 }}
+                  style={{ flex: 1 }}
                 />
-                <button
-                  onClick={() => {
-                    setShowImageInput(false);
-                    setImageUrl("");
-                  }}
-                  style={{
-                    color: "var(--text-dim)",
-                    backgroundColor: "transparent",
-                    border: "none",
-                    cursor: "pointer",
-                    fontSize: 16,
-                  }}
-                >
-                  ×
-                </button>
               </div>
             )}
 
             {/* Location Input */}
             {showLocationInput && (
               <div className="flex items-center gap-2">
-                <MapPin
-                  size={14}
-                  style={{ color: "var(--text-dim)", flexShrink: 0 }}
-                />
+                <MapPin size={14} style={{ color: "var(--text-dim)" }} />
                 <input
                   type="text"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
-                  placeholder="Enter location..."
+                  placeholder="Enter location or get current..."
                   className={styles.input}
-                  style={{ flex: 1, height: 28, fontSize: 12 }}
+                  style={{ flex: 1 }}
                 />
                 <button
                   onClick={getCurrentLocation}
+                  className="btn-action btn-action-secondary"
                   disabled={isGettingLocation}
-                  style={{
-                    padding: "4px 8px",
-                    fontSize: 10,
-                    backgroundColor: "var(--accent-subtle)",
-                    color: "var(--accent)",
-                    border: "none",
-                    borderRadius: 4,
-                    cursor: "pointer",
-                  }}
                 >
-                  {isGettingLocation ? "..." : "AUTO"}
-                </button>
-                <button
-                  onClick={() => {
-                    setShowLocationInput(false);
-                    setLocation("");
-                  }}
-                  style={{
-                    color: "var(--text-dim)",
-                    backgroundColor: "transparent",
-                    border: "none",
-                    cursor: "pointer",
-                    fontSize: 16,
-                  }}
-                >
-                  ×
+                  {isGettingLocation ? "..." : "📍"}
                 </button>
               </div>
             )}
           </div>
         )}
 
-        {/* Linked Entries */}
-        <div className={styles.section}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-            <Link2 size={12} style={{ color: "var(--text-dim)" }} />
-            <span style={{ fontSize: 10, color: "var(--text-dim)", fontWeight: 600 }}>LINKED ENTRIES</span>
-            <button
-              onClick={() => setShowLinkSearch(!showLinkSearch)}
-              className={`btn-action ${showLinkSearch ? 'btn-action-primary' : 'btn-action-secondary'}`}
-            >
-              + ADD
-            </button>
-          </div>
-
-          {/* Current linked entries */}
-          {linkedEntries.length > 0 && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: showLinkSearch ? 8 : 0 }}>
-              {linkedEntries.map(linkId => {
-                const linkedEntry = allEntries.find(e => e.id === linkId);
-                if (!linkedEntry) return null;
-                const isOlder = linkedEntry.timestamp < entry.timestamp;
-                return (
-                  <div
-                    key={linkId}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                      padding: "4px 8px",
-                      backgroundColor: "var(--bg-tertiary)",
-                      borderRadius: 4,
-                      fontSize: 11,
-                      fontFamily: "var(--font-mono)",
-                    }}
-                  >
-                    <span style={{ color: isOlder ? "var(--accent)" : "var(--warning)", fontWeight: 600 }}>
-                      {isOlder ? "↑" : "↓"}
-                    </span>
-                    <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "var(--text-secondary)" }}>
-                      {getEntryPreview(linkedEntry.content)}
-                    </span>
-                    <span style={{ fontSize: 9, color: "var(--text-dim)" }}>
-                      {new Date(linkedEntry.timestamp).toLocaleDateString()}
-                    </span>
-                    <button
-                      onClick={() => removeLinkedEntry(linkId)}
-                      style={{
-                        background: "none",
-                        border: "none",
-                        cursor: "pointer",
-                        padding: 2,
-                        color: "var(--text-muted)",
-                        display: "flex",
-                        alignItems: "center",
-                      }}
-                    >
-                      <X size={12} />
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Search input */}
-          {showLinkSearch && (
-            <div style={{ position: "relative" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                <Search size={12} style={{ color: "var(--text-dim)" }} />
-                <input
-                  type="text"
-                  value={linkSearch}
-                  onChange={(e) => setLinkSearch(e.target.value)}
-                  placeholder="Search entries..."
-                  autoFocus
-                  className="edit-modal-input"
-                  style={{ flex: 1, height: 28, fontSize: 12 }}
-                />
-              </div>
-
-              {/* Search results */}
-              <div style={{ maxHeight: 150, overflowY: "auto" }}>
-                {searchableEntries.map(e => {
-                  const isOlder = e.timestamp < entry.timestamp;
-                  return (
-                    <button
-                      key={e.id}
-                      onClick={() => addLinkedEntry(e.id)}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 8,
-                        padding: "6px 8px",
-                        backgroundColor: "transparent",
-                        border: "none",
-                        borderRadius: 4,
-                        cursor: "pointer",
-                        width: "100%",
-                        textAlign: "left",
-                        fontSize: 11,
-                        fontFamily: "var(--font-mono)",
-                        color: "var(--text-secondary)",
-                      }}
-                      onMouseOver={(ev) => ev.currentTarget.style.backgroundColor = "var(--bg-tertiary)"}
-                      onMouseOut={(ev) => ev.currentTarget.style.backgroundColor = "transparent"}
-                    >
-                      <span style={{ color: isOlder ? "var(--accent)" : "var(--warning)", fontWeight: 600 }}>
-                        {isOlder ? "↑" : "↓"}
-                      </span>
-                      <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {getEntryPreview(e.content)}
-                      </span>
-                      <span style={{ fontSize: 9, color: "var(--text-dim)" }}>
-                        {new Date(e.timestamp).toLocaleDateString()}
-                      </span>
-                    </button>
-                  );
-                })}
-                {searchableEntries.length === 0 && linkSearch.trim() && (
-                  <div style={{ fontSize: 11, color: "var(--text-dim)", padding: 8, textAlign: "center" }}>
-                    No matching entries
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {linkedEntries.length === 0 && !showLinkSearch && (
-            <div style={{ fontSize: 11, color: "var(--text-dim)", fontStyle: "italic" }}>
-              No linked entries
-            </div>
-          )}
-        </div>
-
-        {/* Tags */}
-        <div className="edit-modal-section">
-          <div style={{ fontSize: 10, color: "var(--text-dim)", marginBottom: 8 }}>TAGS</div>
-
-          {/* Tag Input */}
-          <div className="flex items-center gap-2 mb-2">
-            <input
-              type="text"
-              value={tagInput}
-              onChange={(e) => setTagInput(e.target.value)}
-              onKeyDown={handleTagKeyDown}
-              placeholder="Add tag..."
-              className="edit-modal-input"
-              style={{ flex: 1, fontSize: 11 }}
-            />
-            <button
-              onClick={handleAddTag}
-              className="btn-action btn-action-primary"
-            >
-              ADD
-            </button>
-          </div>
-
-          {/* Tag List */}
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-            {tags.map(tag => (
-              <span
-                key={tag}
-                style={{
-                  fontSize: 10,
-                  padding: "2px 6px",
-                  backgroundColor: "var(--bg-tertiary)",
-                  color: "var(--text-secondary)",
-                  fontFamily: "var(--font-mono)",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 4
-                }}
-              >
-                #{tag}
-                <X
-                  size={10}
-                  style={{ cursor: "pointer" }}
-                  onClick={() => handleRemoveTag(tag)}
-                />
-              </span>
-            ))}
-            {tags.length === 0 && (
-              <span style={{ fontSize: 11, color: "var(--text-dim)", fontStyle: "italic" }}>
-                No tags
-              </span>
-            )}
-          </div>
-        </div>
+        {/* EntryMetadataInput - Category, Content Type, Tags, Dynamic Fields, Linked Entries */}
+        <EntryMetadataInput
+          category={category}
+          setCategory={setCategory}
+          contentType={contentType}
+          setContentType={setContentType}
+          fieldValues={fieldValues}
+          setFieldValues={setFieldValues}
+          tags={tags}
+          setTags={setTags}
+          linkedEntries={linkedEntries}
+          setLinkedEntries={setLinkedEntries}
+          allEntries={allEntries}
+          currentEntryId={entry.id}
+          currentEntryTimestamp={entry.timestamp}
+          contentTypes={types}
+          isExpanded={showMetadata}
+          showLinkedEntries={true}
+        />
 
         {/* Footer */}
         <div className={styles.footer}>
@@ -572,84 +306,14 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
               </select>
             </div>
 
-            {/* Category */}
-            <div className="flex items-center gap-2">
-              <span
-                style={{
-                  fontSize: 10,
-                  color: "var(--text-dim)",
-                  userSelect: "none",
-                }}
-              >
-                CATEGORY
-              </span>
-              <Dropdown
-                value={category}
-                onChange={(val) => setCategory((val || null) as CategoryId | null)}
-                placeholder="None"
-                options={[
-                  { value: "", label: "None" },
-                  ...(categories?.map((cat) => ({
-                    value: cat.id,
-                    label: cat.label,
-                    color: cat.color,
-                  })) || []),
-                ]}
-              />
-            </div>
-
-            {/* Content Type */}
-            <div className="flex items-center gap-2">
-              <span
-                style={{
-                  fontSize: 10,
-                  color: "var(--text-dim)",
-                  userSelect: "none",
-                }}
-              >
-                TYPE
-              </span>
-              <select
-                value={contentType || ''}
-                onChange={(e) => {
-                  const newType = e.target.value || null;
-                  setContentType(newType);
-                  // Reset fieldValues when changing type
-                  if (newType === 'expense') {
-                    setFieldValues({ currency: 'USD' });
-                  } else if (newType === 'task') {
-                    setFieldValues({ done: false });
-                  } else if (newType === 'bookmark') {
-                    setFieldValues({ type: 'Article', status: 'Inbox' });
-                  } else if (newType === 'mood') {
-                    setFieldValues({ feeling: 'Calm', energy: 3 });
-                  } else if (newType === 'workout') {
-                    setFieldValues({ workoutType: 'Strength', exercises: '[]' });
-                  } else {
-                    setFieldValues({});
-                  }
-                }}
-                className="edit-modal-input"
-                style={{ width: 100 }}
-              >
-                <option value="">Note</option>
-                {BUILTIN_CONTENT_TYPES.filter(ct => ct.id !== 'note').map(ct => (
-                  <option key={ct.id} value={ct.id}>{ct.name}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Task done checkbox */}
-            {contentType === 'task' && (
-              <label className="flex items-center gap-2" style={{ cursor: 'pointer' }}>
-                <input
-                  type="checkbox"
-                  checked={(fieldValues.done as boolean) || false}
-                  onChange={(e) => handleFieldChange('done', e.target.checked)}
-                />
-                <span style={{ fontSize: 10, color: "var(--text-dim)" }}>DONE</span>
-              </label>
-            )}
+            {/* Toggle metadata button */}
+            <button
+              onClick={() => setShowMetadata(!showMetadata)}
+              className={`icon-btn ${showMetadata ? "active" : ""}`}
+              title={showMetadata ? "Hide options" : "More options"}
+            >
+              {showMetadata ? <ChevronDown size={14} /> : <Plus size={14} />}
+            </button>
 
             {/* Attachment buttons */}
             <button
@@ -666,6 +330,18 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
             >
               <MapPin size={14} />
             </button>
+
+            {/* Task done checkbox */}
+            {contentType === 'task' && (
+              <label className="flex items-center gap-2" style={{ cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={(fieldValues.done as boolean) || false}
+                  onChange={(e) => setFieldValues(prev => ({ ...prev, done: e.target.checked }))}
+                />
+                <span style={{ fontSize: 10, color: "var(--text-dim)" }}>DONE</span>
+              </label>
+            )}
           </div>
 
           <div className="flex items-center gap-3">

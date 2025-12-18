@@ -5,7 +5,7 @@ import { formatTime, formatDuration, formatDate } from "../../utils/formatters";
 import { parseContent, darkenColor } from "../../utils/contentParser";
 import { useTheme } from "../../hooks/useTheme";
 import { LinkedEntryPreview } from "./LinkedEntryPreview";
-import { ExpenseDisplay, BookmarkDisplay, MoodDisplay, WorkoutDisplay } from "./ContentTypeDisplays";
+import { BookmarkDisplay, MoodDisplay, WorkoutDisplay } from "./ContentTypeDisplays";
 import styles from "./TimelineEntry.module.css";
 import type { Entry, Category } from "../../types";
 
@@ -434,7 +434,6 @@ export const TimelineEntry = memo(function TimelineEntry({
                         </span>
                     )}
 
-                    {entry.contentType === 'expense' && <ExpenseDisplay fieldValues={entry.fieldValues} />}
                 </div>
 
                 {/* Content type displays */}

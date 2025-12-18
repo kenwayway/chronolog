@@ -1,45 +1,5 @@
 import { memo, MouseEvent } from 'react';
 
-interface ExpenseFieldValues {
-  amount?: number;
-  currency?: string;
-  category?: string;
-  subcategory?: string;
-  expenseType?: string;
-}
-
-interface ExpenseDisplayProps {
-  fieldValues: ExpenseFieldValues | null | undefined;
-}
-
-/**
- * Display component for expense entries
- */
-export const ExpenseDisplay = memo(function ExpenseDisplay({ fieldValues }: ExpenseDisplayProps) {
-  if (!fieldValues) return null;
-
-  const { amount, currency, category, subcategory, expenseType } = fieldValues;
-  const currencySymbols: Record<string, string> = { USD: '$', CNY: '¥', EUR: '€', GBP: '£', JPY: '¥' };
-  const symbol = currencySymbols[currency || ''] || '$';
-  const cat = category || expenseType || '';
-  const sub = subcategory ? ` › ${subcategory}` : '';
-
-  return (
-    <span
-      style={{
-        fontSize: 11,
-        color: 'var(--accent)',
-        backgroundColor: 'var(--accent-subtle)',
-        padding: '2px 8px',
-        fontWeight: 500,
-        userSelect: 'none',
-      }}
-    >
-      {`${symbol}${amount}${cat ? ` · ${cat}${sub}` : ''}`}
-    </span>
-  );
-});
-
 interface BookmarkFieldValues {
   url?: string;
   title?: string;
@@ -231,6 +191,7 @@ export const MoodDisplay = memo(function MoodDisplay({ fieldValues }: MoodDispla
       'Anxious': '😰',
       'Sad': '😢',
       'Angry': '😠',
+      'Excited': '🤩',
     };
     return emojis[feeling || ''] || '😐';
   };
