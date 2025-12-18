@@ -27,9 +27,13 @@ export function useAIComment(config: AIConfig = {}): UseAICommentReturn {
     const [error, setError] = useState<string | null>(null)
 
     const callAI = useCallback(async (systemPrompt: string, userMessage: string): Promise<string | null> => {
-        console.log('[AI Comment] callAI called, config:', { apiKey: !!apiKey, baseUrl, model })
+        console.log('[AI Comment] callAI called, config:', {
+            apiKey: apiKey ? `${String(apiKey).slice(0, 8)}...` : 'MISSING',
+            baseUrl: baseUrl || 'MISSING',
+            model: model || 'MISSING'
+        })
         if (!apiKey || !baseUrl || !model) {
-            console.warn('[AI Comment] Missing API config:', { apiKey: !!apiKey, baseUrl: !!baseUrl, model: !!model })
+            console.warn('[AI Comment] Missing API config - cannot proceed')
             return null
         }
 
