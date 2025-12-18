@@ -134,6 +134,7 @@ interface TimelineEntryProps {
   isLightMode: boolean;
   showDate?: boolean;
   onNavigateToEntry?: (entry: Entry) => void;
+  showAIComments?: boolean;
 }
 
 /**
@@ -152,6 +153,7 @@ export const TimelineEntry = memo(function TimelineEntry({
   isLightMode,
   showDate = false,
   onNavigateToEntry,
+  showAIComments = true,
 }: TimelineEntryProps) {
   const { symbols } = useTheme();
   const [pressTimer, setPressTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
@@ -526,7 +528,7 @@ export const TimelineEntry = memo(function TimelineEntry({
         )}
 
         {/* AI Comment */}
-        {entry.aiComment && (
+        {showAIComments && entry.aiComment && (
           <div className={styles.aiCommentWrapper}>
             <div className={styles.aiComment}>
               <span className={styles.aiCommentLabel}>Zaddy:</span>

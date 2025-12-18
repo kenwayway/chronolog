@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, MessageSquare } from "lucide-react";
 import { ENTRY_TYPES } from "../../utils/constants";
 import { useTheme } from "../../hooks/useTheme";
 import { TimelineEntry } from "./TimelineEntry";
@@ -25,6 +25,7 @@ interface TimelineProps {
 export function Timeline({ entries, allEntries, status, categories, onContextMenu, categoryFilter = [], onNavigateToEntry }: TimelineProps) {
     const { theme } = useTheme();
     const [currentPage, setCurrentPage] = useState(0);
+    const [showAIComments, setShowAIComments] = useState(true);
 
     // Reset page when entries change (filter changes)
     useEffect(() => {
@@ -108,6 +109,35 @@ export function Timeline({ entries, allEntries, status, categories, onContextMen
                 fontFamily: "var(--font-mono)",
             }}
         >
+            {/* AI Comment Toggle - top right */}
+            <div style={{
+                display: 'flex',
+                justifyContent: 'flex-end',
+                marginBottom: 12,
+            }}>
+                <button
+                    onClick={() => setShowAIComments(!showAIComments)}
+                    title={showAIComments ? "Hide AI Comments" : "Show AI Comments"}
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        padding: '4px 10px',
+                        fontSize: 11,
+                        fontFamily: 'var(--font-mono)',
+                        color: showAIComments ? 'var(--accent)' : 'var(--text-dim)',
+                        backgroundColor: showAIComments ? 'var(--bg-secondary)' : 'transparent',
+                        border: '1px solid var(--border-subtle)',
+                        borderRadius: 4,
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                    }}
+                >
+                    <MessageSquare size={14} />
+                    <span>{showAIComments ? 'AI ON' : 'AI OFF'}</span>
+                </button>
+            </div>
+
             {/* Filter mode header with pagination */}
             {isFilterMode && entries.length > 0 && (
                 <div
@@ -200,6 +230,7 @@ export function Timeline({ entries, allEntries, status, categories, onContextMen
                     isLightMode={theme.mode === "light"}
                     showDate={isFilterMode}
                     onNavigateToEntry={onNavigateToEntry}
+                    showAIComments={showAIComments}
                 />
             ))}
         </div>

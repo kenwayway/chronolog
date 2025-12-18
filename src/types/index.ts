@@ -9,7 +9,7 @@ export type EntryType = 'SESSION_START' | 'NOTE' | 'SESSION_END'
 export type SessionStatus = 'IDLE' | 'STREAMING'
 
 /** Category IDs (fixed, not user-editable) - life areas */
-export type CategoryId = 'hustle' | 'craft' | 'hardware' | 'sparks' | 'barter' | 'wander' | 'beans'
+export type CategoryId = 'hustle' | 'craft' | 'hardware' | 'sparks' | 'barter' | 'wander' | 'beans' | 'work'
 
 /** Category definition */
 export interface Category {
