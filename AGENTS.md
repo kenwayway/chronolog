@@ -1,7 +1,7 @@
 # Chronolog - AI Agent Context
 
 ## Quick Start
-Chronolog is a minimalist time-tracking and journaling PWA. Entry point is `src/App.jsx`, which orchestrates all hooks and components.
+Chronolog is a minimalist time-tracking and journaling PWA. Entry point is `src/App.tsx`, which orchestrates all hooks and components.
 
 ```bash
 npm run dev      # Start development server
@@ -13,7 +13,7 @@ npm run build    # Build for production
 ## Tech Stack
 | Layer | Technology |
 |-------|------------|
-| **Frontend** | React 19, Vite, Vanilla CSS |
+| **Frontend** | React 19, TypeScript, Vite, CSS Modules + Vanilla CSS |
 | **Backend** | Cloudflare Pages Functions |
 | **Data Storage** | Cloudflare KV |
 | **Image Storage** | Cloudflare R2 |
@@ -35,9 +35,10 @@ interface Entry {
   sessionId?: string            // SESSION_START only
   duration?: number             // SESSION_END only (ms since session start)
   category?: CategoryId         // Life area category
-  contentType?: string          // 'note' | 'task' | 'expense' | custom
+  contentType?: string          // 'note' | 'task' | 'bookmark' | 'mood' | 'workout' | custom
   fieldValues?: Record<string, unknown>  // Dynamic field values
   linkedEntries?: string[]      // Bidirectional linked entry IDs
+  tags?: string[]               // Free-form tags (without # prefix)
 }
 ```
 
@@ -45,10 +46,12 @@ interface Entry {
 ContentTypes define schemas for structured entries. Built-in types:
 
 | ID | Name | Fields |
-|----|------|------|
+|----|------|--------|
 | `note` | Note | (none) |
 | `task` | Task | `done: boolean` |
-| `expense` | Expense | `amount, currency, category, subcategory` |
+| `bookmark` | Bookmark | `url, title, type (Article/Video/Tool/Paper), status (Inbox/Reading/Archived)` |
+| `mood` | Mood | `feeling (Happy/Excited/Calm/Tired/Anxious/Sad/Angry), energy (1-5), trigger` |
+| `workout` | Workout | `workoutType (Strength/Flexibility/Mixed), duration, exercises` |
 
 ```typescript
 interface ContentType {
@@ -56,25 +59,16 @@ interface ContentType {
   name: string
   fields: FieldDefinition[]
   builtIn?: boolean
+  order?: number
 }
 
 interface FieldDefinition {
   id: string
   name: string
-  type: 'text' | 'number' | 'dropdown' | 'boolean' | 'date' | 'rating'
+  type: 'text' | 'number' | 'dropdown' | 'boolean'
   options?: string[]    // For dropdown
   required?: boolean
   default?: unknown
-}
-```
-
-**Expense fieldValues example:**
-```json
-{
-  "amount": 35,
-  "currency": "CNY",
-  "category": "Food",
-  "subcategory": "Cafe"
 }
 ```
 
@@ -110,7 +104,7 @@ interface SessionState {
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                         App.jsx                              │
+│                         App.tsx                              │
 │  ┌─────────────┐ ┌──────────────┐ ┌─────────────────────┐   │
 │  │ useSession  │ │useCloudSync  │ │  useAICategories    │   │
 │  │ (state mgmt)│ │  (sync)      │ │  (auto-detect)      │   │
@@ -124,9 +118,9 @@ interface SessionState {
 └────────┘        └──────────┘   └──────────┘       └───────────┘
                         │              │
                         ▼              ▼
-                  ┌──────────┐   ┌──────────┐
-                  │ EditModal│   │ContextMenu│
-                  └──────────┘   └──────────┘
+                  ┌──────────┐   ┌──────────────────┐
+                  │ EditModal│   │EntryMetadataInput│
+                  └──────────┘   └──────────────────┘
 ```
 
 ### Data Flow
@@ -142,38 +136,128 @@ interface SessionState {
 
 ```
 ├── src/
-│   ├── App.jsx                 # Main app component, orchestrates everything
-│   ├── main.jsx                # React entry point
+│   ├── App.tsx                 # Main app component, orchestrates everything
+│   ├── main.tsx                # React entry point
 │   ├── components/
+│   │   ├── Header.tsx          # App header with session controls
+│   │   ├── Header.module.css   # CSS Module for Header
 │   │   ├── common/             # Dropdown, ContextMenu
-│   │   ├── input/              # InputPanel, FocusMode, AttachmentPreview
-│   │   ├── layout/             # Header
-│   │   ├── modals/             # EditModal, SettingsModal
+│   │   ├── input/
+│   │   │   ├── InputPanel.tsx          # Main input area
+│   │   │   ├── InputPanel.module.css   # CSS Module
+│   │   │   ├── EntryMetadataInput.tsx  # SHARED: Category, Type, Tags, Fields, Links
+│   │   │   ├── DynamicFieldForm.tsx    # Dynamic fields based on ContentType
+│   │   │   └── InputActions.tsx        # Action buttons (Note, Log In, etc)
+│   │   ├── modals/
+│   │   │   ├── EditModal.tsx           # Edit entry modal (uses EntryMetadataInput)
+│   │   │   ├── EditModal.module.css    # CSS Module
+│   │   │   └── SettingsModal.tsx       # Settings
 │   │   ├── panels/             # TasksPanel, ActivityPanel
-│   │   └── timeline/           # Timeline, TimelineEntry
+│   │   └── timeline/
+│   │       ├── Timeline.tsx            # Entry list
+│   │       ├── TimelineEntry.tsx       # Single entry display
+│   │       ├── TimelineEntry.module.css# CSS Module
+│   │       └── ContentTypeDisplays.tsx # Bookmark, Mood, Workout displays
 │   ├── hooks/
 │   │   ├── useSession.ts       # Core state: entries, contentTypes, reducer
 │   │   ├── useCloudSync.ts     # Auth, sync, image upload
 │   │   ├── useTheme.tsx        # Theme, accent colors
 │   │   ├── useAICategories.ts  # Auto-categorization + contentType detection
+│   │   ├── useEntryHandlers.ts # Entry action handlers
 │   │   └── useGoogleTasks.ts   # Google Tasks integration
-│   ├── styles/                 # CSS files
-│   ├── themes/                 # Theme files
+│   ├── styles/
+│   │   ├── base.css            # CSS variables, design tokens
+│   │   ├── components.css      # Global component styles (legacy)
+│   │   └── responsive.css      # Mobile breakpoints
+│   ├── themes/                 # Theme files (tokyo-night, etc)
 │   ├── types/
-│   │   └── index.ts            # TypeScript interfaces
+│   │   ├── index.ts            # TypeScript interfaces
+│   │   └── css-modules.d.ts    # CSS Modules type declarations
 │   └── utils/
 │       ├── constants.ts        # ENTRY_TYPES, ACTIONS, BUILTIN_CONTENT_TYPES
 │       └── formatters.ts       # Date/time formatting, generateId()
 ├── functions/                  # Cloudflare Pages Functions
-│   ├── api/
-│   │   ├── auth.js             # POST /api/auth
-│   │   ├── data.js             # GET/PUT /api/data
-│   │   ├── upload.js           # POST /api/upload
-│   │   ├── cleanup.js          # POST /api/cleanup
-│   │   ├── categorize.js       # POST /api/categorize (AI detection)
-│   │   └── image/[id].js       # GET /api/image/:id
+│   └── api/
+│       ├── auth.js             # POST /api/auth
+│       ├── data.js             # GET/PUT /api/data
+│       ├── upload.js           # POST /api/upload
+│       ├── categorize.js       # POST /api/categorize (AI detection)
+│       └── image/[id].js       # GET /api/image/:id
 └── public/                     # PWA manifest, icons
 ```
+
+---
+
+## Styling Conventions
+
+### CSS Modules (Preferred)
+Components use co-located CSS Modules for scoped styling:
+
+```tsx
+// Component.tsx
+import styles from './Component.module.css';
+
+<div className={styles.container}>
+  <span className={styles.title}>...</span>
+</div>
+```
+
+```css
+/* Component.module.css */
+.container { ... }
+.title { ... }
+```
+
+**Migrated Components:**
+- `Header.module.css`
+- `InputPanel.module.css`
+- `EditModal.module.css`
+- `TimelineEntry.module.css`
+
+### CSS Variables
+Use design tokens from `base.css`:
+- Colors: `var(--accent)`, `var(--bg-primary)`, `var(--text-primary)`
+- Radius: `var(--radius-none)` (0), `var(--radius-sm)` (2px), `var(--radius-md)` (4px)
+- Fonts: `var(--font-mono)`, `var(--font-sans)`
+
+### Brutalist Design
+- Angular shapes (`border-radius: 0` or `var(--radius-none)`)
+- Hard borders (`1px solid var(--border-light)`)
+- Mono-spaced typography for data
+
+---
+
+## Shared Components
+
+### EntryMetadataInput
+Shared component for editing entry metadata. Used by:
+- `EditModal` - Full editing with linked entries
+- `InputPanel` (Focus Mode) - Quick metadata selection
+
+```tsx
+<EntryMetadataInput
+  category={category}
+  setCategory={setCategory}
+  contentType={contentType}
+  setContentType={setContentType}
+  fieldValues={fieldValues}
+  setFieldValues={setFieldValues}
+  tags={tags}
+  setTags={setTags}
+  linkedEntries={linkedEntries}        // Optional
+  setLinkedEntries={setLinkedEntries}  // Optional
+  allEntries={allEntries}              // For link search
+  isExpanded={showMetadata}
+  showLinkedEntries={true}             // Enable linked entries section
+/>
+```
+
+Features:
+- Category dropdown
+- Content Type dropdown (auto-resets fieldValues)
+- Tags input with inline display
+- DynamicFieldForm (based on ContentType schema)
+- Linked Entries search and management
 
 ---
 
@@ -189,7 +273,7 @@ interface SessionState {
 | `LOG_OFF` | End session, creates SESSION_END with duration |
 | `DELETE_ENTRY` | Remove entry |
 | `EDIT_ENTRY` | Update entry content only |
-| `UPDATE_ENTRY` | Update content, timestamp, category, contentType, fieldValues |
+| `UPDATE_ENTRY` | Update content, timestamp, category, contentType, fieldValues, linkedEntries, tags, **type** |
 | `SET_ENTRY_CATEGORY` | Set category on an entry |
 | `SET_AI_CONFIG` | Update AI settings (apiKey, baseUrl, model) |
 | `LOAD_STATE` | Initialize from localStorage |
@@ -217,8 +301,6 @@ Body: { "password": "string" }
 Response 200: { "success": true, "token": "uuid-timestamp", "expiresAt": number }
 Response 401: { "error": "Invalid password" }
 ```
-
-**Token Storage**: `auth_token:{token}` = `"valid"` (30-day TTL per device)
 
 ### Data CRUD
 ```http
@@ -256,8 +338,8 @@ Response 200: {
 ```
 
 **AI Detection Examples:**
-- Input: "午饭花了35块" → `{category: "beans", contentType: "expense", fieldValues: {amount: 35, currency: "CNY", category: "Food"}}`
 - Input: "买牛奶" → `{contentType: "task", fieldValues: {done: false}}`
+- Input: "Feeling tired after work" → `{contentType: "mood", fieldValues: {feeling: "Tired", trigger: "Work"}}`
 
 ### Image Upload
 ```http
@@ -269,25 +351,27 @@ Body: file (image/jpeg, image/png, image/gif, image/webp, max 10MB)
 Response 200: { "success": true, "url": "/api/image/filename.ext" }
 ```
 
-### Serve Image
-```http
-GET /api/image/:id
-
-Response 200: Image binary with appropriate Content-Type
-Response 404: { "error": "Image not found" }
-```
-
 ---
 
-## Component Relationships
+## Common Tasks
 
-| Component | Key Features |
-|-----------|--------------|
-| `TimelineEntry.jsx` | Displays entry with contentType badge (💰$35 · Food › Cafe) |
-| `EditModal.jsx` | Edit content, timestamp, category, contentType, fieldValues |
-| `InputPanel.jsx` | Text input, image paste, action buttons |
-| `TasksPanel.jsx` | Google Tasks integration |
-| `ContextMenu.jsx` | Right-click: Mark as Task, Edit, Copy, Delete |
+### Add New ContentType
+1. Add to `BUILTIN_CONTENT_TYPES` in `src/utils/constants.ts`
+2. Add default fieldValues in `EntryMetadataInput.tsx` content type change handler
+3. Create display component in `ContentTypeDisplays.tsx`
+4. Import and render in `TimelineEntry.tsx`
+5. Update AI prompt in `functions/api/categorize.js`
+
+### Add New Category
+Categories are defined in `constants.ts`. To add:
+1. Add to `CategoryId` type in `types/index.ts`
+2. Add to `CATEGORIES` array in `constants.ts`
+
+### Create CSS Module for Component
+1. Create `Component.module.css` in same directory
+2. Import: `import styles from './Component.module.css'`
+3. Use: `className={styles.container}`
+4. Conditionals: `className={\`${styles.base} ${isActive ? styles.active : ''}\`}`
 
 ---
 
@@ -301,35 +385,6 @@ Response 404: { "error": "Image not found" }
 | `AI_API_KEY` | OpenAI API key for backend categorization |
 | `AI_BASE_URL` | (Optional) Custom AI API base URL |
 | `AI_MODEL` | (Optional) AI model name, default: gpt-4o-mini |
-
----
-
-## Styling Conventions
-
-1. **CSS Variables** - Use `base.css` tokens: `var(--accent)`, `var(--bg-primary)`, `var(--text-primary)`
-2. **Component Classes** - Define in `components.css`, prefix with component name
-3. **Responsive** - Mobile styles in `responsive.css`, breakpoint at 768px
-4. **Themes** - Theme files in `src/themes/` directory
-
----
-
-## Common Tasks
-
-### Add New ContentType
-1. Add to `BUILTIN_CONTENT_TYPES` in `src/utils/constants.ts`
-2. Update AI prompt in `functions/api/categorize.js`
-3. Add display logic in `TimelineEntry.jsx`
-4. Add field editing in `EditModal.jsx`
-
-### Add New Category
-Categories are defined in `constants.ts`. To add:
-1. Add to `CategoryId` type in `types/index.ts`
-2. Add to `CATEGORIES` array in `constants.ts`
-
-### Add New API Endpoint
-1. Create `functions/api/[endpoint].js`
-2. Export `onRequestGet`, `onRequestPost`, etc.
-3. Use Bearer token auth pattern from `categorize.js`
 
 ---
 

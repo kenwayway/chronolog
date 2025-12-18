@@ -63,6 +63,7 @@ export interface Entry {
   fieldValues?: Record<string, unknown>  // Dynamic field values
   linkedEntries?: string[]        // Bidirectional linked entry IDs
   tags?: string[]                 // Free-form tags (without # prefix)
+  aiComment?: string              // AI-generated comment (collapsible bubble)
 }
 
 // ============================================
@@ -78,6 +79,7 @@ export interface SessionState {
   apiKey: string | null
   aiBaseUrl: string
   aiModel: string
+  aiPersona?: string              // Customizable AI persona/system prompt
 }
 
 /** Action payloads */
@@ -120,6 +122,7 @@ export interface UpdateEntryPayload {
   linkedEntries?: string[]
   tags?: string[]
   type?: EntryType
+  aiComment?: string
 }
 
 export interface SetEntryCategoryPayload {
