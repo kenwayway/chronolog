@@ -298,8 +298,21 @@ export const TimelineEntry = memo(function TimelineEntry({
                     </div>
                 )}
                 {formatTime(entry.timestamp)}
-                {/* Duration under timestamp for session start */}
+                {/* Duration under timestamp for session start (or session end for cross-date sessions) */}
                 {isSessionStart && sessionDuration && (
+                    <div
+                        style={{
+                            marginTop: 4,
+                            fontSize: 9,
+                            color: "var(--accent)",
+                            fontWeight: 500,
+                        }}
+                    >
+                        {formatDuration(sessionDuration)}
+                    </div>
+                )}
+                {/* For cross-date sessions, show duration on SESSION_END */}
+                {isSessionEnd && sessionDuration && (
                     <div
                         style={{
                             marginTop: 4,
@@ -512,42 +525,12 @@ export const TimelineEntry = memo(function TimelineEntry({
                     </div>
                 )}
 
-                {/* AI Comment Bubble */}
+                {/* AI Comment */}
                 {entry.aiComment && (
-                    <div
-                        style={{
-                            marginTop: 12,
-                            display: 'flex',
-                            justifyContent: 'flex-end',
-                        }}
-                    >
-                        <div
-                            style={{
-                                maxWidth: '85%',
-                                padding: '8px 12px',
-                                backgroundColor: 'var(--accent-subtle)',
-                                border: '1px solid var(--border-subtle)',
-                                borderRadius: '12px 12px 4px 12px',
-                                position: 'relative',
-                            }}
-                        >
-                            <div style={{
-                                display: 'flex',
-                                alignItems: 'flex-start',
-                                gap: 8,
-                            }}>
-                                <span style={{ fontSize: 14, userSelect: 'none' }}>💭</span>
-                                <p style={{
-                                    margin: 0,
-                                    fontSize: 12,
-                                    fontStyle: 'italic',
-                                    color: 'var(--text-secondary)',
-                                    lineHeight: 1.5,
-                                }}>
-                                    {entry.aiComment}
-                                </p>
-                            </div>
-                        </div>
+                    <div className={styles.aiComment}>
+                        <p className={styles.aiCommentText}>
+                            {entry.aiComment}
+                        </p>
                     </div>
                 )}
             </div>

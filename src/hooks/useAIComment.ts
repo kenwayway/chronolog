@@ -1,11 +1,6 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
+import { STORAGE_KEYS, getStorage, type CloudAuthData } from '../utils/storageService'
 import type { Entry } from '../types'
-
-interface AIConfig {
-    apiKey?: string | null
-    baseUrl?: string
-    model?: string
-}
 
 export const DEFAULT_AI_PERSONA = `你是一个温暖、有洞察力的日记伙伴。你的任务是：
 - 对用户的日记内容给出简短、有共鸣的评论（1-2句话）
@@ -14,142 +9,224 @@ export const DEFAULT_AI_PERSONA = `你是一个温暖、有洞察力的日记伙
 - 不要说教，不要给建议，除非用户明确要求
 - 用中文回复，除非内容是英文`
 
-interface UseAICommentReturn {
-    generateComment: (entry: Entry, persona?: string) => Promise<string | null>
-    generateDailySummary: (entries: Entry[], persona?: string) => Promise<string | null>
-    loading: boolean
-    error: string | null
+interface AICommentConfig {
+  hasApiKey: boolean
+  baseUrl: string
+  model: string
+  persona: string
 }
 
-export function useAIComment(config: AIConfig = {}): UseAICommentReturn {
-    const { apiKey, baseUrl, model } = config
-    const [loading, setLoading] = useState(false)
-    const [error, setError] = useState<string | null>(null)
+interface UseAICommentReturn {
+  generateComment: (entry: Entry, todayEntries?: Entry[]) => Promise<string | null>
+  generateDailySummary: (entries: Entry[]) => Promise<string | null>
+  loading: boolean
+  error: string | null
+  config: AICommentConfig | null
+  loadConfig: () => Promise<AICommentConfig | null>
+  saveConfig: (config: { apiKey?: string; baseUrl?: string; model?: string; persona?: string }) => Promise<boolean>
+}
 
-    const callAI = useCallback(async (systemPrompt: string, userMessage: string): Promise<string | null> => {
-        console.log('[AI Comment] callAI called, config:', {
-            apiKey: apiKey ? `${String(apiKey).slice(0, 8)}...` : 'MISSING',
-            baseUrl: baseUrl || 'MISSING',
-            model: model || 'MISSING'
-        })
-        if (!apiKey || !baseUrl || !model) {
-            console.warn('[AI Comment] Missing API config - cannot proceed')
-            return null
-        }
+export function useAIComment(): UseAICommentReturn {
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [config, setConfig] = useState<AICommentConfig | null>(null)
 
-        const normalizedBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl
-        const endpoint = `${normalizedBaseUrl}/chat/completions`
-        console.log('[AI Comment] Calling endpoint:', endpoint)
+  const getAuthToken = useCallback(() => {
+    const auth = getStorage<CloudAuthData>(STORAGE_KEYS.CLOUD_AUTH)
+    return auth?.token
+  }, [])
 
-        try {
-            const response = await fetch(endpoint, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${apiKey}`
-                },
-                body: JSON.stringify({
-                    model: model,
-                    messages: [
-                        { role: 'system', content: systemPrompt },
-                        { role: 'user', content: userMessage }
-                    ],
-                    temperature: 0.7,
-                    max_tokens: 300
-                })
-            })
-
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({})) as { error?: { message?: string } }
-                throw new Error(errorData.error?.message || `API error: ${response.status}`)
-            }
-
-            interface ChatCompletionResponse {
-                choices?: { message?: { content?: string } }[]
-            }
-
-            const data: ChatCompletionResponse = await response.json()
-            return data.choices?.[0]?.message?.content || null
-        } catch (err) {
-            console.error('AI API error:', err)
-            throw err
-        }
-    }, [apiKey, baseUrl, model])
-
-    const generateComment = useCallback(async (entry: Entry, persona?: string): Promise<string | null> => {
-        if (!entry.content?.trim()) {
-            return null
-        }
-
-        setLoading(true)
-        setError(null)
-
-        try {
-            const systemPrompt = persona || DEFAULT_AI_PERSONA
-            const userMessage = `请对这条日记内容给出简短评论：
-
-"${entry.content}"
-
-${entry.category ? `分类: ${entry.category}` : ''}
-${entry.contentType ? `类型: ${entry.contentType}` : ''}
-
-记住：只需要1-2句简短评论，不要太长。`
-
-            const result = await callAI(systemPrompt, userMessage)
-            return result
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Unknown error')
-            return null
-        } finally {
-            setLoading(false)
-        }
-    }, [callAI])
-
-    const generateDailySummary = useCallback(async (entries: Entry[], persona?: string): Promise<string | null> => {
-        if (!entries.length) {
-            return null
-        }
-
-        setLoading(true)
-        setError(null)
-
-        try {
-            const systemPrompt = persona || DEFAULT_AI_PERSONA
-
-            // Format entries for summary
-            const entriesText = entries
-                .map(e => {
-                    const time = new Date(e.timestamp).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
-                    const type = e.type === 'SESSION_START' ? '🟢 开始' :
-                        e.type === 'SESSION_END' ? '🔴 结束' : '📝'
-                    return `[${time}] ${type} ${e.content || '(无内容)'}`
-                })
-                .join('\n')
-
-            const userMessage = `请为今天的日记生成一个简短的总结（3-5句话）：
-
-${entriesText}
-
-要求：
-1. 概括今天的主要活动和心情
-2. 如果有值得注意的模式或洞察，简单提一下
-3. 保持温暖、鼓励的语气
-4. 不要逐条重复，要有综合性`
-
-            const result = await callAI(systemPrompt, userMessage)
-            return result
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Unknown error')
-            return null
-        } finally {
-            setLoading(false)
-        }
-    }, [callAI])
-
-    return {
-        generateComment,
-        generateDailySummary,
-        loading,
-        error
+  // Load config from backend
+  const loadConfig = useCallback(async (): Promise<AICommentConfig | null> => {
+    const token = getAuthToken()
+    if (!token) {
+      console.log('[AI Comment] Not logged in, cannot load config')
+      return null
     }
+
+    try {
+      const response = await fetch('/api/ai-config', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (!response.ok) {
+        throw new Error(`Failed to load config: ${response.status}`)
+      }
+
+      const data: AICommentConfig = await response.json()
+      setConfig(data)
+      return data
+    } catch (err) {
+      console.error('[AI Comment] Failed to load config:', err)
+      return null
+    }
+  }, [getAuthToken])
+
+  // Save config to backend
+  const saveConfig = useCallback(async (updates: {
+    apiKey?: string
+    baseUrl?: string
+    model?: string
+    persona?: string
+  }): Promise<boolean> => {
+    const token = getAuthToken()
+    if (!token) {
+      setError('Not logged in')
+      return false
+    }
+
+    try {
+      const response = await fetch('/api/ai-config', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(updates)
+      })
+
+      if (!response.ok) {
+        throw new Error(`Failed to save config: ${response.status}`)
+      }
+
+      const data: AICommentConfig & { success: boolean } = await response.json()
+      if (data.success) {
+        setConfig({
+          hasApiKey: data.hasApiKey,
+          baseUrl: data.baseUrl,
+          model: data.model,
+          persona: data.persona
+        })
+        return true
+      }
+      return false
+    } catch (err) {
+      console.error('[AI Comment] Failed to save config:', err)
+      setError(err instanceof Error ? err.message : 'Failed to save config')
+      return false
+    }
+  }, [getAuthToken])
+
+  // Load config on mount
+  useEffect(() => {
+    loadConfig()
+  }, [loadConfig])
+
+  const generateComment = useCallback(async (
+    entry: Entry,
+    todayEntries?: Entry[]
+  ): Promise<string | null> => {
+    if (!entry.content?.trim()) {
+      return null
+    }
+
+    const token = getAuthToken()
+    if (!token) {
+      setError('Please connect to Cloud Sync first')
+      return null
+    }
+
+    setLoading(true)
+    setError(null)
+
+    try {
+      // Filter today entries for context (excluding current entry)
+      const contextEntries = todayEntries
+        ?.filter(e => e.id !== entry.id && e.content?.trim())
+        .slice(-5)
+        .map(e => ({
+          timestamp: e.timestamp,
+          content: e.content
+        })) || []
+
+      const response = await fetch('/api/comment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          content: entry.content,
+          todayEntries: contextEntries
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({})) as { error?: string }
+        throw new Error(errorData.error || `API error: ${response.status}`)
+      }
+
+      const data: { comment: string } = await response.json()
+      return data.comment || null
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error'
+      setError(message)
+      console.error('[AI Comment] Error:', message)
+      return null
+    } finally {
+      setLoading(false)
+    }
+  }, [getAuthToken])
+
+  const generateDailySummary = useCallback(async (entries: Entry[]): Promise<string | null> => {
+    if (!entries.length) {
+      return null
+    }
+
+    const token = getAuthToken()
+    if (!token) {
+      setError('Please connect to Cloud Sync first')
+      return null
+    }
+
+    setLoading(true)
+    setError(null)
+
+    try {
+      // Format entries for summary
+      const formattedEntries = entries.map(e => ({
+        timestamp: e.timestamp,
+        content: e.content,
+        type: e.type
+      }))
+
+      const response = await fetch('/api/comment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          content: '[DAILY_SUMMARY_REQUEST]',
+          todayEntries: formattedEntries
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({})) as { error?: string }
+        throw new Error(errorData.error || `API error: ${response.status}`)
+      }
+
+      const data: { comment: string } = await response.json()
+      return data.comment || null
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error'
+      setError(message)
+      return null
+    } finally {
+      setLoading(false)
+    }
+  }, [getAuthToken])
+
+  return {
+    generateComment,
+    generateDailySummary,
+    loading,
+    error,
+    config,
+    loadConfig,
+    saveConfig
+  }
 }

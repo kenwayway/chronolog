@@ -1,4 +1,4 @@
-import { useState, useRef, ChangeEvent, KeyboardEvent, MouseEvent } from "react";
+import { useState, useRef, useEffect, ChangeEvent, KeyboardEvent, MouseEvent } from "react";
 import { Download, Upload, Check, FolderOpen, Cloud, CloudOff, RefreshCw, Palette, Sparkles, Database, Trash2, LucideIcon } from "lucide-react";
 import { useTheme, ACCENT_COLORS } from "../../hooks/useTheme";
 import type { Entry, Category } from "../../types";
@@ -34,11 +34,11 @@ interface GoogleTasks {
     logout: () => void;
 }
 
-interface AIConfig {
-    apiKey: string;
-    aiBaseUrl: string;
-    aiModel: string;
-    aiPersona?: string;
+interface AICommentConfig {
+    hasApiKey: boolean;
+    baseUrl: string;
+    model: string;
+    persona: string;
 }
 
 interface ImportData {
@@ -50,11 +50,8 @@ interface ImportData {
 interface SettingsModalProps {
     isOpen: boolean;
     onClose: () => void;
-    apiKey?: string | null;
-    aiBaseUrl?: string;
-    aiModel?: string;
-    aiPersona?: string;
-    onSaveAIConfig: (config: AIConfig) => void;
+    aiCommentConfig?: AICommentConfig | null;
+    onSaveAIConfig: (config: { apiKey?: string; baseUrl?: string; model?: string; persona?: string }) => Promise<boolean>;
     categories?: Category[];
     entries?: Entry[];
     tasks?: unknown[];
@@ -72,10 +69,7 @@ interface CleanupResult {
 export function SettingsModal({
     isOpen,
     onClose,
-    apiKey,
-    aiBaseUrl,
-    aiModel,
-    aiPersona,
+    aiCommentConfig,
     onSaveAIConfig,
     categories,
     entries,
@@ -85,11 +79,12 @@ export function SettingsModal({
     googleTasks,
 }: SettingsModalProps) {
     const [activeTab, setActiveTab] = useState("appearance");
-    const [key, setKey] = useState(apiKey || "");
-    const [baseUrl, setBaseUrl] = useState(aiBaseUrl || "https://api.openai.com/v1");
-    const [model, setModel] = useState(aiModel || "gpt-4o-mini");
-    const [persona, setPersona] = useState(aiPersona || "");
+    const [key, setKey] = useState("");
+    const [baseUrl, setBaseUrl] = useState(aiCommentConfig?.baseUrl || "https://api.openai.com/v1");
+    const [model, setModel] = useState(aiCommentConfig?.model || "gpt-4o-mini");
+    const [persona, setPersona] = useState(aiCommentConfig?.persona || "");
     const [saved, setSaved] = useState(false);
+    const [saving, setSaving] = useState(false);
     const [cloudPassword, setCloudPassword] = useState("");
     const [cloudLoginError, setCloudLoginError] = useState("");
     const [isCleaningUp, setIsCleaningUp] = useState(false);
@@ -97,15 +92,33 @@ export function SettingsModal({
     const { theme, setAccent, setStyle, availableStyles } = useTheme();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    // Update local state when config changes
+    useEffect(() => {
+        if (aiCommentConfig) {
+            setBaseUrl(aiCommentConfig.baseUrl || "https://api.openai.com/v1");
+            setModel(aiCommentConfig.model || "gpt-4o-mini");
+            setPersona(aiCommentConfig.persona || "");
+        }
+    }, [aiCommentConfig]);
+
     if (!isOpen) return null;
 
-    const handleSave = () => {
-        onSaveAIConfig({ apiKey: key, aiBaseUrl: baseUrl, aiModel: model, aiPersona: persona });
-        setSaved(true);
-        setTimeout(() => {
-            setSaved(false);
-            onClose();
-        }, 800);
+    const handleSave = async () => {
+        setSaving(true);
+        const success = await onSaveAIConfig({
+            apiKey: key || undefined, // Only send if user entered a new key
+            baseUrl,
+            model,
+            persona
+        });
+        setSaving(false);
+        if (success) {
+            setKey(""); // Clear the input after saving
+            setSaved(true);
+            setTimeout(() => {
+                setSaved(false);
+            }, 1500);
+        }
     };
 
     const handleBackdropClick = (e: MouseEvent<HTMLDivElement>) => {
@@ -286,45 +299,79 @@ export function SettingsModal({
                         )}
                         {activeTab === "ai" && (
                             <div className="space-y-4">
-                                {/* Local AI Config for AI Comment */}
+                                {/* AI Comment Config - requires Cloud Sync */}
                                 <div>
                                     <div className="settings-section-label">AI COMMENT CONFIG</div>
-                                    <p className="settings-hint" style={{ marginBottom: 12 }}>
-                                        右键 Entry → "💭 AI COMMENT" 使用此配置
-                                    </p>
-                                    <div className="space-y-2">
-                                        <input
-                                            type="password"
-                                            value={key}
-                                            onChange={(e) => setKey(e.target.value)}
-                                            placeholder="OpenAI API Key (sk-...)"
-                                            className="edit-modal-input"
-                                            style={{ width: "100%" }}
-                                        />
-                                        <input
-                                            type="text"
-                                            value={baseUrl}
-                                            onChange={(e) => setBaseUrl(e.target.value)}
-                                            placeholder="API Base URL"
-                                            className="edit-modal-input"
-                                            style={{ width: "100%" }}
-                                        />
-                                        <input
-                                            type="text"
-                                            value={model}
-                                            onChange={(e) => setModel(e.target.value)}
-                                            placeholder="Model name"
-                                            className="edit-modal-input"
-                                            style={{ width: "100%" }}
-                                        />
-                                        <textarea
-                                            value={persona}
-                                            onChange={(e) => setPersona(e.target.value)}
-                                            placeholder="AI Persona (留空使用默认)&#10;&#10;默认：你是一个温暖、有洞察力的日记伙伴..."
-                                            className="edit-modal-input"
-                                            style={{ width: "100%", minHeight: 80, resize: "vertical" }}
-                                        />
-                                    </div>
+
+                                    {!cloudSync?.isLoggedIn ? (
+                                        <p className="settings-hint" style={{ color: "var(--warning)" }}>
+                                            ⚠ 需要先连接 Cloud Sync 才能配置 AI Comment
+                                        </p>
+                                    ) : (
+                                        <>
+                                            <p className="settings-hint" style={{ marginBottom: 12 }}>
+                                                右键 Entry → "💭 AI COMMENT" 使用此配置（存储在云端）
+                                            </p>
+
+                                            {aiCommentConfig?.hasApiKey && (
+                                                <p className="settings-hint" style={{ color: "var(--success)", marginBottom: 8 }}>
+                                                    ✓ API Key 已配置
+                                                </p>
+                                            )}
+
+                                            <div className="space-y-2">
+                                                <input
+                                                    type="password"
+                                                    value={key}
+                                                    onChange={(e) => setKey(e.target.value)}
+                                                    placeholder={aiCommentConfig?.hasApiKey ? "输入新 Key 替换现有配置..." : "OpenAI API Key (sk-...)"}
+                                                    className="edit-modal-input"
+                                                    style={{ width: "100%" }}
+                                                />
+                                                <input
+                                                    type="text"
+                                                    value={baseUrl}
+                                                    onChange={(e) => setBaseUrl(e.target.value)}
+                                                    placeholder="API Base URL"
+                                                    className="edit-modal-input"
+                                                    style={{ width: "100%" }}
+                                                />
+                                                <input
+                                                    type="text"
+                                                    value={model}
+                                                    onChange={(e) => setModel(e.target.value)}
+                                                    placeholder="Model name"
+                                                    className="edit-modal-input"
+                                                    style={{ width: "100%" }}
+                                                />
+                                                <textarea
+                                                    value={persona}
+                                                    onChange={(e) => setPersona(e.target.value)}
+                                                    placeholder="AI Persona (留空使用默认)&#10;&#10;默认：你是一个温暖、有洞察力的日记伙伴..."
+                                                    className="edit-modal-input"
+                                                    style={{ width: "100%", minHeight: 80, resize: "vertical" }}
+                                                />
+
+                                                <button
+                                                    onClick={handleSave}
+                                                    disabled={saving}
+                                                    style={{
+                                                        marginTop: 8,
+                                                        padding: "8px 16px",
+                                                        backgroundColor: saved ? "var(--success)" : "var(--accent)",
+                                                        color: "white",
+                                                        border: "none",
+                                                        borderRadius: 4,
+                                                        cursor: saving ? "wait" : "pointer",
+                                                        fontSize: 12,
+                                                        fontWeight: 500,
+                                                    }}
+                                                >
+                                                    {saving ? "保存中..." : saved ? "✓ 已保存" : "保存 AI 配置"}
+                                                </button>
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
 
                                 {/* Auto-categorization info */}
@@ -579,6 +626,6 @@ export function SettingsModal({
                     </div>
                 </div>
             </div>
-        </div>
+        </div >
     );
 }

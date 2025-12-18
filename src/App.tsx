@@ -45,12 +45,8 @@ function App() {
     const googleTasks = useGoogleTasks();
     const { categorize } = useAICategories();
 
-    // AI Comment hook
-    const aiComment = useAIComment({
-        apiKey: state.apiKey,
-        baseUrl: state.aiBaseUrl,
-        model: state.aiModel,
-    });
+    // AI Comment hook (uses backend API)
+    const aiComment = useAIComment();
 
     // Cloud sync
     const cloudSync = useCloudSync({
@@ -140,12 +136,20 @@ function App() {
 
     // AI Comment handler
     const handleAIComment = useCallback(async (entry: Entry) => {
-        const comment = await aiComment.generateComment(entry, state.aiPersona);
+        // Get today's entries for context
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const todayEntries = state.entries.filter(e => {
+            const entryDate = new Date(e.timestamp);
+            return entryDate.toDateString() === today.toDateString();
+        });
+
+        const comment = await aiComment.generateComment(entry, todayEntries);
         if (comment) {
             actions.updateEntry(entry.id, { aiComment: comment });
         }
         closeContextMenu();
-    }, [aiComment, state.aiPersona, actions, closeContextMenu]);
+    }, [aiComment, state.entries, actions, closeContextMenu]);
 
     // Edit modal handlers
     const openEditModal = useCallback((entry: Entry) => {
@@ -300,11 +304,8 @@ function App() {
             <SettingsModal
                 isOpen={settingsOpen}
                 onClose={() => setSettingsOpen(false)}
-                apiKey={state.apiKey}
-                aiBaseUrl={state.aiBaseUrl}
-                aiModel={state.aiModel}
-                aiPersona={state.aiPersona}
-                onSaveAIConfig={actions.setAIConfig}
+                aiCommentConfig={aiComment.config}
+                onSaveAIConfig={aiComment.saveConfig}
                 categories={categories}
                 entries={state.entries}
                 onImportData={actions.importData}

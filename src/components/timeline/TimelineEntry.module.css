@@ -107,3 +107,33 @@
         display: block !important;
     }
 }
+
+/* AI Comment Bubble */
+.aiComment {
+    margin-top: 10px;
+    margin-left: 8px;
+    padding: 8px 12px;
+    border-left: 2px solid var(--accent);
+    background: linear-gradient(90deg, var(--bg-secondary) 0%, transparent 100%);
+    border-radius: 0 4px 4px 0;
+}
+
+.aiCommentText {
+    margin: 0;
+    font-size: 12px;
+    font-style: italic;
+    color: var(--text-muted);
+    line-height: 1.5;
+    letter-spacing: 0.01em;
+}
+
+@media (max-width: 640px) {
+    .aiComment {
+        margin-left: 4px;
+        padding: 6px 10px;
+    }
+    
+    .aiCommentText {
+        font-size: 13px;
+    }
+}

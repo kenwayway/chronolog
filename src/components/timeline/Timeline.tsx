@@ -44,12 +44,29 @@ export function Timeline({ entries, allEntries, status, categories, onContextMen
         : [...displayEntries].sort((a, b) => a.timestamp - b.timestamp);
 
     // Build session durations map
+    // For cross-date sessions, we need to look in allEntries to find the SESSION_START
     const sessionDurations: Record<string, number> = {};
     let currentSessionStartId: string | null = null;
 
     // Calculate line states
     const entryLineStates: Record<string, string> = {};
     let inSession = false;
+
+    // First, check if we're already in a session from a previous day
+    // by looking for an unclosed SESSION_START before today's first entry
+    const allSorted = allEntries ? [...allEntries].sort((a, b) => a.timestamp - b.timestamp) : [];
+    const firstDisplayedTimestamp = sortedEntries[0]?.timestamp ?? Date.now();
+
+    for (const entry of allSorted) {
+        if (entry.timestamp >= firstDisplayedTimestamp) break;
+        if (entry.type === ENTRY_TYPES.SESSION_START) {
+            currentSessionStartId = entry.id;
+            inSession = true;
+        } else if (entry.type === ENTRY_TYPES.SESSION_END) {
+            currentSessionStartId = null;
+            inSession = false;
+        }
+    }
 
     for (const entry of sortedEntries) {
         if (entry.type === ENTRY_TYPES.SESSION_START) {
@@ -58,6 +75,7 @@ export function Timeline({ entries, allEntries, status, categories, onContextMen
             entry.type === ENTRY_TYPES.SESSION_END &&
             currentSessionStartId
         ) {
+            // Store duration on the SESSION_START entry
             sessionDurations[currentSessionStartId] = entry.duration || 0;
             currentSessionStartId = null;
         }
@@ -67,6 +85,11 @@ export function Timeline({ entries, allEntries, status, categories, onContextMen
             inSession = true;
             state = "start";
         } else if (entry.type === ENTRY_TYPES.SESSION_END) {
+            // For cross-date SESSION_END, still show duration
+            if (entry.duration && !sessionDurations[entry.id]) {
+                // Store on the SESSION_END itself so TimelineEntry can find it
+                sessionDurations[entry.id] = entry.duration;
+            }
             inSession = false;
             state = "end";
         } else if (inSession) {
