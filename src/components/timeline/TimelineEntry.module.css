@@ -1,149 +1,154 @@
 /* TimelineEntry Component Styles */
 
 .entry {
-    padding: 12px;
-    margin: 0 -12px;
-    border-radius: var(--radius-none);
-    transition: background-color 150ms ease;
+  padding: 12px;
+  margin: 0 -12px;
+  border-radius: var(--radius-none);
+  transition: background-color 150ms ease;
 }
 
 .entry:hover {
-    background-color: var(--bg-secondary);
+  background-color: var(--bg-secondary);
 }
 
 .entryDone .contentCol {
-    opacity: 0.7;
+  opacity: 0.7;
 }
 
 /* Timeline Images */
 .imageContainer {
-    margin-top: 8px;
-    margin-bottom: 4px;
+  margin-top: 8px;
+  margin-bottom: 4px;
 }
 
 .image {
-    max-width: 100%;
-    max-height: 300px;
-    border-radius: var(--radius-none);
-    border: 1px solid var(--border-subtle);
+  max-width: 100%;
+  max-height: 300px;
+  border-radius: var(--radius-none);
+  border: 1px solid var(--border-subtle);
 }
 
 .imageFallback {
-    display: none;
-    color: var(--accent);
-    font-size: 12px;
+  display: none;
+  color: var(--accent);
+  font-size: 12px;
 }
 
 /* Timeline Columns */
 .timeCol {
-    flex-shrink: 0;
-    width: 50px;
-    text-align: right;
-    font-size: 10px;
-    color: var(--text-dim);
-    padding-right: 8px;
-    padding-top: 4px;
-    font-family: var(--font-mono);
-    opacity: 0.6;
+  flex-shrink: 0;
+  width: 50px;
+  text-align: right;
+  font-size: 10px;
+  color: var(--text-dim);
+  padding-right: 8px;
+  padding-top: 4px;
+  font-family: var(--font-mono);
+  opacity: 0.6;
 }
 
 .symbolCol {
-    position: relative;
-    flex-shrink: 0;
-    width: 20px;
-    text-align: center;
-    font-size: 14px;
-    user-select: none;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    align-self: stretch;
+  position: relative;
+  flex-shrink: 0;
+  width: 20px;
+  text-align: center;
+  font-size: 14px;
+  user-select: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  align-self: stretch;
 }
 
 .contentCol {
-    flex: 1;
-    min-width: 0;
+  flex: 1;
+  min-width: 0;
 }
 
 .contentText {
-    font-size: 15px;
-    line-height: 1.6;
-    overflow-wrap: break-word;
-    font-family: var(--font-primary);
-    white-space: pre-wrap;
+  font-size: 15px;
+  line-height: 1.6;
+  overflow-wrap: break-word;
+  font-family: var(--font-primary);
+  white-space: pre-wrap;
 }
 
 .mobileTime {
-    font-size: 10px;
-    color: var(--text-dim);
-    font-family: var(--font-mono);
-    margin-bottom: 4px;
-    display: none;
+  font-size: 10px;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  margin-bottom: 4px;
+  display: none;
 }
 
 /* Responsive */
 @media (max-width: 640px) {
-    .entry {
-        flex-wrap: wrap;
-        padding: 10px 8px !important;
-        gap: 8px !important;
-        margin: 0 !important;
-        border-bottom: none !important;
-    }
+  .entry {
+    flex-wrap: wrap;
+    padding: 10px 8px !important;
+    gap: 8px !important;
+    margin: 0 !important;
+    border-bottom: none !important;
+  }
 
-    .timeCol {
-        display: none !important;
-    }
+  .timeCol {
+    display: none !important;
+  }
 
-    .symbolCol {
-        width: 16px !important;
-    }
+  .symbolCol {
+    width: 16px !important;
+  }
 
-    .contentText {
-        font-size: 16px !important;
-    }
+  .contentText {
+    font-size: 16px !important;
+  }
 
-    .mobileTime {
-        display: block !important;
-    }
+  .mobileTime {
+    display: block !important;
+  }
 }
 
-/* AI Comment Bubble */
+/* AI Comment */
+.aiCommentWrapper {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
 .aiComment {
-    margin-top: 12px;
-    padding: 12px 14px;
-    background-color: var(--bg-secondary);
-    border-radius: 8px;
-    border: 1px solid var(--border-subtle);
-    position: relative;
+  display: inline-block;
+  max-width: 80%;
+  padding: 10px 14px;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0;
 }
 
-.aiCommentHeader {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin-bottom: 6px;
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--accent);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    opacity: 0.9;
+.aiCommentLabel {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+  opacity: 0.9;
 }
 
 .aiCommentText {
-    margin: 0;
-    font-size: 13px;
-    color: var(--text-secondary);
-    line-height: 1.6;
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
 }
 
 @media (max-width: 640px) {
-    .aiComment {
-        padding: 10px 12px;
-    }
+  .aiComment {
+    max-width: 90%;
+    padding: 8px 12px;
+  }
 
-    .aiCommentText {
-        font-size: 13px;
-    }
+  .aiCommentText {
+    font-size: 13px;
+  }
 }
