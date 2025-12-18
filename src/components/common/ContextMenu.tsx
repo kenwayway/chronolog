@@ -141,9 +141,9 @@ export function ContextMenu({
                     className="context-menu-item"
                     onClick={handleAIComment}
                     disabled={aiLoading}
-                    style={{ color: aiLoading ? "var(--text-dim)" : "var(--accent)" }}
+                    style={{ color: aiLoading ? "var(--text-dim)" : undefined }}
                 >
-                    {aiLoading ? "💭 ..." : "💭 AI COMMENT"}
+                    {aiLoading ? "GENERATING..." : "AI COMMENT"}
                 </button>
             )}
 

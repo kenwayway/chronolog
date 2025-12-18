@@ -156,6 +156,11 @@ function App() {
         closeContextMenu();
     }, [aiComment, state.entries, actions, closeContextMenu]);
 
+    // Delete AI Comment handler
+    const handleDeleteAIComment = useCallback((entry: Entry) => {
+        actions.updateEntry(entry.id, { aiComment: undefined });
+    }, [actions]);
+
     // Edit modal handlers
     const openEditModal = useCallback((entry: Entry) => {
         setEditModal({ isOpen: true, entry });
@@ -248,6 +253,7 @@ function App() {
                         onContextMenu={handleContextMenu}
                         categoryFilter={categoryFilter}
                         onNavigateToEntry={navigateToEntry}
+                        onDeleteAIComment={handleDeleteAIComment}
                     />
                 )}
             </main>

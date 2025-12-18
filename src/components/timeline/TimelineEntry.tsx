@@ -135,6 +135,7 @@ interface TimelineEntryProps {
   showDate?: boolean;
   onNavigateToEntry?: (entry: Entry) => void;
   showAIComments?: boolean;
+  onDeleteAIComment?: (entry: Entry) => void;
 }
 
 /**
@@ -154,6 +155,7 @@ export const TimelineEntry = memo(function TimelineEntry({
   showDate = false,
   onNavigateToEntry,
   showAIComments = true,
+  onDeleteAIComment,
 }: TimelineEntryProps) {
   const { symbols } = useTheme();
   const [pressTimer, setPressTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
@@ -300,21 +302,8 @@ export const TimelineEntry = memo(function TimelineEntry({
           </div>
         )}
         {formatTime(entry.timestamp)}
-        {/* Duration under timestamp for session start (or session end for cross-date sessions) */}
+        {/* Duration under timestamp for session start only */}
         {isSessionStart && sessionDuration && (
-          <div
-            style={{
-              marginTop: 4,
-              fontSize: 9,
-              color: "var(--accent)",
-              fontWeight: 500,
-            }}
-          >
-            {formatDuration(sessionDuration)}
-          </div>
-        )}
-        {/* For cross-date sessions, show duration on SESSION_END */}
-        {isSessionEnd && sessionDuration && (
           <div
             style={{
               marginTop: 4,
@@ -466,8 +455,8 @@ export const TimelineEntry = memo(function TimelineEntry({
           <WorkoutDisplay fieldValues={entry.fieldValues} />
         )}
 
-        {/* Metadata Footer (Tags & Category) */}
-        {(category || (entry.tags && entry.tags.length > 0)) && (
+        {/* Metadata Footer (Tags & Category) - hide for SESSION_END */}
+        {!isSessionEnd && (category || (entry.tags && entry.tags.length > 0)) && (
           <div style={{
             display: 'flex',
             alignItems: 'center',
@@ -530,7 +519,28 @@ export const TimelineEntry = memo(function TimelineEntry({
         {/* AI Comment */}
         {showAIComments && entry.aiComment && (
           <div className={styles.aiCommentWrapper}>
-            <div className={styles.aiComment}>
+            <div
+              className={styles.aiComment}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (confirm('删除 AI Comment?')) {
+                  onDeleteAIComment?.(entry);
+                }
+              }}
+              onTouchStart={(e) => {
+                const timer = setTimeout(() => {
+                  if (confirm('删除 AI Comment?')) {
+                    onDeleteAIComment?.(entry);
+                  }
+                }, 500);
+                const cleanup = () => clearTimeout(timer);
+                e.currentTarget.addEventListener('touchend', cleanup, { once: true });
+                e.currentTarget.addEventListener('touchcancel', cleanup, { once: true });
+              }}
+              style={{ cursor: 'pointer' }}
+              title="右键/长按删除"
+            >
               <span className={styles.aiCommentLabel}>Zaddy:</span>
               <p className={styles.aiCommentText}>
                 {entry.aiComment}

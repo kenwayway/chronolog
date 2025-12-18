@@ -20,9 +20,10 @@ interface TimelineProps {
     onContextMenu: (entry: Entry, position: Position) => void;
     categoryFilter?: CategoryId[];
     onNavigateToEntry?: (entry: Entry) => void;
+    onDeleteAIComment?: (entry: Entry) => void;
 }
 
-export function Timeline({ entries, allEntries, status, categories, onContextMenu, categoryFilter = [], onNavigateToEntry }: TimelineProps) {
+export function Timeline({ entries, allEntries, status, categories, onContextMenu, categoryFilter = [], onNavigateToEntry, onDeleteAIComment }: TimelineProps) {
     const { theme } = useTheme();
     const [currentPage, setCurrentPage] = useState(0);
     const [showAIComments, setShowAIComments] = useState(true);
@@ -231,6 +232,7 @@ export function Timeline({ entries, allEntries, status, categories, onContextMen
                     showDate={isFilterMode}
                     onNavigateToEntry={onNavigateToEntry}
                     showAIComments={showAIComments}
+                    onDeleteAIComment={onDeleteAIComment}
                 />
             ))}
         </div>
