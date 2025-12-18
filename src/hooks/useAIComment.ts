@@ -27,12 +27,15 @@ export function useAIComment(config: AIConfig = {}): UseAICommentReturn {
     const [error, setError] = useState<string | null>(null)
 
     const callAI = useCallback(async (systemPrompt: string, userMessage: string): Promise<string | null> => {
+        console.log('[AI Comment] callAI called, config:', { apiKey: !!apiKey, baseUrl, model })
         if (!apiKey || !baseUrl || !model) {
+            console.warn('[AI Comment] Missing API config:', { apiKey: !!apiKey, baseUrl: !!baseUrl, model: !!model })
             return null
         }
 
         const normalizedBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl
         const endpoint = `${normalizedBaseUrl}/chat/completions`
+        console.log('[AI Comment] Calling endpoint:', endpoint)
 
         try {
             const response = await fetch(endpoint, {
