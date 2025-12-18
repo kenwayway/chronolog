@@ -188,7 +188,8 @@ function sessionReducer(state: SessionState, action: SessionAction): SessionStat
         ...state,
         apiKey: action.payload.apiKey ?? state.apiKey,
         aiBaseUrl: action.payload.aiBaseUrl ?? state.aiBaseUrl,
-        aiModel: action.payload.aiModel ?? state.aiModel
+        aiModel: action.payload.aiModel ?? state.aiModel,
+        aiPersona: action.payload.aiPersona ?? state.aiPersona
       }
     }
 
@@ -303,18 +304,20 @@ export function useSession(): UseSessionReturn {
     const savedApiKey = getStorageRaw(STORAGE_KEYS.API_KEY)
     const savedBaseUrl = getStorageRaw(STORAGE_KEYS.AI_BASE_URL)
     const savedModel = getStorageRaw(STORAGE_KEYS.AI_MODEL)
+    const savedPersona = getStorageRaw(STORAGE_KEYS.AI_PERSONA)
 
     if (savedState) {
       dispatch({ type: ACTIONS.LOAD_STATE, payload: savedState })
     }
 
-    if (savedApiKey || savedBaseUrl || savedModel) {
+    if (savedApiKey || savedBaseUrl || savedModel || savedPersona) {
       dispatch({
         type: ACTIONS.SET_AI_CONFIG,
         payload: {
           apiKey: savedApiKey || undefined,
           aiBaseUrl: savedBaseUrl || 'https://api.openai.com/v1',
-          aiModel: savedModel || 'gpt-4o-mini'
+          aiModel: savedModel || 'gpt-4o-mini',
+          aiPersona: savedPersona || undefined
         }
       })
     }
@@ -365,10 +368,11 @@ export function useSession(): UseSessionReturn {
   }, [])
 
   const setAIConfig = useCallback((config: SetAIConfigPayload) => {
-    const { apiKey, aiBaseUrl, aiModel } = config
+    const { apiKey, aiBaseUrl, aiModel, aiPersona } = config
     if (apiKey !== undefined) setStorageRaw(STORAGE_KEYS.API_KEY, apiKey)
     if (aiBaseUrl !== undefined) setStorageRaw(STORAGE_KEYS.AI_BASE_URL, aiBaseUrl)
     if (aiModel !== undefined) setStorageRaw(STORAGE_KEYS.AI_MODEL, aiModel)
+    if (aiPersona !== undefined) setStorageRaw(STORAGE_KEYS.AI_PERSONA, aiPersona)
     dispatch({ type: ACTIONS.SET_AI_CONFIG, payload: config })
   }, [])
 

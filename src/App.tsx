@@ -303,6 +303,7 @@ function App() {
                 apiKey={state.apiKey}
                 aiBaseUrl={state.aiBaseUrl}
                 aiModel={state.aiModel}
+                aiPersona={state.aiPersona}
                 onSaveAIConfig={actions.setAIConfig}
                 categories={categories}
                 entries={state.entries}

@@ -10,6 +10,7 @@ export const STORAGE_KEYS = {
     API_KEY: 'chronolog_api_key',
     AI_BASE_URL: 'chronolog_ai_base_url',
     AI_MODEL: 'chronolog_ai_model',
+    AI_PERSONA: 'chronolog_ai_persona',
 
     // Auth tokens
     CLOUD_AUTH: 'chronolog_cloud_auth',

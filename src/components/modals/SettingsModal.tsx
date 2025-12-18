@@ -38,6 +38,7 @@ interface AIConfig {
     apiKey: string;
     aiBaseUrl: string;
     aiModel: string;
+    aiPersona?: string;
 }
 
 interface ImportData {
@@ -52,6 +53,7 @@ interface SettingsModalProps {
     apiKey?: string | null;
     aiBaseUrl?: string;
     aiModel?: string;
+    aiPersona?: string;
     onSaveAIConfig: (config: AIConfig) => void;
     categories?: Category[];
     entries?: Entry[];
@@ -73,6 +75,7 @@ export function SettingsModal({
     apiKey,
     aiBaseUrl,
     aiModel,
+    aiPersona,
     onSaveAIConfig,
     categories,
     entries,
@@ -85,6 +88,7 @@ export function SettingsModal({
     const [key, setKey] = useState(apiKey || "");
     const [baseUrl, setBaseUrl] = useState(aiBaseUrl || "https://api.openai.com/v1");
     const [model, setModel] = useState(aiModel || "gpt-4o-mini");
+    const [persona, setPersona] = useState(aiPersona || "");
     const [saved, setSaved] = useState(false);
     const [cloudPassword, setCloudPassword] = useState("");
     const [cloudLoginError, setCloudLoginError] = useState("");
@@ -96,7 +100,7 @@ export function SettingsModal({
     if (!isOpen) return null;
 
     const handleSave = () => {
-        onSaveAIConfig({ apiKey: key, aiBaseUrl: baseUrl, aiModel: model });
+        onSaveAIConfig({ apiKey: key, aiBaseUrl: baseUrl, aiModel: model, aiPersona: persona });
         setSaved(true);
         setTimeout(() => {
             setSaved(false);
@@ -312,6 +316,13 @@ export function SettingsModal({
                                             placeholder="Model name"
                                             className="edit-modal-input"
                                             style={{ width: "100%" }}
+                                        />
+                                        <textarea
+                                            value={persona}
+                                            onChange={(e) => setPersona(e.target.value)}
+                                            placeholder="AI Persona (留空使用默认)&#10;&#10;默认：你是一个温暖、有洞察力的日记伙伴..."
+                                            className="edit-modal-input"
+                                            style={{ width: "100%", minHeight: 80, resize: "vertical" }}
                                         />
                                     </div>
                                 </div>

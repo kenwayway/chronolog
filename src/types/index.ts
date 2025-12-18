@@ -138,6 +138,7 @@ export interface SetAIConfigPayload {
   apiKey?: string
   aiBaseUrl?: string
   aiModel?: string
+  aiPersona?: string
 }
 
 export interface ImportDataPayload {
