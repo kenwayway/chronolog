@@ -5,8 +5,7 @@ import { formatTime, formatDuration, formatDate } from "../../utils/formatters";
 import { parseContent, darkenColor } from "../../utils/contentParser";
 import { useTheme } from "../../hooks/useTheme";
 import { LinkedEntryPreview } from "./LinkedEntryPreview";
-import { BookmarkDisplay, MoodDisplay, WorkoutDisplay } from "./ContentTypeDisplays";
-import styles from "./TimelineEntry.module.css";
+import { ExpenseDisplay, BookmarkDisplay, MoodDisplay } from "./ContentTypeDisplays";
 import type { Entry, Category } from "../../types";
 
 interface Position {
@@ -134,8 +133,6 @@ interface TimelineEntryProps {
   isLightMode: boolean;
   showDate?: boolean;
   onNavigateToEntry?: (entry: Entry) => void;
-  showAIComments?: boolean;
-  onDeleteAIComment?: (entry: Entry) => void;
 }
 
 /**
@@ -154,8 +151,6 @@ export const TimelineEntry = memo(function TimelineEntry({
   isLightMode,
   showDate = false,
   onNavigateToEntry,
-  showAIComments = true,
-  onDeleteAIComment,
 }: TimelineEntryProps) {
   const { symbols } = useTheme();
   const [pressTimer, setPressTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
@@ -266,7 +261,7 @@ export const TimelineEntry = memo(function TimelineEntry({
 
   return (
     <div
-      className={`${styles.entry} ${isTaskDone ? styles.entryDone : ''}`}
+      className={`timeline-entry ${isTaskDone ? 'timeline-entry-done' : ''}`}
       data-entry-id={entry.id}
       style={{
         display: "flex",
@@ -283,7 +278,7 @@ export const TimelineEntry = memo(function TimelineEntry({
     >
       {/* Time Column */}
       <div
-        className={styles.timeCol}
+        className="timeline-time-col"
         style={{
           flexShrink: 0,
           width: 50,
@@ -302,7 +297,7 @@ export const TimelineEntry = memo(function TimelineEntry({
           </div>
         )}
         {formatTime(entry.timestamp)}
-        {/* Duration under timestamp for session start only */}
+        {/* Duration under timestamp for session start */}
         {isSessionStart && sessionDuration && (
           <div
             style={{
@@ -319,7 +314,7 @@ export const TimelineEntry = memo(function TimelineEntry({
 
       {/* Symbol Column */}
       <div
-        className={styles.symbolCol}
+        className="timeline-symbol-col"
         style={{
           position: "relative",
           flexShrink: 0,
@@ -377,7 +372,7 @@ export const TimelineEntry = memo(function TimelineEntry({
       </div>
 
       {/* Content */}
-      <div className={styles.contentCol} style={{ flex: 1, minWidth: 0 }}>
+      <div className="timeline-content-col" style={{ flex: 1, minWidth: 0 }}>
         {/* Linked entries before (older) */}
         {beforeLinks.length > 0 && (
           <div className="linked-entries-before" style={{ marginBottom: 8 }}>
@@ -394,7 +389,7 @@ export const TimelineEntry = memo(function TimelineEntry({
 
         {/* Mobile timestamp */}
         <div
-          className={styles.mobileTime}
+          className="timeline-mobile-time"
           style={{
             fontSize: 10,
             color: "var(--text-dim)",
@@ -410,7 +405,7 @@ export const TimelineEntry = memo(function TimelineEntry({
         <div className="flex flex-wrap items-baseline" style={{ gap: "4px 12px", marginBottom: 6 }}>
           {entry.content && (
             <span
-              className={styles.contentText}
+              className="timeline-content-text"
               style={{
                 fontSize: 15,
                 lineHeight: 1.6,
@@ -438,6 +433,7 @@ export const TimelineEntry = memo(function TimelineEntry({
             </span>
           )}
 
+          {entry.contentType === 'expense' && <ExpenseDisplay fieldValues={entry.fieldValues} />}
         </div>
 
         {/* Content type displays */}
@@ -451,12 +447,9 @@ export const TimelineEntry = memo(function TimelineEntry({
             <MoodDisplay fieldValues={entry.fieldValues} />
           </div>
         )}
-        {entry.contentType === 'workout' && (
-          <WorkoutDisplay fieldValues={entry.fieldValues} />
-        )}
 
-        {/* Metadata Footer (Tags & Category) - hide for SESSION_END */}
-        {!isSessionEnd && (category || (entry.tags && entry.tags.length > 0)) && (
+        {/* Metadata Footer (Tags & Category) */}
+        {(category || (entry.tags && entry.tags.length > 0)) && (
           <div style={{
             display: 'flex',
             alignItems: 'center',
@@ -513,39 +506,6 @@ export const TimelineEntry = memo(function TimelineEntry({
                 onNavigateToEntry={onNavigateToEntry}
               />
             ))}
-          </div>
-        )}
-
-        {/* AI Comment */}
-        {showAIComments && entry.aiComment && (
-          <div className={styles.aiCommentWrapper}>
-            <div
-              className={styles.aiComment}
-              onContextMenu={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                if (confirm('删除 AI Comment?')) {
-                  onDeleteAIComment?.(entry);
-                }
-              }}
-              onTouchStart={(e) => {
-                const timer = setTimeout(() => {
-                  if (confirm('删除 AI Comment?')) {
-                    onDeleteAIComment?.(entry);
-                  }
-                }, 500);
-                const cleanup = () => clearTimeout(timer);
-                e.currentTarget.addEventListener('touchend', cleanup, { once: true });
-                e.currentTarget.addEventListener('touchcancel', cleanup, { once: true });
-              }}
-              style={{ cursor: 'pointer' }}
-              title="右键/长按删除"
-            >
-              <span className={styles.aiCommentLabel}>Zaddy:</span>
-              <p className={styles.aiCommentText}>
-                {entry.aiComment}
-              </p>
-            </div>
           </div>
         )}
       </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight, MessageSquare } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { ENTRY_TYPES } from "../../utils/constants";
 import { useTheme } from "../../hooks/useTheme";
 import { TimelineEntry } from "./TimelineEntry";
@@ -20,13 +20,11 @@ interface TimelineProps {
     onContextMenu: (entry: Entry, position: Position) => void;
     categoryFilter?: CategoryId[];
     onNavigateToEntry?: (entry: Entry) => void;
-    onDeleteAIComment?: (entry: Entry) => void;
 }
 
-export function Timeline({ entries, allEntries, status, categories, onContextMenu, categoryFilter = [], onNavigateToEntry, onDeleteAIComment }: TimelineProps) {
+export function Timeline({ entries, allEntries, status, categories, onContextMenu, categoryFilter = [], onNavigateToEntry }: TimelineProps) {
     const { theme } = useTheme();
     const [currentPage, setCurrentPage] = useState(0);
-    const [showAIComments, setShowAIComments] = useState(true);
 
     // Reset page when entries change (filter changes)
     useEffect(() => {
@@ -46,29 +44,12 @@ export function Timeline({ entries, allEntries, status, categories, onContextMen
         : [...displayEntries].sort((a, b) => a.timestamp - b.timestamp);
 
     // Build session durations map
-    // For cross-date sessions, we need to look in allEntries to find the SESSION_START
     const sessionDurations: Record<string, number> = {};
     let currentSessionStartId: string | null = null;
 
     // Calculate line states
     const entryLineStates: Record<string, string> = {};
     let inSession = false;
-
-    // First, check if we're already in a session from a previous day
-    // by looking for an unclosed SESSION_START before today's first entry
-    const allSorted = allEntries ? [...allEntries].sort((a, b) => a.timestamp - b.timestamp) : [];
-    const firstDisplayedTimestamp = sortedEntries[0]?.timestamp ?? Date.now();
-
-    for (const entry of allSorted) {
-        if (entry.timestamp >= firstDisplayedTimestamp) break;
-        if (entry.type === ENTRY_TYPES.SESSION_START) {
-            currentSessionStartId = entry.id;
-            inSession = true;
-        } else if (entry.type === ENTRY_TYPES.SESSION_END) {
-            currentSessionStartId = null;
-            inSession = false;
-        }
-    }
 
     for (const entry of sortedEntries) {
         if (entry.type === ENTRY_TYPES.SESSION_START) {
@@ -77,7 +58,6 @@ export function Timeline({ entries, allEntries, status, categories, onContextMen
             entry.type === ENTRY_TYPES.SESSION_END &&
             currentSessionStartId
         ) {
-            // Store duration on the SESSION_START entry
             sessionDurations[currentSessionStartId] = entry.duration || 0;
             currentSessionStartId = null;
         }
@@ -87,11 +67,6 @@ export function Timeline({ entries, allEntries, status, categories, onContextMen
             inSession = true;
             state = "start";
         } else if (entry.type === ENTRY_TYPES.SESSION_END) {
-            // For cross-date SESSION_END, still show duration
-            if (entry.duration && !sessionDurations[entry.id]) {
-                // Store on the SESSION_END itself so TimelineEntry can find it
-                sessionDurations[entry.id] = entry.duration;
-            }
             inSession = false;
             state = "end";
         } else if (inSession) {
@@ -110,35 +85,6 @@ export function Timeline({ entries, allEntries, status, categories, onContextMen
                 fontFamily: "var(--font-mono)",
             }}
         >
-            {/* AI Comment Toggle - top right */}
-            <div style={{
-                display: 'flex',
-                justifyContent: 'flex-end',
-                marginBottom: 12,
-            }}>
-                <button
-                    onClick={() => setShowAIComments(!showAIComments)}
-                    title={showAIComments ? "Hide AI Comments" : "Show AI Comments"}
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 6,
-                        padding: '4px 10px',
-                        fontSize: 11,
-                        fontFamily: 'var(--font-mono)',
-                        color: showAIComments ? 'var(--accent)' : 'var(--text-dim)',
-                        backgroundColor: showAIComments ? 'var(--bg-secondary)' : 'transparent',
-                        border: '1px solid var(--border-subtle)',
-                        borderRadius: 4,
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease',
-                    }}
-                >
-                    <MessageSquare size={14} />
-                    <span>{showAIComments ? 'AI ON' : 'AI OFF'}</span>
-                </button>
-            </div>
-
             {/* Filter mode header with pagination */}
             {isFilterMode && entries.length > 0 && (
                 <div
@@ -231,8 +177,6 @@ export function Timeline({ entries, allEntries, status, categories, onContextMen
                     isLightMode={theme.mode === "light"}
                     showDate={isFilterMode}
                     onNavigateToEntry={onNavigateToEntry}
-                    showAIComments={showAIComments}
-                    onDeleteAIComment={onDeleteAIComment}
                 />
             ))}
         </div>

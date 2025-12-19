@@ -188,8 +188,7 @@ function sessionReducer(state: SessionState, action: SessionAction): SessionStat
         ...state,
         apiKey: action.payload.apiKey ?? state.apiKey,
         aiBaseUrl: action.payload.aiBaseUrl ?? state.aiBaseUrl,
-        aiModel: action.payload.aiModel ?? state.aiModel,
-        aiPersona: action.payload.aiPersona ?? state.aiPersona
+        aiModel: action.payload.aiModel ?? state.aiModel
       }
     }
 
@@ -204,7 +203,7 @@ function sessionReducer(state: SessionState, action: SessionAction): SessionStat
     }
 
     case ACTIONS.UPDATE_ENTRY: {
-      const { entryId, content, timestamp, category, contentType, fieldValues, linkedEntries, tags, type, aiComment } = action.payload
+      const { entryId, content, timestamp, category, contentType, fieldValues, linkedEntries, tags } = action.payload
       return {
         ...state,
         entries: state.entries.map(e => {
@@ -217,8 +216,6 @@ function sessionReducer(state: SessionState, action: SessionAction): SessionStat
           if (fieldValues !== undefined) updated.fieldValues = fieldValues
           if (linkedEntries !== undefined) updated.linkedEntries = linkedEntries
           if (tags !== undefined) updated.tags = tags.length > 0 ? tags : undefined
-          if (type !== undefined) updated.type = type
-          if (aiComment !== undefined) updated.aiComment = aiComment
           return updated
         })
       }
@@ -241,11 +238,14 @@ function sessionReducer(state: SessionState, action: SessionAction): SessionStat
         }
       }
 
-      // Merge content types - always use latest BUILTIN_CONTENT_TYPES for built-in types
+      // Merge content types
       const builtInIds = BUILTIN_CONTENT_TYPES.map(ct => ct.id)
       const mergedContentTypes = [
-        ...BUILTIN_CONTENT_TYPES, // Always use latest built-in definitions
-        ...importedContentTypes.filter(ct => !builtInIds.includes(ct.id)) // Keep user-created types
+        ...BUILTIN_CONTENT_TYPES.map(builtIn => {
+          const imported = importedContentTypes.find(ct => ct.id === builtIn.id)
+          return imported ? { ...imported, builtIn: true } : builtIn
+        }),
+        ...importedContentTypes.filter(ct => !builtInIds.includes(ct.id))
       ]
 
       return {
@@ -304,20 +304,18 @@ export function useSession(): UseSessionReturn {
     const savedApiKey = getStorageRaw(STORAGE_KEYS.API_KEY)
     const savedBaseUrl = getStorageRaw(STORAGE_KEYS.AI_BASE_URL)
     const savedModel = getStorageRaw(STORAGE_KEYS.AI_MODEL)
-    const savedPersona = getStorageRaw(STORAGE_KEYS.AI_PERSONA)
 
     if (savedState) {
       dispatch({ type: ACTIONS.LOAD_STATE, payload: savedState })
     }
 
-    if (savedApiKey || savedBaseUrl || savedModel || savedPersona) {
+    if (savedApiKey || savedBaseUrl || savedModel) {
       dispatch({
         type: ACTIONS.SET_AI_CONFIG,
         payload: {
           apiKey: savedApiKey || undefined,
           aiBaseUrl: savedBaseUrl || 'https://api.openai.com/v1',
-          aiModel: savedModel || 'gpt-4o-mini',
-          aiPersona: savedPersona || undefined
+          aiModel: savedModel || 'gpt-4o-mini'
         }
       })
     }
@@ -368,11 +366,10 @@ export function useSession(): UseSessionReturn {
   }, [])
 
   const setAIConfig = useCallback((config: SetAIConfigPayload) => {
-    const { apiKey, aiBaseUrl, aiModel, aiPersona } = config
+    const { apiKey, aiBaseUrl, aiModel } = config
     if (apiKey !== undefined) setStorageRaw(STORAGE_KEYS.API_KEY, apiKey)
     if (aiBaseUrl !== undefined) setStorageRaw(STORAGE_KEYS.AI_BASE_URL, aiBaseUrl)
     if (aiModel !== undefined) setStorageRaw(STORAGE_KEYS.AI_MODEL, aiModel)
-    if (aiPersona !== undefined) setStorageRaw(STORAGE_KEYS.AI_PERSONA, aiPersona)
     dispatch({ type: ACTIONS.SET_AI_CONFIG, payload: config })
   }, [])
 

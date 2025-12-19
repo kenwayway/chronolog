@@ -7,7 +7,6 @@ import { useAICategories } from "./hooks/useAICategories";
 import { useGoogleTasks } from "./hooks/useGoogleTasks";
 import { useEntryHandlers } from "./hooks/useEntryHandlers";
 import { useAutoCategorize } from "./hooks/useAutoCategorize";
-import { useAIComment } from "./hooks/useAIComment";
 import {
     Header,
     LandingPage,
@@ -44,9 +43,6 @@ function App() {
     const { isDark, toggleTheme } = useTheme();
     const googleTasks = useGoogleTasks();
     const { categorize } = useAICategories();
-
-    // AI Comment hook (uses backend API)
-    const aiComment = useAIComment();
 
     // Cloud sync
     const cloudSync = useCloudSync({
@@ -133,33 +129,6 @@ function App() {
     const closeContextMenu = useCallback(() => {
         setContextMenu(prev => ({ ...prev, isOpen: false }));
     }, []);
-
-    // AI Comment handler
-    const handleAIComment = useCallback(async (entry: Entry) => {
-        console.log('[AI Comment] Generating for entry:', entry.id, entry.content?.substring(0, 50));
-
-        // Get today's entries for context
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const todayEntries = state.entries.filter(e => {
-            const entryDate = new Date(e.timestamp);
-            return entryDate.toDateString() === today.toDateString();
-        });
-
-        const comment = await aiComment.generateComment(entry, todayEntries);
-        console.log('[AI Comment] Generated comment:', comment?.substring(0, 50), 'for entry:', entry.id);
-
-        if (comment) {
-            console.log('[AI Comment] Updating entry:', entry.id);
-            actions.updateEntry(entry.id, { aiComment: comment });
-        }
-        closeContextMenu();
-    }, [aiComment, state.entries, actions, closeContextMenu]);
-
-    // Delete AI Comment handler
-    const handleDeleteAIComment = useCallback((entry: Entry) => {
-        actions.updateEntry(entry.id, { aiComment: undefined });
-    }, [actions]);
 
     // Edit modal handlers
     const openEditModal = useCallback((entry: Entry) => {
@@ -253,7 +222,6 @@ function App() {
                         onContextMenu={handleContextMenu}
                         categoryFilter={categoryFilter}
                         onNavigateToEntry={navigateToEntry}
-                        onDeleteAIComment={handleDeleteAIComment}
                     />
                 )}
             </main>
@@ -298,9 +266,7 @@ function App() {
                 onCopy={handlers.handleCopyEntry}
                 onMarkAsTask={handlers.handleMarkAsTask}
                 onLink={handleFollowUp}
-                onAIComment={handleAIComment}
                 googleTasksEnabled={googleTasks.isLoggedIn}
-                aiLoading={aiComment.loading}
             />
 
             <EditModal
@@ -315,8 +281,10 @@ function App() {
             <SettingsModal
                 isOpen={settingsOpen}
                 onClose={() => setSettingsOpen(false)}
-                aiCommentConfig={aiComment.config}
-                onSaveAIConfig={aiComment.saveConfig}
+                apiKey={state.apiKey}
+                aiBaseUrl={state.aiBaseUrl}
+                aiModel={state.aiModel}
+                onSaveAIConfig={actions.setAIConfig}
                 categories={categories}
                 entries={state.entries}
                 onImportData={actions.importData}
