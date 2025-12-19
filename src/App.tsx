@@ -7,6 +7,7 @@ import { useAICategories } from "./hooks/useAICategories";
 import { useGoogleTasks } from "./hooks/useGoogleTasks";
 import { useEntryHandlers } from "./hooks/useEntryHandlers";
 import { useAutoCategorize } from "./hooks/useAutoCategorize";
+import { useAIComment } from "./hooks/useAIComment";
 import {
     Header,
     LandingPage,
@@ -43,6 +44,7 @@ function App() {
     const { isDark, toggleTheme } = useTheme();
     const googleTasks = useGoogleTasks();
     const { categorize } = useAICategories();
+    const aiComment = useAIComment();
 
     // Cloud sync
     const cloudSync = useCloudSync({
@@ -129,6 +131,23 @@ function App() {
     const closeContextMenu = useCallback(() => {
         setContextMenu(prev => ({ ...prev, isOpen: false }));
     }, []);
+
+    // AI Comment handler
+    const handleAIComment = useCallback(async (entry: Entry) => {
+        // Get today's entries for context
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const todayEntries = state.entries.filter(e => {
+            const entryDate = new Date(e.timestamp);
+            return entryDate.toDateString() === today.toDateString();
+        });
+
+        const comment = await aiComment.generateComment(entry, todayEntries);
+        if (comment) {
+            actions.updateEntry(entry.id, { aiComment: comment });
+        }
+        closeContextMenu();
+    }, [aiComment, state.entries, actions, closeContextMenu]);
 
     // Edit modal handlers
     const openEditModal = useCallback((entry: Entry) => {
@@ -266,7 +285,9 @@ function App() {
                 onCopy={handlers.handleCopyEntry}
                 onMarkAsTask={handlers.handleMarkAsTask}
                 onLink={handleFollowUp}
+                onAIComment={handleAIComment}
                 googleTasksEnabled={googleTasks.isLoggedIn}
+                aiLoading={aiComment.loading}
             />
 
             <EditModal
