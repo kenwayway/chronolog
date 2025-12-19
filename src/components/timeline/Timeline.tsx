@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, MessageCircle, MessageCircleOff } from "lucide-react";
 import { ENTRY_TYPES } from "../../utils/constants";
 import { useTheme } from "../../hooks/useTheme";
 import { TimelineEntry } from "./TimelineEntry";
@@ -25,6 +25,7 @@ interface TimelineProps {
 export function Timeline({ entries, allEntries, status, categories, onContextMenu, categoryFilter = [], onNavigateToEntry }: TimelineProps) {
   const { theme } = useTheme();
   const [currentPage, setCurrentPage] = useState(0);
+  const [showAIComments, setShowAIComments] = useState(true);
 
   // Reset page when entries change (filter changes)
   useEffect(() => {
@@ -83,8 +84,32 @@ export function Timeline({ entries, allEntries, status, categories, onContextMen
         overflowY: "auto",
         padding: "24px 16px 160px",
         fontFamily: "var(--font-mono)",
+        position: "relative",
       }}
     >
+      {/* AI Comment Toggle */}
+      <button
+        onClick={() => setShowAIComments(!showAIComments)}
+        title={showAIComments ? "Hide AI Comments" : "Show AI Comments"}
+        style={{
+          position: "absolute",
+          top: 8,
+          right: 16,
+          padding: 6,
+          backgroundColor: "var(--bg-secondary)",
+          border: "1px solid var(--border-subtle)",
+          borderRadius: 4,
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: showAIComments ? "var(--accent)" : "var(--text-dim)",
+          opacity: showAIComments ? 1 : 0.5,
+          zIndex: 10,
+        }}
+      >
+        {showAIComments ? <MessageCircle size={16} /> : <MessageCircleOff size={16} />}
+      </button>
       {/* Filter mode header with pagination */}
       {isFilterMode && entries.length > 0 && (
         <div
@@ -177,6 +202,7 @@ export function Timeline({ entries, allEntries, status, categories, onContextMen
           isLightMode={theme.mode === "light"}
           showDate={isFilterMode}
           onNavigateToEntry={onNavigateToEntry}
+          showAIComment={showAIComments}
         />
       ))}
     </div>
