@@ -257,6 +257,7 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
           contentTypes={types}
           isExpanded={showMetadata}
           showLinkedEntries={true}
+          showAutoOption={false}
         />
 
         {/* Footer */}
