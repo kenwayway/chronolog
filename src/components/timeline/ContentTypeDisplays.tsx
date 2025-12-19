@@ -1,5 +1,59 @@
 import { memo, MouseEvent } from 'react';
 
+interface ExpenseFieldValues {
+  amount?: number;
+  currency?: string;
+  category?: string;
+  subcategory?: string;
+}
+
+interface ExpenseDisplayProps {
+  fieldValues: ExpenseFieldValues | null | undefined;
+}
+
+/**
+ * Display component for expense entries
+ */
+export const ExpenseDisplay = memo(function ExpenseDisplay({ fieldValues }: ExpenseDisplayProps) {
+  if (!fieldValues) return null;
+
+  const getCurrencySymbol = (currency: string | undefined) => {
+    const symbols: Record<string, string> = {
+      'USD': '$',
+      'CNY': '¥',
+      'EUR': '€',
+      'GBP': '£',
+      'JPY': '¥',
+    };
+    return symbols[currency || 'USD'] || currency || '$';
+  };
+
+  return (
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 6,
+        padding: '2px 8px',
+        backgroundColor: 'var(--bg-secondary)',
+        border: '1px solid var(--border-subtle)',
+        fontSize: 12,
+        fontFamily: 'var(--font-mono)',
+        color: 'var(--warning)',
+        fontWeight: 600,
+      }}
+    >
+      {getCurrencySymbol(fieldValues.currency)}{fieldValues.amount?.toFixed(2) || '0.00'}
+      {fieldValues.category && (
+        <span style={{ color: 'var(--text-dim)', fontWeight: 400, fontSize: 11 }}>
+          {fieldValues.category}
+          {fieldValues.subcategory && ` / ${fieldValues.subcategory}`}
+        </span>
+      )}
+    </span>
+  );
+});
+
 interface BookmarkFieldValues {
   url?: string;
   title?: string;
