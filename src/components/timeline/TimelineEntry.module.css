@@ -60,6 +60,67 @@
   align-self: stretch;
 }
 
+/* Symbol wrapper circle */
+.symbolWrapper {
+  position: relative;
+  z-index: 10;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background-color: var(--bg-primary);
+}
+
+/* Timeline connecting lines */
+.lineTop {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1px;
+  height: 24px;
+}
+
+.lineBottom {
+  position: absolute;
+  top: 12px;
+  bottom: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1px;
+}
+
+/* Metadata footer (tags + category) */
+.metadataFooter {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 8px;
+  gap: 8px;
+  min-height: 20px;
+}
+
+.categoryLabel {
+  font-size: 10px;
+  padding: 2px 8px;
+  font-weight: 600;
+  text-transform: uppercase;
+  user-select: none;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.tagsList {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--accent);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
 .contentCol {
   flex: 1;
   min-width: 0;

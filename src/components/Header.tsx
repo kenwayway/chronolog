@@ -15,11 +15,7 @@ import { useTheme } from "../hooks/useTheme";
 import { formatDate } from "../utils/formatters";
 import { Calendar } from "./common/Calendar";
 import styles from "./Header.module.css";
-
-interface CloudSync {
-    isLoggedIn: boolean;
-    isSyncing: boolean;
-}
+import type { CloudSyncStatus } from "../types";
 
 interface HeaderProps {
     isStreaming: boolean;
@@ -31,7 +27,7 @@ interface HeaderProps {
     onOpenSidebar: () => void;
     onOpenLeftSidebar: () => void;
     onOpenSettings: () => void;
-    cloudSync?: CloudSync;
+    cloudSync?: CloudSyncStatus;
 }
 
 export function Header({

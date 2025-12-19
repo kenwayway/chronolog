@@ -6,12 +6,7 @@ import { AttachmentPreview } from "./AttachmentPreview";
 import { InputActions } from "./InputActions";
 import { EntryMetadataInput } from "./EntryMetadataInput";
 import styles from "./InputPanel.module.css";
-import type { Entry, SessionStatus, CategoryId } from "../../types";
-
-interface CloudSync {
-    isLoggedIn: boolean;
-    uploadImage: (file: File) => Promise<string>;
-}
+import type { Entry, SessionStatus, CategoryId, CloudSyncWithUpload } from "../../types";
 
 interface NoteOptions {
     contentType?: string;
@@ -26,7 +21,7 @@ interface InputPanelProps {
     onSwitch: (content: string) => void;
     onNote: (content: string, options?: NoteOptions) => void;
     onLogOff: (content: string) => void;
-    cloudSync: CloudSync | null;
+    cloudSync: CloudSyncWithUpload | null;
     followUpEntry: Entry | null;
     onClearFollowUp?: () => void;
 }

@@ -331,43 +331,17 @@ export const TimelineEntry = memo(function TimelineEntry({
       >
         {!isFirst && (
           <div
-            style={{
-              position: "absolute",
-              top: -12,
-              left: "50%",
-              transform: "translateX(-50%)",
-              width: 1,
-              height: 24,
-              backgroundColor: getLineColor("top"),
-            }}
+            className={styles.lineTop}
+            style={{ backgroundColor: getLineColor("top") }}
           />
         )}
         {!isLast && (
           <div
-            style={{
-              position: "absolute",
-              top: 12,
-              bottom: -12,
-              left: "50%",
-              transform: "translateX(-50%)",
-              width: 1,
-              backgroundColor: getLineColor("bottom"),
-            }}
+            className={styles.lineBottom}
+            style={{ backgroundColor: getLineColor("bottom") }}
           />
         )}
-        <div
-          style={{
-            position: "relative",
-            zIndex: 10,
-            width: 20,
-            height: 20,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            borderRadius: 9999,
-            backgroundColor: "var(--bg-primary)",
-          }}
-        >
+        <div className={styles.symbolWrapper}>
           {getEntrySymbol()}
         </div>
       </div>
@@ -451,29 +425,15 @@ export const TimelineEntry = memo(function TimelineEntry({
 
         {/* Metadata Footer (Tags & Category) */}
         {(category || (entry.tags && entry.tags.length > 0)) && (
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            marginTop: 8,
-            gap: 8,
-            minHeight: 20,
-          }}>
+          <div className={styles.metadataFooter}>
             {/* Category - Left aligned */}
             {category && (
               <span
-                className="category-label"
+                className={styles.categoryLabel}
                 style={{
-                  fontSize: 10,
-                  padding: "2px 8px",
-                  fontWeight: 600,
-                  textTransform: "uppercase",
-                  userSelect: "none",
-                  letterSpacing: "0.05em",
                   color: categoryTextColor || undefined,
                   backgroundColor: `${category.color}15`,
                   border: `1px solid ${category.color}30`,
-                  whiteSpace: 'nowrap',
                 }}
               >
                 {category.label}
@@ -481,14 +441,7 @@ export const TimelineEntry = memo(function TimelineEntry({
             )}
 
             {/* Tags - Left aligned next to category */}
-            <div style={{
-              fontSize: 11,
-              fontFamily: "var(--font-mono)",
-              color: "var(--accent)",
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: 6,
-            }}>
+            <div className={styles.tagsList}>
               {entry.tags?.map(tag => (
                 <span key={tag}>#{tag}</span>
               ))}

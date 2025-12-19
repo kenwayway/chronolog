@@ -1,4 +1,9 @@
 // ============================================
+// Re-exports
+// ============================================
+export type { CloudSyncStatus, CloudSyncWithUpload, CloudSyncFull, GoogleTasksStatus } from './cloudSync'
+
+// ============================================
 // Core Data Types
 // ============================================
 
