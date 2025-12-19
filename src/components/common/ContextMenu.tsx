@@ -17,7 +17,9 @@ interface ContextMenuProps {
     onCopy: (entry: Entry) => void;
     onMarkAsTask: (entry: Entry) => void;
     onLink?: (entry: Entry) => void;
+    onAIComment?: (entry: Entry) => void;
     googleTasksEnabled?: boolean;
+    aiLoading?: boolean;
 }
 
 export function ContextMenu({
@@ -30,7 +32,9 @@ export function ContextMenu({
     onCopy,
     onMarkAsTask,
     onLink,
+    onAIComment,
     googleTasksEnabled = false,
+    aiLoading = false,
 }: ContextMenuProps) {
     const menuRef = useRef<HTMLDivElement>(null);
 
@@ -74,12 +78,19 @@ export function ContextMenu({
         onLink?.(entry);
         onClose();
     };
+    const handleAIComment = () => {
+        onAIComment?.(entry);
+        // Don't close immediately - let loading state show
+    };
 
     // Can mark as task: NOTE or SESSION_START, not already a task
     const isTask = entry.contentType === 'task';
     const canMarkAsTask =
         (entry.type === ENTRY_TYPES.NOTE || entry.type === ENTRY_TYPES.SESSION_START) &&
         !isTask;
+
+    // Can add AI comment: has content
+    const canAddAIComment = !!entry.content?.trim();
 
     return (
         <div
@@ -124,6 +135,17 @@ export function ContextMenu({
             <button className="context-menu-item" onClick={handleLink}>
                 ↪ FOLLOW UP
             </button>
+
+            {canAddAIComment && (
+                <button
+                    className="context-menu-item"
+                    onClick={handleAIComment}
+                    disabled={aiLoading}
+                    style={{ color: aiLoading ? "var(--text-dim)" : undefined }}
+                >
+                    {aiLoading ? "GENERATING..." : "AI COMMENT"}
+                </button>
+            )}
 
             <button className="context-menu-item" onClick={handleCopy}>
                 COPY
