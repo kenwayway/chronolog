@@ -308,10 +308,8 @@ function App() {
             <SettingsModal
                 isOpen={settingsOpen}
                 onClose={() => setSettingsOpen(false)}
-                apiKey={state.apiKey}
-                aiBaseUrl={state.aiBaseUrl}
-                aiModel={state.aiModel}
-                onSaveAIConfig={actions.setAIConfig}
+                aiCommentConfig={aiComment.config}
+                onSaveAIConfig={aiComment.saveConfig}
                 categories={categories}
                 entries={state.entries}
                 onImportData={actions.importData}
