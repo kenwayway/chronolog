@@ -203,7 +203,9 @@ function sessionReducer(state: SessionState, action: SessionAction): SessionStat
     }
 
     case ACTIONS.UPDATE_ENTRY: {
-      const { entryId, content, timestamp, category, contentType, fieldValues, linkedEntries, tags, type, aiComment } = action.payload
+      const { entryId, content, timestamp, category, contentType, fieldValues, linkedEntries, tags, type } = action.payload
+      // aiComment needs special handling - check if key exists in payload (allows explicit undefined to clear)
+      const hasAiCommentKey = 'aiComment' in action.payload
       return {
         ...state,
         entries: state.entries.map(e => {
@@ -217,7 +219,7 @@ function sessionReducer(state: SessionState, action: SessionAction): SessionStat
           if (linkedEntries !== undefined) updated.linkedEntries = linkedEntries
           if (tags !== undefined) updated.tags = tags.length > 0 ? tags : undefined
           if (type !== undefined) updated.type = type
-          if (aiComment !== undefined) updated.aiComment = aiComment
+          if (hasAiCommentKey) updated.aiComment = action.payload.aiComment
           return updated
         })
       }
