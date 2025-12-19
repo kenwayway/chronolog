@@ -509,6 +509,18 @@ export const TimelineEntry = memo(function TimelineEntry({
             ))}
           </div>
         )}
+
+        {/* AI Comment */}
+        {entry.aiComment && (
+          <div className={styles.aiCommentWrapper}>
+            <div className={styles.aiComment}>
+              <span className={styles.aiCommentLabel}>Zaddy:</span>
+              <p className={styles.aiCommentText}>
+                {entry.aiComment}
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
