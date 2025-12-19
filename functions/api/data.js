@@ -1,14 +1,10 @@
 // GET /api/data - Fetch user data from KV
 // PUT /api/data - Save user data to KV
 
+import { verifyAuth, corsHeaders, unauthorizedResponse } from './_auth.js';
+
 export async function onRequestGet(context) {
   const { env } = context;
-
-  const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-  };
 
   try {
     const data = await env.CHRONOLOG_KV.get('user_data', 'json');
@@ -30,24 +26,24 @@ export async function onRequestGet(context) {
 
 // Handle OPTIONS preflight request
 export async function onRequestOptions() {
-  return new Response(null, {
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, PUT, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    }
-  });
+  return new Response(null, { headers: corsHeaders });
 }
 
 export async function onRequestPut(context) {
   const { request, env } = context;
+
+  // Verify authentication
+  const auth = await verifyAuth(request, env);
+  if (!auth.valid) {
+    return unauthorizedResponse(auth.error);
+  }
 
   try {
     const data = await request.json();
 
     // Validate data structure
     if (!data || typeof data !== 'object') {
-      return Response.json({ error: 'Invalid data format' }, { status: 400 });
+      return Response.json({ error: 'Invalid data format' }, { status: 400, headers: corsHeaders });
     }
 
     // Add lastModified timestamp
@@ -62,8 +58,8 @@ export async function onRequestPut(context) {
     return Response.json({
       success: true,
       lastModified: dataToSave.lastModified
-    });
+    }, { headers: corsHeaders });
   } catch (error) {
-    return Response.json({ error: 'Failed to save data' }, { status: 500 });
+    return Response.json({ error: 'Failed to save data' }, { status: 500, headers: corsHeaders });
   }
 }

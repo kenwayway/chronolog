@@ -5,9 +5,10 @@ import { formatTime, formatDuration, formatDate } from "../../utils/formatters";
 import { parseContent, darkenColor } from "../../utils/contentParser";
 import { useTheme } from "../../hooks/useTheme";
 import { LinkedEntryPreview } from "./LinkedEntryPreview";
-import { BookmarkDisplay, MoodDisplay } from "./ContentTypeDisplays";
+import { BookmarkDisplay, MoodDisplay, WorkoutDisplay } from "./ContentTypeDisplays";
 import styles from "./TimelineEntry.module.css";
 import type { Entry, Category } from "../../types";
+import { isTaskEntry, getBookmarkFields, getMoodFields, getWorkoutFields } from "../../types/guards";
 
 interface Position {
   x: number;
@@ -195,7 +196,7 @@ export const TimelineEntry = memo(function TimelineEntry({
   const isSessionStart = entry.type === ENTRY_TYPES.SESSION_START;
   const isSessionEnd = entry.type === ENTRY_TYPES.SESSION_END;
   const isTask = entry.contentType === 'task';
-  const isTaskDone = isTask && entry.fieldValues?.done;
+  const isTaskDone = isTaskEntry(entry) && entry.fieldValues.done;
 
   // Linked entries
   const linkedEntryData = useMemo(() => {
@@ -227,7 +228,7 @@ export const TimelineEntry = memo(function TimelineEntry({
     }
 
     if (entry.contentType === 'task') {
-      const isDone = entry.fieldValues?.done;
+      const isDone = isTaskEntry(entry) ? entry.fieldValues.done : false;
       if (isDone) {
         return <span style={{ ...styles, color: "var(--success)", fontWeight: 700 }}>{symbols.done}</span>;
       }
@@ -414,12 +415,17 @@ export const TimelineEntry = memo(function TimelineEntry({
         {/* Content type displays */}
         {entry.contentType === 'bookmark' && (
           <div style={{ marginTop: 6 }}>
-            <BookmarkDisplay fieldValues={entry.fieldValues} />
+            <BookmarkDisplay fieldValues={getBookmarkFields(entry)} />
           </div>
         )}
         {entry.contentType === 'mood' && (
           <div style={{ marginTop: 6 }}>
-            <MoodDisplay fieldValues={entry.fieldValues} />
+            <MoodDisplay fieldValues={getMoodFields(entry)} />
+          </div>
+        )}
+        {entry.contentType === 'workout' && (
+          <div style={{ marginTop: 6 }}>
+            <WorkoutDisplay fieldValues={getWorkoutFields(entry)} />
           </div>
         )}
 

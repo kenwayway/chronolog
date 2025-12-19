@@ -240,18 +240,31 @@ export function useGoogleTasks(): UseGoogleTasksReturn {
     const deleteTask = useCallback(async (taskId: string): Promise<void> => {
         try {
             const listId = await getDefaultTaskList()
+            // Use apiRequest for consistent auth handling (DELETE returns 204 No Content)
             const token = getAccessToken()
-            await fetch(`https://tasks.googleapis.com/tasks/v1/lists/${listId}/tasks/${taskId}`, {
+            if (!token) {
+                throw new Error('Not authenticated')
+            }
+
+            const response = await fetch(`https://tasks.googleapis.com/tasks/v1/lists/${listId}/tasks/${taskId}`, {
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${token}`,
                 },
             })
+
+            if (!response.ok) {
+                if (response.status === 401) {
+                    logout()
+                    throw new Error('Session expired, please login again')
+                }
+                throw new Error(`Delete failed: ${response.status}`)
+            }
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Unknown error')
             throw err
         }
-    }, [getAccessToken, getDefaultTaskList])
+    }, [getAccessToken, getDefaultTaskList, logout])
 
     // Parse entry ID from task notes
     const parseEntryId = useCallback((task: GoogleTask): string | null => {

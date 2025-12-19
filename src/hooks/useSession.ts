@@ -203,7 +203,7 @@ function sessionReducer(state: SessionState, action: SessionAction): SessionStat
     }
 
     case ACTIONS.UPDATE_ENTRY: {
-      const { entryId, content, timestamp, category, contentType, fieldValues, linkedEntries, tags } = action.payload
+      const { entryId, content, timestamp, category, contentType, fieldValues, linkedEntries, tags, type, aiComment } = action.payload
       return {
         ...state,
         entries: state.entries.map(e => {
@@ -216,6 +216,8 @@ function sessionReducer(state: SessionState, action: SessionAction): SessionStat
           if (fieldValues !== undefined) updated.fieldValues = fieldValues
           if (linkedEntries !== undefined) updated.linkedEntries = linkedEntries
           if (tags !== undefined) updated.tags = tags.length > 0 ? tags : undefined
+          if (type !== undefined) updated.type = type
+          if (aiComment !== undefined) updated.aiComment = aiComment
           return updated
         })
       }

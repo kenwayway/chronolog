@@ -52,6 +52,46 @@ export interface ContentType {
 }
 
 // ============================================
+// Built-in Content Type Field Values
+// ============================================
+
+/** Built-in content type IDs (type-safe literal union) */
+export type BuiltInContentTypeId = 'note' | 'task' | 'bookmark' | 'mood' | 'workout'
+
+/** Task field values */
+export interface TaskFields {
+  done: boolean
+}
+
+/** Bookmark field values */
+export interface BookmarkFields {
+  url?: string
+  title?: string
+  type?: 'Article' | 'Video' | 'Tool' | 'Paper'
+  status?: 'Inbox' | 'Reading' | 'Archived'
+}
+
+/** Mood field values */
+export interface MoodFields {
+  feeling?: 'Happy' | 'Excited' | 'Calm' | 'Tired' | 'Anxious' | 'Sad' | 'Angry'
+  energy?: number
+  trigger?: 'Work' | 'Health' | 'Social' | 'Money' | 'Family' | 'Sleep' | 'Weather' | 'Other'
+}
+
+/** Workout field values */
+export interface WorkoutFields {
+  workoutType?: 'Strength' | 'Flexibility' | 'Mixed'
+  duration?: number
+  exercises?: string  // JSON string of exercise array
+}
+
+/** Union of all known field value types */
+export type KnownFieldValues = TaskFields | BookmarkFields | MoodFields | WorkoutFields
+
+/** Field values - known types or unknown for custom content types */
+export type EntryFieldValues = KnownFieldValues | Record<string, unknown>
+
+// ============================================
 // Entry
 // ============================================
 
@@ -65,7 +105,7 @@ export interface Entry {
   duration?: number               // SESSION_END only (ms)
   category?: CategoryId           // Life area category
   contentType?: string            // References ContentType.id
-  fieldValues?: Record<string, unknown>  // Dynamic field values
+  fieldValues?: EntryFieldValues  // Typed field values
   linkedEntries?: string[]        // Bidirectional linked entry IDs
   tags?: string[]                 // Free-form tags (without # prefix)
   aiComment?: string              // AI-generated comment (collapsible bubble)

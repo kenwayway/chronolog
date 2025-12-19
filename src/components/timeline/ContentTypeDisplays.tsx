@@ -1,12 +1,8 @@
 import { memo, MouseEvent } from 'react';
-
-interface BookmarkFieldValues {
-  url?: string;
-  title?: string;
-}
+import type { BookmarkFields, MoodFields, WorkoutFields } from '../../types';
 
 interface BookmarkDisplayProps {
-  fieldValues: BookmarkFieldValues | null | undefined;
+  fieldValues: BookmarkFields | null | undefined;
 }
 
 /**
@@ -167,14 +163,8 @@ export const BookmarkDisplay = memo(function BookmarkDisplay({ fieldValues }: Bo
   );
 });
 
-interface MoodFieldValues {
-  feeling?: string;
-  energy?: number;
-  trigger?: string;
-}
-
 interface MoodDisplayProps {
-  fieldValues: MoodFieldValues | null | undefined;
+  fieldValues: MoodFields | null | undefined;
 }
 
 /**

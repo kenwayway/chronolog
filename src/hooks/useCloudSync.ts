@@ -83,10 +83,15 @@ export function useCloudSync({ entries, contentTypes, onImportData }: UseCloudSy
 
       const remoteData: CloudData = await response.json()
 
-      // Cloud-first strategy: use remote data if it exists
-      if (remoteData && remoteData.entries && remoteData.entries.length > 0) {
+      // Cloud-first strategy: import remote data if it exists (entries or contentTypes)
+      const hasRemoteData = remoteData && (
+        (remoteData.entries && remoteData.entries.length > 0) ||
+        (remoteData.contentTypes && remoteData.contentTypes.length > 0)
+      )
+
+      if (hasRemoteData) {
         onImportData({
-          entries: remoteData.entries,
+          entries: remoteData.entries || [],
           contentTypes: remoteData.contentTypes,
         })
         lastDataRef.current = JSON.stringify(remoteData)

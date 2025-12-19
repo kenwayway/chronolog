@@ -46,10 +46,10 @@ export async function onRequestPost(context) {
     // Build prompt - now detects both category AND content type
     const categoryList = categories.map(c => `${c.id} (${c.label}): ${c.description || c.label}`).join('\\n');
 
-    // Content types for detection (built-in: note, task, expense)
+    // Content types for detection (built-in: note, task, bookmark, mood, workout)
     const contentTypeList = contentTypes
       ? contentTypes.map(ct => `${ct.id}: ${ct.name}`).join(', ')
-      : 'note: regular note, task: todo item, expense: money spent';
+      : 'note: regular note, task: todo item, bookmark: saved link, mood: emotional state, workout: exercise log';
 
     const prompt = `You are an entry analyzer. Analyze this log entry and return a JSON object.
 
@@ -67,30 +67,28 @@ Return ONLY a valid JSON object with these fields:
 
 Content type detection rules:
 - If entry contains a URL (http/https) that is NOT an image (not ending in .jpg, .jpeg, .png, .gif, .webp, .svg, .ico), it's likely a "bookmark"
-- If entry mentions spending/buying/paying money or has currency symbols, it's "expense"
 - If entry is a todo/reminder/action item (买/记得/要/todo), it's "task"
 - If entry expresses feelings, emotions, or mood (feeling/心情/feel/累/开心/sad/happy/tired/stressed/anxious), it's "mood"
+- If entry describes exercise/workout/running/gym/training/锻炼/跑步/健身, it's "workout"
 - Otherwise, it's "note"
 
 FieldValues by content type:
-- expense: {amount: number, currency: "USD"|"CNY"|"EUR"|"GBP"|"JPY", category: string, subcategory: string}
 - task: {done: false}
 - bookmark: {url: "extracted URL", title: "title from content", type: "Article"|"Video"|"Tool"|"Paper", status: "Inbox"}
 - mood: {feeling: "Happy"|"Calm"|"Tired"|"Anxious"|"Sad"|"Angry", energy: 1-5, trigger: "Work"|"Health"|"Social"|"Money"|"Family"|"Sleep"|"Weather"|"Other"}
+- workout: {workoutType: "Strength"|"Flexibility"|"Mixed", duration: number in minutes, exercises: "JSON array of exercises or description"}
 - note: null
 
-Currency hints: $ = USD, ¥/元/块/刀 = CNY, € = EUR, £ = GBP, 円 = JPY
-Expense categories: Food, Transport, Entertainment, Shopping, Health, Bills, Other
 Mood hints: 开心/excited/joyful = Happy, 平静/relaxed = Calm, 累/疲惫/sleepy = Tired, 焦虑/stressed/nervous = Anxious, 难过/down/upset = Sad, 生气/frustrated = Angry
 Trigger hints: 工作/office/deadline/meeting = Work, 身体/sick/headache = Health, 朋友/party/social = Social, 钱/broke/expensive = Money, 家/parents = Family, 睡眠/insomnia/晚睡 = Sleep, rain/hot/cold = Weather
 Energy hints: very tired/exhausted = 1, tired = 2, normal/okay = 3, energetic = 4, very energetic = 5
 
 Example responses:
 {"category":"hustle","contentType":"note","fieldValues":null}
-{"category":"beans","contentType":"expense","fieldValues":{"amount":35,"currency":"CNY","category":"Food","subcategory":"Cafe"}}
 {"category":"craft","contentType":"task","fieldValues":{"done":false}}
 {"category":"sparks","contentType":"bookmark","fieldValues":{"url":"https://example.com/article","title":"Great Article","type":"Article","status":"Inbox"}}
-{"category":"hardware","contentType":"mood","fieldValues":{"feeling":"Tired","energy":2,"trigger":"Work"}}`;
+{"category":"hardware","contentType":"mood","fieldValues":{"feeling":"Tired","energy":2,"trigger":"Work"}}
+{"category":"hardware","contentType":"workout","fieldValues":{"workoutType":"Strength","duration":45,"exercises":"bench press, squats"}}`;
 
     // Call AI API
     const response = await fetch(`${aiBaseUrl}/chat/completions`, {

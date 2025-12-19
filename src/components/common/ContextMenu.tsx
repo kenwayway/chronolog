@@ -18,6 +18,7 @@ interface ContextMenuProps {
     onMarkAsTask: (entry: Entry) => void;
     onLink?: (entry: Entry) => void;
     onAIComment?: (entry: Entry) => void;
+    onDeleteAIComment?: (entry: Entry) => void;
     googleTasksEnabled?: boolean;
     aiLoading?: boolean;
 }
@@ -33,6 +34,7 @@ export function ContextMenu({
     onMarkAsTask,
     onLink,
     onAIComment,
+    onDeleteAIComment,
     googleTasksEnabled = false,
     aiLoading = false,
 }: ContextMenuProps) {
@@ -82,6 +84,10 @@ export function ContextMenu({
         onAIComment?.(entry);
         // Don't close immediately - let loading state show
     };
+    const handleDeleteAIComment = () => {
+        onDeleteAIComment?.(entry);
+        onClose();
+    };
 
     // Can mark as task: NOTE or SESSION_START, not already a task
     const isTask = entry.contentType === 'task';
@@ -89,8 +95,11 @@ export function ContextMenu({
         (entry.type === ENTRY_TYPES.NOTE || entry.type === ENTRY_TYPES.SESSION_START) &&
         !isTask;
 
-    // Can add AI comment: has content
-    const canAddAIComment = !!entry.content?.trim();
+    // Can add AI comment: has content and no existing comment
+    const canAddAIComment = !!entry.content?.trim() && !entry.aiComment;
+
+    // Can delete AI comment: has existing comment
+    const hasAIComment = !!entry.aiComment;
 
     return (
         <div
@@ -144,6 +153,15 @@ export function ContextMenu({
                     style={{ color: aiLoading ? "var(--text-dim)" : undefined }}
                 >
                     {aiLoading ? "GENERATING..." : "AI COMMENT"}
+                </button>
+            )}
+
+            {hasAIComment && (
+                <button
+                    className="context-menu-item context-menu-item-danger"
+                    onClick={handleDeleteAIComment}
+                >
+                    DELETE AI COMMENT
                 </button>
             )}
 
