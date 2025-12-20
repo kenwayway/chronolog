@@ -262,99 +262,78 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
 
         {/* Footer */}
         <div className={styles.footer}>
-          <div className="flex items-center gap-4">
+          {/* Row 1: Time & Entry Type */}
+          <div className={styles.footerRow}>
             {/* Time */}
             <div className="flex items-center gap-2">
-              <span
-                style={{
-                  fontSize: 10,
-                  color: "var(--text-dim)",
-                  userSelect: "none",
-                }}
-              >
-                TIME
-              </span>
+              <span className={styles.label}>TIME</span>
               <input
                 type="datetime-local"
                 value={timestamp}
                 onChange={(e) => setTimestamp(e.target.value)}
                 className={styles.input}
-                style={{ width: 180 }}
+                style={{ width: 'auto', minWidth: 150 }}
                 lang="en-GB"
               />
             </div>
 
             {/* Entry Type */}
             <div className="flex items-center gap-2">
-              <span
-                style={{
-                  fontSize: 10,
-                  color: "var(--text-dim)",
-                  userSelect: "none",
-                }}
-              >
-                ENTRY
-              </span>
+              <span className={styles.label}>ENTRY</span>
               <select
                 value={entryType}
                 onChange={(e) => setEntryType(e.target.value)}
                 className={styles.input}
-                style={{ width: 120 }}
+                style={{ width: 'auto', minWidth: 100 }}
               >
                 <option value={ENTRY_TYPES.NOTE}>Note</option>
                 <option value={ENTRY_TYPES.SESSION_START}>Session Start</option>
                 <option value={ENTRY_TYPES.SESSION_END}>Session End</option>
               </select>
             </div>
-
-            {/* Toggle metadata button */}
-            <button
-              onClick={() => setShowMetadata(!showMetadata)}
-              className={`icon-btn ${showMetadata ? "active" : ""}`}
-              title={showMetadata ? "Hide options" : "More options"}
-            >
-              {showMetadata ? <ChevronDown size={14} /> : <Plus size={14} />}
-            </button>
-
-            {/* Attachment buttons */}
-            <button
-              onClick={() => setShowImageInput(!showImageInput)}
-              title="Add image URL"
-              className={`icon-btn ${showImageInput || imageUrl ? "active" : ""}`}
-            >
-              <Image size={14} />
-            </button>
-            <button
-              onClick={() => setShowLocationInput(!showLocationInput)}
-              title="Add location"
-              className={`icon-btn ${showLocationInput || location ? "active" : ""}`}
-            >
-              <MapPin size={14} />
-            </button>
-
-            {/* Task done checkbox */}
-            {contentType === 'task' && (
-              <label className="flex items-center gap-2" style={{ cursor: 'pointer' }}>
-                <input
-                  type="checkbox"
-                  checked={(fieldValues.done as boolean) || false}
-                  onChange={(e) => setFieldValues(prev => ({ ...prev, done: e.target.checked }))}
-                />
-                <span style={{ fontSize: 10, color: "var(--text-dim)" }}>DONE</span>
-              </label>
-            )}
           </div>
 
-          <div className="flex items-center gap-3">
-            <span
-              style={{
-                fontSize: 10,
-                color: "var(--text-dim)",
-                userSelect: "none",
-              }}
-            >
-              Ctrl+Enter to save
-            </span>
+          {/* Row 2: Icons & Save */}
+          <div className={styles.footerRow}>
+            <div className="flex items-center gap-2">
+              {/* Toggle metadata button */}
+              <button
+                onClick={() => setShowMetadata(!showMetadata)}
+                className={`icon-btn ${showMetadata ? "active" : ""}`}
+                title={showMetadata ? "Hide options" : "More options"}
+              >
+                {showMetadata ? <ChevronDown size={16} /> : <Plus size={16} />}
+              </button>
+
+              {/* Attachment buttons */}
+              <button
+                onClick={() => setShowImageInput(!showImageInput)}
+                title="Add image URL"
+                className={`icon-btn ${showImageInput || imageUrl ? "active" : ""}`}
+              >
+                <Image size={16} />
+              </button>
+              <button
+                onClick={() => setShowLocationInput(!showLocationInput)}
+                title="Add location"
+                className={`icon-btn ${showLocationInput || location ? "active" : ""}`}
+              >
+                <MapPin size={16} />
+              </button>
+
+              {/* Task done checkbox */}
+              {contentType === 'task' && (
+                <label className="flex items-center gap-2" style={{ cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={(fieldValues.done as boolean) || false}
+                    onChange={(e) => setFieldValues(prev => ({ ...prev, done: e.target.checked }))}
+                  />
+                  <span style={{ fontSize: 10, color: "var(--text-dim)" }}>DONE</span>
+                </label>
+              )}
+            </div>
+
             <button onClick={handleSave} className="btn-action btn-action-primary">
               Save
             </button>

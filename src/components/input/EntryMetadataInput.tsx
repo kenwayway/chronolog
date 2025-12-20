@@ -144,14 +144,16 @@ export function EntryMetadataInput({
           backgroundColor: 'var(--bg-secondary)',
         }}
       >
-        {/* Row 1: Category, Type */}
+        {/* Row 1: Category, Type, Tags - all in one row on desktop, wraps on mobile */}
         <div
+          className="metadata-row"
           style={{
             padding: '8px 12px',
             display: 'flex',
             flexWrap: 'wrap',
             alignItems: 'center',
             gap: 8,
+            rowGap: 6,
           }}
         >
           {/* Category */}
@@ -198,69 +200,61 @@ export function EntryMetadataInput({
                   }
                 }
               }}
-              placeholder={showAutoOption ? "Auto" : "None"}
+              placeholder={showAutoOption ? "Auto" : "Note"}
               options={[
-                ...(showAutoOption ? [{ value: '', label: 'Auto' }] : [{ value: '', label: 'None' }]),
+                ...(showAutoOption ? [{ value: '', label: 'Auto' }] : []),
                 ...BUILTIN_CONTENT_TYPES.map(ct => ({ value: ct.id, label: ct.name }))
               ]}
             />
           </div>
-        </div>
 
-        {/* Row 2: Tags */}
-        <div
-          style={{
-            padding: '4px 12px 8px',
-            display: 'flex',
-            flexWrap: 'wrap',
-            alignItems: 'center',
-            gap: 6,
-          }}
-        >
-          <span style={{ fontSize: 10, color: 'var(--text-dim)', userSelect: 'none' }}>
-            TAGS
-          </span>
-          <input
-            type="text"
-            value={tagInput}
-            onChange={(e) => setTagInput(e.target.value)}
-            onKeyDown={handleTagKeyDown}
-            placeholder="add..."
-            style={{
-              width: 60,
-              height: 22,
-              padding: '0 6px',
-              fontSize: 11,
-              fontFamily: 'var(--font-mono)',
-              backgroundColor: 'var(--bg-tertiary)',
-              color: 'var(--text-primary)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: 0,
-              outline: 'none',
-            }}
-          />
-          {tags.map(tag => (
-            <span
-              key={tag}
-              style={{
-                fontSize: 10,
-                padding: '2px 6px',
-                backgroundColor: 'var(--bg-tertiary)',
-                color: 'var(--text-secondary)',
-                fontFamily: 'var(--font-mono)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 4,
-              }}
-            >
-              #{tag}
-              <X
-                size={10}
-                style={{ cursor: 'pointer' }}
-                onClick={() => handleRemoveTag(tag)}
-              />
+          {/* Tags - inline with category/type on desktop, wraps to new line on mobile */}
+          <div className="flex items-center gap-2" style={{ flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 10, color: 'var(--text-dim)', userSelect: 'none' }}>
+              TAGS
             </span>
-          ))}
+            <input
+              type="text"
+              value={tagInput}
+              onChange={(e) => setTagInput(e.target.value)}
+              onKeyDown={handleTagKeyDown}
+              placeholder="add..."
+              style={{
+                width: 60,
+                height: 22,
+                padding: '0 6px',
+                fontSize: 11,
+                fontFamily: 'var(--font-mono)',
+                backgroundColor: 'var(--bg-tertiary)',
+                color: 'var(--text-primary)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: 0,
+                outline: 'none',
+              }}
+            />
+            {tags.map(tag => (
+              <span
+                key={tag}
+                style={{
+                  fontSize: 10,
+                  padding: '2px 6px',
+                  backgroundColor: 'var(--bg-tertiary)',
+                  color: 'var(--text-secondary)',
+                  fontFamily: 'var(--font-mono)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                }}
+              >
+                #{tag}
+                <X
+                  size={10}
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => handleRemoveTag(tag)}
+                />
+              </span>
+            ))}
+          </div>
         </div>
 
         {/* Row 2: Dynamic Field Form */}

@@ -32,7 +32,8 @@ export function useAutoCategorize({
             const newEntry = entries[entries.length - 1]
 
             // Only suggest for notes without existing category or contentType
-            if (newEntry && newEntry.content && !newEntry.category && !newEntry.contentType) {
+            // Skip SESSION_END entries - they shouldn't have category data
+            if (newEntry && newEntry.content && newEntry.type !== 'SESSION_END' && !newEntry.category && !newEntry.contentType) {
                 // Get token from storage
                 const auth = getStorage<CloudAuthData>(STORAGE_KEYS.CLOUD_AUTH)
                 const token = auth?.token || null
