@@ -103,11 +103,13 @@ export function parseContent(text: string): ContentParseResult[] {
             continue;
         }
 
-        // Image line: 🖼️ url
-        if (line.startsWith('🖼️ ')) {
+        // Image line: 🖼️ url (more robust matching for mobile)
+        const trimmedLine = line.trim();
+        const imageMatch = trimmedLine.match(/^🖼️\s*(.+)$/);
+        if (imageMatch) {
             result.push({
                 type: 'image',
-                content: line.replace('🖼️ ', '').trim(),
+                content: imageMatch[1].trim(),
                 key,
             });
             continue;
