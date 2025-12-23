@@ -6,6 +6,7 @@ import { parseContent, darkenColor } from "../../utils/contentParser";
 import { useTheme } from "../../hooks/useTheme";
 import { LinkedEntryPreview } from "./LinkedEntryPreview";
 import { BookmarkDisplay, MoodDisplay, WorkoutDisplay } from "./ContentTypeDisplays";
+import { ImageLightbox } from "../common/ImageLightbox";
 import styles from "./TimelineEntry.module.css";
 import type { Entry, Category } from "../../types";
 import { isTaskEntry, getBookmarkFields, getMoodFields, getWorkoutFields } from "../../types/guards";
@@ -17,12 +18,13 @@ interface Position {
 
 interface ContentRendererProps {
   content: string;
+  onImageClick?: (src: string) => void;
 }
 
 /**
  * Renders parsed content with proper markdown elements
  */
-function ContentRenderer({ content }: ContentRendererProps): ReactNode {
+function ContentRenderer({ content, onImageClick }: ContentRendererProps): ReactNode {
   const parsed = useMemo(() => parseContent(content), [content]);
 
   return parsed.map((item: any, idx: number) => {
@@ -41,6 +43,11 @@ function ContentRenderer({ content }: ContentRendererProps): ReactNode {
               src={item.content as string}
               alt="attached"
               className="timeline-image"
+              style={{ cursor: onImageClick ? 'zoom-in' : 'default' }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onImageClick?.(item.content as string);
+              }}
               onError={(e) => {
                 (e.target as HTMLImageElement).style.display = "none";
                 ((e.target as HTMLImageElement).nextSibling as HTMLElement).style.display = "inline";
@@ -158,6 +165,7 @@ export const TimelineEntry = memo(function TimelineEntry({
 }: TimelineEntryProps) {
   const { symbols } = useTheme();
   const [pressTimer, setPressTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
   // Event handlers
   const handleContextMenu = (e: MouseEvent<HTMLDivElement>) => {
@@ -264,225 +272,236 @@ export const TimelineEntry = memo(function TimelineEntry({
   };
 
   return (
-    <div
-      className={`${styles.entry} ${isTaskDone ? styles.entryDone : ''}`}
-      data-entry-id={entry.id}
-      style={{
-        display: "flex",
-        alignItems: "flex-start",
-        gap: 16,
-        cursor: "default",
-        userSelect: "none",
-        transition: "background-color 300ms ease",
-      }}
-      onContextMenu={handleContextMenu}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-      onTouchCancel={handleTouchEnd}
-    >
-      {/* Time Column */}
+    <>
       <div
-        className={styles.timeCol}
+        className={`${styles.entry} ${isTaskDone ? styles.entryDone : ''}`}
+        data-entry-id={entry.id}
         style={{
-          flexShrink: 0,
-          width: 50,
-          textAlign: "right",
-          fontSize: 10,
-          color: "var(--text-dim)",
-          paddingRight: 8,
-          paddingTop: 4,
-          fontFamily: "var(--font-mono)",
-          opacity: 0.6,
-        }}
-      >
-        {showDate && (
-          <div style={{ marginBottom: 2, fontSize: 9, color: "var(--text-muted)" }}>
-            {formatDate(new Date(entry.timestamp).getTime())}
-          </div>
-        )}
-        {formatTime(entry.timestamp)}
-        {/* Duration under timestamp for session start */}
-        {isSessionStart && sessionDuration && (
-          <div
-            style={{
-              marginTop: 4,
-              fontSize: 9,
-              color: "var(--accent)",
-              fontWeight: 500,
-            }}
-          >
-            {formatDuration(sessionDuration)}
-          </div>
-        )}
-      </div>
-
-      {/* Symbol Column */}
-      <div
-        className={styles.symbolCol}
-        style={{
-          position: "relative",
-          flexShrink: 0,
-          width: 20,
-          textAlign: "center",
-          fontSize: 14,
-          userSelect: "none",
           display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          alignSelf: "stretch",
+          alignItems: "flex-start",
+          gap: 16,
+          cursor: "default",
+          userSelect: "none",
+          transition: "background-color 300ms ease",
         }}
+        onContextMenu={handleContextMenu}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchEnd}
       >
-        {!isFirst && (
-          <div
-            className={styles.lineTop}
-            style={{ backgroundColor: getLineColor("top") }}
-          />
-        )}
-        {!isLast && (
-          <div
-            className={styles.lineBottom}
-            style={{ backgroundColor: getLineColor("bottom") }}
-          />
-        )}
-        <div className={styles.symbolWrapper}>
-          {getEntrySymbol()}
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className={styles.contentCol} style={{ flex: 1, minWidth: 0 }}>
-        {/* Linked entries before (older) */}
-        {beforeLinks.length > 0 && (
-          <div className="linked-entries-before" style={{ marginBottom: 8 }}>
-            {beforeLinks.map(linked => (
-              <LinkedEntryPreview
-                key={linked.id}
-                linkedEntry={linked}
-                direction="before"
-                onNavigateToEntry={onNavigateToEntry}
-              />
-            ))}
-          </div>
-        )}
-
-        {/* Mobile timestamp */}
+        {/* Time Column */}
         <div
-          className={styles.mobileTime}
+          className={styles.timeCol}
           style={{
+            flexShrink: 0,
+            width: 50,
+            textAlign: "right",
             fontSize: 10,
             color: "var(--text-dim)",
+            paddingRight: 8,
+            paddingTop: 4,
             fontFamily: "var(--font-mono)",
-            marginBottom: 4,
-            display: "none",
+            opacity: 0.6,
           }}
         >
+          {showDate && (
+            <div style={{ marginBottom: 2, fontSize: 9, color: "var(--text-muted)" }}>
+              {formatDate(new Date(entry.timestamp).getTime())}
+            </div>
+          )}
           {formatTime(entry.timestamp)}
-        </div>
-
-        {/* Main content row */}
-        <div className="flex flex-wrap items-baseline" style={{ gap: "4px 12px", marginBottom: 6 }}>
-          {entry.content && (
-            <span
-              className={styles.contentText}
+          {/* Duration under timestamp for session start */}
+          {isSessionStart && sessionDuration && (
+            <div
               style={{
-                fontSize: 15,
-                lineHeight: 1.6,
-                overflowWrap: "break-word",
-                fontFamily: "var(--font-primary)",
-                whiteSpace: "pre-wrap",
-                color: getContentColor(),
-                fontStyle: isSessionEnd ? "italic" : "normal",
-                textDecoration: isTaskDone ? "line-through" : "none",
+                marginTop: 4,
+                fontSize: 9,
+                color: "var(--accent)",
+                fontWeight: 500,
               }}
             >
-              <ContentRenderer content={entry.content} />
-            </span>
+              {formatDuration(sessionDuration)}
+            </div>
           )}
-
-          {isTaskDone && (
-            <span style={{ fontSize: 11, color: "var(--success)", fontWeight: 700, userSelect: "none" }}>
-              {"[DONE]" as any}
-            </span>
-          )}
-
-          {isTask && !isTaskDone && (
-            <span style={{ fontSize: 11, color: "var(--warning)", fontWeight: 700, userSelect: "none" }}>
-              [TODO]
-            </span>
-          )}
-
-
         </div>
 
-        {/* Content type displays */}
-        {entry.contentType === 'bookmark' && (
-          <div style={{ marginTop: 6 }}>
-            <BookmarkDisplay fieldValues={getBookmarkFields(entry)} />
+        {/* Symbol Column */}
+        <div
+          className={styles.symbolCol}
+          style={{
+            position: "relative",
+            flexShrink: 0,
+            width: 20,
+            textAlign: "center",
+            fontSize: 14,
+            userSelect: "none",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            alignSelf: "stretch",
+          }}
+        >
+          {!isFirst && (
+            <div
+              className={styles.lineTop}
+              style={{ backgroundColor: getLineColor("top") }}
+            />
+          )}
+          {!isLast && (
+            <div
+              className={styles.lineBottom}
+              style={{ backgroundColor: getLineColor("bottom") }}
+            />
+          )}
+          <div className={styles.symbolWrapper}>
+            {getEntrySymbol()}
           </div>
-        )}
-        {entry.contentType === 'mood' && (
-          <div style={{ marginTop: 6 }}>
-            <MoodDisplay fieldValues={getMoodFields(entry)} />
-          </div>
-        )}
-        {entry.contentType === 'workout' && (
-          <div style={{ marginTop: 6 }}>
-            <WorkoutDisplay fieldValues={getWorkoutFields(entry)} />
-          </div>
-        )}
+        </div>
 
-        {/* Metadata Footer (Tags & Category) */}
-        {(category || (entry.tags && entry.tags.length > 0)) && (
-          <div className={styles.metadataFooter}>
-            {/* Category - Left aligned */}
-            {category && (
+        {/* Content */}
+        <div className={styles.contentCol} style={{ flex: 1, minWidth: 0 }}>
+          {/* Linked entries before (older) */}
+          {beforeLinks.length > 0 && (
+            <div className="linked-entries-before" style={{ marginBottom: 8 }}>
+              {beforeLinks.map(linked => (
+                <LinkedEntryPreview
+                  key={linked.id}
+                  linkedEntry={linked}
+                  direction="before"
+                  onNavigateToEntry={onNavigateToEntry}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Mobile timestamp */}
+          <div
+            className={styles.mobileTime}
+            style={{
+              fontSize: 10,
+              color: "var(--text-dim)",
+              fontFamily: "var(--font-mono)",
+              marginBottom: 4,
+              display: "none",
+            }}
+          >
+            {formatTime(entry.timestamp)}
+          </div>
+
+          {/* Main content row */}
+          <div className="flex flex-wrap items-baseline" style={{ gap: "4px 12px", marginBottom: 6 }}>
+            {entry.content && (
               <span
-                className={styles.categoryLabel}
+                className={styles.contentText}
                 style={{
-                  color: categoryTextColor || undefined,
-                  backgroundColor: `${category.color}15`,
-                  border: `1px solid ${category.color}30`,
+                  fontSize: 15,
+                  lineHeight: 1.6,
+                  overflowWrap: "break-word",
+                  fontFamily: "var(--font-primary)",
+                  whiteSpace: "pre-wrap",
+                  color: getContentColor(),
+                  fontStyle: isSessionEnd ? "italic" : "normal",
+                  textDecoration: isTaskDone ? "line-through" : "none",
                 }}
               >
-                {category.label}
+                <ContentRenderer content={entry.content} onImageClick={setLightboxImage} />
               </span>
             )}
 
-            {/* Tags - Left aligned next to category */}
-            <div className={styles.tagsList}>
-              {entry.tags?.map(tag => (
-                <span key={tag}>#{tag}</span>
+            {isTaskDone && (
+              <span style={{ fontSize: 11, color: "var(--success)", fontWeight: 700, userSelect: "none" }}>
+                {"[DONE]" as any}
+              </span>
+            )}
+
+            {isTask && !isTaskDone && (
+              <span style={{ fontSize: 11, color: "var(--warning)", fontWeight: 700, userSelect: "none" }}>
+                [TODO]
+              </span>
+            )}
+
+
+          </div>
+
+          {/* Content type displays */}
+          {entry.contentType === 'bookmark' && (
+            <div style={{ marginTop: 6 }}>
+              <BookmarkDisplay fieldValues={getBookmarkFields(entry)} />
+            </div>
+          )}
+          {entry.contentType === 'mood' && (
+            <div style={{ marginTop: 6 }}>
+              <MoodDisplay fieldValues={getMoodFields(entry)} />
+            </div>
+          )}
+          {entry.contentType === 'workout' && (
+            <div style={{ marginTop: 6 }}>
+              <WorkoutDisplay fieldValues={getWorkoutFields(entry)} />
+            </div>
+          )}
+
+          {/* Metadata Footer (Tags & Category) */}
+          {(category || (entry.tags && entry.tags.length > 0)) && (
+            <div className={styles.metadataFooter}>
+              {/* Category - Left aligned */}
+              {category && (
+                <span
+                  className={styles.categoryLabel}
+                  style={{
+                    color: categoryTextColor || undefined,
+                    backgroundColor: `${category.color}15`,
+                    border: `1px solid ${category.color}30`,
+                  }}
+                >
+                  {category.label}
+                </span>
+              )}
+
+              {/* Tags - Left aligned next to category */}
+              <div className={styles.tagsList}>
+                {entry.tags?.map(tag => (
+                  <span key={tag}>#{tag}</span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Linked entries after (newer) */}
+          {afterLinks.length > 0 && (
+            <div className="linked-entries-after" style={{ marginTop: 8 }}>
+              {afterLinks.map(linked => (
+                <LinkedEntryPreview
+                  key={linked.id}
+                  linkedEntry={linked}
+                  direction="after"
+                  onNavigateToEntry={onNavigateToEntry}
+                />
               ))}
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Linked entries after (newer) */}
-        {afterLinks.length > 0 && (
-          <div className="linked-entries-after" style={{ marginTop: 8 }}>
-            {afterLinks.map(linked => (
-              <LinkedEntryPreview
-                key={linked.id}
-                linkedEntry={linked}
-                direction="after"
-                onNavigateToEntry={onNavigateToEntry}
-              />
-            ))}
-          </div>
-        )}
-
-        {/* AI Comment */}
-        {showAIComment && entry.aiComment && (
-          <div className={styles.aiCommentWrapper}>
-            <div className={styles.aiComment}>
-              <span className={styles.aiCommentLabel}>Zaddy:</span>
-              <p className={styles.aiCommentText}>
-                {entry.aiComment}
-              </p>
+          {/* AI Comment */}
+          {showAIComment && entry.aiComment && (
+            <div className={styles.aiCommentWrapper}>
+              <div className={styles.aiComment}>
+                <span className={styles.aiCommentLabel}>Zaddy:</span>
+                <p className={styles.aiCommentText}>
+                  {entry.aiComment}
+                </p>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
-    </div>
+
+      {/* Image Lightbox */}
+      {lightboxImage && (
+        <ImageLightbox
+          src={lightboxImage}
+          onClose={() => setLightboxImage(null)}
+        />
+      )}
+    </>
   );
 });
+

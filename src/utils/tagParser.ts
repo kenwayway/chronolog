@@ -22,8 +22,13 @@ export function parseTags(content: string): { cleanContent: string; tags: string
         }
     }
 
-    // Remove tags from content
-    const cleanContent = content.replace(tagRegex, '').replace(/\s+/g, ' ').trim();
+    // Remove tags from content, but PRESERVE newlines (needed for 🖼️ and 📍 markers)
+    // Only collapse consecutive spaces/tabs within a line, not across lines
+    const cleanContent = content
+        .replace(tagRegex, '')  // Remove tags
+        .replace(/[^\S\n]+/g, ' ')  // Collapse spaces/tabs within lines, but preserve \n
+        .replace(/ ?\n ?/g, '\n')  // Clean up spaces around newlines
+        .trim();
 
     return { cleanContent, tags };
 }
