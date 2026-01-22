@@ -108,6 +108,16 @@ export const BUILTIN_CONTENT_TYPES: ContentType[] = [
     fields: [],
     builtIn: true,
     order: 6
+  },
+  {
+    id: 'media',
+    name: 'Media',
+    fields: [
+      { id: 'mediaType', name: 'Type', type: 'dropdown', options: ['Book', 'Movie', 'Game', 'TV', 'Anime', 'Podcast'], default: 'Movie' },
+      { id: 'title', name: 'Title', type: 'text' }
+    ],
+    builtIn: true,
+    order: 7
   }
 ]
 
