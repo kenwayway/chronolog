@@ -2,6 +2,7 @@ import { useState, useEffect, MouseEvent } from "react";
 import { Palette, Sparkles, Database, LucideIcon } from "lucide-react";
 import type { Entry, Category, CloudSyncFull, GoogleTasksStatus } from "../../types";
 import { AppearanceTab, AITab, SyncTab } from "./settings";
+import styles from "./SettingsModal.module.css";
 
 interface Tab {
     id: string;
@@ -90,66 +91,29 @@ export function SettingsModal({
     };
 
     return (
-        <div
-            onMouseDown={handleBackdropClick}
-            style={{
-                position: "fixed",
-                inset: 0,
-                backgroundColor: "var(--bg-primary)",
-                zIndex: 1000,
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                padding: 40,
-                cursor: "default",
-            }}
-        >
+        <div className={styles.overlay} onMouseDown={handleBackdropClick}>
             <div style={{ maxWidth: 480, width: "100%", pointerEvents: "none" }}>
                 <div
-                    className="modal-panel"
+                    className={styles.panel}
                     onMouseDown={(e) => e.stopPropagation()}
-                    style={{
-                        pointerEvents: "auto",
-                        backgroundColor: "var(--bg-primary)",
-                        border: "1px solid var(--border-light)",
-                        borderRadius: 4,
-                        boxShadow: "0 0 80px rgba(0,0,0,0.3)",
-                        fontFamily: "var(--font-mono)",
-                    }}
                 >
                     {/* Header with Tabs */}
-                    <div
-                        style={{
-                            borderBottom: "1px solid var(--border-subtle)",
-                            backgroundColor: "var(--bg-secondary)",
-                            userSelect: "none",
-                        }}
-                    >
+                    <div className={styles.header}>
                         {/* Title row */}
-                        <div className="flex-between" style={{ padding: "12px 20px 0" }}>
-                            <span
-                                style={{
-                                    fontSize: 13,
-                                    fontWeight: 600,
-                                    color: "var(--text-muted)",
-                                    letterSpacing: "0.05em",
-                                }}
-                            >
-                                CONFIG
-                            </span>
-                            <button onClick={onClose} className="edit-modal-close" style={{ fontSize: 20 }}>×</button>
+                        <div className={`flex-between ${styles.headerTitle}`}>
+                            <span className={styles.title}>CONFIG</span>
+                            <button onClick={onClose} className={styles.closeBtn}>×</button>
                         </div>
 
                         {/* Tabs */}
-                        <div className="settings-tabs">
+                        <div className={styles.tabs}>
                             {TABS.map((tab) => {
                                 const Icon = tab.icon;
                                 return (
                                     <button
                                         key={tab.id}
                                         onClick={() => setActiveTab(tab.id)}
-                                        className={`settings-tab ${activeTab === tab.id ? "active" : ""}`}
+                                        className={`${styles.tab} ${activeTab === tab.id ? styles.active : ""}`}
                                     >
                                         <Icon size={14} />
                                         {tab.label}
@@ -160,7 +124,7 @@ export function SettingsModal({
                     </div>
 
                     {/* Content - Tab Components */}
-                    <div style={{ padding: 20, minHeight: 280 }}>
+                    <div className={styles.content}>
                         {activeTab === "appearance" && (
                             <AppearanceTab categories={categories} />
                         )}
@@ -189,17 +153,8 @@ export function SettingsModal({
                     </div>
 
                     {/* Footer */}
-                    <div
-                        className="flex-between"
-                        style={{
-                            padding: "12px 20px",
-                            borderTop: "1px solid var(--border-subtle)",
-                            backgroundColor: "var(--bg-secondary)",
-                        }}
-                    >
-                        <span style={{ fontSize: 10, color: "var(--text-dim)", userSelect: "none" }}>
-                            Esc to close
-                        </span>
+                    <div className={`flex-between ${styles.footer}`}>
+                        <span className={styles.footerHint}>Esc to close</span>
                         <button
                             onClick={handleSave}
                             className="btn-action btn-action-primary"
@@ -213,3 +168,4 @@ export function SettingsModal({
         </div>
     );
 }
+

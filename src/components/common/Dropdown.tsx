@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { ChevronDown, Check } from "lucide-react";
+import styles from "./Dropdown.module.css";
 
 export interface DropdownOption {
     value: string;
@@ -61,18 +62,18 @@ export function Dropdown({ value, onChange, options, placeholder = "Select..." }
             <button
                 ref={triggerRef}
                 type="button"
-                className="custom-dropdown-trigger"
+                className={styles.trigger}
                 onClick={() => setIsOpen(!isOpen)}
                 style={{
                     color: selectedOption?.color || "var(--text-secondary)",
                 }}
             >
-                <span className="custom-dropdown-value">
+                <span className={styles.value}>
                     {selectedOption ? selectedOption.label : placeholder}
                 </span>
                 <ChevronDown
                     size={14}
-                    className={`custom-dropdown-arrow ${isOpen ? "open" : ""}`}
+                    className={`${styles.arrow} ${isOpen ? styles.open : ""}`}
                 />
             </button>
 
@@ -80,7 +81,7 @@ export function Dropdown({ value, onChange, options, placeholder = "Select..." }
             {isOpen && createPortal(
                 <div
                     ref={menuRef}
-                    className="custom-dropdown-menu animate-slide-in"
+                    className={`${styles.menu} animate-slide-in`}
                     style={{
                         position: "fixed",
                         top: menuPosition.top,
@@ -92,7 +93,7 @@ export function Dropdown({ value, onChange, options, placeholder = "Select..." }
                         <button
                             key={option.value}
                             type="button"
-                            className={`custom-dropdown-item ${value === option.value ? "selected" : ""}`}
+                            className={`${styles.item} ${value === option.value ? styles.selected : ""}`}
                             onClick={() => {
                                 onChange(option.value);
                                 setIsOpen(false);
@@ -100,7 +101,7 @@ export function Dropdown({ value, onChange, options, placeholder = "Select..." }
                         >
                             {option.color && (
                                 <span
-                                    className="custom-dropdown-color"
+                                    className={styles.color}
                                     style={{ backgroundColor: option.color }}
                                 />
                             )}
@@ -108,7 +109,7 @@ export function Dropdown({ value, onChange, options, placeholder = "Select..." }
                                 {option.label}
                             </span>
                             {value === option.value && (
-                                <Check size={14} className="custom-dropdown-check" />
+                                <Check size={14} className={styles.check} />
                             )}
                         </button>
                     ))}
@@ -118,3 +119,4 @@ export function Dropdown({ value, onChange, options, placeholder = "Select..." }
         </>
     );
 }
+

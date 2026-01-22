@@ -33,15 +33,13 @@ export const ACTIONS = {
 } as const
 
 
-// Fixed categories (life areas, not user-editable)
+// Fixed categories (life areas for time tracking, not user-editable)
 export const CATEGORIES: Category[] = [
   { id: 'hustle', label: 'Hustle', color: '#7aa2f7', description: 'Life admin: visa, taxes, rent, bills, errands, paperwork' },
   { id: 'craft', label: 'Craft', color: '#bb9af7', description: 'Coding, drawing, creating, building projects' },
-  { id: 'hardware', label: 'Hardware', color: '#4dcc59', description: 'Sleep, eating, workout, physical health, medical checkups, mental health, doctor visits, therapy' },
-  { id: 'sparks', label: 'Sparks', color: '#89ddff', description: 'Internalized ideas, insights, personal thoughts, reflections' },
+  { id: 'hardware', label: 'Hardware', color: '#4dcc59', description: 'Sleep, eating, workout, physical health, mental health' },
   { id: 'barter', label: 'Barter', color: '#c8e068', description: 'Friends, social activities, relationships' },
   { id: 'wander', label: 'Wander', color: '#f7768e', description: 'Travel, movies, relaxation, exploration' },
-  { id: 'beans', label: 'Beans', color: '#ff9e64', description: 'External knowledge, fun facts, trivia learned from others' },
   { id: 'work', label: 'Work', color: '#f59e0b', description: 'Job tasks, meetings, work projects, office stuff' },
 ]
 
@@ -96,6 +94,20 @@ export const BUILTIN_CONTENT_TYPES: ContentType[] = [
     ],
     builtIn: true,
     order: 4
+  },
+  {
+    id: 'beans',
+    name: 'Beans',
+    fields: [],
+    builtIn: true,
+    order: 5
+  },
+  {
+    id: 'sparks',
+    name: 'Sparks',
+    fields: [],
+    builtIn: true,
+    order: 6
   }
 ]
 

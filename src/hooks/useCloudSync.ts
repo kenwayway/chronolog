@@ -90,11 +90,31 @@ export function useCloudSync({ entries, contentTypes, onImportData }: UseCloudSy
       )
 
       if (hasRemoteData) {
+        // One-time migration: convert category=beans/sparks to contentType=beans/sparks
+        // These categories were moved to content types, but legacy data may still have them
+        let migrated = false
+        const migratedEntries = (remoteData.entries || []).map(entry => {
+          const legacyCategory = entry.category as string | undefined
+          if ((legacyCategory === 'beans' || legacyCategory === 'sparks') && !entry.contentType) {
+            migrated = true
+            return {
+              ...entry,
+              contentType: legacyCategory,  // Move category value to contentType
+              category: undefined,           // Clear the category
+            }
+          }
+          return entry
+        })
+
+        if (migrated) {
+          console.log('[Migration] Converted beans/sparks categories to content types')
+        }
+
         onImportData({
-          entries: remoteData.entries || [],
+          entries: migratedEntries,
           contentTypes: remoteData.contentTypes,
         })
-        lastDataRef.current = JSON.stringify(remoteData)
+        lastDataRef.current = JSON.stringify({ entries: migratedEntries, contentTypes: remoteData.contentTypes })
       }
 
       setSyncState(prev => ({

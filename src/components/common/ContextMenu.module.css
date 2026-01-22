@@ -1,0 +1,52 @@
+/* ContextMenu Component Styles */
+
+.menu {
+    position: fixed;
+    min-width: 120px;
+    padding: 4px 0;
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-light);
+    border-radius: 4px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    z-index: 500;
+    font-family: var(--font-mono);
+}
+
+.item {
+    display: block;
+    width: 100%;
+    padding: 8px 14px;
+    font-size: 11px;
+    font-family: var(--font-mono);
+    letter-spacing: 0.04em;
+    color: var(--text-secondary);
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    transition: all 100ms ease;
+}
+
+.item:hover {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.item:disabled {
+    cursor: default;
+    color: var(--text-dim);
+}
+
+.itemDanger {
+    color: var(--error);
+}
+
+.itemDanger:hover {
+    background-color: rgba(239, 68, 68, 0.1);
+}
+
+.divider {
+    height: 1px;
+    margin: 4px 8px;
+    background-color: var(--border-subtle);
+}

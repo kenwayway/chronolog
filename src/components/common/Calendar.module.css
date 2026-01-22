@@ -1,0 +1,133 @@
+/* Calendar Component Styles */
+
+.calendar {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 8px;
+    padding: 12px;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-none);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    z-index: 500;
+    min-width: 260px;
+    font-family: var(--font-mono);
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.navBtn {
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: var(--radius-md);
+    background-color: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 150ms ease;
+}
+
+.navBtn:hover:not(.disabled) {
+    background-color: var(--bg-tertiary);
+}
+
+.navBtn.disabled {
+    color: var(--text-dim);
+    cursor: default;
+}
+
+.title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 32px);
+    gap: 2px;
+    margin-bottom: 4px;
+}
+
+.weekday {
+    width: 32px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: var(--text-dim);
+}
+
+.days {
+    display: grid;
+    grid-template-columns: repeat(7, 32px);
+    gap: 2px;
+}
+
+.dayEmpty {
+    width: 32px;
+    height: 32px;
+}
+
+.day {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    font-family: var(--font-mono);
+    background-color: transparent;
+    color: var(--text-secondary);
+    transition: all 150ms ease;
+}
+
+.day:hover:not(.future):not(.selected) {
+    background-color: var(--bg-tertiary);
+}
+
+.day.today {
+    background-color: var(--accent-subtle);
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.day.selected {
+    background-color: var(--accent);
+    color: white;
+    font-weight: 600;
+}
+
+.day.future {
+    color: var(--text-dim);
+    cursor: default;
+}
+
+.todayBtn {
+    width: 100%;
+    margin-top: 12px;
+    padding: 6px 0;
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    background-color: transparent;
+    color: var(--accent);
+    font-size: 11px;
+    font-family: var(--font-mono);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 150ms ease;
+}
+
+.todayBtn:hover {
+    background-color: var(--accent-subtle);
+}

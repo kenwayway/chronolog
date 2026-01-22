@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, ReactNode } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import styles from "./Calendar.module.css";
 
 interface CalendarProps {
     selectedDate: Date | null;
@@ -46,7 +47,7 @@ export function Calendar({ selectedDate, onSelect, onClose }: CalendarProps) {
 
     const days: ReactNode[] = [];
     for (let i = 0; i < startDayOfWeek; i++) {
-        days.push(<div key={`empty-${i}`} className="calendar-day-empty" />);
+        days.push(<div key={`empty-${i}`} className={styles.dayEmpty} />);
     }
 
     for (let day = 1; day <= daysInMonth; day++) {
@@ -63,7 +64,7 @@ export function Calendar({ selectedDate, onSelect, onClose }: CalendarProps) {
                     onSelect(date);
                     onClose();
                 }}
-                className={`calendar-day ${isToday ? "today" : ""} ${isSelected ? "selected" : ""} ${isFuture ? "future" : ""}`}
+                className={`${styles.day} ${isToday ? styles.today : ""} ${isSelected ? styles.selected : ""} ${isFuture ? styles.future : ""}`}
             >
                 {day}
             </button>
@@ -73,33 +74,33 @@ export function Calendar({ selectedDate, onSelect, onClose }: CalendarProps) {
     const canGoNext = new Date(year, month + 1, 1) <= today;
 
     return (
-        <div ref={calendarRef} className="calendar animate-slide-in">
+        <div ref={calendarRef} className={`${styles.calendar} animate-slide-in`}>
             {/* Header */}
-            <div className="calendar-header">
-                <button onClick={prevMonth} className="calendar-nav-btn">
+            <div className={styles.header}>
+                <button onClick={prevMonth} className={styles.navBtn}>
                     <ChevronLeft size={16} />
                 </button>
-                <span className="calendar-title">
+                <span className={styles.title}>
                     {monthNames[month]} {year}
                 </span>
                 <button
                     onClick={nextMonth}
                     disabled={!canGoNext}
-                    className={`calendar-nav-btn ${!canGoNext ? "disabled" : ""}`}
+                    className={`${styles.navBtn} ${!canGoNext ? styles.disabled : ""}`}
                 >
                     <ChevronRight size={16} />
                 </button>
             </div>
 
             {/* Day names */}
-            <div className="calendar-weekdays">
+            <div className={styles.weekdays}>
                 {dayNames.map((d) => (
-                    <div key={d} className="calendar-weekday">{d}</div>
+                    <div key={d} className={styles.weekday}>{d}</div>
                 ))}
             </div>
 
             {/* Days grid */}
-            <div className="calendar-days">{days}</div>
+            <div className={styles.days}>{days}</div>
 
             {/* Today button */}
             <button
@@ -107,10 +108,11 @@ export function Calendar({ selectedDate, onSelect, onClose }: CalendarProps) {
                     onSelect(null);
                     onClose();
                 }}
-                className="calendar-today-btn"
+                className={styles.todayBtn}
             >
                 TODAY
             </button>
         </div>
     );
 }
+

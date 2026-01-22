@@ -1,0 +1,88 @@
+/* Dropdown Component Styles */
+
+.trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-width: 100px;
+    height: 32px;
+    padding: 0 10px;
+    font-size: 12px;
+    font-family: var(--font-mono);
+    background-color: var(--bg-tertiary);
+    border: 1px solid var(--border-subtle);
+    cursor: pointer;
+    transition: all 150ms ease;
+}
+
+.trigger:hover {
+    border-color: var(--text-dim);
+    background-color: var(--bg-secondary);
+}
+
+.value {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.arrow {
+    flex-shrink: 0;
+    color: var(--text-dim);
+    transition: transform 200ms ease;
+}
+
+.arrow.open {
+    transform: rotate(180deg);
+}
+
+.menu {
+    position: fixed;
+    min-width: 140px;
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 4px;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    z-index: 9999;
+}
+
+.item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 10px;
+    font-size: 12px;
+    font-family: var(--font-mono);
+    color: var(--text-secondary);
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    transition: all 100ms ease;
+}
+
+.item:hover {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.item.selected {
+    background-color: var(--accent-subtle);
+    color: var(--accent);
+}
+
+.color {
+    width: 10px;
+    height: 10px;
+    border-radius: var(--radius-sm);
+    flex-shrink: 0;
+}
+
+.check {
+    margin-left: auto;
+    color: var(--accent);
+}

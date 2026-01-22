@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { ENTRY_TYPES } from "../../utils/constants";
+import styles from "./ContextMenu.module.css";
 import type { Entry } from "../../types";
 
 interface Position {
@@ -104,23 +105,15 @@ export function ContextMenu({
     return (
         <div
             ref={menuRef}
-            className="fixed animate-slide-in context-menu"
+            className={`${styles.menu} animate-slide-in`}
             style={{
                 left: position.x,
                 top: position.y,
-                minWidth: 120,
-                padding: "4px 0",
-                backgroundColor: "var(--bg-primary)",
-                border: "1px solid var(--border-light)",
-                borderRadius: 4,
-                boxShadow: "0 8px 24px rgba(0,0,0,0.25)",
-                zIndex: 500,
-                fontFamily: "var(--font-mono)",
             }}
         >
             {canMarkAsTask && (
                 <button
-                    className="context-menu-item"
+                    className={styles.item}
                     onClick={handleMarkAsTask}
                     title={googleTasksEnabled ? "Adds to Google Tasks" : "Connect Google Tasks in Settings"}
                 >
@@ -129,28 +122,24 @@ export function ContextMenu({
             )}
 
             {isTask && (
-                <span
-                    className="context-menu-item"
-                    style={{ color: "var(--text-dim)", cursor: "default" }}
-                >
+                <span className={styles.item} style={{ color: "var(--text-dim)", cursor: "default" }}>
                     [PENDING TASK]
                 </span>
             )}
 
-            <button className="context-menu-item" onClick={handleEdit}>
+            <button className={styles.item} onClick={handleEdit}>
                 EDIT
             </button>
 
-            <button className="context-menu-item" onClick={handleLink}>
+            <button className={styles.item} onClick={handleLink}>
                 ↪ FOLLOW UP
             </button>
 
             {canAddAIComment && (
                 <button
-                    className="context-menu-item"
+                    className={styles.item}
                     onClick={handleAIComment}
                     disabled={aiLoading}
-                    style={{ color: aiLoading ? "var(--text-dim)" : undefined }}
                 >
                     {aiLoading ? "GENERATING..." : "AI COMMENT"}
                 </button>
@@ -158,27 +147,21 @@ export function ContextMenu({
 
             {hasAIComment && (
                 <button
-                    className="context-menu-item context-menu-item-danger"
+                    className={`${styles.item} ${styles.itemDanger}`}
                     onClick={handleDeleteAIComment}
                 >
                     DELETE AI COMMENT
                 </button>
             )}
 
-            <button className="context-menu-item" onClick={handleCopy}>
+            <button className={styles.item} onClick={handleCopy}>
                 COPY
             </button>
 
-            <div
-                style={{
-                    height: 1,
-                    margin: "4px 8px",
-                    backgroundColor: "var(--border-subtle)",
-                }}
-            />
+            <div className={styles.divider} />
 
             <button
-                className="context-menu-item context-menu-item-danger"
+                className={`${styles.item} ${styles.itemDanger}`}
                 onClick={handleDelete}
             >
                 DELETE
@@ -186,3 +169,4 @@ export function ContextMenu({
         </div>
     );
 }
+

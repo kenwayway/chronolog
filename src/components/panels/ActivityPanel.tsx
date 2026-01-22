@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { useTheme } from "../../hooks/useTheme";
+import styles from "./TasksPanel.module.css";
 import type { Entry, Category, CategoryId } from "../../types";
 
 interface HeatmapDay {
@@ -107,21 +108,18 @@ export function ActivityPanel({
         <>
             {/* Backdrop */}
             {isOpen && (
-                <div
-                    className="sidebar-overlay"
-                    onClick={onClose}
-                />
+                <div className={styles.overlay} onClick={onClose} />
             )}
 
             {/* Panel */}
-            <div className={`sidebar-panel ${isOpen ? '' : 'closed'}`} style={{ width: 340 }}>
+            <div className={`${styles.panel} ${isOpen ? '' : styles.closed}`} style={{ width: 340 }}>
                 {/* Header */}
-                <div className="panel-header">
-                    <div className="panel-title">
-                        <span className="panel-title-prefix">{tokens.panelTitlePrefix}</span>
+                <div className={styles.header}>
+                    <div className={styles.title}>
+                        <span className={styles.titlePrefix}>{tokens.panelTitlePrefix}</span>
                         <span>ACTIVITY</span>
                     </div>
-                    <button onClick={onClose} className="modal-close-btn">
+                    <button onClick={onClose} className={styles.closeBtn}>
                         ×
                     </button>
                 </div>
@@ -130,9 +128,9 @@ export function ActivityPanel({
                 <div style={{ flex: 1, overflowY: "auto", padding: 20 }}>
                     {/* Heatmap Section */}
                     <div style={{ marginBottom: 32 }}>
-                        <div className="section-header">
+                        <div className={styles.sectionHeader}>
                             CONTRIBUTION
-                            <div className="section-line" />
+                            <div className={styles.sectionLine} />
                         </div>
                         <div style={{ display: "flex", gap: 3 }}>
                             {heatmapData.map((week, weekIdx) => (
@@ -198,9 +196,9 @@ export function ActivityPanel({
 
                     {/* Category Filter Section */}
                     <div>
-                        <div className="section-header">
+                        <div className={styles.sectionHeader}>
                             <span>FILTER</span>
-                            <div className="section-line" />
+                            <div className={styles.sectionLine} />
                             {categoryFilter.length > 0 && (
                                 <button
                                     onClick={clearFilter}
