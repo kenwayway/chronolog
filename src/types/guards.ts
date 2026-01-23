@@ -3,7 +3,7 @@
  * Use these to safely access typed fieldValues
  */
 
-import type { Entry, TaskFields, BookmarkFields, MoodFields, WorkoutFields } from './index'
+import type { Entry, TaskFields, BookmarkFields, MoodFields, WorkoutFields, MediaFields } from './index'
 
 // ============================================
 // Typed Entry interfaces (narrowed)
@@ -33,6 +33,12 @@ export interface WorkoutEntry extends Entry {
     fieldValues: WorkoutFields
 }
 
+/** Entry with media content type */
+export interface MediaEntry extends Entry {
+    contentType: 'media'
+    fieldValues: MediaFields
+}
+
 // ============================================
 // Type Guards
 // ============================================
@@ -57,6 +63,11 @@ export function isWorkoutEntry(entry: Entry): entry is WorkoutEntry {
     return entry.contentType === 'workout' && entry.fieldValues !== undefined
 }
 
+/** Check if entry is a media */
+export function isMediaEntry(entry: Entry): entry is MediaEntry {
+    return entry.contentType === 'media' && entry.fieldValues !== undefined
+}
+
 // ============================================
 // Field Value Helpers
 // ============================================
@@ -79,4 +90,9 @@ export function getMoodFields(entry: Entry): MoodFields | undefined {
 /** Safely get workout fields */
 export function getWorkoutFields(entry: Entry): WorkoutFields | undefined {
     return isWorkoutEntry(entry) ? entry.fieldValues : undefined
+}
+
+/** Safely get media fields */
+export function getMediaFields(entry: Entry): MediaFields | undefined {
+    return isMediaEntry(entry) ? entry.fieldValues : undefined
 }

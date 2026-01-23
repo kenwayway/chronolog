@@ -85,8 +85,14 @@ export interface WorkoutFields {
   exercises?: string  // JSON string of exercise array
 }
 
+/** Media field values (books, movies, games, etc.) */
+export interface MediaFields {
+  mediaType?: 'Book' | 'Movie' | 'Game' | 'TV' | 'Anime' | 'Podcast'
+  title?: string
+}
+
 /** Union of all known field value types */
-export type KnownFieldValues = TaskFields | BookmarkFields | MoodFields | WorkoutFields
+export type KnownFieldValues = TaskFields | BookmarkFields | MoodFields | WorkoutFields | MediaFields
 
 /** Field values - known types or unknown for custom content types */
 export type EntryFieldValues = KnownFieldValues | Record<string, unknown>

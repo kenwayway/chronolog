@@ -5,11 +5,11 @@ import { formatTime, formatDuration, formatDate } from "../../utils/formatters";
 import { parseContent, darkenColor } from "../../utils/contentParser";
 import { useTheme } from "../../hooks/useTheme";
 import { LinkedEntryPreview } from "./LinkedEntryPreview";
-import { BookmarkDisplay, MoodDisplay, WorkoutDisplay } from "./ContentTypeDisplays";
+import { BookmarkDisplay, MoodDisplay, WorkoutDisplay, MediaDisplay } from "./ContentTypeDisplays";
 import { ImageLightbox } from "../common/ImageLightbox";
 import styles from "./TimelineEntry.module.css";
 import type { Entry, Category } from "../../types";
-import { isTaskEntry, getBookmarkFields, getMoodFields, getWorkoutFields } from "../../types/guards";
+import { isTaskEntry, getBookmarkFields, getMoodFields, getWorkoutFields, getMediaFields } from "../../types/guards";
 
 interface Position {
   x: number;
@@ -233,7 +233,7 @@ export const TimelineEntry = memo(function TimelineEntry({
   const getEntrySymbol = (): ReactNode => {
     const styles = { fontSize: 14 };
 
-    if (entry.category === 'beans') {
+    if (entry.contentType === 'beans') {
       return <span style={{ ...styles, color: '#ff9e64' }}>{symbols.beans}</span>;
     }
 
@@ -437,6 +437,11 @@ export const TimelineEntry = memo(function TimelineEntry({
           {entry.contentType === 'workout' && (
             <div style={{ marginTop: 6 }}>
               <WorkoutDisplay fieldValues={getWorkoutFields(entry)} />
+            </div>
+          )}
+          {entry.contentType === 'media' && (
+            <div style={{ marginTop: 6 }}>
+              <MediaDisplay fieldValues={getMediaFields(entry)} />
             </div>
           )}
 

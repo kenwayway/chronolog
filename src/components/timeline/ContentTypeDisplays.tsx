@@ -379,3 +379,88 @@ export const WorkoutDisplay = memo(function WorkoutDisplay({ fieldValues }: Work
     </div>
   );
 });
+
+// Media field values interface
+interface MediaFields {
+  mediaType?: string;
+  title?: string;
+}
+
+interface MediaDisplayProps {
+  fieldValues: MediaFields | null | undefined;
+}
+
+/**
+ * Display component for media entries (books, movies, games, etc.)
+ */
+export const MediaDisplay = memo(function MediaDisplay({ fieldValues }: MediaDisplayProps) {
+  if (!fieldValues) return null;
+
+  const getMediaEmoji = (type: string | undefined) => {
+    const emojis: Record<string, string> = {
+      'Book': '📚',
+      'Movie': '🎬',
+      'Game': '🎮',
+      'TV': '📺',
+      'Anime': '🎌',
+      'Podcast': '🎙️',
+    };
+    return emojis[type || ''] || '🎬';
+  };
+
+  const getMediaLabel = (type: string | undefined) => {
+    const labels: Record<string, string> = {
+      'Book': 'BOOK',
+      'Movie': 'MOVIE',
+      'Game': 'GAME',
+      'TV': 'TV SHOW',
+      'Anime': 'ANIME',
+      'Podcast': 'PODCAST',
+    };
+    return labels[type || ''] || 'MEDIA';
+  };
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        marginTop: 8,
+        padding: '8px 12px',
+        backgroundColor: 'var(--bg-secondary)',
+        border: '1px solid var(--border-subtle)',
+        fontSize: 12,
+        fontFamily: 'var(--font-mono)',
+        width: 'fit-content',
+        maxWidth: '100%',
+      }}
+    >
+      <span style={{
+        color: 'var(--accent)',
+        fontWeight: 600,
+        fontSize: 11,
+        flexShrink: 0
+      }}>
+        [{getMediaLabel(fieldValues.mediaType)}]
+      </span>
+
+      <span style={{ fontSize: 16, lineHeight: 1 }}>
+        {getMediaEmoji(fieldValues.mediaType)}
+      </span>
+
+      {fieldValues.title && (
+        <span style={{
+          fontWeight: 500,
+          color: 'var(--text-primary)',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+        }}>
+          {fieldValues.title}
+        </span>
+      )}
+    </div>
+  );
+});
+
