@@ -1,4 +1,5 @@
 import { memo, MouseEvent } from 'react';
+import { Book, Film, Gamepad2, Tv, Clapperboard, Mic } from 'lucide-react';
 import type { BookmarkFields, MoodFields, WorkoutFields } from '../../types';
 
 interface BookmarkDisplayProps {
@@ -396,16 +397,25 @@ interface MediaDisplayProps {
 export const MediaDisplay = memo(function MediaDisplay({ fieldValues }: MediaDisplayProps) {
   if (!fieldValues) return null;
 
-  const getMediaEmoji = (type: string | undefined) => {
-    const emojis: Record<string, string> = {
-      'Book': '📚',
-      'Movie': '🎬',
-      'Game': '🎮',
-      'TV': '📺',
-      'Anime': '🎌',
-      'Podcast': '🎙️',
-    };
-    return emojis[type || ''] || '🎬';
+  const iconStyle = { width: 14, height: 14, strokeWidth: 2 };
+
+  const getMediaIcon = (type: string | undefined) => {
+    switch (type) {
+      case 'Book':
+        return <Book {...iconStyle} />;
+      case 'Movie':
+        return <Film {...iconStyle} />;
+      case 'Game':
+        return <Gamepad2 {...iconStyle} />;
+      case 'TV':
+        return <Tv {...iconStyle} />;
+      case 'Anime':
+        return <Clapperboard {...iconStyle} />;
+      case 'Podcast':
+        return <Mic {...iconStyle} />;
+      default:
+        return <Film {...iconStyle} />;
+    }
   };
 
   const getMediaLabel = (type: string | undefined) => {
@@ -445,8 +455,8 @@ export const MediaDisplay = memo(function MediaDisplay({ fieldValues }: MediaDis
         [{getMediaLabel(fieldValues.mediaType)}]
       </span>
 
-      <span style={{ fontSize: 16, lineHeight: 1 }}>
-        {getMediaEmoji(fieldValues.mediaType)}
+      <span style={{ color: 'var(--text-secondary)', display: 'flex', alignItems: 'center' }}>
+        {getMediaIcon(fieldValues.mediaType)}
       </span>
 
       {fieldValues.title && (
