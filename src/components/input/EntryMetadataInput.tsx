@@ -5,12 +5,6 @@ import { DynamicFieldForm } from './DynamicFieldForm';
 import { CATEGORIES, BUILTIN_CONTENT_TYPES } from '../../utils/constants';
 import type { CategoryId, ContentType, Entry } from '../../types';
 
-// Generate content type options from BUILTIN_CONTENT_TYPES
-const CONTENT_TYPE_OPTIONS = [
-  { value: '', label: 'Auto' },
-  ...BUILTIN_CONTENT_TYPES.map(ct => ({ value: ct.id, label: ct.name }))
-];
-
 interface EntryMetadataInputProps {
   // Category
   category: CategoryId | null;
@@ -203,7 +197,7 @@ export function EntryMetadataInput({
               placeholder={showAutoOption ? "Auto" : "Note"}
               options={[
                 ...(showAutoOption ? [{ value: '', label: 'Auto' }] : []),
-                ...BUILTIN_CONTENT_TYPES.map(ct => ({ value: ct.id, label: ct.name }))
+                ...types.map(ct => ({ value: ct.id, label: ct.name }))
               ]}
             />
           </div>
