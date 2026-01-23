@@ -1,4 +1,4 @@
-import { ChangeEvent } from "react";
+import { ChangeEvent, useEffect } from "react";
 import type { ContentType, FieldDefinition } from "../../types";
 
 interface DynamicFieldFormProps {
@@ -12,6 +12,25 @@ interface DynamicFieldFormProps {
  * Minimal version: only handles dropdown and number fields
  */
 export function DynamicFieldForm({ contentType, fieldValues, onChange }: DynamicFieldFormProps) {
+    // Auto-populate missing defaults when contentType changes
+    useEffect(() => {
+        if (!contentType || !contentType.fields) return;
+
+        const missingDefaults: Record<string, unknown> = {};
+        let hasMissing = false;
+
+        for (const field of contentType.fields) {
+            if (field.default !== undefined && fieldValues[field.id] === undefined) {
+                missingDefaults[field.id] = field.default;
+                hasMissing = true;
+            }
+        }
+
+        if (hasMissing) {
+            onChange({ ...fieldValues, ...missingDefaults });
+        }
+    }, [contentType?.id]); // Only run when contentType changes
+
     if (!contentType || !contentType.fields || contentType.fields.length === 0) {
         return null;
     }

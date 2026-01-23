@@ -189,6 +189,8 @@ export function EntryMetadataInput({
                     setFieldValues({ feeling: 'Calm', energy: 3 });
                   } else if (val === 'workout') {
                     setFieldValues({ workoutType: 'Strength', exercises: '[]' });
+                  } else if (val === 'media') {
+                    setFieldValues({ mediaType: 'Movie' });
                   } else {
                     setFieldValues({});
                   }
