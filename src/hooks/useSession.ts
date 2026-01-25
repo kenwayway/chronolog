@@ -6,6 +6,7 @@ import { parseTags } from '../utils/tagParser'
 import type {
   Entry,
   ContentType,
+  MediaItem,
   SessionState,
   SessionAction,
   UseSessionReturn,
@@ -21,6 +22,7 @@ const initialState: SessionState = {
   sessionStart: null,
   entries: [],
   contentTypes: [...BUILTIN_CONTENT_TYPES],
+  mediaItems: [],
   apiKey: null,
   aiBaseUrl: 'https://api.openai.com/v1',
   aiModel: 'gpt-4o-mini'
@@ -169,6 +171,7 @@ function sessionReducer(state: SessionState, action: SessionAction): SessionStat
         ...initialState,
         ...action.payload,
         contentTypes: mergedContentTypes,
+        mediaItems: action.payload.mediaItems || state.mediaItems || [],
         apiKey: state.apiKey ?? action.payload.apiKey ?? initialState.apiKey,
         aiBaseUrl: state.aiBaseUrl ?? action.payload.aiBaseUrl ?? initialState.aiBaseUrl,
         aiModel: state.aiModel ?? action.payload.aiModel ?? initialState.aiModel,
@@ -256,6 +259,7 @@ function sessionReducer(state: SessionState, action: SessionAction): SessionStat
         ...state,
         entries: importedEntries,
         contentTypes: mergedContentTypes.length > 0 ? mergedContentTypes : state.contentTypes,
+        mediaItems: action.payload.mediaItems || state.mediaItems,
         status: inSession ? SESSION_STATUS.STREAMING : SESSION_STATUS.IDLE,
         sessionStart: lastSessionStart
       }
@@ -295,6 +299,32 @@ function sessionReducer(state: SessionState, action: SessionAction): SessionStat
       }
     }
 
+    case ACTIONS.ADD_MEDIA_ITEM: {
+      const newItem = action.payload.mediaItem
+      return {
+        ...state,
+        mediaItems: [...state.mediaItems, newItem]
+      }
+    }
+
+    case ACTIONS.UPDATE_MEDIA_ITEM: {
+      const { id, updates } = action.payload
+      return {
+        ...state,
+        mediaItems: state.mediaItems.map(item =>
+          item.id === id ? { ...item, ...updates } : item
+        )
+      }
+    }
+
+    case ACTIONS.DELETE_MEDIA_ITEM: {
+      const { id } = action.payload
+      return {
+        ...state,
+        mediaItems: state.mediaItems.filter(item => item.id !== id)
+      }
+    }
+
     default:
       return state
   }
@@ -330,10 +360,11 @@ export function useSession(): UseSessionReturn {
       status: state.status,
       sessionStart: state.sessionStart,
       entries: state.entries,
-      contentTypes: state.contentTypes
+      contentTypes: state.contentTypes,
+      mediaItems: state.mediaItems
     }
     setStorage(STORAGE_KEYS.STATE, stateToSave)
-  }, [state.status, state.sessionStart, state.entries, state.contentTypes])
+  }, [state.status, state.sessionStart, state.entries, state.contentTypes, state.mediaItems])
 
   const logIn = useCallback((content: string) => {
     dispatch({ type: ACTIONS.LOG_IN, payload: { content } })
@@ -405,6 +436,18 @@ export function useSession(): UseSessionReturn {
     dispatch({ type: ACTIONS.DELETE_CONTENT_TYPE, payload: { id } })
   }, [])
 
+  const addMediaItem = useCallback((mediaItem: MediaItem) => {
+    dispatch({ type: ACTIONS.ADD_MEDIA_ITEM, payload: { mediaItem } })
+  }, [])
+
+  const updateMediaItem = useCallback((id: string, updates: Partial<Omit<MediaItem, 'id' | 'createdAt'>>) => {
+    dispatch({ type: ACTIONS.UPDATE_MEDIA_ITEM, payload: { id, updates } })
+  }, [])
+
+  const deleteMediaItem = useCallback((id: string) => {
+    dispatch({ type: ACTIONS.DELETE_MEDIA_ITEM, payload: { id } })
+  }, [])
+
   return {
     state,
     isStreaming: state.status === SESSION_STATUS.STREAMING,
@@ -422,7 +465,10 @@ export function useSession(): UseSessionReturn {
       importData,
       addContentType,
       updateContentType,
-      deleteContentType
+      deleteContentType,
+      addMediaItem,
+      updateMediaItem,
+      deleteMediaItem
     }
   }
 }

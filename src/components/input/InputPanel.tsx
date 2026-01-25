@@ -6,7 +6,7 @@ import { AttachmentPreview } from "./AttachmentPreview";
 import { InputActions } from "./InputActions";
 import { EntryMetadataInput } from "./EntryMetadataInput";
 import styles from "./InputPanel.module.css";
-import type { Entry, SessionStatus, CategoryId, CloudSyncWithUpload } from "../../types";
+import type { Entry, SessionStatus, CategoryId, CloudSyncWithUpload, MediaItem } from "../../types";
 
 interface NoteOptions {
     contentType?: string;
@@ -24,6 +24,8 @@ interface InputPanelProps {
     cloudSync: CloudSyncWithUpload | null;
     followUpEntry: Entry | null;
     onClearFollowUp?: () => void;
+    mediaItems?: MediaItem[];
+    onAddMediaItem?: (mediaItem: MediaItem) => void;
 }
 
 export interface InputPanelRef {
@@ -38,7 +40,9 @@ export const InputPanel = forwardRef<InputPanelRef, InputPanelProps>(function In
     onLogOff,
     cloudSync,
     followUpEntry,
-    onClearFollowUp
+    onClearFollowUp,
+    mediaItems = [],
+    onAddMediaItem
 }, ref) {
     const [input, setInput] = useState("");
     const [isFocused, setIsFocused] = useState(false);
@@ -56,6 +60,7 @@ export const InputPanel = forwardRef<InputPanelRef, InputPanelProps>(function In
     const [showMetadata, setShowMetadata] = useState(false);
     const [category, setCategory] = useState<CategoryId | null>(null);
     const [contentType, setContentType] = useState<string | null>(null);
+    const [fieldValues, setFieldValues] = useState<Record<string, unknown>>({});
     const [tags, setTags] = useState<string[]>([]);
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const focusInputRef = useRef<HTMLTextAreaElement>(null);
@@ -207,15 +212,9 @@ export const InputPanel = forwardRef<InputPanelRef, InputPanelProps>(function In
                 const options: NoteOptions = {};
                 if (contentType) {
                     options.contentType = contentType;
-                    // Set default fieldValues based on content type
-                    if (contentType === 'workout') {
-                        options.fieldValues = { workoutType: 'Strength', exercises: '[]' };
-                    } else if (contentType === 'task') {
-                        options.fieldValues = { done: false };
-                    } else if (contentType === 'mood') {
-                        options.fieldValues = { feeling: 'Calm', energy: 3 };
-                    } else if (contentType === 'bookmark') {
-                        options.fieldValues = { type: 'Article', status: 'Inbox' };
+                    // Use fieldValues from state (set by DynamicFieldForm)
+                    if (Object.keys(fieldValues).length > 0) {
+                        options.fieldValues = fieldValues;
                     }
                 }
                 if (category) options.category = category;
@@ -239,6 +238,7 @@ export const InputPanel = forwardRef<InputPanelRef, InputPanelProps>(function In
         setShowMetadata(false);
         setCategory(null);
         setContentType(null);
+        setFieldValues({});
         setTags([]);
         inputRef.current?.blur();
 
@@ -408,9 +408,13 @@ export const InputPanel = forwardRef<InputPanelRef, InputPanelProps>(function In
                     setCategory={setCategory}
                     contentType={contentType}
                     setContentType={setContentType}
+                    fieldValues={fieldValues}
+                    setFieldValues={setFieldValues}
                     tags={tags}
                     setTags={setTags}
                     isExpanded={showMetadata}
+                    mediaItems={mediaItems}
+                    onAddMediaItem={onAddMediaItem}
                 />
             )}
 

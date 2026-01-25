@@ -50,6 +50,7 @@ function App() {
     const cloudSync = useCloudSync({
         entries: state.entries,
         contentTypes: state.contentTypes,
+        mediaItems: state.mediaItems,
         onImportData: actions.importData,
     });
 
@@ -246,6 +247,7 @@ function App() {
                         onContextMenu={handleContextMenu}
                         categoryFilter={categoryFilter}
                         onNavigateToEntry={navigateToEntry}
+                        mediaItems={state.mediaItems}
                     />
                 )}
             </main>
@@ -260,6 +262,8 @@ function App() {
                 cloudSync={cloudSync}
                 followUpEntry={followUpEntry}
                 onClearFollowUp={clearFollowUp}
+                mediaItems={state.mediaItems}
+                onAddMediaItem={actions.addMediaItem}
             />
 
             <TasksPanel
@@ -303,6 +307,8 @@ function App() {
                 onSave={handlers.handleSaveEdit}
                 onClose={closeEditModal}
                 allEntries={state.entries}
+                mediaItems={state.mediaItems}
+                onAddMediaItem={actions.addMediaItem}
             />
 
             <SettingsModal

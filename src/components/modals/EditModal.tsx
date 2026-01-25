@@ -3,7 +3,7 @@ import { Image, MapPin, Plus, ChevronDown } from "lucide-react";
 import { EntryMetadataInput } from "../input/EntryMetadataInput";
 import { BUILTIN_CONTENT_TYPES, ENTRY_TYPES } from "../../utils/constants";
 import styles from "./EditModal.module.css";
-import type { Entry, Category, ContentType, CategoryId } from "../../types";
+import type { Entry, Category, ContentType, CategoryId, MediaItem } from "../../types";
 
 interface EntryUpdates {
   content?: string;
@@ -24,9 +24,11 @@ interface EditModalProps {
   categories: Category[];
   contentTypes?: ContentType[];
   allEntries?: Entry[];
+  mediaItems?: MediaItem[];
+  onAddMediaItem?: (mediaItem: MediaItem) => void;
 }
 
-export function EditModal({ isOpen, entry, onSave, onClose, categories, contentTypes, allEntries = [] }: EditModalProps) {
+export function EditModal({ isOpen, entry, onSave, onClose, categories, contentTypes, allEntries = [], mediaItems = [], onAddMediaItem }: EditModalProps) {
   // Content state
   const [content, setContent] = useState("");
   const [timestamp, setTimestamp] = useState("");
@@ -258,6 +260,8 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
           isExpanded={showMetadata}
           showLinkedEntries={true}
           showAutoOption={false}
+          mediaItems={mediaItems}
+          onAddMediaItem={onAddMediaItem}
         />
 
         {/* Footer */}

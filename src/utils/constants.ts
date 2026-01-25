@@ -30,6 +30,9 @@ export const ACTIONS = {
   ADD_CONTENT_TYPE: 'ADD_CONTENT_TYPE',
   UPDATE_CONTENT_TYPE: 'UPDATE_CONTENT_TYPE',
   DELETE_CONTENT_TYPE: 'DELETE_CONTENT_TYPE',
+  ADD_MEDIA_ITEM: 'ADD_MEDIA_ITEM',
+  UPDATE_MEDIA_ITEM: 'UPDATE_MEDIA_ITEM',
+  DELETE_MEDIA_ITEM: 'DELETE_MEDIA_ITEM',
 } as const
 
 
@@ -113,8 +116,7 @@ export const BUILTIN_CONTENT_TYPES: ContentType[] = [
     id: 'media',
     name: 'Media',
     fields: [
-      { id: 'mediaType', name: 'Type', type: 'dropdown', options: ['Book', 'Movie', 'Game', 'TV', 'Anime', 'Podcast'], default: 'Movie' },
-      { id: 'title', name: 'Title', type: 'text' }
+      { id: 'mediaId', name: 'Media', type: 'media-select' }
     ],
     builtIn: true,
     order: 7

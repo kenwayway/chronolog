@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import type { Entry, ContentType, CloudData, ImportDataPayload } from '../types'
+import type { Entry, ContentType, MediaItem, CloudData, ImportDataPayload } from '../types'
 import { STORAGE_KEYS, getStorage, setStorage, removeStorage, type CloudAuthData } from '../utils/storageService'
 
 const SYNC_DEBOUNCE_MS = 500
@@ -36,6 +36,7 @@ interface CleanupResult {
 interface UseCloudSyncProps {
   entries: Entry[]
   contentTypes: ContentType[]
+  mediaItems: MediaItem[]
   onImportData: (data: ImportDataPayload) => void
 }
 
@@ -53,7 +54,7 @@ const getApiBase = (): string => {
   return ''
 }
 
-export function useCloudSync({ entries, contentTypes, onImportData }: UseCloudSyncProps): UseCloudSyncReturn {
+export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }: UseCloudSyncProps): UseCloudSyncReturn {
   const [syncState, setSyncState] = useState<CloudSyncState>({
     isLoggedIn: false,
     isSyncing: false,
@@ -113,8 +114,9 @@ export function useCloudSync({ entries, contentTypes, onImportData }: UseCloudSy
         onImportData({
           entries: migratedEntries,
           contentTypes: remoteData.contentTypes,
+          mediaItems: remoteData.mediaItems,
         })
-        lastDataRef.current = JSON.stringify({ entries: migratedEntries, contentTypes: remoteData.contentTypes })
+        lastDataRef.current = JSON.stringify({ entries: migratedEntries, contentTypes: remoteData.contentTypes, mediaItems: remoteData.mediaItems })
       }
 
       setSyncState(prev => ({
@@ -152,7 +154,7 @@ export function useCloudSync({ entries, contentTypes, onImportData }: UseCloudSy
   const saveToCloud = useCallback(async () => {
     if (!tokenRef.current) return
 
-    const dataToSync = { entries, contentTypes }
+    const dataToSync = { entries, contentTypes, mediaItems }
     const dataString = JSON.stringify(dataToSync)
 
     // Skip if data hasn't changed
@@ -187,7 +189,7 @@ export function useCloudSync({ entries, contentTypes, onImportData }: UseCloudSy
         error: error instanceof Error ? error.message : 'Unknown error'
       }))
     }
-  }, [entries, contentTypes])
+  }, [entries, contentTypes, mediaItems])
 
   // Auto-sync when data changes (debounced)
   useEffect(() => {

@@ -3,7 +3,7 @@ import { X, Link2, Search } from 'lucide-react';
 import { Dropdown } from '../common/Dropdown';
 import { DynamicFieldForm } from './DynamicFieldForm';
 import { CATEGORIES, BUILTIN_CONTENT_TYPES } from '../../utils/constants';
-import type { CategoryId, ContentType, Entry } from '../../types';
+import type { CategoryId, ContentType, Entry, MediaItem } from '../../types';
 
 interface EntryMetadataInputProps {
   // Category
@@ -26,6 +26,9 @@ interface EntryMetadataInputProps {
   currentEntryTimestamp?: number;
   // Content types list (optional - use BUILTIN if not provided)
   contentTypes?: ContentType[];
+  // Media library
+  mediaItems?: MediaItem[];
+  onAddMediaItem?: (mediaItem: MediaItem) => void;
   // UI state
   isExpanded: boolean;
   // Modes
@@ -52,6 +55,8 @@ export function EntryMetadataInput({
   currentEntryId,
   currentEntryTimestamp = Date.now(),
   contentTypes,
+  mediaItems = [],
+  onAddMediaItem,
   isExpanded,
   showLinkedEntries = false,
   showAutoOption = true,
@@ -126,10 +131,12 @@ export function EntryMetadataInput({
     <div
       className="entry-metadata-input"
       style={{
-        overflow: 'hidden',
+        overflow: isExpanded && height > 0 ? 'visible' : 'hidden',
         height: height,
         transition: 'height 0.2s ease-out',
         borderTop: isExpanded ? '1px solid var(--border-subtle)' : 'none',
+        position: 'relative',
+        zIndex: 50,
       }}
     >
       <div
@@ -259,6 +266,8 @@ export function EntryMetadataInput({
             contentType={currentContentType}
             fieldValues={fieldValues}
             onChange={setFieldValues}
+            mediaItems={mediaItems}
+            onAddMediaItem={onAddMediaItem}
           />
         )}
 

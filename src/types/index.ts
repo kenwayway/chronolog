@@ -25,11 +25,27 @@ export interface Category {
 }
 
 // ============================================
+// Media Library
+// ============================================
+
+/** Media type options */
+export type MediaType = 'Book' | 'Movie' | 'Game' | 'TV' | 'Anime' | 'Podcast'
+
+/** Media item in the library */
+export interface MediaItem {
+  id: string              // Unique ID (uuid)
+  title: string           // e.g. "Return to Silent Hill"
+  mediaType: MediaType    // Book, Movie, Game, etc.
+  notionUrl?: string      // Optional Notion page URL
+  createdAt: number       // Timestamp when added
+}
+
+// ============================================
 // ContentType System (user-editable schemas)
 // ============================================
 
 /** Field types for ContentType schema */
-export type FieldType = 'text' | 'number' | 'dropdown' | 'boolean'
+export type FieldType = 'text' | 'number' | 'dropdown' | 'boolean' | 'media-select'
 
 /** Single field definition in a ContentType schema */
 export interface FieldDefinition {
@@ -127,6 +143,7 @@ export interface SessionState {
   sessionStart: number | null
   entries: Entry[]
   contentTypes: ContentType[]     // User's content types (includes built-in)
+  mediaItems: MediaItem[]         // User's media library
   apiKey: string | null
   aiBaseUrl: string
   aiModel: string
@@ -195,6 +212,7 @@ export interface SetAIConfigPayload {
 export interface ImportDataPayload {
   entries?: Entry[]
   contentTypes?: ContentType[]
+  mediaItems?: MediaItem[]
 }
 
 // ContentType actions
@@ -208,6 +226,20 @@ export interface UpdateContentTypePayload {
 }
 
 export interface DeleteContentTypePayload {
+  id: string
+}
+
+// Media library actions
+export interface AddMediaItemPayload {
+  mediaItem: MediaItem
+}
+
+export interface UpdateMediaItemPayload {
+  id: string
+  updates: Partial<Omit<MediaItem, 'id' | 'createdAt'>>
+}
+
+export interface DeleteMediaItemPayload {
   id: string
 }
 
@@ -228,6 +260,9 @@ export type SessionAction =
   | { type: 'ADD_CONTENT_TYPE'; payload: AddContentTypePayload }
   | { type: 'UPDATE_CONTENT_TYPE'; payload: UpdateContentTypePayload }
   | { type: 'DELETE_CONTENT_TYPE'; payload: DeleteContentTypePayload }
+  | { type: 'ADD_MEDIA_ITEM'; payload: AddMediaItemPayload }
+  | { type: 'UPDATE_MEDIA_ITEM'; payload: UpdateMediaItemPayload }
+  | { type: 'DELETE_MEDIA_ITEM'; payload: DeleteMediaItemPayload }
 
 // ============================================
 // Hook Return Types
@@ -249,6 +284,9 @@ export interface SessionActions {
   addContentType: (contentType: ContentType) => void
   updateContentType: (id: string, updates: Partial<Omit<ContentType, 'id' | 'builtIn'>>) => void
   deleteContentType: (id: string) => void
+  addMediaItem: (mediaItem: MediaItem) => void
+  updateMediaItem: (id: string, updates: Partial<Omit<MediaItem, 'id' | 'createdAt'>>) => void
+  deleteMediaItem: (id: string) => void
 }
 
 /** useSession hook return type */
@@ -272,6 +310,7 @@ export interface CloudSyncState {
 export interface CloudData {
   entries: Entry[]
   contentTypes?: ContentType[]
+  mediaItems?: MediaItem[]
   categories?: Category[] | null
   lastModified?: number | null
 }

@@ -3,7 +3,7 @@ import { ChevronLeft, ChevronRight, MessageCircle, MessageCircleOff } from "luci
 import { ENTRY_TYPES } from "../../utils/constants";
 import { useTheme } from "../../hooks/useTheme";
 import { TimelineEntry } from "./TimelineEntry";
-import type { Entry, Category, SessionStatus, CategoryId } from "../../types";
+import type { Entry, Category, SessionStatus, CategoryId, MediaItem } from "../../types";
 
 const ENTRIES_PER_PAGE = 20;
 
@@ -20,9 +20,10 @@ interface TimelineProps {
   onContextMenu: (entry: Entry, position: Position) => void;
   categoryFilter?: CategoryId[];
   onNavigateToEntry?: (entry: Entry) => void;
+  mediaItems?: MediaItem[];
 }
 
-export function Timeline({ entries, allEntries, status, categories, onContextMenu, categoryFilter = [], onNavigateToEntry }: TimelineProps) {
+export function Timeline({ entries, allEntries, status, categories, onContextMenu, categoryFilter = [], onNavigateToEntry, mediaItems = [] }: TimelineProps) {
   const { theme } = useTheme();
   const [currentPage, setCurrentPage] = useState(0);
   const [showAIComments, setShowAIComments] = useState(true);
@@ -203,6 +204,7 @@ export function Timeline({ entries, allEntries, status, categories, onContextMen
           showDate={isFilterMode}
           onNavigateToEntry={onNavigateToEntry}
           showAIComment={showAIComments}
+          mediaItems={mediaItems}
         />
       ))}
     </div>

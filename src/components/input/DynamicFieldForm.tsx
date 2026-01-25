@@ -1,17 +1,20 @@
 import { ChangeEvent, useEffect } from "react";
-import type { ContentType, FieldDefinition } from "../../types";
+import type { ContentType, FieldDefinition, MediaItem } from "../../types";
+import { MediaSelector } from "./MediaSelector";
 
 interface DynamicFieldFormProps {
     contentType: ContentType | null;
     fieldValues: Record<string, unknown>;
     onChange: (values: Record<string, unknown>) => void;
+    mediaItems?: MediaItem[];
+    onAddMediaItem?: (mediaItem: MediaItem) => void;
 }
 
 /**
  * DynamicFieldForm - Renders form fields based on ContentType schema
- * Minimal version: only handles dropdown and number fields
+ * Handles dropdown, number, text, and media-select fields
  */
-export function DynamicFieldForm({ contentType, fieldValues, onChange }: DynamicFieldFormProps) {
+export function DynamicFieldForm({ contentType, fieldValues, onChange, mediaItems = [], onAddMediaItem }: DynamicFieldFormProps) {
     // Auto-populate missing defaults when contentType changes
     useEffect(() => {
         if (!contentType || !contentType.fields) return;
@@ -134,6 +137,15 @@ export function DynamicFieldForm({ contentType, fieldValues, onChange }: Dynamic
                                     border: "1px solid var(--border-light)",
                                     borderRadius: 4,
                                 }}
+                            />
+                        )}
+
+                        {field.type === 'media-select' && onAddMediaItem && (
+                            <MediaSelector
+                                mediaItems={mediaItems}
+                                selectedMediaId={value as string | undefined}
+                                onChange={(mediaId) => handleFieldChange(field.id, mediaId)}
+                                onAddMediaItem={onAddMediaItem}
                             />
                         )}
                     </div>

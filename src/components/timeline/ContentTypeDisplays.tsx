@@ -383,19 +383,38 @@ export const WorkoutDisplay = memo(function WorkoutDisplay({ fieldValues }: Work
 
 // Media field values interface
 interface MediaFields {
+  mediaId?: string;
+  // Legacy fields for backward compatibility
   mediaType?: string;
   title?: string;
 }
 
 interface MediaDisplayProps {
   fieldValues: MediaFields | null | undefined;
+  mediaItems?: Array<{
+    id: string;
+    title: string;
+    mediaType: string;
+    notionUrl?: string;
+  }>;
 }
 
 /**
  * Display component for media entries (books, movies, games, etc.)
+ * Resolves mediaId from Media Library if available
  */
-export const MediaDisplay = memo(function MediaDisplay({ fieldValues }: MediaDisplayProps) {
+export const MediaDisplay = memo(function MediaDisplay({ fieldValues, mediaItems = [] }: MediaDisplayProps) {
   if (!fieldValues) return null;
+
+  // Resolve media item from library
+  const mediaItem = fieldValues.mediaId
+    ? mediaItems.find(m => m.id === fieldValues.mediaId)
+    : null;
+
+  // Use resolved media item or fall back to legacy fields
+  const mediaType = mediaItem?.mediaType || fieldValues.mediaType;
+  const title = mediaItem?.title || fieldValues.title;
+  const notionUrl = mediaItem?.notionUrl;
 
   const iconStyle = { width: 14, height: 14, strokeWidth: 2 };
 
@@ -430,8 +449,15 @@ export const MediaDisplay = memo(function MediaDisplay({ fieldValues }: MediaDis
     return labels[type || ''] || 'MEDIA';
   };
 
+  const handleClick = () => {
+    if (notionUrl) {
+      window.open(notionUrl, '_blank', 'noopener,noreferrer');
+    }
+  };
+
   return (
     <div
+      onClick={notionUrl ? handleClick : undefined}
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -444,6 +470,16 @@ export const MediaDisplay = memo(function MediaDisplay({ fieldValues }: MediaDis
         fontFamily: 'var(--font-mono)',
         width: 'fit-content',
         maxWidth: '100%',
+        cursor: notionUrl ? 'pointer' : 'default',
+        transition: 'background-color 150ms ease',
+      }}
+      onMouseEnter={(e) => {
+        if (notionUrl) {
+          e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)';
+        }
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.backgroundColor = 'var(--bg-secondary)';
       }}
     >
       <span style={{
@@ -452,14 +488,14 @@ export const MediaDisplay = memo(function MediaDisplay({ fieldValues }: MediaDis
         fontSize: 11,
         flexShrink: 0
       }}>
-        [{getMediaLabel(fieldValues.mediaType)}]
+        [{getMediaLabel(mediaType)}]
       </span>
 
       <span style={{ color: 'var(--text-secondary)', display: 'flex', alignItems: 'center' }}>
-        {getMediaIcon(fieldValues.mediaType)}
+        {getMediaIcon(mediaType)}
       </span>
 
-      {fieldValues.title && (
+      {title && (
         <span style={{
           fontWeight: 500,
           color: 'var(--text-primary)',
@@ -467,10 +503,15 @@ export const MediaDisplay = memo(function MediaDisplay({ fieldValues }: MediaDis
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',
         }}>
-          {fieldValues.title}
+          {title}
+        </span>
+      )}
+
+      {notionUrl && (
+        <span style={{ color: 'var(--accent)', fontSize: 10, marginLeft: 4 }}>
+          ↗
         </span>
       )}
     </div>
   );
 });
-

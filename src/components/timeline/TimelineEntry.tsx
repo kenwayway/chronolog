@@ -8,7 +8,7 @@ import { LinkedEntryPreview } from "./LinkedEntryPreview";
 import { BookmarkDisplay, MoodDisplay, WorkoutDisplay, MediaDisplay } from "./ContentTypeDisplays";
 import { ImageLightbox } from "../common/ImageLightbox";
 import styles from "./TimelineEntry.module.css";
-import type { Entry, Category } from "../../types";
+import type { Entry, Category, MediaItem } from "../../types";
 import { isTaskEntry, getBookmarkFields, getMoodFields, getWorkoutFields, getMediaFields } from "../../types/guards";
 
 interface Position {
@@ -143,6 +143,7 @@ interface TimelineEntryProps {
   showDate?: boolean;
   onNavigateToEntry?: (entry: Entry) => void;
   showAIComment?: boolean;
+  mediaItems?: MediaItem[];
 }
 
 /**
@@ -162,6 +163,7 @@ export const TimelineEntry = memo(function TimelineEntry({
   showDate = false,
   onNavigateToEntry,
   showAIComment = true,
+  mediaItems = [],
 }: TimelineEntryProps) {
   const { symbols } = useTheme();
   const [pressTimer, setPressTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
@@ -441,7 +443,7 @@ export const TimelineEntry = memo(function TimelineEntry({
           )}
           {entry.contentType === 'media' && (
             <div style={{ marginTop: 6 }}>
-              <MediaDisplay fieldValues={getMediaFields(entry)} />
+              <MediaDisplay fieldValues={getMediaFields(entry)} mediaItems={mediaItems} />
             </div>
           )}
 
