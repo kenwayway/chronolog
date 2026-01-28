@@ -138,6 +138,7 @@ interface TimelineEntryProps {
   sessionDuration?: number;
   categories: Category[];
   onContextMenu?: (entry: Entry, position: Position) => void;
+  onEdit?: (entry: Entry) => void;
   lineState: LineState | string;
   isLightMode: boolean;
   showDate?: boolean;
@@ -158,6 +159,7 @@ export const TimelineEntry = memo(function TimelineEntry({
   sessionDuration,
   categories,
   onContextMenu,
+  onEdit,
   lineState,
   isLightMode,
   showDate = false,
@@ -173,6 +175,10 @@ export const TimelineEntry = memo(function TimelineEntry({
   const handleContextMenu = (e: MouseEvent<HTMLDivElement>) => {
     e.preventDefault();
     onContextMenu?.(entry, { x: e.clientX, y: e.clientY });
+  };
+
+  const handleDoubleClick = () => {
+    onEdit?.(entry);
   };
 
   const handleTouchStart = (e: TouchEvent<HTMLDivElement>) => {
@@ -287,6 +293,7 @@ export const TimelineEntry = memo(function TimelineEntry({
           transition: "background-color 300ms ease",
         }}
         onContextMenu={handleContextMenu}
+        onDoubleClick={handleDoubleClick}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
         onTouchCancel={handleTouchEnd}

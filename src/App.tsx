@@ -245,6 +245,7 @@ function App() {
                         status={state.status}
                         categories={categories}
                         onContextMenu={handleContextMenu}
+                        onEdit={openEditModal}
                         categoryFilter={categoryFilter}
                         onNavigateToEntry={navigateToEntry}
                         mediaItems={state.mediaItems}

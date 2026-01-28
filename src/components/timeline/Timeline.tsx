@@ -18,12 +18,13 @@ interface TimelineProps {
   status: SessionStatus;
   categories: Category[];
   onContextMenu: (entry: Entry, position: Position) => void;
+  onEdit?: (entry: Entry) => void;
   categoryFilter?: CategoryId[];
   onNavigateToEntry?: (entry: Entry) => void;
   mediaItems?: MediaItem[];
 }
 
-export function Timeline({ entries, allEntries, status, categories, onContextMenu, categoryFilter = [], onNavigateToEntry, mediaItems = [] }: TimelineProps) {
+export function Timeline({ entries, allEntries, status, categories, onContextMenu, onEdit, categoryFilter = [], onNavigateToEntry, mediaItems = [] }: TimelineProps) {
   const { theme } = useTheme();
   const [currentPage, setCurrentPage] = useState(0);
   const [showAIComments, setShowAIComments] = useState(true);
@@ -45,23 +46,28 @@ export function Timeline({ entries, allEntries, status, categories, onContextMen
     ? displayEntries // Already sorted in App.jsx
     : [...displayEntries].sort((a, b) => a.timestamp - b.timestamp);
 
-  // Build session durations map
+  // Build session durations map (dynamically calculated from timestamps)
   const sessionDurations: Record<string, number> = {};
   let currentSessionStartId: string | null = null;
+  let currentSessionStartTime: number | null = null;
 
-  // Calculate line states
+  // Calculate line states and session durations
   const entryLineStates: Record<string, string> = {};
   let inSession = false;
 
   for (const entry of sortedEntries) {
     if (entry.type === ENTRY_TYPES.SESSION_START) {
       currentSessionStartId = entry.id;
+      currentSessionStartTime = entry.timestamp;
     } else if (
       entry.type === ENTRY_TYPES.SESSION_END &&
-      currentSessionStartId
+      currentSessionStartId &&
+      currentSessionStartTime
     ) {
-      sessionDurations[currentSessionStartId] = entry.duration || 0;
+      // Calculate duration dynamically from timestamps
+      sessionDurations[currentSessionStartId] = entry.timestamp - currentSessionStartTime;
       currentSessionStartId = null;
+      currentSessionStartTime = null;
     }
 
     let state = "default";
@@ -199,6 +205,7 @@ export function Timeline({ entries, allEntries, status, categories, onContextMen
           sessionDuration={sessionDurations[entry.id]}
           categories={categories}
           onContextMenu={onContextMenu}
+          onEdit={onEdit}
           lineState={entryLineStates[entry.id]}
           isLightMode={theme.mode === "light"}
           showDate={isFilterMode}
