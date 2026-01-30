@@ -16,19 +16,19 @@ export interface CloudSyncWithUpload extends CloudSyncStatus {
 
 /** Full cloud sync interface with all methods - used by SettingsModal */
 export interface CloudSyncFull extends CloudSyncStatus {
-    lastSynced?: number;
-    error?: string;
+    lastSynced?: number | null;
+    error?: string | null;
     login: (password: string) => Promise<{ success: boolean; error?: string }>;
     logout: () => void;
     sync: () => void;
-    cleanupImages: () => Promise<{ deletedCount: number; totalImages: number; error?: string }>;
+    cleanupImages: () => Promise<{ deleted: string[]; kept: string[] }>;
 }
 
 /** Google Tasks integration interface */
 export interface GoogleTasksStatus {
     isLoggedIn: boolean;
     isLoading: boolean;
-    error?: string;
+    error?: string | null;
     login: () => void;
     logout: () => void;
 }

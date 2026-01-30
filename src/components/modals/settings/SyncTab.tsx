@@ -9,8 +9,8 @@ interface ImportData {
 }
 
 interface CleanupResult {
-    deletedCount?: number;
-    totalImages?: number;
+    deleted?: string[];
+    kept?: string[];
     error?: string;
 }
 
@@ -268,7 +268,7 @@ export function SyncTab({
                         <p className={cleanupResult.error ? "settings-error" : "settings-hint"} style={{ marginTop: 8 }}>
                             {cleanupResult.error
                                 ? `错误: ${cleanupResult.error}`
-                                : `已清理 ${cleanupResult.deletedCount} 张图片 (共 ${cleanupResult.totalImages} 张)`
+                                : `已清理 ${cleanupResult.deleted?.length ?? 0} 张图片 (共 ${(cleanupResult.deleted?.length ?? 0) + (cleanupResult.kept?.length ?? 0)} 张)`
                             }
                         </p>
                     )}

@@ -61,6 +61,7 @@ export interface FieldDefinition {
 export interface ContentType {
   id: string
   name: string
+  icon?: string         // Display icon (emoji or character)
   color?: string
   fields: FieldDefinition[]
   builtIn?: boolean     // System types can't be deleted

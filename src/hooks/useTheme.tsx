@@ -5,7 +5,7 @@ import { STORAGE_KEYS, getStorage, setStorage } from '../utils/storageService'
 // ===== Accent Color Palette =====
 export type AccentColorKey = 'blue' | 'indigo' | 'violet' | 'rose' | 'amber' | 'emerald' | 'cyan'
 
-interface AccentColor {
+export interface AccentColor {
     name: string
     value: string
     light: string

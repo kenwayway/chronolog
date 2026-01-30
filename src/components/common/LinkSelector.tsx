@@ -241,7 +241,7 @@ export function LinkSelector({
                                                 fontFamily: "var(--font-mono)",
                                             }}
                                         >
-                                            {formatDate(date)} {formatTime(entry.timestamp)}
+                                            {formatDate(entry.timestamp)} {formatTime(entry.timestamp)}
                                         </div>
                                     </div>
 

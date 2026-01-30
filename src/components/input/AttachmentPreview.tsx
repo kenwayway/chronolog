@@ -16,7 +16,7 @@ interface AttachmentPreviewProps {
     setShowLocationInput: (show: boolean) => void;
     isUploading: boolean;
     isGettingLocation: boolean;
-    fileInputRef: RefObject<HTMLInputElement>;
+    fileInputRef: RefObject<HTMLInputElement | null>;
     cloudSync: CloudSync | null;
     onImageUpload: (e: ChangeEvent<HTMLInputElement>) => void;
     onGetLocation: () => void;

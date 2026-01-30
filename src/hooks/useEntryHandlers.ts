@@ -17,7 +17,7 @@ interface EntryHandlers {
     handleNote: (content: string, options?: { contentType?: string; fieldValues?: Record<string, unknown>; category?: CategoryId; tags?: string[] }) => void
     handleLogOff: (content: string) => void
     handleEditEntry: (entry: Entry, openModal: (entry: Entry) => void) => void
-    handleSaveEdit: (entryId: string, updates: UpdateEntryPayload) => void
+    handleSaveEdit: (entryId: string, updates: Omit<UpdateEntryPayload, 'entryId'>) => void
     handleDeleteEntry: (entry: Entry) => void
     handleCopyEntry: (entry: Entry) => void
     handleMarkAsTask: (entry: Entry) => Promise<void>
@@ -63,10 +63,10 @@ export function useEntryHandlers({
         openModal(entry)
     }, [])
 
-    const handleSaveEdit = useCallback((entryId: string, updates: UpdateEntryPayload) => {
+    const handleSaveEdit = useCallback((entryId: string, updates: Omit<UpdateEntryPayload, 'entryId'>) => {
         const cleanUpdates = Object.fromEntries(
             Object.entries(updates).filter(([, v]) => v !== undefined)
-        ) as UpdateEntryPayload
+        ) as Omit<UpdateEntryPayload, 'entryId'>
         if (Object.keys(cleanUpdates).length > 0) {
             actions.updateEntry(entryId, cleanUpdates)
         }

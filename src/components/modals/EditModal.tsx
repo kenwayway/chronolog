@@ -3,23 +3,12 @@ import { Image, MapPin, Plus, ChevronDown } from "lucide-react";
 import { EntryMetadataInput } from "../input/EntryMetadataInput";
 import { BUILTIN_CONTENT_TYPES, ENTRY_TYPES } from "../../utils/constants";
 import styles from "./EditModal.module.css";
-import type { Entry, Category, ContentType, CategoryId, MediaItem } from "../../types";
-
-interface EntryUpdates {
-  content?: string;
-  timestamp?: number;
-  category?: CategoryId | null;
-  contentType?: string | null;
-  fieldValues?: Record<string, unknown>;
-  linkedEntries?: string[];
-  tags?: string[];
-  type?: string;
-}
+import type { Entry, Category, ContentType, CategoryId, MediaItem, UpdateEntryPayload, EntryType } from "../../types";
 
 interface EditModalProps {
   isOpen: boolean;
   entry: Entry | null;
-  onSave: (entryId: string, updates: EntryUpdates) => void;
+  onSave: (entryId: string, updates: Omit<UpdateEntryPayload, 'entryId'>) => void;
   onClose: () => void;
   categories: Category[];
   contentTypes?: ContentType[];
@@ -89,7 +78,7 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
       setTimestamp(localISOTime);
       setCategory(entry.category || null);
       setContentType(entry.contentType || null);
-      setFieldValues(entry.fieldValues || {});
+      setFieldValues((entry.fieldValues || {}) as Record<string, unknown>);
       setLinkedEntries(entry.linkedEntries || []);
       setTags(entry.tags || []);
       setEntryType(entry.type || ENTRY_TYPES.NOTE);
@@ -153,12 +142,12 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
     onSave(entry.id, {
       content: newContent !== entry.content ? newContent : undefined,
       timestamp: newTimestamp !== entry.timestamp ? newTimestamp : undefined,
-      category: category !== entry.category ? category : undefined,
-      contentType: contentType !== entry.contentType ? contentType : undefined,
+      category: category !== entry.category ? (category ?? undefined) : undefined,
+      contentType: contentType !== entry.contentType ? (contentType ?? undefined) : undefined,
       fieldValues: JSON.stringify(fieldValues) !== JSON.stringify(entry.fieldValues) ? fieldValues : undefined,
       linkedEntries: JSON.stringify(linkedEntries) !== JSON.stringify(entry.linkedEntries || []) ? linkedEntries : undefined,
       tags: tagsChanged ? tags : undefined,
-      type: entryType !== entry.type ? entryType : undefined,
+      type: entryType !== entry.type ? (entryType as EntryType) : undefined,
     });
     onClose();
   };

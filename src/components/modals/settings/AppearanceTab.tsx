@@ -1,5 +1,5 @@
 import type { Category } from '../../../types';
-import { useTheme, ACCENT_COLORS, type AccentColor } from '../../../hooks/useTheme';
+import { useTheme, ACCENT_COLORS, type AccentColorKey } from '../../../hooks/useTheme';
 
 interface AppearanceTabProps {
     categories?: Category[];
@@ -41,7 +41,7 @@ export function AppearanceTab({ categories }: AppearanceTabProps) {
                     {Object.entries(ACCENT_COLORS).map(([colorKey, color]) => (
                         <button
                             key={colorKey}
-                            onClick={() => setAccent(colorKey as AccentColor)}
+                            onClick={() => setAccent(colorKey as AccentColorKey)}
                             title={color.name}
                             className="settings-color-btn"
                             style={{

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import type { Entry, ContentType, SessionActions } from '../types'
+import type { Entry, ContentType, SessionActions, UpdateEntryPayload } from '../types'
 import type { CategorizeResult } from './useAICategories'
 import { STORAGE_KEYS, getStorage, type CloudAuthData } from '../utils/storageService'
 
@@ -40,7 +40,7 @@ export function useAutoCategorize({
 
                 if (token) {
                     categorize(newEntry.content, token, contentTypes).then(result => {
-                        const updates: Partial<Entry> = {}
+                        const updates: Omit<UpdateEntryPayload, 'entryId'> = {}
 
                         if (result.category) {
                             updates.category = result.category

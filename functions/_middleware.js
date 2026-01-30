@@ -17,10 +17,11 @@ export async function onRequest(context) {
     // Skip auth for public endpoints
     const url = new URL(request.url);
 
-    // Public routes: auth, image serving, and data reading (GET only)
+    // Public routes: auth, image serving, data reading (GET only), and public entries API
     const isPublicRoute =
         url.pathname === '/api/auth' ||
         url.pathname.startsWith('/api/image/') ||
+        url.pathname === '/api/entries/public' ||
         (url.pathname === '/api/data' && request.method === 'GET');
 
     if (isPublicRoute) {
