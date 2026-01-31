@@ -18,10 +18,7 @@ interface ContextMenuProps {
     onCopy: (entry: Entry) => void;
     onMarkAsTask: (entry: Entry) => void;
     onLink?: (entry: Entry) => void;
-    onAIComment?: (entry: Entry) => void;
-    onDeleteAIComment?: (entry: Entry) => void;
     googleTasksEnabled?: boolean;
-    aiLoading?: boolean;
 }
 
 export function ContextMenu({
@@ -34,10 +31,7 @@ export function ContextMenu({
     onCopy,
     onMarkAsTask,
     onLink,
-    onAIComment,
-    onDeleteAIComment,
     googleTasksEnabled = false,
-    aiLoading = false,
 }: ContextMenuProps) {
     const menuRef = useRef<HTMLDivElement>(null);
 
@@ -81,26 +75,12 @@ export function ContextMenu({
         onLink?.(entry);
         onClose();
     };
-    const handleAIComment = () => {
-        onAIComment?.(entry);
-        // Don't close immediately - let loading state show
-    };
-    const handleDeleteAIComment = () => {
-        onDeleteAIComment?.(entry);
-        onClose();
-    };
 
     // Can mark as task: NOTE or SESSION_START, not already a task
     const isTask = entry.contentType === 'task';
     const canMarkAsTask =
         (entry.type === ENTRY_TYPES.NOTE || entry.type === ENTRY_TYPES.SESSION_START) &&
         !isTask;
-
-    // Can add AI comment: has content and no existing comment
-    const canAddAIComment = !!entry.content?.trim() && !entry.aiComment;
-
-    // Can delete AI comment: has existing comment
-    const hasAIComment = !!entry.aiComment;
 
     return (
         <div
@@ -135,24 +115,7 @@ export function ContextMenu({
                 ↪ FOLLOW UP
             </button>
 
-            {canAddAIComment && (
-                <button
-                    className={styles.item}
-                    onClick={handleAIComment}
-                    disabled={aiLoading}
-                >
-                    {aiLoading ? "GENERATING..." : "AI COMMENT"}
-                </button>
-            )}
 
-            {hasAIComment && (
-                <button
-                    className={`${styles.item} ${styles.itemDanger}`}
-                    onClick={handleDeleteAIComment}
-                >
-                    DELETE AI COMMENT
-                </button>
-            )}
 
             <button className={styles.item} onClick={handleCopy}>
                 COPY

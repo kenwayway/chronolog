@@ -1,7 +1,7 @@
-import { useState, useEffect, MouseEvent } from "react";
-import { Palette, Sparkles, Database, LucideIcon } from "lucide-react";
+import { useState, MouseEvent } from "react";
+import { Palette, Database, LucideIcon } from "lucide-react";
 import type { Entry, Category, CloudSyncFull, GoogleTasksStatus } from "../../types";
-import { AppearanceTab, AITab, SyncTab } from "./settings";
+import { AppearanceTab, SyncTab } from "./settings";
 import styles from "./SettingsModal.module.css";
 
 interface Tab {
@@ -12,16 +12,10 @@ interface Tab {
 
 const TABS: Tab[] = [
     { id: "appearance", label: "Appearance", icon: Palette },
-    { id: "ai", label: "AI", icon: Sparkles },
     { id: "sync", label: "Sync", icon: Database },
 ];
 
-interface AICommentConfig {
-    hasApiKey: boolean;
-    baseUrl: string;
-    model: string;
-    persona: string;
-}
+
 
 interface ImportData {
     entries: Entry[];
@@ -32,8 +26,6 @@ interface ImportData {
 interface SettingsModalProps {
     isOpen: boolean;
     onClose: () => void;
-    aiCommentConfig?: AICommentConfig | null;
-    onSaveAIConfig: (config: { baseUrl?: string; model?: string; persona?: string }) => Promise<boolean>;
     categories?: Category[];
     entries?: Entry[];
     tasks?: unknown[];
@@ -49,8 +41,6 @@ interface SettingsModalProps {
 export function SettingsModal({
     isOpen,
     onClose,
-    aiCommentConfig,
-    onSaveAIConfig,
     categories,
     entries,
     tasks,
@@ -59,32 +49,6 @@ export function SettingsModal({
     googleTasks,
 }: SettingsModalProps) {
     const [activeTab, setActiveTab] = useState("appearance");
-    const [baseUrl, setBaseUrl] = useState(aiCommentConfig?.baseUrl || "https://api.openai.com/v1");
-    const [model, setModel] = useState(aiCommentConfig?.model || "gpt-4o-mini");
-    const [persona, setPersona] = useState(aiCommentConfig?.persona || "");
-    const [saved, setSaved] = useState(false);
-    const [saving, setSaving] = useState(false);
-
-    // Update local state when config changes
-    useEffect(() => {
-        if (aiCommentConfig) {
-            setBaseUrl(aiCommentConfig.baseUrl || "https://api.openai.com/v1");
-            setModel(aiCommentConfig.model || "gpt-4o-mini");
-            setPersona(aiCommentConfig.persona || "");
-        }
-    }, [aiCommentConfig]);
-
-    if (!isOpen) return null;
-
-    const handleSave = async () => {
-        setSaving(true);
-        const success = await onSaveAIConfig({ baseUrl, model, persona });
-        setSaving(false);
-        if (success) {
-            setSaved(true);
-            setTimeout(() => setSaved(false), 1500);
-        }
-    };
 
     const handleBackdropClick = (e: MouseEvent<HTMLDivElement>) => {
         if (e.target === e.currentTarget) onClose();
@@ -128,18 +92,6 @@ export function SettingsModal({
                         {activeTab === "appearance" && (
                             <AppearanceTab categories={categories} />
                         )}
-                        {activeTab === "ai" && (
-                            <AITab
-                                cloudSync={cloudSync}
-                                aiCommentConfig={aiCommentConfig}
-                                baseUrl={baseUrl}
-                                setBaseUrl={setBaseUrl}
-                                model={model}
-                                setModel={setModel}
-                                persona={persona}
-                                setPersona={setPersona}
-                            />
-                        )}
                         {activeTab === "sync" && (
                             <SyncTab
                                 cloudSync={cloudSync}
@@ -156,11 +108,10 @@ export function SettingsModal({
                     <div className={`flex-between ${styles.footer}`}>
                         <span className={styles.footerHint}>Esc to close</span>
                         <button
-                            onClick={handleSave}
+                            onClick={onClose}
                             className="btn-action btn-action-primary"
-                            style={{ backgroundColor: saved ? "#22c55e" : undefined }}
                         >
-                            {saved ? "SAVED ✓" : "SAVE"}
+                            CLOSE
                         </button>
                     </div>
                 </div>
