@@ -39,6 +39,7 @@ async function notifyOpenClaw(entry, env) {
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
+      entryId: entry.id,
       text: `新日志: ${entry.content}`,
       mode: 'now'
     })
