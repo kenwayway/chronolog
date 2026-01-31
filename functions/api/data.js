@@ -33,7 +33,7 @@ export async function onRequestOptions() {
 async function notifyOpenClaw(entry, env) {
   try {
     const webhookSecret = env.OPENCLAW_WEBHOOK_SECRET || 'chronolog-webhook-secret';
-    await fetch('http://68.233.124.109:18789/hooks/wake', {
+    await fetch('https://claw.233446.xyz/hooks/wake', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${webhookSecret}`,
