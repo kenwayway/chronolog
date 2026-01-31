@@ -50,6 +50,8 @@ export function SettingsModal({
 }: SettingsModalProps) {
     const [activeTab, setActiveTab] = useState("appearance");
 
+    if (!isOpen) return null;
+
     const handleBackdropClick = (e: MouseEvent<HTMLDivElement>) => {
         if (e.target === e.currentTarget) onClose();
     };
