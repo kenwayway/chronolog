@@ -31,27 +31,23 @@ export async function onRequestOptions() {
 
 // Send webhook notification to OpenClaw for new entries
 async function notifyOpenClaw(entry, env) {
-  try {
-    const webhookSecret = env.OPENCLAW_WEBHOOK_SECRET || 'chronolog-webhook-secret';
-    await fetch('https://claw.233446.xyz/hooks/wake', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${webhookSecret}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        text: `新日志: ${entry.content}`,
-        mode: 'now'
-      })
-    });
-  } catch (error) {
-    // Fail silently - don't block the main request
-    console.error('OpenClaw webhook failed:', error);
-  }
+  const webhookSecret = env.OPENCLAW_WEBHOOK_SECRET || 'chronolog-webhook-secret';
+  const response = await fetch('https://claw.233446.xyz/hooks/wake', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${webhookSecret}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      text: `新日志: ${entry.content}`,
+      mode: 'now'
+    })
+  });
+  console.log('OpenClaw webhook response:', response.status);
 }
 
 export async function onRequestPut(context) {
-  const { request, env } = context;
+  const { request, env, waitUntil } = context;
 
   // Verify authentication
   const auth = await verifyAuth(request, env);
@@ -87,11 +83,11 @@ export async function onRequestPut(context) {
     // Save to KV
     await env.CHRONOLOG_KV.put('user_data', JSON.stringify(dataToSave));
 
-    // Send webhook notifications for new entries (don't await - fire and forget)
+    // Send webhook notifications for new entries using waitUntil to keep worker alive
     for (const entry of newEntries) {
       // Only notify for entries with content (skip SESSION_START/SESSION_END without meaningful content)
       if (entry.content && entry.content.trim()) {
-        notifyOpenClaw(entry, env);
+        waitUntil(notifyOpenClaw(entry, env));
       }
     }
 
