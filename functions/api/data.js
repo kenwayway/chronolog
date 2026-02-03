@@ -40,7 +40,7 @@ async function notifyOpenClaw(entry, env) {
     },
     body: JSON.stringify({
       entryId: entry.id,
-      text: `新日志: ${entry.content}`,
+      text: `宝宝刚刚在她的chronolog更新了，内容是: ${entry.content}，你可以自己决定是否根据这个更新内容回复她`,
       mode: 'now'
     })
   });
