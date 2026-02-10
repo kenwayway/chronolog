@@ -2,14 +2,22 @@
 // API Key is stored as Cloudflare Secret (env.AI_COMMENT_API_KEY)
 // Non-sensitive config (baseUrl, model, persona) stored in KV
 
-export async function onRequestGet(context) {
-    const { request, env } = context;
+import type { CFContext } from './types.ts';
 
-    const corsHeaders = {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, PUT, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    };
+const corsHeaders: Record<string, string> = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, PUT, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+};
+
+interface AIConfig {
+    baseUrl?: string;
+    model?: string;
+    persona?: string;
+}
+
+export async function onRequestGet(context: CFContext): Promise<Response> {
+    const { request, env } = context;
 
     try {
         // Verify auth token
@@ -28,7 +36,7 @@ export async function onRequestGet(context) {
 
         // Get non-sensitive config from KV
         const configStr = await env.CHRONOLOG_KV.get('ai_comment_config');
-        const config = configStr ? JSON.parse(configStr) : {};
+        const config: AIConfig = configStr ? JSON.parse(configStr) : {};
 
         return Response.json({
             hasApiKey,
@@ -38,21 +46,16 @@ export async function onRequestGet(context) {
         }, { headers: corsHeaders });
 
     } catch (error) {
+        const message = error instanceof Error ? error.message : 'Failed to get config';
         return Response.json(
-            { error: error.message || 'Failed to get config' },
+            { error: message },
             { status: 500, headers: corsHeaders }
         );
     }
 }
 
-export async function onRequestPut(context) {
+export async function onRequestPut(context: CFContext): Promise<Response> {
     const { request, env } = context;
-
-    const corsHeaders = {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, PUT, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    };
 
     try {
         // Verify auth token
@@ -66,14 +69,14 @@ export async function onRequestPut(context) {
             return Response.json({ error: 'Invalid token' }, { status: 401, headers: corsHeaders });
         }
 
-        const body = await request.json();
+        const body = await request.json<AIConfig>();
 
         // Get existing config
         const existingStr = await env.CHRONOLOG_KV.get('ai_comment_config');
-        const existing = existingStr ? JSON.parse(existingStr) : {};
+        const existing: AIConfig = existingStr ? JSON.parse(existingStr) : {};
 
         // Update non-sensitive config only (API Key is set via wrangler secret)
-        const config = {
+        const config: AIConfig = {
             baseUrl: body.baseUrl !== undefined ? body.baseUrl : existing.baseUrl,
             model: body.model !== undefined ? body.model : existing.model,
             persona: body.persona !== undefined ? body.persona : existing.persona,
@@ -90,20 +93,15 @@ export async function onRequestPut(context) {
         }, { headers: corsHeaders });
 
     } catch (error) {
+        const message = error instanceof Error ? error.message : 'Failed to save config';
         return Response.json(
-            { error: error.message || 'Failed to save config' },
+            { error: message },
             { status: 500, headers: corsHeaders }
         );
     }
 }
 
 // Handle OPTIONS preflight
-export async function onRequestOptions() {
-    return new Response(null, {
-        headers: {
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, PUT, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        }
-    });
+export async function onRequestOptions(): Promise<Response> {
+    return new Response(null, { headers: corsHeaders });
 }

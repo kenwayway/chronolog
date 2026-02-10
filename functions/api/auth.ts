@@ -1,10 +1,13 @@
 // POST /api/auth - Authenticate with password
 // Supports multi-device: each login creates a unique token
-export async function onRequestPost(context) {
+
+import type { CFContext } from './types.ts';
+
+export async function onRequestPost(context: CFContext): Promise<Response> {
     const { request, env } = context;
 
     try {
-        const { password } = await request.json();
+        const { password } = await request.json<{ password: string }>();
 
         // Get password from environment variable
         const correctPassword = env.AUTH_PASSWORD;
@@ -31,7 +34,7 @@ export async function onRequestPost(context) {
             token,
             expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000
         });
-    } catch (error) {
+    } catch {
         return Response.json({ error: 'Invalid request' }, { status: 400 });
     }
 }

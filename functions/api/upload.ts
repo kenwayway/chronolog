@@ -1,14 +1,15 @@
 // POST /api/upload - Upload image to R2 and return URL
 // Requires authentication
 
-import { verifyAuth, corsHeaders, unauthorizedResponse } from './_auth.js';
+import { verifyAuth, corsHeaders, unauthorizedResponse } from './_auth.ts';
+import type { CFContext } from './types.ts';
 
 // Handle OPTIONS preflight request
-export async function onRequestOptions() {
+export async function onRequestOptions(): Promise<Response> {
     return new Response(null, { headers: corsHeaders });
 }
 
-export async function onRequestPost(context) {
+export async function onRequestPost(context: CFContext): Promise<Response> {
     const { request, env } = context;
 
     // Verify authentication
@@ -23,9 +24,9 @@ export async function onRequestPost(context) {
         // Handle multipart form data
         if (contentType.includes('multipart/form-data')) {
             const formData = await request.formData();
-            const file = formData.get('file');
+            const file = formData.get('file') as File | null;
 
-            if (!file || !(file instanceof File)) {
+            if (!file || typeof file === 'string') {
                 return Response.json({ error: 'No file provided' }, { status: 400, headers: corsHeaders });
             }
 

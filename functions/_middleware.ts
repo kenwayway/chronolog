@@ -1,5 +1,7 @@
 // Middleware for CORS and auth
-export async function onRequest(context) {
+import type { Env } from './api/types.ts';
+
+export async function onRequest(context: EventContext<Env, string, unknown>): Promise<Response> {
     const { request, env, next } = context;
 
     // Handle CORS preflight
@@ -22,7 +24,7 @@ export async function onRequest(context) {
         url.pathname === '/api/auth' ||
         url.pathname.startsWith('/api/image/') ||
         url.pathname === '/api/entries/public' ||
-        url.pathname.match(/^\/api\/entries\/[^/]+\/comment$/) ||  // OpenClaw comment endpoint
+        !!url.pathname.match(/^\/api\/entries\/[^/]+\/comment$/) ||
         (url.pathname === '/api/data' && request.method === 'GET');
 
     if (isPublicRoute) {
@@ -61,7 +63,7 @@ export async function onRequest(context) {
     return addCorsHeaders(response);
 }
 
-function addCorsHeaders(response) {
+function addCorsHeaders(response: Response): Response {
     const newHeaders = new Headers(response.headers);
     newHeaders.set('Access-Control-Allow-Origin', '*');
     return new Response(response.body, {

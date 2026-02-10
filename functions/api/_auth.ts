@@ -1,13 +1,12 @@
 // Shared authentication helper for API endpoints
 // Validates bearer token against KV-stored auth tokens
 
+import type { Env, AuthResult } from './types.ts';
+
 /**
  * Verify the bearer token from Authorization header
- * @param {Request} request - The incoming request
- * @param {object} env - Cloudflare environment bindings
- * @returns {Promise<{valid: boolean, error?: string}>}
  */
-export async function verifyAuth(request, env) {
+export async function verifyAuth(request: Request, env: Env): Promise<AuthResult> {
     const authHeader = request.headers.get('Authorization');
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -33,7 +32,7 @@ export async function verifyAuth(request, env) {
 /**
  * Standard CORS headers for API responses
  */
-export const corsHeaders = {
+export const corsHeaders: Record<string, string> = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
@@ -42,7 +41,7 @@ export const corsHeaders = {
 /**
  * Create an unauthorized response
  */
-export function unauthorizedResponse(message = 'Unauthorized') {
+export function unauthorizedResponse(message = 'Unauthorized'): Response {
     return Response.json(
         { error: message },
         { status: 401, headers: corsHeaders }

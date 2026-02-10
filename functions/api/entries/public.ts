@@ -1,12 +1,13 @@
 // GET /api/entries/public?token=xxx - Public API endpoint for AI access to entries
 // Requires PUBLIC_API_TOKEN environment variable to be set in Cloudflare
 
-import { entryRowToObject, contentTypeRowToObject, mediaItemRowToObject, getLastModified } from '../_db.js';
+import { entryRowToObject, contentTypeRowToObject, mediaItemRowToObject, getLastModified } from '../_db.ts';
+import type { CFContext, EntryRow, ContentTypeRow, MediaItemRow } from '../types.ts';
 
-export async function onRequestGet(context) {
+export async function onRequestGet(context: CFContext): Promise<Response> {
     const { request, env } = context;
 
-    const corsHeaders = {
+    const corsHeaders: Record<string, string> = {
         'Access-Control-Allow-Origin': '*',
         'Content-Type': 'application/json',
     };
@@ -39,7 +40,7 @@ export async function onRequestGet(context) {
         const limit = Math.min(parseInt(url.searchParams.get('limit') || '100', 10), 1000);
 
         let query = 'SELECT * FROM entries WHERE 1=1';
-        const bindings = [];
+        const bindings: (string | number)[] = [];
 
         if (startDate) {
             const start = new Date(startDate).getTime();
@@ -57,14 +58,14 @@ export async function onRequestGet(context) {
         bindings.push(limit);
 
         const stmt = db.prepare(query);
-        const result = await (bindings.length > 0 ? stmt.bind(...bindings) : stmt).all();
+        const result = await (bindings.length > 0 ? stmt.bind(...bindings) : stmt).all<EntryRow>();
         const entries = result.results.map(entryRowToObject);
 
         // Fetch content types and media items
-        const ctResult = await db.prepare('SELECT * FROM content_types ORDER BY sort_order ASC').all();
+        const ctResult = await db.prepare('SELECT * FROM content_types ORDER BY sort_order ASC').all<ContentTypeRow>();
         const contentTypes = ctResult.results.map(contentTypeRowToObject);
 
-        const miResult = await db.prepare('SELECT * FROM media_items ORDER BY created_at DESC').all();
+        const miResult = await db.prepare('SELECT * FROM media_items ORDER BY created_at DESC').all<MediaItemRow>();
         const mediaItems = miResult.results.map(mediaItemRowToObject);
 
         const lastModified = await getLastModified(db);
@@ -87,7 +88,7 @@ export async function onRequestGet(context) {
 }
 
 // Handle OPTIONS preflight request
-export async function onRequestOptions() {
+export async function onRequestOptions(): Promise<Response> {
     return new Response(null, {
         headers: {
             'Access-Control-Allow-Origin': '*',

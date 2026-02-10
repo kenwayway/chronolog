@@ -1,11 +1,13 @@
 // Shared D1 helper functions for consistent row <-> object mapping
 
+import type { EntryRow, ContentTypeRow, MediaItemRow, Entry, ContentType, MediaItem } from './types.ts';
+
 /**
  * Convert a D1 entry row (snake_case) to a frontend Entry object (camelCase)
  * Parses JSON string fields back into objects/arrays
  */
-export function entryRowToObject(row) {
-    const entry = {
+export function entryRowToObject(row: EntryRow): Entry {
+    const entry: Entry = {
         id: row.id,
         type: row.type,
         content: row.content,
@@ -38,11 +40,28 @@ export function entryRowToObject(row) {
     return entry;
 }
 
+interface EntryRowValues {
+    id: string;
+    type: string;
+    content: string;
+    timestamp: number;
+    session_id: string | null;
+    duration: number | null;
+    category: string | null;
+    content_type: string;
+    field_values: string | null;
+    linked_entries: string | null;
+    tags: string | null;
+    ai_comment: string | null;
+    created_at: number;
+    updated_at: number;
+}
+
 /**
  * Convert a frontend Entry object (camelCase) to D1 row values (snake_case)
  * Stringifies JSON fields
  */
-export function entryObjectToRow(entry) {
+export function entryObjectToRow(entry: Entry): EntryRowValues {
     const now = Date.now();
     return {
         id: entry.id,
@@ -65,8 +84,8 @@ export function entryObjectToRow(entry) {
 /**
  * Convert a D1 content_type row to a frontend ContentType object
  */
-export function contentTypeRowToObject(row) {
-    const ct = {
+export function contentTypeRowToObject(row: ContentTypeRow): ContentType {
+    const ct: ContentType = {
         id: row.id,
         name: row.name,
         fields: [],
@@ -84,10 +103,20 @@ export function contentTypeRowToObject(row) {
     return ct;
 }
 
+interface ContentTypeRowValues {
+    id: string;
+    name: string;
+    icon: string | null;
+    color: string | null;
+    fields: string;
+    built_in: number;
+    sort_order: number;
+}
+
 /**
  * Convert a frontend ContentType object to D1 row values
  */
-export function contentTypeObjectToRow(ct) {
+export function contentTypeObjectToRow(ct: ContentType): ContentTypeRowValues {
     return {
         id: ct.id,
         name: ct.name,
@@ -102,7 +131,7 @@ export function contentTypeObjectToRow(ct) {
 /**
  * Convert a D1 media_item row to a frontend MediaItem object
  */
-export function mediaItemRowToObject(row) {
+export function mediaItemRowToObject(row: MediaItemRow): MediaItem {
     return {
         id: row.id,
         title: row.title,
@@ -112,10 +141,18 @@ export function mediaItemRowToObject(row) {
     };
 }
 
+interface MediaItemRowValues {
+    id: string;
+    title: string;
+    media_type: string;
+    notion_url: string | null;
+    created_at: number;
+}
+
 /**
  * Convert a frontend MediaItem object to D1 row values
  */
-export function mediaItemObjectToRow(item) {
+export function mediaItemObjectToRow(item: MediaItem): MediaItemRowValues {
     return {
         id: item.id,
         title: item.title,
@@ -127,11 +164,8 @@ export function mediaItemObjectToRow(item) {
 
 /**
  * Upsert entries into D1 in batches
- * @param {D1Database} db
- * @param {Array} entries - frontend Entry objects
- * @returns {Promise<number>} number of rows affected
  */
-export async function upsertEntries(db, entries) {
+export async function upsertEntries(db: D1Database, entries: Entry[]): Promise<number> {
     if (!entries || entries.length === 0) return 0;
 
     const stmt = db.prepare(`
@@ -141,7 +175,7 @@ export async function upsertEntries(db, entries) {
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
-    const batches = [];
+    const batches: D1PreparedStatement[] = [];
     for (const entry of entries) {
         const row = entryObjectToRow(entry);
         batches.push(stmt.bind(
@@ -166,7 +200,7 @@ export async function upsertEntries(db, entries) {
 /**
  * Upsert content types into D1
  */
-export async function upsertContentTypes(db, contentTypes) {
+export async function upsertContentTypes(db: D1Database, contentTypes: ContentType[]): Promise<number> {
     if (!contentTypes || contentTypes.length === 0) return 0;
 
     const stmt = db.prepare(`
@@ -187,7 +221,7 @@ export async function upsertContentTypes(db, contentTypes) {
 /**
  * Upsert media items into D1
  */
-export async function upsertMediaItems(db, mediaItems) {
+export async function upsertMediaItems(db: D1Database, mediaItems: MediaItem[]): Promise<number> {
     if (!mediaItems || mediaItems.length === 0) return 0;
 
     const stmt = db.prepare(`
@@ -208,15 +242,15 @@ export async function upsertMediaItems(db, mediaItems) {
 /**
  * Get the last_modified timestamp from sync_meta
  */
-export async function getLastModified(db) {
-    const row = await db.prepare("SELECT value FROM sync_meta WHERE key = 'last_modified'").first();
+export async function getLastModified(db: D1Database): Promise<number | null> {
+    const row = await db.prepare("SELECT value FROM sync_meta WHERE key = 'last_modified'").first<{ value: string }>();
     return row ? parseInt(row.value, 10) : null;
 }
 
 /**
  * Set the last_modified timestamp in sync_meta
  */
-export async function setLastModified(db, timestamp) {
+export async function setLastModified(db: D1Database, timestamp: number): Promise<void> {
     await db.prepare(
         "INSERT OR REPLACE INTO sync_meta (key, value) VALUES ('last_modified', ?)"
     ).bind(String(timestamp)).run();
