@@ -104,13 +104,22 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
         url += `?since=${savedSyncAt}`
       }
 
+      console.log('[CloudSync] Fetching:', url)
+
       const response = await fetch(url, { headers })
 
       if (!response.ok) {
-        throw new Error('Failed to fetch data')
+        throw new Error(`Failed to fetch data: ${response.status}`)
       }
 
       const remoteData: CloudData & { deletedIds?: string[], incremental?: boolean } = await response.json()
+
+      console.log('[CloudSync] Received:', {
+        entries: (remoteData.entries || []).length,
+        contentTypes: (remoteData.contentTypes || []).length,
+        incremental: remoteData.incremental,
+        deletedIds: (remoteData.deletedIds || []).length,
+      })
 
       if (remoteData.incremental && remoteData.deletedIds && remoteData.deletedIds.length > 0) {
         // Handle deleted entries from other devices
@@ -133,6 +142,7 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
           }
         }
 
+        console.log('[CloudSync] Incremental merge:', mergedEntries.length, 'entries')
         isImportingRef.current = true
         onImportDataRef.current({
           entries: mergedEntries,
@@ -141,15 +151,16 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
         })
       } else {
         // Full fetch - replace everything
-        const hasRemoteData = remoteData && (
-          (remoteData.entries && remoteData.entries.length > 0) ||
-          (remoteData.contentTypes && remoteData.contentTypes.length > 0)
-        )
+        const remoteEntries = remoteData.entries || []
+        const remoteContentTypes = remoteData.contentTypes || []
+        const hasRemoteData = remoteEntries.length > 0 || remoteContentTypes.length > 0
+
+        console.log('[CloudSync] Full fetch, hasRemoteData:', hasRemoteData)
 
         if (hasRemoteData) {
           // One-time migration: convert category=beans/sparks to contentType=beans/sparks
           let migrated = false
-          const migratedEntries = (remoteData.entries || []).map(entry => {
+          const migratedEntries = remoteEntries.map(entry => {
             const legacyCategory = entry.category as string | undefined
             if ((legacyCategory === 'beans' || legacyCategory === 'sparks') && !entry.contentType) {
               migrated = true
@@ -163,9 +174,10 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
           })
 
           if (migrated) {
-            console.log('[Migration] Converted beans/sparks categories to content types')
+            console.log('[CloudSync] Converted beans/sparks categories to content types')
           }
 
+          console.log('[CloudSync] Importing', migratedEntries.length, 'entries,', remoteContentTypes.length, 'content types')
           isImportingRef.current = true
           onImportDataRef.current({
             entries: migratedEntries,
@@ -179,13 +191,14 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
       localStorage.setItem(LAST_SYNC_KEY, String(now))
 
       // After import, snapshot current state as "previous" to avoid re-uploading imported data
-      // Use a microtask to ensure state has been updated by React
+      // Use a longer delay to ensure React has flushed all state updates
       setTimeout(() => {
         prevEntriesRef.current = [...entriesRef.current]
         prevContentTypesRef.current = [...contentTypesRef.current]
         prevMediaItemsRef.current = [...mediaItemsRef.current]
         isImportingRef.current = false
-      }, 300)
+        console.log('[CloudSync] Import complete, prev snapshot:', prevEntriesRef.current.length, 'entries')
+      }, 500)
 
       setSyncState(prev => ({
         ...prev,
@@ -193,6 +206,7 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
         lastSynced: now,
       }))
     } catch (error) {
+      console.error('[CloudSync] Fetch error:', error)
       setSyncState(prev => ({
         ...prev,
         isSyncing: false,
