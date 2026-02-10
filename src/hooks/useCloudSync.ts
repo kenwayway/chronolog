@@ -104,8 +104,6 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
         url += `?since=${savedSyncAt}`
       }
 
-      console.log('[CloudSync] Fetching:', url)
-
       const response = await fetch(url, { headers })
 
       if (!response.ok) {
@@ -114,13 +112,6 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
 
       const remoteData: CloudData & { deletedIds?: string[], incremental?: boolean } = await response.json()
 
-      console.log('[CloudSync] Received:', {
-        entries: (remoteData.entries || []).length,
-        contentTypes: (remoteData.contentTypes || []).length,
-        incremental: remoteData.incremental,
-        deletedIds: (remoteData.deletedIds || []).length,
-      })
-
       if (remoteData.incremental) {
         // --- INCREMENTAL FETCH: merge with local state ---
         const remoteEntries = remoteData.entries || []
@@ -128,7 +119,7 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
 
         // If nothing changed remotely, skip import entirely
         if (remoteEntries.length === 0 && deletedIds.length === 0) {
-          console.log('[CloudSync] Incremental: nothing changed, skipping import')
+          // Nothing changed remotely, skip import
         } else {
           const currentEntries = [...entriesRef.current]
 
@@ -149,7 +140,6 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
             }
           }
 
-          console.log('[CloudSync] Incremental merge:', mergedEntries.length, 'entries (added/updated:', remoteEntries.length, ', deleted:', deletedIds.length, ')')
           isImportingRef.current = true
           onImportDataRef.current({
             entries: mergedEntries,
@@ -162,8 +152,6 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
         const remoteEntries = remoteData.entries || []
         const remoteContentTypes = remoteData.contentTypes || []
         const hasRemoteData = remoteEntries.length > 0 || remoteContentTypes.length > 0
-
-        console.log('[CloudSync] Full fetch, hasRemoteData:', hasRemoteData, '(entries:', remoteEntries.length, ')')
 
         if (hasRemoteData) {
           // One-time migration: convert category=beans/sparks to contentType=beans/sparks
@@ -181,11 +169,6 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
             return entry
           })
 
-          if (migrated) {
-            console.log('[CloudSync] Converted beans/sparks categories to content types')
-          }
-
-          console.log('[CloudSync] Importing', migratedEntries.length, 'entries,', remoteContentTypes.length, 'content types')
           isImportingRef.current = true
           onImportDataRef.current({
             entries: migratedEntries,
@@ -205,7 +188,6 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
         prevContentTypesRef.current = [...contentTypesRef.current]
         prevMediaItemsRef.current = [...mediaItemsRef.current]
         isImportingRef.current = false
-        console.log('[CloudSync] Import complete, prev snapshot:', prevEntriesRef.current.length, 'entries')
       }, 500)
 
       setSyncState(prev => ({
@@ -214,7 +196,6 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
         lastSynced: now,
       }))
     } catch (error) {
-      console.error('[CloudSync] Fetch error:', error)
       setSyncState(prev => ({
         ...prev,
         isSyncing: false,
