@@ -266,7 +266,9 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
 
     for (const entry of currentEntries) {
       const prev = prevEntryMap.get(entry.id)
-      if (!prev || JSON.stringify(prev) !== JSON.stringify(entry)) {
+      // Reference equality: React reducer creates new objects for modified entries,
+      // unchanged entries keep the same reference — no need for JSON.stringify
+      if (!prev || prev !== entry) {
         changedEntries.push(entry)
       }
     }
@@ -286,7 +288,7 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
     const changedContentTypes: ContentType[] = []
     for (const ct of currentContentTypes) {
       const prev = prevCtMap.get(ct.id)
-      if (!prev || JSON.stringify(prev) !== JSON.stringify(ct)) {
+      if (!prev || prev !== ct) {
         changedContentTypes.push(ct)
       }
     }
@@ -302,7 +304,7 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
     const changedMediaItems: MediaItem[] = []
     for (const mi of currentMediaItems) {
       const prev = prevMiMap.get(mi.id)
-      if (!prev || JSON.stringify(prev) !== JSON.stringify(mi)) {
+      if (!prev || prev !== mi) {
         changedMediaItems.push(mi)
       }
     }

@@ -1,4 +1,4 @@
-import { useReducer, useEffect, useCallback } from 'react'
+import { useReducer, useEffect, useCallback, useRef } from 'react'
 import { ENTRY_TYPES, SESSION_STATUS, ACTIONS, BUILTIN_CONTENT_TYPES } from '../utils/constants'
 import { STORAGE_KEYS, getStorage, getStorageRaw, setStorage, setStorageRaw } from '../utils/storageService'
 import { generateId } from '../utils/formatters'
@@ -333,6 +333,21 @@ function sessionReducer(state: SessionState, action: SessionAction): SessionStat
 export function useSession(): UseSessionReturn {
   const [state, dispatch] = useReducer(sessionReducer, initialState)
 
+  // Debounced localStorage persistence
+  const pendingSaveRef = useRef<Partial<SessionState> | null>(null)
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const flushSave = useCallback(() => {
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current)
+      saveTimerRef.current = null
+    }
+    if (pendingSaveRef.current) {
+      setStorage(STORAGE_KEYS.STATE, pendingSaveRef.current)
+      pendingSaveRef.current = null
+    }
+  }, [])
+
   useEffect(() => {
     const savedState = getStorage<Partial<SessionState>>(STORAGE_KEYS.STATE)
     const savedApiKey = getStorageRaw(STORAGE_KEYS.API_KEY)
@@ -355,16 +370,29 @@ export function useSession(): UseSessionReturn {
     }
   }, [])
 
+  // Debounced save: batches rapid state changes into a single localStorage write
   useEffect(() => {
-    const stateToSave = {
+    pendingSaveRef.current = {
       status: state.status,
       sessionStart: state.sessionStart,
       entries: state.entries,
       contentTypes: state.contentTypes,
       mediaItems: state.mediaItems
     }
-    setStorage(STORAGE_KEYS.STATE, stateToSave)
-  }, [state.status, state.sessionStart, state.entries, state.contentTypes, state.mediaItems])
+
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+    saveTimerRef.current = setTimeout(flushSave, 500)
+  }, [state.status, state.sessionStart, state.entries, state.contentTypes, state.mediaItems, flushSave])
+
+  // Flush pending save on page unload / component unmount
+  useEffect(() => {
+    const handleBeforeUnload = () => flushSave()
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+      flushSave()
+    }
+  }, [flushSave])
 
   const logIn = useCallback((content: string) => {
     dispatch({ type: ACTIONS.LOG_IN, payload: { content } })

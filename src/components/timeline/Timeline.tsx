@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { ChevronLeft, ChevronRight, MessageCircle, MessageCircleOff } from "lucide-react";
 import { ENTRY_TYPES } from "../../utils/constants";
 import { useTheme } from "../../hooks/useTheme";
@@ -29,59 +29,65 @@ export function Timeline({ entries, allEntries, status, categories, onContextMen
   const [currentPage, setCurrentPage] = useState(0);
   const [showAIComments, setShowAIComments] = useState(true);
 
-  // Reset page when entries change (filter changes)
+  // Stable key for categoryFilter to avoid re-creating strings on every render
+  const categoryFilterKey = categoryFilter.join(',');
+
+  // Reset page when filter changes
   useEffect(() => {
     setCurrentPage(0);
-  }, [JSON.stringify(categoryFilter)]);
+  }, [categoryFilterKey]);
 
   const isFilterMode = categoryFilter.length > 0;
   const totalPages = isFilterMode ? Math.ceil(entries.length / ENTRIES_PER_PAGE) : 1;
 
-  // In filter mode, paginate; otherwise show all
-  const displayEntries = isFilterMode
-    ? entries.slice(currentPage * ENTRIES_PER_PAGE, (currentPage + 1) * ENTRIES_PER_PAGE)
-    : entries;
+  // Memoize sorted entries to avoid re-sorting on every render
+  const sortedEntries = useMemo(() => {
+    const display = isFilterMode
+      ? entries.slice(currentPage * ENTRIES_PER_PAGE, (currentPage + 1) * ENTRIES_PER_PAGE)
+      : entries;
 
-  const sortedEntries = isFilterMode
-    ? displayEntries // Already sorted in App.jsx
-    : [...displayEntries].sort((a, b) => a.timestamp - b.timestamp);
+    return isFilterMode
+      ? display // Already sorted in App.tsx
+      : [...display].sort((a, b) => a.timestamp - b.timestamp);
+  }, [entries, isFilterMode, currentPage]);
 
-  // Build session durations map (dynamically calculated from timestamps)
-  const sessionDurations: Record<string, number> = {};
-  let currentSessionStartId: string | null = null;
-  let currentSessionStartTime: number | null = null;
+  // Memoize session duration and line state calculations
+  const { sessionDurations, entryLineStates } = useMemo(() => {
+    const durations: Record<string, number> = {};
+    const lineStates: Record<string, string> = {};
+    let startId: string | null = null;
+    let startTime: number | null = null;
+    let inSession = false;
 
-  // Calculate line states and session durations
-  const entryLineStates: Record<string, string> = {};
-  let inSession = false;
+    for (const entry of sortedEntries) {
+      if (entry.type === ENTRY_TYPES.SESSION_START) {
+        startId = entry.id;
+        startTime = entry.timestamp;
+      } else if (
+        entry.type === ENTRY_TYPES.SESSION_END &&
+        startId &&
+        startTime
+      ) {
+        durations[startId] = entry.timestamp - startTime;
+        startId = null;
+        startTime = null;
+      }
 
-  for (const entry of sortedEntries) {
-    if (entry.type === ENTRY_TYPES.SESSION_START) {
-      currentSessionStartId = entry.id;
-      currentSessionStartTime = entry.timestamp;
-    } else if (
-      entry.type === ENTRY_TYPES.SESSION_END &&
-      currentSessionStartId &&
-      currentSessionStartTime
-    ) {
-      // Calculate duration dynamically from timestamps
-      sessionDurations[currentSessionStartId] = entry.timestamp - currentSessionStartTime;
-      currentSessionStartId = null;
-      currentSessionStartTime = null;
+      let state = "default";
+      if (entry.type === ENTRY_TYPES.SESSION_START) {
+        inSession = true;
+        state = "start";
+      } else if (entry.type === ENTRY_TYPES.SESSION_END) {
+        inSession = false;
+        state = "end";
+      } else if (inSession) {
+        state = "active";
+      }
+      lineStates[entry.id] = state;
     }
 
-    let state = "default";
-    if (entry.type === ENTRY_TYPES.SESSION_START) {
-      inSession = true;
-      state = "start";
-    } else if (entry.type === ENTRY_TYPES.SESSION_END) {
-      inSession = false;
-      state = "end";
-    } else if (inSession) {
-      state = "active";
-    }
-    entryLineStates[entry.id] = state;
-  }
+    return { sessionDurations: durations, entryLineStates: lineStates };
+  }, [sortedEntries]);
 
   return (
     <div
