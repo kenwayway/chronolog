@@ -1,6 +1,6 @@
 import { useState, MouseEvent } from "react";
 import { Palette, Database, LucideIcon } from "lucide-react";
-import type { Entry, Category, CloudSyncFull, GoogleTasksStatus } from "../../types";
+import type { Entry, Category, ContentType, MediaItem, CloudSyncFull, GoogleTasksStatus } from "../../types";
 import { AppearanceTab, SyncTab } from "./settings";
 import styles from "./SettingsModal.module.css";
 
@@ -21,6 +21,8 @@ interface ImportData {
     entries: Entry[];
     tasks: unknown[];
     categories?: Category[];
+    contentTypes?: ContentType[];
+    mediaItems?: MediaItem[];
 }
 
 interface SettingsModalProps {
@@ -29,6 +31,8 @@ interface SettingsModalProps {
     categories?: Category[];
     entries?: Entry[];
     tasks?: unknown[];
+    contentTypes?: ContentType[];
+    mediaItems?: MediaItem[];
     onImportData: (data: ImportData) => void;
     cloudSync?: CloudSyncFull;
     googleTasks?: GoogleTasksStatus;
@@ -44,6 +48,8 @@ export function SettingsModal({
     categories,
     entries,
     tasks,
+    contentTypes,
+    mediaItems,
     onImportData,
     cloudSync,
     googleTasks,
@@ -101,6 +107,8 @@ export function SettingsModal({
                                 entries={entries}
                                 tasks={tasks}
                                 categories={categories}
+                                contentTypes={contentTypes}
+                                mediaItems={mediaItems}
                                 onImportData={onImportData}
                             />
                         )}

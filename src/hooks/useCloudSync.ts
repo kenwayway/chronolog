@@ -3,6 +3,7 @@ import type { Entry, ContentType, MediaItem, CloudData, ImportDataPayload } from
 import { STORAGE_KEYS, getStorage, setStorage, removeStorage, type CloudAuthData } from '../utils/storageService'
 
 const SYNC_DEBOUNCE_MS = 500
+const POLL_INTERVAL_MS = 30_000 // Poll for changes from other devices every 30s
 
 interface CloudSyncState {
   isLoggedIn: boolean
@@ -61,7 +62,9 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
   })
 
   const syncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const tokenRef = useRef<string | null>(null)
+  const isInitialFetchRef = useRef(true) // track if this is the first fetch on mount
 
   // Use refs for data to avoid dependency cycles
   const entriesRef = useRef<Entry[]>(entries)
@@ -88,7 +91,7 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
 
   // Fetch data from cloud (full or incremental)
   // NO dependencies on entries/contentTypes/mediaItems — uses refs instead
-  const fetchRemoteData = useCallback(async (token: string | null) => {
+  const fetchRemoteData = useCallback(async (token: string | null, forceFullFetch = false) => {
     try {
       setSyncState(prev => ({ ...prev, isSyncing: true, error: null }))
 
@@ -97,10 +100,11 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
         headers['Authorization'] = `Bearer ${token}`
       }
 
-      // Use incremental fetch if we have a last sync timestamp
+      // Use incremental fetch only if we have a last sync timestamp AND it's not a forced full fetch
+      // On initial mount, always do full fetch to avoid race condition with empty entriesRef
       let url = `${getApiBase()}/api/data`
       const savedSyncAt = localStorage.getItem(LAST_SYNC_KEY)
-      if (savedSyncAt && token) {
+      if (savedSyncAt && token && !forceFullFetch && !isInitialFetchRef.current) {
         url += `?since=${savedSyncAt}`
       }
 
@@ -188,6 +192,7 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
         prevContentTypesRef.current = [...contentTypesRef.current]
         prevMediaItemsRef.current = [...mediaItemsRef.current]
         isImportingRef.current = false
+        isInitialFetchRef.current = false // subsequent fetches can use incremental
       }, 500)
 
       setSyncState(prev => ({
@@ -211,15 +216,40 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
       if (saved.expiresAt > Date.now()) {
         tokenRef.current = saved.token
         setSyncState(prev => ({ ...prev, isLoggedIn: true }))
-        fetchRemoteData(saved.token)
+        // Force full fetch on mount to avoid race condition with empty entriesRef
+        fetchRemoteData(saved.token, true)
       } else {
         removeStorage(STORAGE_KEYS.CLOUD_AUTH)
-        fetchRemoteData(null)
+        fetchRemoteData(null, true)
       }
     } else {
-      fetchRemoteData(null)
+      fetchRemoteData(null, true)
     }
   }, [fetchRemoteData])
+
+  // Periodic polling: fetch changes from other devices every 30s
+  useEffect(() => {
+    if (!syncState.isLoggedIn || !tokenRef.current) {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current)
+        pollIntervalRef.current = null
+      }
+      return
+    }
+
+    pollIntervalRef.current = setInterval(() => {
+      if (!syncState.isSyncing && tokenRef.current) {
+        fetchRemoteData(tokenRef.current)
+      }
+    }, POLL_INTERVAL_MS)
+
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current)
+        pollIntervalRef.current = null
+      }
+    }
+  }, [syncState.isLoggedIn, syncState.isSyncing, fetchRemoteData])
 
   // Save changes to cloud (incremental)
   const saveToCloud = useCallback(async () => {
@@ -457,11 +487,12 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
     return result.url
   }, [])
 
-  // Manual sync
+  // Manual sync — bidirectional: push local changes, then pull remote changes
   const sync = useCallback(async () => {
     if (!tokenRef.current) return
     await saveToCloud()
-  }, [saveToCloud])
+    await fetchRemoteData(tokenRef.current)
+  }, [saveToCloud, fetchRemoteData])
 
   // Cleanup unreferenced images
   const cleanupImages = useCallback(async (): Promise<CleanupResult> => {

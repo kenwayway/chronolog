@@ -295,6 +295,8 @@ function App() {
 
                 categories={categories}
                 entries={state.entries}
+                contentTypes={state.contentTypes}
+                mediaItems={state.mediaItems}
                 onImportData={actions.importData}
                 cloudSync={cloudSync}
                 googleTasks={googleTasks}

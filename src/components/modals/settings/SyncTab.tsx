@@ -1,11 +1,13 @@
 import { useState, useRef, KeyboardEvent, ChangeEvent } from 'react';
 import { Download, Upload, Check, FolderOpen, Cloud, CloudOff, RefreshCw, Trash2 } from 'lucide-react';
-import type { Entry, Category, CloudSyncFull, GoogleTasksStatus } from '../../../types';
+import type { Entry, Category, ContentType, MediaItem, CloudSyncFull, GoogleTasksStatus } from '../../../types';
 
 interface ImportData {
     entries: Entry[];
     tasks: unknown[];
     categories?: Category[];
+    contentTypes?: ContentType[];
+    mediaItems?: MediaItem[];
 }
 
 interface CleanupResult {
@@ -20,6 +22,8 @@ interface SyncTabProps {
     entries?: Entry[];
     tasks?: unknown[];
     categories?: Category[];
+    contentTypes?: ContentType[];
+    mediaItems?: MediaItem[];
     onImportData: (data: ImportData) => void;
 }
 
@@ -32,6 +36,8 @@ export function SyncTab({
     entries,
     tasks,
     categories,
+    contentTypes,
+    mediaItems,
     onImportData,
 }: SyncTabProps) {
     const [cloudPassword, setCloudPassword] = useState("");
@@ -45,6 +51,8 @@ export function SyncTab({
             entries,
             tasks,
             categories,
+            contentTypes,
+            mediaItems,
             exportedAt: new Date().toISOString(),
         };
         const blob = new Blob([JSON.stringify(data, null, 2)], {
@@ -71,6 +79,8 @@ export function SyncTab({
                         entries: data.entries,
                         tasks: data.tasks || [],
                         categories: data.categories,
+                        contentTypes: data.contentTypes,
+                        mediaItems: data.mediaItems,
                     });
                 }
             } catch {
