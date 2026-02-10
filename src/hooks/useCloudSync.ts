@@ -121,41 +121,49 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
         deletedIds: (remoteData.deletedIds || []).length,
       })
 
-      if (remoteData.incremental && remoteData.deletedIds && remoteData.deletedIds.length > 0) {
-        // Handle deleted entries from other devices
-        const deletedSet = new Set(remoteData.deletedIds)
-        const currentEntries = [...entriesRef.current]
-        const filteredEntries = currentEntries.filter(e => !deletedSet.has(e.id))
-
-        // Merge new/updated entries from remote
+      if (remoteData.incremental) {
+        // --- INCREMENTAL FETCH: merge with local state ---
         const remoteEntries = remoteData.entries || []
-        const remoteEntryMap = new Map(remoteEntries.map(e => [e.id, e]))
+        const deletedIds = remoteData.deletedIds || []
 
-        // Update or add remote entries
-        const mergedEntries = filteredEntries.map(e =>
-          remoteEntryMap.has(e.id) ? remoteEntryMap.get(e.id)! : e
-        )
-        // Add entries from remote that don't exist locally
-        for (const re of remoteEntries) {
-          if (!mergedEntries.find(e => e.id === re.id)) {
-            mergedEntries.push(re)
+        // If nothing changed remotely, skip import entirely
+        if (remoteEntries.length === 0 && deletedIds.length === 0) {
+          console.log('[CloudSync] Incremental: nothing changed, skipping import')
+        } else {
+          const currentEntries = [...entriesRef.current]
+
+          // Remove deleted entries
+          const deletedSet = new Set(deletedIds)
+          const filteredEntries = deletedSet.size > 0
+            ? currentEntries.filter(e => !deletedSet.has(e.id))
+            : currentEntries
+
+          // Merge: update existing + add new from remote
+          const remoteEntryMap = new Map(remoteEntries.map(e => [e.id, e]))
+          const mergedEntries = filteredEntries.map(e =>
+            remoteEntryMap.has(e.id) ? remoteEntryMap.get(e.id)! : e
+          )
+          for (const re of remoteEntries) {
+            if (!mergedEntries.find(e => e.id === re.id)) {
+              mergedEntries.push(re)
+            }
           }
-        }
 
-        console.log('[CloudSync] Incremental merge:', mergedEntries.length, 'entries')
-        isImportingRef.current = true
-        onImportDataRef.current({
-          entries: mergedEntries,
-          contentTypes: remoteData.contentTypes?.length ? remoteData.contentTypes : undefined,
-          mediaItems: remoteData.mediaItems?.length ? remoteData.mediaItems : undefined,
-        })
+          console.log('[CloudSync] Incremental merge:', mergedEntries.length, 'entries (added/updated:', remoteEntries.length, ', deleted:', deletedIds.length, ')')
+          isImportingRef.current = true
+          onImportDataRef.current({
+            entries: mergedEntries,
+            contentTypes: remoteData.contentTypes?.length ? remoteData.contentTypes : undefined,
+            mediaItems: remoteData.mediaItems?.length ? remoteData.mediaItems : undefined,
+          })
+        }
       } else {
-        // Full fetch - replace everything
+        // --- FULL FETCH: replace everything ---
         const remoteEntries = remoteData.entries || []
         const remoteContentTypes = remoteData.contentTypes || []
         const hasRemoteData = remoteEntries.length > 0 || remoteContentTypes.length > 0
 
-        console.log('[CloudSync] Full fetch, hasRemoteData:', hasRemoteData)
+        console.log('[CloudSync] Full fetch, hasRemoteData:', hasRemoteData, '(entries:', remoteEntries.length, ')')
 
         if (hasRemoteData) {
           // One-time migration: convert category=beans/sparks to contentType=beans/sparks
