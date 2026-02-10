@@ -15,7 +15,8 @@ npm run build    # Build for production
 |-------|------------|
 | **Frontend** | React 19, TypeScript, Vite, CSS Modules + Vanilla CSS |
 | **Backend** | Cloudflare Pages Functions |
-| **Data Storage** | Cloudflare KV |
+| **Data Storage** | Cloudflare D1 (SQLite) |
+| **Auth/Config** | Cloudflare KV (auth tokens, AI config) |
 | **Image Storage** | Cloudflare R2 |
 | **AI** | OpenAI-compatible API |
 
@@ -127,7 +128,7 @@ interface SessionState {
 1. **User Input** → `InputPanel` calls `actions.logIn()`, `actions.addNote()`, etc.
 2. **State Update** → `useSession` reducer updates state
 3. **Local Persist** → State auto-saved to localStorage
-4. **Cloud Sync** → `useCloudSync` debounces and PUTs to `/api/data`
+4. **Cloud Sync** → `useCloudSync` diffs changes and PUTs only modified entries to `/api/data` (D1 incremental upsert)
 5. **AI Detection** → New entries trigger `/api/categorize` for auto-detection of category + contentType + fieldValues
 
 ---
@@ -178,10 +179,15 @@ interface SessionState {
 │       └── formatters.ts       # Date/time formatting, generateId()
 ├── functions/                  # Cloudflare Pages Functions
 │   └── api/
+│       ├── _auth.js            # Shared auth helpers
+│       ├── _db.js              # Shared D1 database helpers
 │       ├── auth.js             # POST /api/auth
-│       ├── data.js             # GET/PUT /api/data
+│       ├── data.js             # GET/PUT /api/data (D1 incremental sync)
 │       ├── upload.js           # POST /api/upload
 │       ├── categorize.js       # POST /api/categorize (AI detection)
+│       ├── cleanup.js          # POST /api/cleanup (R2 image cleanup)
+│       ├── migrate.js          # POST /api/migrate (one-time KV→D1)
+│       ├── entries/public.js   # GET /api/entries/public
 │       └── image/[id].js       # GET /api/image/:id
 └── public/                     # PWA manifest, icons
 ```
@@ -302,22 +308,35 @@ Response 200: { "success": true, "token": "uuid-timestamp", "expiresAt": number 
 Response 401: { "error": "Invalid password" }
 ```
 
-### Data CRUD
+### Data Sync (D1)
 ```http
-# Public read - no auth required
+# Full fetch - no auth required
 GET /api/data
+
+# Incremental fetch - only changes since timestamp
+GET /api/data?since=<timestamp>
 
 Response 200: {
   "entries": Entry[],
   "contentTypes": ContentType[],
-  "lastModified": number | null
+  "mediaItems": MediaItem[],
+  "lastModified": number | null,
+  "deletedIds": string[],       // Only in incremental mode
+  "incremental": boolean
 }
 
-# Authenticated write
+# Authenticated incremental write (upsert + delete)
 PUT /api/data
 Authorization: Bearer <token>
 Content-Type: application/json
-Body: { "entries": Entry[], "contentTypes": ContentType[] }
+Body: {
+  "entries": Entry[],                    // Changed entries to upsert
+  "deletedIds": string[],               // Entry IDs to delete
+  "contentTypes": ContentType[],         // Changed content types
+  "deletedContentTypeIds": string[],     // Content type IDs to delete
+  "mediaItems": MediaItem[],             // Changed media items
+  "deletedMediaItemIds": string[]        // Media item IDs to delete
+}
 
 Response 200: { "success": true, "lastModified": number }
 ```
@@ -380,7 +399,8 @@ Categories are defined in `constants.ts`. To add:
 | Variable | Description |
 |----------|-------------|
 | `AUTH_PASSWORD` | Password for cloud sync authentication |
-| `CHRONOLOG_KV` | KV namespace binding for data storage |
+| `CHRONOLOG_DB` | D1 database binding for data storage |
+| `CHRONOLOG_KV` | KV namespace binding for auth tokens + config |
 | `CHRONOLOG_R2` | R2 bucket binding for image storage |
 | `AI_API_KEY` | OpenAI API key for backend categorization |
 | `AI_BASE_URL` | (Optional) Custom AI API base URL |

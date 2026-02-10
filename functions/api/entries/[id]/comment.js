@@ -43,36 +43,33 @@ export async function onRequestPost(context) {
             );
         }
 
-        // Get existing data
-        const data = await env.CHRONOLOG_KV.get('user_data', 'json');
-        if (!data || !data.entries) {
-            return Response.json(
-                { error: 'No data found' },
-                { status: 404, headers: corsHeaders }
-            );
-        }
+        const db = env.CHRONOLOG_DB;
+        const now = Date.now();
 
-        // Find the entry
-        const entryIndex = data.entries.findIndex(e => e.id === entryId);
-        if (entryIndex === -1) {
+        // Check entry exists
+        const existing = await db.prepare('SELECT id FROM entries WHERE id = ?').bind(entryId).first();
+        if (!existing) {
             return Response.json(
                 { error: 'Entry not found' },
                 { status: 404, headers: corsHeaders }
             );
         }
 
-        // Update the entry with the comment
-        data.entries[entryIndex].aiComment = comment;
-        data.lastModified = Date.now();
+        // Update the entry with the comment (single row update)
+        await db.prepare(
+            'UPDATE entries SET ai_comment = ?, updated_at = ? WHERE id = ?'
+        ).bind(comment, now, entryId).run();
 
-        // Save back to KV
-        await env.CHRONOLOG_KV.put('user_data', JSON.stringify(data));
+        // Update last modified
+        await db.prepare(
+            "INSERT OR REPLACE INTO sync_meta (key, value) VALUES ('last_modified', ?)"
+        ).bind(String(now)).run();
 
         return Response.json({
             success: true,
             entryId,
             comment,
-            lastModified: data.lastModified
+            lastModified: now
         }, { headers: corsHeaders });
 
     } catch (error) {

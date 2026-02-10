@@ -11,6 +11,11 @@ id = "8c09bfd9a30f495dab3e1464bd637f79"
 binding = "CHRONOLOG_R2"
 bucket_name = "chronolog-images"
 
+[[d1_databases]]
+binding = "CHRONOLOG_DB"
+database_name = "chronolog"
+database_id = "c6d90d0f-81a7-422f-84af-8e520fec3204"
+
 [vars]
 # Set this in Cloudflare dashboard for security
 # AUTH_PASSWORD = "your-secure-password"

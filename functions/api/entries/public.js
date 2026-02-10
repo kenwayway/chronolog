@@ -1,6 +1,8 @@
 // GET /api/entries/public?token=xxx - Public API endpoint for AI access to entries
 // Requires PUBLIC_API_TOKEN environment variable to be set in Cloudflare
 
+import { entryRowToObject, contentTypeRowToObject, mediaItemRowToObject, getLastModified } from '../_db.js';
+
 export async function onRequestGet(context) {
     const { request, env } = context;
 
@@ -29,48 +31,54 @@ export async function onRequestGet(context) {
             );
         }
 
-        // Fetch user data from KV
-        const data = await env.CHRONOLOG_KV.get('user_data', 'json');
+        const db = env.CHRONOLOG_DB;
 
-        if (!data) {
-            return Response.json(
-                { entries: [], lastModified: null },
-                { headers: corsHeaders }
-            );
-        }
-
-        // Optional: filter entries by date range
+        // Build query with optional date range filters
         const startDate = url.searchParams.get('start');
         const endDate = url.searchParams.get('end');
+        const limit = Math.min(parseInt(url.searchParams.get('limit') || '100', 10), 1000);
 
-        let entries = data.entries || [];
+        let query = 'SELECT * FROM entries WHERE 1=1';
+        const bindings = [];
 
         if (startDate) {
             const start = new Date(startDate).getTime();
-            entries = entries.filter(e => e.timestamp >= start);
+            query += ' AND timestamp >= ?';
+            bindings.push(start);
         }
 
         if (endDate) {
             const end = new Date(endDate).getTime();
-            entries = entries.filter(e => e.timestamp <= end);
+            query += ' AND timestamp <= ?';
+            bindings.push(end);
         }
 
-        // Sort by timestamp descending (most recent first)
-        entries.sort((a, b) => b.timestamp - a.timestamp);
+        query += ' ORDER BY timestamp DESC LIMIT ?';
+        bindings.push(limit);
 
-        // Optional: limit number of entries
-        const limit = parseInt(url.searchParams.get('limit') || '100', 10);
-        entries = entries.slice(0, Math.min(limit, 1000));
+        const stmt = db.prepare(query);
+        const result = await (bindings.length > 0 ? stmt.bind(...bindings) : stmt).all();
+        const entries = result.results.map(entryRowToObject);
+
+        // Fetch content types and media items
+        const ctResult = await db.prepare('SELECT * FROM content_types ORDER BY sort_order ASC').all();
+        const contentTypes = ctResult.results.map(contentTypeRowToObject);
+
+        const miResult = await db.prepare('SELECT * FROM media_items ORDER BY created_at DESC').all();
+        const mediaItems = miResult.results.map(mediaItemRowToObject);
+
+        const lastModified = await getLastModified(db);
 
         return Response.json({
             entries,
-            mediaItems: data.mediaItems || [],
-            contentTypes: data.contentTypes || [],
-            lastModified: data.lastModified,
+            mediaItems,
+            contentTypes,
+            lastModified,
             count: entries.length,
         }, { headers: corsHeaders });
 
     } catch (error) {
+        console.error('Public API error:', error);
         return Response.json(
             { error: 'Failed to fetch entries' },
             { status: 500, headers: corsHeaders }

@@ -1,25 +1,74 @@
-// GET /api/data - Fetch user data from KV
-// PUT /api/data - Save user data to KV
+// GET /api/data - Fetch user data from D1
+// PUT /api/data - Save user data to D1 (incremental upsert)
 
 import { verifyAuth, corsHeaders, unauthorizedResponse } from './_auth.js';
+import {
+  entryRowToObject,
+  contentTypeRowToObject,
+  mediaItemRowToObject,
+  upsertEntries,
+  upsertContentTypes,
+  upsertMediaItems,
+  getLastModified,
+  setLastModified,
+} from './_db.js';
 
+// GET /api/data - supports full and incremental fetch
+// GET /api/data           → all data (initial load)
+// GET /api/data?since=ts  → only changes since that timestamp
 export async function onRequestGet(context) {
-  const { env } = context;
+  const { request, env } = context;
 
   try {
-    const data = await env.CHRONOLOG_KV.get('user_data', 'json');
+    const url = new URL(request.url);
+    const since = url.searchParams.get('since');
+    const db = env.CHRONOLOG_DB;
 
-    if (!data) {
-      return Response.json({
-        entries: [],
-        tasks: [],
-        categories: null,
-        lastModified: null
-      }, { headers: corsHeaders });
+    let entries;
+    if (since) {
+      // Incremental fetch: only entries updated since the given timestamp
+      const sinceTs = parseInt(since, 10);
+      const result = await db.prepare(
+        'SELECT * FROM entries WHERE updated_at > ? ORDER BY timestamp ASC'
+      ).bind(sinceTs).all();
+      entries = result.results.map(entryRowToObject);
+    } else {
+      // Full fetch: all entries
+      const result = await db.prepare(
+        'SELECT * FROM entries ORDER BY timestamp ASC'
+      ).all();
+      entries = result.results.map(entryRowToObject);
     }
 
-    return Response.json(data, { headers: corsHeaders });
+    // Always fetch all content types and media items (small datasets)
+    const ctResult = await db.prepare('SELECT * FROM content_types ORDER BY sort_order ASC').all();
+    const contentTypes = ctResult.results.map(contentTypeRowToObject);
+
+    const miResult = await db.prepare('SELECT * FROM media_items ORDER BY created_at DESC').all();
+    const mediaItems = miResult.results.map(mediaItemRowToObject);
+
+    const lastModified = await getLastModified(db);
+
+    // Also fetch deleted entry IDs if doing incremental sync
+    let deletedIds = [];
+    if (since) {
+      const sinceTs = parseInt(since, 10);
+      const delResult = await db.prepare(
+        'SELECT entry_id FROM deleted_entries WHERE deleted_at > ?'
+      ).bind(sinceTs).all().catch(() => ({ results: [] }));
+      deletedIds = delResult.results.map(r => r.entry_id);
+    }
+
+    return Response.json({
+      entries,
+      contentTypes,
+      mediaItems,
+      lastModified,
+      deletedIds,
+      incremental: !!since,
+    }, { headers: corsHeaders });
   } catch (error) {
+    console.error('Data fetch error:', error);
     return Response.json({ error: 'Failed to fetch data' }, { status: 500, headers: corsHeaders });
   }
 }
@@ -47,6 +96,7 @@ async function notifyOpenClaw(entry, env) {
   console.log('OpenClaw webhook response:', response.status);
 }
 
+// PUT /api/data - Upsert entries, contentTypes, mediaItems into D1
 export async function onRequestPut(context) {
   const { request, env, waitUntil } = context;
 
@@ -58,35 +108,69 @@ export async function onRequestPut(context) {
 
   try {
     const data = await request.json();
+    const db = env.CHRONOLOG_DB;
 
     // Validate data structure
     if (!data || typeof data !== 'object') {
       return Response.json({ error: 'Invalid data format' }, { status: 400, headers: corsHeaders });
     }
 
-    // Get existing data to detect new entries
-    const existingData = await env.CHRONOLOG_KV.get('user_data', 'json');
-    const existingEntryIds = new Set(
-      (existingData?.entries || []).map(e => e.id)
-    );
+    // Detect new entries (for OpenClaw webhook)
+    const incomingEntries = data.entries || [];
+    let existingIds = new Set();
+    if (incomingEntries.length > 0) {
+      // Get existing entry IDs in a single query
+      const ids = incomingEntries.map(e => e.id);
+      const placeholders = ids.map(() => '?').join(',');
+      const existingResult = await db.prepare(
+        `SELECT id FROM entries WHERE id IN (${placeholders})`
+      ).bind(...ids).all();
+      existingIds = new Set(existingResult.results.map(r => r.id));
+    }
 
-    // Find new entries (entries that don't exist in the old data)
-    const newEntries = (data.entries || []).filter(
-      entry => !existingEntryIds.has(entry.id)
-    );
+    const newEntries = incomingEntries.filter(e => !existingIds.has(e.id));
 
-    // Add lastModified timestamp
-    const dataToSave = {
-      ...data,
-      lastModified: Date.now()
-    };
+    // Upsert all data
+    await upsertEntries(db, incomingEntries);
+    await upsertContentTypes(db, data.contentTypes);
+    await upsertMediaItems(db, data.mediaItems);
 
-    // Save to KV
-    await env.CHRONOLOG_KV.put('user_data', JSON.stringify(dataToSave));
+    // Handle deleted entries
+    if (data.deletedIds && data.deletedIds.length > 0) {
+      const delStmt = db.prepare('DELETE FROM entries WHERE id = ?');
+      const trackStmt = db.prepare(
+        'INSERT OR REPLACE INTO deleted_entries (entry_id, deleted_at) VALUES (?, ?)'
+      );
+      const now = Date.now();
+      const delBatches = data.deletedIds.flatMap(id => [
+        delStmt.bind(id),
+        trackStmt.bind(id, now),
+      ]);
+      for (let i = 0; i < delBatches.length; i += 100) {
+        await db.batch(delBatches.slice(i, i + 100));
+      }
+    }
 
-    // Send webhook notifications for new entries using waitUntil to keep worker alive
+    // Handle deleted content types
+    if (data.deletedContentTypeIds && data.deletedContentTypeIds.length > 0) {
+      const stmt = db.prepare('DELETE FROM content_types WHERE id = ? AND built_in = 0');
+      const batches = data.deletedContentTypeIds.map(id => stmt.bind(id));
+      await db.batch(batches);
+    }
+
+    // Handle deleted media items
+    if (data.deletedMediaItemIds && data.deletedMediaItemIds.length > 0) {
+      const stmt = db.prepare('DELETE FROM media_items WHERE id = ?');
+      const batches = data.deletedMediaItemIds.map(id => stmt.bind(id));
+      await db.batch(batches);
+    }
+
+    // Update last modified timestamp
+    const now = Date.now();
+    await setLastModified(db, now);
+
+    // Send webhook notifications for new entries
     for (const entry of newEntries) {
-      // Only notify for entries with content (skip SESSION_START/SESSION_END without meaningful content)
       if (entry.content && entry.content.trim()) {
         waitUntil(notifyOpenClaw(entry, env));
       }
@@ -94,9 +178,10 @@ export async function onRequestPut(context) {
 
     return Response.json({
       success: true,
-      lastModified: dataToSave.lastModified
+      lastModified: now,
     }, { headers: corsHeaders });
   } catch (error) {
+    console.error('Data save error:', error);
     return Response.json({ error: 'Failed to save data' }, { status: 500, headers: corsHeaders });
   }
 }

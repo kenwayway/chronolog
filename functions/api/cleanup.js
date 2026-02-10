@@ -18,16 +18,18 @@ export async function onRequestPost(context) {
   }
 
   try {
-    // Get all entries from KV
-    const data = await env.CHRONOLOG_KV.get('user_data', { type: 'json' });
-    const entries = data?.entries || [];
+    const db = env.CHRONOLOG_DB;
+
+    // Query entries that contain image references directly from D1
+    const result = await db.prepare(
+      "SELECT content FROM entries WHERE content LIKE '%/api/image/%'"
+    ).all();
 
     // Extract all image filenames from entries
     const usedImages = new Set();
-    entries.forEach(entry => {
-      if (entry.content) {
-        // Match /api/image/filename pattern
-        const matches = entry.content.match(/\/api\/image\/([^\s\n]+)/g);
+    for (const row of result.results) {
+      if (row.content) {
+        const matches = row.content.match(/\/api\/image\/([^\s\n]+)/g);
         if (matches) {
           matches.forEach(match => {
             const filename = match.replace('/api/image/', '');
@@ -35,7 +37,7 @@ export async function onRequestPost(context) {
           });
         }
       }
-    });
+    }
 
     // List ALL objects in R2 (paginated - R2 returns max 1000 per request)
     const allImages = [];
