@@ -96,7 +96,7 @@ FieldValues by content type:
 - task: {done: false}
 - bookmark: {url: "extracted URL", title: "title from content", type: "Article"|"Video"|"Tool"|"Paper", status: "Inbox"}
 - mood: {feeling: "Happy"|"Calm"|"Tired"|"Anxious"|"Sad"|"Angry", energy: 1-5, trigger: "Work"|"Health"|"Social"|"Money"|"Family"|"Sleep"|"Weather"|"Other"}
-- workout: {workoutType: "Strength"|"Cardio"|"Flexibility"|"Mixed", place: "Home"|"In Building Gym"|"Outside Gym", duration: number in minutes, exercises: "JSON array of exercises or description"}
+- workout: {workoutType: "Strength"|"Cardio"|"Flexibility"|"Mixed", place: "Home"|"In Building Gym"|"Outside Gym", exercises: "comma-separated exercise names"}
 - note: null
 
 Mood hints: 开心/excited/joyful = Happy, 平静/relaxed = Calm, 累/疲惫/sleepy = Tired, 焦虑/stressed/nervous = Anxious, 难过/down/upset = Sad, 生气/frustrated = Angry
@@ -108,7 +108,7 @@ Example responses:
 {"category":"craft","contentType":"task","fieldValues":{"done":false}}
 {"category":"sparks","contentType":"bookmark","fieldValues":{"url":"https://example.com/article","title":"Great Article","type":"Article","status":"Inbox"}}
 {"category":"hardware","contentType":"mood","fieldValues":{"feeling":"Tired","energy":2,"trigger":"Work"}}
-{"category":"hardware","contentType":"workout","fieldValues":{"workoutType":"Strength","place":"Outside Gym","duration":45,"exercises":"bench press, squats"}}`;
+{"category":"hardware","contentType":"workout","fieldValues":{"workoutType":"Strength","place":"Outside Gym","exercises":"bench press, squat, deadlift"}}`;
 
         // Call AI API
         const response = await fetch(`${aiBaseUrl}/chat/completions`, {

@@ -265,18 +265,10 @@ export const MoodDisplay = memo(function MoodDisplay({ fieldValues }: MoodDispla
   );
 });
 
-interface Exercise {
-  name: string;
-  weight?: number;
-  sets?: number;
-  reps?: number | string;
-}
-
 interface WorkoutFieldValues {
   workoutType?: 'Strength' | 'Cardio' | 'Flexibility' | 'Mixed';
   place?: 'Home' | 'In Building Gym' | 'Outside Gym';
-  duration?: number;
-  exercises?: string | Exercise[];
+  exercises?: string;
 }
 
 interface WorkoutDisplayProps {
@@ -289,20 +281,22 @@ interface WorkoutDisplayProps {
 export const WorkoutDisplay = memo(function WorkoutDisplay({ fieldValues }: WorkoutDisplayProps) {
   if (!fieldValues) return null;
 
-  const { workoutType, place, duration, exercises } = fieldValues;
+  const { workoutType, place, exercises } = fieldValues;
 
-  // Parse exercises if it's a JSON string
-  let exerciseList: Exercise[] = [];
+  // Parse exercises: comma-separated names, or legacy JSON array
+  let exerciseNames: string[] = [];
   if (exercises) {
-    if (typeof exercises === 'string') {
+    if (exercises.startsWith('[')) {
       try {
-        exerciseList = JSON.parse(exercises);
+        const parsed = JSON.parse(exercises);
+        exerciseNames = parsed.map((ex: { name?: string } | string) =>
+          typeof ex === 'string' ? ex : ex.name || ''
+        ).filter(Boolean);
       } catch {
-        // If not valid JSON, treat as single exercise name
-        exerciseList = [{ name: exercises }];
+        exerciseNames = exercises.split(/[,，]/).map(s => s.trim()).filter(Boolean);
       }
     } else {
-      exerciseList = exercises;
+      exerciseNames = exercises.split(/[,，]/).map(s => s.trim()).filter(Boolean);
     }
   }
 
@@ -327,14 +321,6 @@ export const WorkoutDisplay = memo(function WorkoutDisplay({ fieldValues }: Work
     }
   };
 
-  const formatExercise = (ex: Exercise) => {
-    const parts = [ex.name];
-    if (ex.weight) parts.push(`${ex.weight}kg`);
-    if (ex.sets && ex.reps) parts.push(`${ex.sets}×${ex.reps}`);
-    else if (ex.reps) parts.push(`${ex.reps}`);
-    return parts.join(' ');
-  };
-
   return (
     <div
       style={{
@@ -352,7 +338,7 @@ export const WorkoutDisplay = memo(function WorkoutDisplay({ fieldValues }: Work
         display: 'flex',
         alignItems: 'center',
         gap: 8,
-        marginBottom: exerciseList.length > 0 ? 8 : 0,
+        marginBottom: exerciseNames.length > 0 ? 8 : 0,
       }}>
         <span style={{
           color: 'var(--accent)',
@@ -376,19 +362,19 @@ export const WorkoutDisplay = memo(function WorkoutDisplay({ fieldValues }: Work
         )}
       </div>
 
-      {/* Exercises row - inline */}
-      {exerciseList.length > 0 && (
+      {/* Exercises - simple name list */}
+      {exerciseNames.length > 0 && (
         <div style={{
           display: 'flex',
           flexWrap: 'wrap',
-          gap: '6px 12px',
+          gap: '4px 8px',
           color: 'var(--text-secondary)',
           fontSize: 11,
         }}>
-          {exerciseList.map((ex, i) => (
+          {exerciseNames.map((name, i) => (
             <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
               <span style={{ color: 'var(--text-dim)' }}>•</span>
-              {formatExercise(ex)}
+              {name}
             </span>
           ))}
         </div>
