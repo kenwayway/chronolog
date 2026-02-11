@@ -1,5 +1,5 @@
-import { memo, MouseEvent } from 'react';
-import { Book, Film, Gamepad2, Tv, Clapperboard, Mic } from 'lucide-react';
+import { memo, MouseEvent, ReactNode } from 'react';
+import { Book, Film, Gamepad2, Tv, Clapperboard, Mic, Dumbbell, HeartPulse, StretchHorizontal, Shuffle, Home, Building2, Warehouse } from 'lucide-react';
 import type { BookmarkFields, MoodFields, WorkoutFields } from '../../types';
 
 interface BookmarkDisplayProps {
@@ -306,21 +306,23 @@ export const WorkoutDisplay = memo(function WorkoutDisplay({ fieldValues }: Work
     }
   }
 
-  const getTypeIcon = (type: string | undefined) => {
+  const iconSize = 13;
+
+  const getTypeIcon = (type: string | undefined): ReactNode => {
     switch (type) {
-      case 'Strength': return '💪';
-      case 'Cardio': return '🏃';
-      case 'Flexibility': return '🧘';
-      case 'Mixed': return '🏋️';
-      default: return '💪';
+      case 'Strength': return <Dumbbell size={iconSize} />;
+      case 'Cardio': return <HeartPulse size={iconSize} />;
+      case 'Flexibility': return <StretchHorizontal size={iconSize} />;
+      case 'Mixed': return <Shuffle size={iconSize} />;
+      default: return <Dumbbell size={iconSize} />;
     }
   };
 
-  const getPlaceIcon = (p: string | undefined) => {
+  const getPlaceIcon = (p: string | undefined): ReactNode | null => {
     switch (p) {
-      case 'Home': return '🏠';
-      case 'In Building Gym': return '🏢';
-      case 'Outside Gym': return '🏋️‍♂️';
+      case 'Home': return <Home size={iconSize} />;
+      case 'In Building Gym': return <Building2 size={iconSize} />;
+      case 'Outside Gym': return <Warehouse size={iconSize} />;
       default: return null;
     }
   };
@@ -359,9 +361,18 @@ export const WorkoutDisplay = memo(function WorkoutDisplay({ fieldValues }: Work
         }}>
           [WORKOUT]
         </span>
-        <span style={{ fontSize: 14 }} title={workoutType || 'Strength'}>{getTypeIcon(workoutType)}</span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text-primary)' }}>
+          {getTypeIcon(workoutType)}
+          <span style={{ fontWeight: 500 }}>{workoutType || 'Strength'}</span>
+        </span>
         {place && (
-          <span style={{ fontSize: 14 }} title={place}>{getPlaceIcon(place)}</span>
+          <>
+            <span style={{ color: 'var(--text-dim)' }}>·</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text-dim)' }}>
+              {getPlaceIcon(place)}
+              {place}
+            </span>
+          </>
         )}
       </div>
 

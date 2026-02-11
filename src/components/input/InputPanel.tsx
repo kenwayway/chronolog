@@ -401,8 +401,8 @@ export const InputPanel = forwardRef<InputPanelRef, InputPanelProps>(function In
                 onGetLocation={getCurrentLocation}
             />
 
-            {/* Metadata input (category, type, tags) - only in focus mode */}
-            {inFocusMode && (
+            {/* Metadata input (category, type, tags) */}
+            {(inFocusMode || (mobileExpanded && isFocused)) && (
                 <EntryMetadataInput
                     category={category}
                     setCategory={setCategory}
