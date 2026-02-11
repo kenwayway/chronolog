@@ -2,8 +2,6 @@
 
 A minimalist personal timeline and activity tracker with cloud sync support.
 
-**Live Demo:** [chronolog.pages.dev](https://chronolog.pages.dev)
-
 ## ✨ Features
 
 ### Core
