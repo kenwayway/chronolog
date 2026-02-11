@@ -359,21 +359,9 @@ export const WorkoutDisplay = memo(function WorkoutDisplay({ fieldValues }: Work
         }}>
           [WORKOUT]
         </span>
-        <span style={{ fontSize: 14 }}>{getTypeIcon(workoutType)}</span>
-        <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>
-          {workoutType || 'Strength'}
-        </span>
-        {duration != null && duration > 0 && (
-          <>
-            <span style={{ color: 'var(--text-dim)' }}>·</span>
-            <span style={{ color: 'var(--text-dim)' }}>{duration}min</span>
-          </>
-        )}
+        <span style={{ fontSize: 14 }} title={workoutType || 'Strength'}>{getTypeIcon(workoutType)}</span>
         {place && (
-          <>
-            <span style={{ color: 'var(--text-dim)' }}>·</span>
-            <span style={{ color: 'var(--text-dim)' }}>{getPlaceIcon(place)} {place}</span>
-          </>
+          <span style={{ fontSize: 14 }} title={place}>{getPlaceIcon(place)}</span>
         )}
       </div>
 
