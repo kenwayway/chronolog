@@ -4,6 +4,8 @@ import { STORAGE_KEYS, getStorage, setStorage, removeStorage, type CloudAuthData
 
 const SYNC_DEBOUNCE_MS = 500
 const POLL_INTERVAL_MS = 30_000 // Poll for changes from other devices every 30s
+const RETRY_BASE_MS = 5_000     // Base delay for retry (5s, 10s, 20s, 40s, 80s)
+const MAX_RETRIES = 5
 
 interface CloudSyncState {
   isLoggedIn: boolean
@@ -64,6 +66,7 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
   const syncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const tokenRef = useRef<string | null>(null)
+  const isSyncingRef = useRef(false) // ref mirror of syncState.isSyncing for polling callback
   const isInitialFetchRef = useRef(true) // track if this is the first fetch on mount
 
   // Use refs for data to avoid dependency cycles
@@ -88,6 +91,7 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
   useEffect(() => { contentTypesRef.current = contentTypes }, [contentTypes])
   useEffect(() => { mediaItemsRef.current = mediaItems }, [mediaItems])
   useEffect(() => { onImportDataRef.current = onImportData }, [onImportData])
+  useEffect(() => { isSyncingRef.current = syncState.isSyncing }, [syncState.isSyncing])
 
   // Fetch data from cloud (full or incremental)
   // NO dependencies on entries/contentTypes/mediaItems — uses refs instead
@@ -134,10 +138,18 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
             : currentEntries
 
           // Merge: update existing + add new from remote
+          // Use reference equality to detect local modifications since last sync:
+          // if local entry reference differs from prevRef, user modified it locally → keep local
           const remoteEntryMap = new Map(remoteEntries.map(e => [e.id, e]))
-          const mergedEntries = filteredEntries.map(e =>
-            remoteEntryMap.has(e.id) ? remoteEntryMap.get(e.id)! : e
-          )
+          const prevEntryMap = new Map(prevEntriesRef.current.map(e => [e.id, e]))
+          const mergedEntries = filteredEntries.map(e => {
+            const remote = remoteEntryMap.get(e.id)
+            if (!remote) return e // no remote version, keep local
+            // Check if local was modified since last sync
+            const prev = prevEntryMap.get(e.id)
+            if (!prev || prev !== e) return e // local modified → keep local
+            return remote // local untouched → accept remote
+          })
           for (const re of remoteEntries) {
             if (!mergedEntries.find(e => e.id === re.id)) {
               mergedEntries.push(re)
@@ -228,6 +240,8 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
   }, [fetchRemoteData])
 
   // Periodic polling: fetch changes from other devices every 30s
+  // Uses isSyncingRef (not syncState.isSyncing) to avoid recreating the interval
+  // on every sync start/end, which would reset the 30s timer
   useEffect(() => {
     if (!syncState.isLoggedIn || !tokenRef.current) {
       if (pollIntervalRef.current) {
@@ -238,7 +252,7 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
     }
 
     pollIntervalRef.current = setInterval(() => {
-      if (!syncState.isSyncing && tokenRef.current) {
+      if (!isSyncingRef.current && tokenRef.current) {
         fetchRemoteData(tokenRef.current)
       }
     }, POLL_INTERVAL_MS)
@@ -249,7 +263,7 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
         pollIntervalRef.current = null
       }
     }
-  }, [syncState.isLoggedIn, syncState.isSyncing, fetchRemoteData])
+  }, [syncState.isLoggedIn, fetchRemoteData])
 
   // Save changes to cloud (incremental)
   const saveToCloud = useCallback(async () => {

@@ -228,7 +228,7 @@ export const MoodDisplay = memo(function MoodDisplay({ fieldValues }: MoodDispla
       </div>
 
       {/* Energy */}
-      {fieldValues.energy && (
+      {fieldValues.energy != null && (
         <>
           <span style={{ color: 'var(--text-dim)', fontSize: 11 }}>·</span>
           <div className="flex items-center gap-2" title={`Energy: ${fieldValues.energy}/5`}>
@@ -273,7 +273,8 @@ interface Exercise {
 }
 
 interface WorkoutFieldValues {
-  workoutType?: 'Strength' | 'Flexibility' | 'Mixed';
+  workoutType?: 'Strength' | 'Cardio' | 'Flexibility' | 'Mixed';
+  place?: 'Home' | 'In Building Gym' | 'Outside Gym';
   duration?: number;
   exercises?: string | Exercise[];
 }
@@ -288,7 +289,7 @@ interface WorkoutDisplayProps {
 export const WorkoutDisplay = memo(function WorkoutDisplay({ fieldValues }: WorkoutDisplayProps) {
   if (!fieldValues) return null;
 
-  const { workoutType, duration, exercises } = fieldValues;
+  const { workoutType, place, duration, exercises } = fieldValues;
 
   // Parse exercises if it's a JSON string
   let exerciseList: Exercise[] = [];
@@ -308,9 +309,19 @@ export const WorkoutDisplay = memo(function WorkoutDisplay({ fieldValues }: Work
   const getTypeIcon = (type: string | undefined) => {
     switch (type) {
       case 'Strength': return '💪';
+      case 'Cardio': return '🏃';
       case 'Flexibility': return '🧘';
       case 'Mixed': return '🏋️';
       default: return '💪';
+    }
+  };
+
+  const getPlaceIcon = (p: string | undefined) => {
+    switch (p) {
+      case 'Home': return '🏠';
+      case 'In Building Gym': return '🏢';
+      case 'Outside Gym': return '🏋️‍♂️';
+      default: return null;
     }
   };
 
@@ -352,10 +363,16 @@ export const WorkoutDisplay = memo(function WorkoutDisplay({ fieldValues }: Work
         <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>
           {workoutType || 'Strength'}
         </span>
-        {duration && (
+        {duration != null && duration > 0 && (
           <>
             <span style={{ color: 'var(--text-dim)' }}>·</span>
             <span style={{ color: 'var(--text-dim)' }}>{duration}min</span>
+          </>
+        )}
+        {place && (
+          <>
+            <span style={{ color: 'var(--text-dim)' }}>·</span>
+            <span style={{ color: 'var(--text-dim)' }}>{getPlaceIcon(place)} {place}</span>
           </>
         )}
       </div>

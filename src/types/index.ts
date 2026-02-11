@@ -97,7 +97,8 @@ export interface MoodFields {
 
 /** Workout field values */
 export interface WorkoutFields {
-  workoutType?: 'Strength' | 'Flexibility' | 'Mixed'
+  workoutType?: 'Strength' | 'Cardio' | 'Flexibility' | 'Mixed'
+  place?: 'Home' | 'In Building Gym' | 'Outside Gym'
   duration?: number
   exercises?: string  // JSON string of exercise array
 }

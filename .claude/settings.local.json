@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc --noEmit)",
+      "Bash(npx vite build)",
+      "Bash(git add src/components/ErrorBoundary.tsx src/main.tsx src/hooks/useCloudSync.ts src/hooks/useSession.ts src/components/timeline/Timeline.tsx)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nperf: add error boundary, optimize sync diffing and rendering\n\n- Add ErrorBoundary component to prevent white-screen crashes\n- Replace JSON.stringify diffing with reference equality in cloud sync\n- Memoize sorted entries and session duration calculations in Timeline\n- Fix JSON.stringify\\(categoryFilter\\) useEffect dependency\n- Debounce localStorage persistence with beforeunload flush\n\nCo-Authored-By: Claude Opus 4.6 \\(1M context\\) <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git push)"
+    ]
+  }
+}

@@ -91,7 +91,8 @@ export const BUILTIN_CONTENT_TYPES: ContentType[] = [
     id: 'workout',
     name: 'Workout',
     fields: [
-      { id: 'workoutType', name: 'Type', type: 'dropdown', options: ['Strength', 'Flexibility', 'Mixed'], default: 'Strength' },
+      { id: 'workoutType', name: 'Type', type: 'dropdown', options: ['Strength', 'Cardio', 'Flexibility', 'Mixed'], default: 'Strength' },
+      { id: 'place', name: 'Place', type: 'dropdown', options: ['Home', 'In Building Gym', 'Outside Gym'] },
       { id: 'duration', name: 'Duration (min)', type: 'number' },
       { id: 'exercises', name: 'Exercises', type: 'text' } // Will be JSON string of exercise array
     ],
