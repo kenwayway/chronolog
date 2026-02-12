@@ -1,6 +1,6 @@
 import { memo, MouseEvent, ReactNode } from 'react';
-import { Book, Film, Gamepad2, Tv, Clapperboard, Mic, Dumbbell, HeartPulse, StretchHorizontal, Shuffle, Home, Building2, Warehouse } from 'lucide-react';
-import type { BookmarkFields, MoodFields, WorkoutFields } from '../../types';
+import { Book, Film, Gamepad2, Tv, Clapperboard, Mic, Dumbbell, HeartPulse, StretchHorizontal, Shuffle, Home, Building2, Warehouse, BookOpen, ExternalLink } from 'lucide-react';
+import type { BookmarkFields, MoodFields, WorkoutFields, VaultFields } from '../../types';
 
 interface BookmarkDisplayProps {
   fieldValues: BookmarkFields | null | undefined;
@@ -378,6 +378,90 @@ export const WorkoutDisplay = memo(function WorkoutDisplay({ fieldValues }: Work
             </span>
           ))}
         </div>
+      )}
+    </div>
+  );
+});
+
+// ============================================
+// Vault Display (Obsidian note links)
+// ============================================
+
+interface VaultDisplayProps {
+  fieldValues: VaultFields | null | undefined;
+}
+
+/**
+ * Display component for vault entries - clickable link to Obsidian note
+ */
+export const VaultDisplay = memo(function VaultDisplay({ fieldValues }: VaultDisplayProps) {
+  if (!fieldValues) return null;
+
+  const { title, obsidianUrl } = fieldValues;
+  if (!title && !obsidianUrl) return null;
+
+  const handleClick = () => {
+    if (obsidianUrl) {
+      window.open(obsidianUrl, '_blank');
+    }
+  };
+
+  // Extract note name from obsidian URL if no title provided
+  const displayTitle = title || (() => {
+    if (!obsidianUrl) return 'Untitled Note';
+    try {
+      const url = new URL(obsidianUrl);
+      const file = url.searchParams.get('file');
+      if (file) return decodeURIComponent(file).split('/').pop() || 'Untitled Note';
+    } catch { /* ignore */ }
+    return 'Untitled Note';
+  })();
+
+  return (
+    <div
+      onClick={handleClick}
+      style={{
+        marginTop: 8,
+        padding: '8px 12px',
+        backgroundColor: 'var(--bg-secondary)',
+        border: '1px solid var(--border-subtle)',
+        fontSize: 12,
+        fontFamily: 'var(--font-mono)',
+        width: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        cursor: obsidianUrl ? 'pointer' : 'default',
+        transition: 'border-color 0.15s ease',
+      }}
+      onMouseEnter={(e) => {
+        if (obsidianUrl) (e.currentTarget.style.borderColor = 'var(--accent)');
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.borderColor = 'var(--border-subtle)';
+      }}
+    >
+      <BookOpen size={14} style={{ color: 'var(--accent)', flexShrink: 0 }} />
+      <span style={{
+        color: 'var(--accent)',
+        fontWeight: 600,
+        fontSize: 11,
+        flexShrink: 0,
+      }}>
+        [VAULT]
+      </span>
+      <span style={{
+        color: 'var(--text-primary)',
+        fontWeight: 500,
+        flex: 1,
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap',
+      }}>
+        {displayTitle}
+      </span>
+      {obsidianUrl && (
+        <ExternalLink size={12} style={{ color: 'var(--text-dim)', flexShrink: 0 }} />
       )}
     </div>
   );

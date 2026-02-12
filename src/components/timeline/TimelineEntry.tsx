@@ -5,11 +5,11 @@ import { formatTime, formatDuration, formatDate } from "../../utils/formatters";
 import { parseContent, darkenColor } from "../../utils/contentParser";
 import { useTheme } from "../../hooks/useTheme";
 import { LinkedEntryPreview } from "./LinkedEntryPreview";
-import { BookmarkDisplay, MoodDisplay, WorkoutDisplay, MediaDisplay } from "./ContentTypeDisplays";
+import { BookmarkDisplay, MoodDisplay, WorkoutDisplay, VaultDisplay, MediaDisplay } from "./ContentTypeDisplays";
 import { ImageLightbox } from "../common/ImageLightbox";
 import styles from "./TimelineEntry.module.css";
 import type { Entry, Category, MediaItem } from "../../types";
-import { isTaskEntry, getBookmarkFields, getMoodFields, getWorkoutFields, getMediaFields } from "../../types/guards";
+import { isTaskEntry, getBookmarkFields, getMoodFields, getWorkoutFields, getVaultFields, getMediaFields } from "../../types/guards";
 
 interface Position {
   x: number;
@@ -446,6 +446,11 @@ export const TimelineEntry = memo(function TimelineEntry({
           {entry.contentType === 'workout' && (
             <div style={{ marginTop: 6 }}>
               <WorkoutDisplay fieldValues={getWorkoutFields(entry)} />
+            </div>
+          )}
+          {entry.contentType === 'vault' && (
+            <div style={{ marginTop: 6 }}>
+              <VaultDisplay fieldValues={getVaultFields(entry)} />
             </div>
           )}
           {entry.contentType === 'media' && (

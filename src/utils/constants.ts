@@ -99,11 +99,21 @@ export const BUILTIN_CONTENT_TYPES: ContentType[] = [
     order: 4
   },
   {
+    id: 'vault',
+    name: 'Vault',
+    fields: [
+      { id: 'title', name: 'Note Title', type: 'text' },
+      { id: 'obsidianUrl', name: 'Obsidian URL', type: 'text' }
+    ],
+    builtIn: true,
+    order: 5
+  },
+  {
     id: 'beans',
     name: 'Beans',
     fields: [],
     builtIn: true,
-    order: 5
+    order: 6
   },
   {
     id: 'sparks',

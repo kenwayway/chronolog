@@ -103,6 +103,12 @@ export interface WorkoutFields {
   exercises?: string  // Comma-separated exercise names
 }
 
+/** Vault field values (Obsidian note links) */
+export interface VaultFields {
+  title?: string
+  obsidianUrl?: string
+}
+
 /** Media field values (books, movies, games, etc.) */
 export interface MediaFields {
   mediaType?: 'Book' | 'Movie' | 'Game' | 'TV' | 'Anime' | 'Podcast'

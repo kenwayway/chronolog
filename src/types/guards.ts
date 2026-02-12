@@ -1,9 +1,4 @@
-/**
- * Type guards for content type narrowing
- * Use these to safely access typed fieldValues
- */
-
-import type { Entry, TaskFields, BookmarkFields, MoodFields, WorkoutFields, MediaFields } from './index'
+import type { Entry, TaskFields, BookmarkFields, MoodFields, WorkoutFields, VaultFields, MediaFields } from './index'
 
 // ============================================
 // Typed Entry interfaces (narrowed)
@@ -31,6 +26,12 @@ export interface MoodEntry extends Entry {
 export interface WorkoutEntry extends Entry {
     contentType: 'workout'
     fieldValues: WorkoutFields
+}
+
+/** Entry with vault content type */
+export interface VaultEntry extends Entry {
+    contentType: 'vault'
+    fieldValues: VaultFields
 }
 
 /** Entry with media content type */
@@ -63,6 +64,11 @@ export function isWorkoutEntry(entry: Entry): entry is WorkoutEntry {
     return entry.contentType === 'workout' && entry.fieldValues !== undefined
 }
 
+/** Check if entry is a vault */
+export function isVaultEntry(entry: Entry): entry is VaultEntry {
+    return entry.contentType === 'vault' && entry.fieldValues !== undefined
+}
+
 /** Check if entry is a media */
 export function isMediaEntry(entry: Entry): entry is MediaEntry {
     return entry.contentType === 'media' && entry.fieldValues !== undefined
@@ -90,6 +96,11 @@ export function getMoodFields(entry: Entry): MoodFields | undefined {
 /** Safely get workout fields */
 export function getWorkoutFields(entry: Entry): WorkoutFields | undefined {
     return isWorkoutEntry(entry) ? entry.fieldValues : undefined
+}
+
+/** Safely get vault fields */
+export function getVaultFields(entry: Entry): VaultFields | undefined {
+    return isVaultEntry(entry) ? entry.fieldValues : undefined
 }
 
 /** Safely get media fields */
