@@ -15,7 +15,7 @@ import { useTheme } from "../hooks/useTheme";
 import { formatDate } from "../utils/formatters";
 import { Calendar } from "./common/Calendar";
 import styles from "./Header.module.css";
-import type { CloudSyncStatus } from "../types";
+import { useCloudSyncContext } from "../contexts/CloudSyncContext";
 
 interface HeaderProps {
     isStreaming: boolean;
@@ -27,7 +27,6 @@ interface HeaderProps {
     onOpenSidebar: () => void;
     onOpenLeftSidebar: () => void;
     onOpenSettings: () => void;
-    cloudSync?: CloudSyncStatus;
 }
 
 export function Header({
@@ -40,8 +39,8 @@ export function Header({
     onOpenSidebar,
     onOpenLeftSidebar,
     onOpenSettings,
-    cloudSync,
 }: HeaderProps) {
+    const cloudSync = useCloudSyncContext();
     const { canToggleMode } = useTheme();
     const [showCalendar, setShowCalendar] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -115,7 +114,7 @@ export function Header({
                     </div>
                     <span className={styles.title}>CHRONOLOG</span>
                     {/* Cloud sync indicator */}
-                    {cloudSync?.isLoggedIn && (
+                    {cloudSync.isLoggedIn && (
                         <span title={cloudSync.isSyncing ? "同步中..." : "云端已连接"}>
                             <Cloud
                                 size={12}

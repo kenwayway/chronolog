@@ -6,7 +6,9 @@ import { AttachmentPreview } from "./AttachmentPreview";
 import { InputActions } from "./InputActions";
 import { EntryMetadataInput } from "./EntryMetadataInput";
 import styles from "./InputPanel.module.css";
-import type { Entry, SessionStatus, CategoryId, CloudSyncWithUpload, MediaItem } from "../../types";
+import { useCloudSyncContext } from "../../contexts/CloudSyncContext";
+import { useSessionContext } from "../../contexts/SessionContext";
+import type { Entry, SessionStatus, CategoryId } from "../../types";
 
 interface NoteOptions {
     contentType?: string;
@@ -21,11 +23,8 @@ interface InputPanelProps {
     onSwitch: (content: string) => void;
     onNote: (content: string, options?: NoteOptions) => void;
     onLogOff: (content: string) => void;
-    cloudSync: CloudSyncWithUpload | null;
     followUpEntry: Entry | null;
     onClearFollowUp?: () => void;
-    mediaItems?: MediaItem[];
-    onAddMediaItem?: (mediaItem: MediaItem) => void;
 }
 
 export interface InputPanelRef {
@@ -38,12 +37,11 @@ export const InputPanel = forwardRef<InputPanelRef, InputPanelProps>(function In
     onSwitch,
     onNote,
     onLogOff,
-    cloudSync,
     followUpEntry,
     onClearFollowUp,
-    mediaItems = [],
-    onAddMediaItem
 }, ref) {
+    const cloudSync = useCloudSyncContext();
+    const { state: { mediaItems }, actions: { addMediaItem: onAddMediaItem } } = useSessionContext();
     const [input, setInput] = useState("");
     const [isFocused, setIsFocused] = useState(false);
     const [mobileExpanded, setMobileExpanded] = useState(false);
@@ -173,7 +171,7 @@ export const InputPanel = forwardRef<InputPanelRef, InputPanelProps>(function In
         const file = e.target.files?.[0];
         if (!file) return;
 
-        if (!cloudSync?.isLoggedIn) {
+        if (!cloudSync.isLoggedIn) {
             alert("Please connect to cloud sync first to upload images");
             return;
         }
@@ -263,7 +261,7 @@ export const InputPanel = forwardRef<InputPanelRef, InputPanelProps>(function In
         for (const item of items) {
             if (item.type.startsWith('image/')) {
                 e.preventDefault();
-                if (!cloudSync?.isLoggedIn) {
+                if (!cloudSync.isLoggedIn) {
                     alert('Please connect to cloud sync to upload images.');
                     return;
                 }

@@ -1,6 +1,8 @@
 import { useState, MouseEvent } from "react";
 import { Palette, Database, LucideIcon } from "lucide-react";
-import type { Entry, Category, ContentType, MediaItem, CloudSyncFull, GoogleTasksStatus } from "../../types";
+import { useSessionContext } from "../../contexts/SessionContext";
+import { useCloudSyncContext } from "../../contexts/CloudSyncContext";
+import type { GoogleTasksStatus } from "../../types";
 import { AppearanceTab, SyncTab } from "./settings";
 import styles from "./SettingsModal.module.css";
 
@@ -16,25 +18,9 @@ const TABS: Tab[] = [
 ];
 
 
-
-interface ImportData {
-    entries: Entry[];
-    tasks: unknown[];
-    categories?: Category[];
-    contentTypes?: ContentType[];
-    mediaItems?: MediaItem[];
-}
-
 interface SettingsModalProps {
     isOpen: boolean;
     onClose: () => void;
-    categories?: Category[];
-    entries?: Entry[];
-    tasks?: unknown[];
-    contentTypes?: ContentType[];
-    mediaItems?: MediaItem[];
-    onImportData: (data: ImportData) => void;
-    cloudSync?: CloudSyncFull;
     googleTasks?: GoogleTasksStatus;
 }
 
@@ -45,15 +31,10 @@ interface SettingsModalProps {
 export function SettingsModal({
     isOpen,
     onClose,
-    categories,
-    entries,
-    tasks,
-    contentTypes,
-    mediaItems,
-    onImportData,
-    cloudSync,
     googleTasks,
 }: SettingsModalProps) {
+    const { state: { entries, contentTypes, mediaItems }, categories, actions: { importData: onImportData } } = useSessionContext();
+    const cloudSync = useCloudSyncContext();
     const [activeTab, setActiveTab] = useState("appearance");
 
     if (!isOpen) return null;
@@ -105,7 +86,6 @@ export function SettingsModal({
                                 cloudSync={cloudSync}
                                 googleTasks={googleTasks}
                                 entries={entries}
-                                tasks={tasks}
                                 categories={categories}
                                 contentTypes={contentTypes}
                                 mediaItems={mediaItems}

@@ -2,22 +2,20 @@ import { useState, useRef, useEffect, KeyboardEvent, MouseEvent } from "react";
 import { Image, MapPin, Plus, ChevronDown } from "lucide-react";
 import { EntryMetadataInput } from "../input/EntryMetadataInput";
 import { BUILTIN_CONTENT_TYPES, ENTRY_TYPES } from "../../utils/constants";
+import { useSessionContext } from "../../contexts/SessionContext";
 import styles from "./EditModal.module.css";
-import type { Entry, Category, ContentType, CategoryId, MediaItem, UpdateEntryPayload, EntryType } from "../../types";
+import type { Entry, CategoryId, UpdateEntryPayload, EntryType } from "../../types";
 
 interface EditModalProps {
   isOpen: boolean;
   entry: Entry | null;
   onSave: (entryId: string, updates: Omit<UpdateEntryPayload, 'entryId'>) => void;
   onClose: () => void;
-  categories: Category[];
-  contentTypes?: ContentType[];
-  allEntries?: Entry[];
-  mediaItems?: MediaItem[];
-  onAddMediaItem?: (mediaItem: MediaItem) => void;
 }
 
-export function EditModal({ isOpen, entry, onSave, onClose, categories, contentTypes, allEntries = [], mediaItems = [], onAddMediaItem }: EditModalProps) {
+export function EditModal({ isOpen, entry, onSave, onClose }: EditModalProps) {
+  const { state: { entries: allEntries, contentTypes: ctFromContext, mediaItems }, categories, actions: { addMediaItem: onAddMediaItem } } = useSessionContext();
+  const types = ctFromContext.length > 0 ? ctFromContext : BUILTIN_CONTENT_TYPES;
   // Content state
   const [content, setContent] = useState("");
   const [timestamp, setTimestamp] = useState("");
@@ -41,7 +39,7 @@ export function EditModal({ isOpen, entry, onSave, onClose, categories, contentT
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const types = contentTypes || BUILTIN_CONTENT_TYPES;
+
 
   useEffect(() => {
     if (isOpen && entry) {

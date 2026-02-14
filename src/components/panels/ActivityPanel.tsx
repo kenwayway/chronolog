@@ -1,7 +1,8 @@
 import { useMemo } from "react";
 import { useTheme } from "../../hooks/useTheme";
+import { useSessionContext } from "../../contexts/SessionContext";
 import styles from "./TasksPanel.module.css";
-import type { Entry, Category, CategoryId } from "../../types";
+import type { CategoryId } from "../../types";
 
 interface HeatmapDay {
     date: Date;
@@ -13,8 +14,6 @@ interface HeatmapDay {
 interface ActivityPanelProps {
     isOpen: boolean;
     onClose: () => void;
-    entries: Entry[];
-    categories: Category[];
     selectedDate: Date | null;
     onDateChange: (date: Date | null) => void;
     categoryFilter: CategoryId[];
@@ -24,13 +23,12 @@ interface ActivityPanelProps {
 export function ActivityPanel({
     isOpen,
     onClose,
-    entries,
-    categories,
     selectedDate,
     onDateChange,
     categoryFilter,
     onCategoryFilterChange,
 }: ActivityPanelProps) {
+    const { state: { entries }, categories } = useSessionContext();
     const { tokens } = useTheme();
     // Generate heatmap data for last 12 weeks
     const heatmapData = useMemo(() => {

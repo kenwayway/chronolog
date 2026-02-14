@@ -2,8 +2,9 @@ import { useState, useEffect, useMemo } from "react";
 import { ChevronLeft, ChevronRight, MessageCircle, MessageCircleOff } from "lucide-react";
 import { ENTRY_TYPES } from "../../utils/constants";
 import { useTheme } from "../../hooks/useTheme";
+import { useSessionContext } from "../../contexts/SessionContext";
 import { TimelineEntry } from "./TimelineEntry";
-import type { Entry, Category, SessionStatus, CategoryId, MediaItem } from "../../types";
+import type { Entry, SessionStatus, CategoryId } from "../../types";
 
 const ENTRIES_PER_PAGE = 20;
 
@@ -14,18 +15,16 @@ interface Position {
 
 interface TimelineProps {
   entries: Entry[];
-  allEntries?: Entry[];
   status: SessionStatus;
-  categories: Category[];
   onContextMenu: (entry: Entry, position: Position) => void;
   onEdit?: (entry: Entry) => void;
   onDeleteAIComment?: (entry: Entry) => void;
   categoryFilter?: CategoryId[];
   onNavigateToEntry?: (entry: Entry) => void;
-  mediaItems?: MediaItem[];
 }
 
-export function Timeline({ entries, allEntries, status, categories, onContextMenu, onEdit, onDeleteAIComment, categoryFilter = [], onNavigateToEntry, mediaItems = [] }: TimelineProps) {
+export function Timeline({ entries, status, onContextMenu, onEdit, onDeleteAIComment, categoryFilter = [], onNavigateToEntry }: TimelineProps) {
+  const { state: { entries: allEntries, mediaItems }, categories } = useSessionContext();
   const { theme } = useTheme();
   const [currentPage, setCurrentPage] = useState(0);
   const [showAIComments, setShowAIComments] = useState(true);
@@ -206,7 +205,7 @@ export function Timeline({ entries, allEntries, status, categories, onContextMen
         <TimelineEntry
           key={entry.id}
           entry={entry}
-          allEntries={allEntries || entries}
+          allEntries={allEntries}
           isFirst={index === 0}
           isLast={index === sortedEntries.length - 1}
           sessionDuration={sessionDurations[entry.id]}
