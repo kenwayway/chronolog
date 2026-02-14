@@ -225,6 +225,7 @@ function App() {
                         categories={categories}
                         onContextMenu={handleContextMenu}
                         onEdit={openEditModal}
+                        onDeleteAIComment={(entry) => actions.updateEntry(entry.id, { aiComment: undefined })}
                         categoryFilter={categoryFilter}
                         onNavigateToEntry={navigateToEntry}
                         mediaItems={state.mediaItems}

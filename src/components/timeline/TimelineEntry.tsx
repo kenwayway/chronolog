@@ -139,6 +139,7 @@ interface TimelineEntryProps {
   categories: Category[];
   onContextMenu?: (entry: Entry, position: Position) => void;
   onEdit?: (entry: Entry) => void;
+  onDeleteAIComment?: (entry: Entry) => void;
   lineState: LineState | string;
   isLightMode: boolean;
   showDate?: boolean;
@@ -160,6 +161,7 @@ export const TimelineEntry = memo(function TimelineEntry({
   categories,
   onContextMenu,
   onEdit,
+  onDeleteAIComment,
   lineState,
   isLightMode,
   showDate = false,
@@ -501,7 +503,24 @@ export const TimelineEntry = memo(function TimelineEntry({
 
           {/* AI Comment */}
           {showAIComment && entry.aiComment && (
-            <div className={styles.aiCommentWrapper}>
+            <div
+              className={styles.aiCommentWrapper}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onDeleteAIComment?.(entry);
+              }}
+              onTouchStart={(e) => {
+                e.stopPropagation();
+                const timer = setTimeout(() => {
+                  onDeleteAIComment?.(entry);
+                }, 500);
+                const el = e.currentTarget;
+                const cleanup = () => { clearTimeout(timer); el.removeEventListener('touchend', cleanup); el.removeEventListener('touchcancel', cleanup); };
+                el.addEventListener('touchend', cleanup);
+                el.addEventListener('touchcancel', cleanup);
+              }}
+            >
               <div className={styles.aiComment}>
                 <span className={styles.aiCommentLabel}>Zaddy:</span>
                 <p className={styles.aiCommentText}>
