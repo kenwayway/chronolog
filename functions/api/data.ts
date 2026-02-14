@@ -1,7 +1,7 @@
 // GET /api/data - Fetch user data from D1
 // PUT /api/data - Save user data to D1 (incremental upsert)
 
-import { corsHeaders } from './_auth.ts';
+import { verifyAuth, corsHeaders, unauthorizedResponse } from './_auth.ts';
 import {
     entryRowToObject,
     contentTypeRowToObject,
@@ -19,6 +19,12 @@ import type { CFContext, Env, Entry, ContentType, MediaItem, EntryRow, ContentTy
 // GET /api/data?since=ts  → only changes since that timestamp
 export async function onRequestGet(context: CFContext): Promise<Response> {
     const { request, env } = context;
+
+    // Verify authentication
+    const auth = await verifyAuth(request, env);
+    if (!auth.valid) {
+        return unauthorizedResponse(auth.error);
+    }
 
     try {
         const url = new URL(request.url);
@@ -81,7 +87,11 @@ export async function onRequestOptions(): Promise<Response> {
 
 // Send webhook notification to OpenClaw for new entries
 async function notifyOpenClaw(entry: Entry, env: Env): Promise<void> {
-    const webhookSecret = env.OPENCLAW_WEBHOOK_SECRET || 'chronolog-webhook-secret';
+    const webhookSecret = env.OPENCLAW_WEBHOOK_SECRET;
+    if (!webhookSecret) {
+        console.warn('OPENCLAW_WEBHOOK_SECRET not configured, skipping webhook');
+        return;
+    }
     const response = await fetch('https://claw.233446.xyz/hooks/wake', {
         method: 'POST',
         headers: {

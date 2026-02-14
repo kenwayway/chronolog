@@ -19,13 +19,12 @@ export async function onRequest(context: EventContext<Env, string, unknown>): Pr
     // Skip auth for public endpoints
     const url = new URL(request.url);
 
-    // Public routes: auth, image serving, data reading (GET only), public entries API, and external comment API
+    // Public routes: auth, image serving, public entries API, and external comment API
     const isPublicRoute =
         url.pathname === '/api/auth' ||
         url.pathname.startsWith('/api/image/') ||
         url.pathname === '/api/entries/public' ||
-        !!url.pathname.match(/^\/api\/entries\/[^/]+\/comment$/) ||
-        (url.pathname === '/api/data' && request.method === 'GET');
+        !!url.pathname.match(/^\/api\/entries\/[^/]+\/comment$/);
 
     if (isPublicRoute) {
         const response = await next();

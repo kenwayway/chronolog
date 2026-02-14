@@ -2,6 +2,7 @@
 // Uses AI config from Cloudflare environment variables
 
 import type { CFContext } from './types.ts';
+import { corsHeaders } from './_auth.ts';
 
 interface Category {
     id: string;
@@ -24,29 +25,9 @@ interface AIResponse {
 export async function onRequestPost(context: CFContext): Promise<Response> {
     const { request, env } = context;
 
-    // CORS headers
-    const corsHeaders: Record<string, string> = {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    };
-
-    // Handle preflight
-    if (request.method === 'OPTIONS') {
-        return new Response(null, { headers: corsHeaders });
-    }
+    // Auth already verified by _middleware.ts
 
     try {
-        // Verify auth token (multi-device: token stored as auth_token:{token})
-        const authHeader = request.headers.get('Authorization');
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return Response.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders });
-        }
-        const token = authHeader.slice(7);
-        const tokenValid = await env.CHRONOLOG_KV.get(`auth_token:${token}`);
-        if (!tokenValid) {
-            return Response.json({ error: 'Invalid token' }, { status: 401, headers: corsHeaders });
-        }
 
         // Get AI config from environment
         const aiApiKey = env.AI_API_KEY;

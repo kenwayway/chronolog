@@ -1,34 +1,15 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import type { Entry, ContentType, MediaItem, CloudData, ImportDataPayload } from '../types'
-import { STORAGE_KEYS, getStorage, setStorage, removeStorage, type CloudAuthData } from '../utils/storageService'
+import { useCloudAuth, getApiBase, type LoginResult } from './useCloudAuth'
+import { useImageUpload, type CleanupResult } from './useImageUpload'
 
 const SYNC_DEBOUNCE_MS = 500
 const POLL_INTERVAL_MS = 30_000 // Poll for changes from other devices every 30s
-const RETRY_BASE_MS = 5_000     // Base delay for retry (5s, 10s, 20s, 40s, 80s)
-const MAX_RETRIES = 5
 
 interface CloudSyncState {
-  isLoggedIn: boolean
   isSyncing: boolean
   lastSynced: number | null
   error: string | null
-}
-
-interface AuthResponse {
-  success?: boolean
-  token: string
-  expiresAt: number
-  error?: string
-}
-
-interface LoginResult {
-  success: boolean
-  error?: string
-}
-
-interface CleanupResult {
-  deleted: string[]
-  kept: string[]
 }
 
 interface UseCloudSyncProps {
@@ -39,6 +20,7 @@ interface UseCloudSyncProps {
 }
 
 interface UseCloudSyncReturn extends CloudSyncState {
+  isLoggedIn: boolean
   login: (password: string) => Promise<LoginResult>
   logout: () => void
   sync: () => Promise<void>
@@ -50,14 +32,8 @@ interface UseCloudSyncReturn extends CloudSyncState {
 // Storage key for last sync timestamp
 const LAST_SYNC_KEY = 'chronolog_last_sync_at'
 
-// Get API base URL - empty for same origin in production
-const getApiBase = (): string => {
-  return ''
-}
-
 export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }: UseCloudSyncProps): UseCloudSyncReturn {
   const [syncState, setSyncState] = useState<CloudSyncState>({
-    isLoggedIn: false,
     isSyncing: false,
     lastSynced: null,
     error: null,
@@ -65,9 +41,8 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
 
   const syncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const tokenRef = useRef<string | null>(null)
-  const isSyncingRef = useRef(false) // ref mirror of syncState.isSyncing for polling callback
-  const isInitialFetchRef = useRef(true) // track if this is the first fetch on mount
+  const isSyncingRef = useRef(false)
+  const isInitialFetchRef = useRef(true)
 
   // Use refs for data to avoid dependency cycles
   const entriesRef = useRef<Entry[]>(entries)
@@ -75,26 +50,25 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
   const mediaItemsRef = useRef<MediaItem[]>(mediaItems)
   const onImportDataRef = useRef(onImportData)
 
-  // Track previous data for diffing (to determine what changed)
+  // Track previous data for diffing
   const prevEntriesRef = useRef<Entry[]>([])
   const prevContentTypesRef = useRef<ContentType[]>([])
   const prevMediaItemsRef = useRef<MediaItem[]>([])
 
-  // Track pending deletions (entry IDs deleted locally that need to be synced)
+  // Track pending deletions
   const pendingDeletedIdsRef = useRef<string[]>([])
 
   // Flag to skip sync triggers during initial data import
   const isImportingRef = useRef(false)
 
-  // Keep refs in sync with props (no re-renders, no dependency cycles)
+  // Keep refs in sync with props
   useEffect(() => { entriesRef.current = entries }, [entries])
   useEffect(() => { contentTypesRef.current = contentTypes }, [contentTypes])
   useEffect(() => { mediaItemsRef.current = mediaItems }, [mediaItems])
   useEffect(() => { onImportDataRef.current = onImportData }, [onImportData])
   useEffect(() => { isSyncingRef.current = syncState.isSyncing }, [syncState.isSyncing])
 
-  // Fetch data from cloud (full or incremental)
-  // NO dependencies on entries/contentTypes/mediaItems — uses refs instead
+  // --- Fetch remote data (full or incremental) ---
   const fetchRemoteData = useCallback(async (token: string | null, forceFullFetch = false) => {
     try {
       setSyncState(prev => ({ ...prev, isSyncing: true, error: null }))
@@ -104,8 +78,6 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
         headers['Authorization'] = `Bearer ${token}`
       }
 
-      // Use incremental fetch only if we have a last sync timestamp AND it's not a forced full fetch
-      // On initial mount, always do full fetch to avoid race condition with empty entriesRef
       let url = `${getApiBase()}/api/data`
       const savedSyncAt = localStorage.getItem(LAST_SYNC_KEY)
       if (savedSyncAt && token && !forceFullFetch && !isInitialFetchRef.current) {
@@ -125,9 +97,8 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
         const remoteEntries = remoteData.entries || []
         const deletedIds = remoteData.deletedIds || []
 
-        // If nothing changed remotely, skip import entirely
         if (remoteEntries.length === 0 && deletedIds.length === 0) {
-          // Nothing changed remotely, skip import
+          // Nothing changed remotely
         } else {
           const currentEntries = [...entriesRef.current]
 
@@ -138,14 +109,11 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
             : currentEntries
 
           // Merge: update existing + add new from remote
-          // Use reference equality to detect local modifications since last sync:
-          // if local entry reference differs from prevRef, user modified it locally → keep local
           const remoteEntryMap = new Map(remoteEntries.map(e => [e.id, e]))
           const prevEntryMap = new Map(prevEntriesRef.current.map(e => [e.id, e]))
           const mergedEntries = filteredEntries.map(e => {
             const remote = remoteEntryMap.get(e.id)
-            if (!remote) return e // no remote version, keep local
-            // Check if local was modified since last sync
+            if (!remote) return e
             const prev = prevEntryMap.get(e.id)
             if (!prev || prev !== e) return e // local modified → keep local
             return remote // local untouched → accept remote
@@ -171,16 +139,10 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
 
         if (hasRemoteData) {
           // One-time migration: convert category=beans/sparks to contentType=beans/sparks
-          let migrated = false
           const migratedEntries = remoteEntries.map(entry => {
             const legacyCategory = entry.category as string | undefined
             if ((legacyCategory === 'beans' || legacyCategory === 'sparks') && !entry.contentType) {
-              migrated = true
-              return {
-                ...entry,
-                contentType: legacyCategory,
-                category: undefined,
-              }
+              return { ...entry, contentType: legacyCategory, category: undefined }
             }
             return entry
           })
@@ -197,21 +159,16 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
       const now = Date.now()
       localStorage.setItem(LAST_SYNC_KEY, String(now))
 
-      // After import, snapshot current state as "previous" to avoid re-uploading imported data
-      // Use a longer delay to ensure React has flushed all state updates
+      // Snapshot current state after React flushes
       setTimeout(() => {
         prevEntriesRef.current = [...entriesRef.current]
         prevContentTypesRef.current = [...contentTypesRef.current]
         prevMediaItemsRef.current = [...mediaItemsRef.current]
         isImportingRef.current = false
-        isInitialFetchRef.current = false // subsequent fetches can use incremental
+        isInitialFetchRef.current = false
       }, 500)
 
-      setSyncState(prev => ({
-        ...prev,
-        isSyncing: false,
-        lastSynced: now,
-      }))
+      setSyncState(prev => ({ ...prev, isSyncing: false, lastSynced: now }))
     } catch (error) {
       setSyncState(prev => ({
         ...prev,
@@ -219,31 +176,34 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
         error: error instanceof Error ? error.message : 'Unknown error'
       }))
     }
-  }, []) // No dependencies — uses refs for all dynamic data
+  }, [])
 
-  // Load saved token on mount (runs once)
-  useEffect(() => {
-    const saved = getStorage<CloudAuthData>(STORAGE_KEYS.CLOUD_AUTH)
-    if (saved) {
-      if (saved.expiresAt > Date.now()) {
-        tokenRef.current = saved.token
-        setSyncState(prev => ({ ...prev, isLoggedIn: true }))
-        // Force full fetch on mount to avoid race condition with empty entriesRef
-        fetchRemoteData(saved.token, true)
-      } else {
-        removeStorage(STORAGE_KEYS.CLOUD_AUTH)
-        fetchRemoteData(null, true)
-      }
-    } else {
-      fetchRemoteData(null, true)
-    }
+  // --- Auth (composed from useCloudAuth) ---
+  const handleLoginSuccess = useCallback((token: string) => {
+    localStorage.removeItem(LAST_SYNC_KEY)
+    fetchRemoteData(token, true)
   }, [fetchRemoteData])
 
-  // Periodic polling: fetch changes from other devices every 30s
-  // Uses isSyncingRef (not syncState.isSyncing) to avoid recreating the interval
-  // on every sync start/end, which would reset the 30s timer
+  const auth = useCloudAuth(handleLoginSuccess)
+
+  // Also fetch on mount for unauthenticated case
   useEffect(() => {
-    if (!syncState.isLoggedIn || !tokenRef.current) {
+    if (!auth.isLoggedIn) {
+      // Token already handled by useCloudAuth's onLoginSuccess callback
+      // Only fetch if there's no saved auth at all
+      const savedAuth = localStorage.getItem('chronolog_cloud_auth')
+      if (!savedAuth) {
+        fetchRemoteData(null, true)
+      }
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // --- Image operations (composed from useImageUpload) ---
+  const { uploadImage, cleanupImages } = useImageUpload(auth.tokenRef)
+
+  // --- Periodic polling ---
+  useEffect(() => {
+    if (!auth.isLoggedIn || !auth.tokenRef.current) {
       if (pollIntervalRef.current) {
         clearInterval(pollIntervalRef.current)
         pollIntervalRef.current = null
@@ -252,8 +212,8 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
     }
 
     pollIntervalRef.current = setInterval(() => {
-      if (!isSyncingRef.current && tokenRef.current) {
-        fetchRemoteData(tokenRef.current)
+      if (!isSyncingRef.current && auth.tokenRef.current) {
+        fetchRemoteData(auth.tokenRef.current)
       }
     }, POLL_INTERVAL_MS)
 
@@ -263,28 +223,23 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
         pollIntervalRef.current = null
       }
     }
-  }, [syncState.isLoggedIn, fetchRemoteData])
+  }, [auth.isLoggedIn, fetchRemoteData, auth.tokenRef])
 
-  // Save changes to cloud (incremental)
+  // --- Save changes to cloud (incremental diff) ---
   const saveToCloud = useCallback(async () => {
-    if (!tokenRef.current) return
+    if (!auth.tokenRef.current) return
     if (isImportingRef.current) return
 
     const currentEntries = entriesRef.current
     const currentContentTypes = contentTypesRef.current
     const currentMediaItems = mediaItemsRef.current
 
-    // Compute diff: find entries that were added or changed
+    // Compute entry diff
     const prevEntryMap = new Map(prevEntriesRef.current.map(e => [e.id, e]))
     const changedEntries: Entry[] = []
-
     for (const entry of currentEntries) {
       const prev = prevEntryMap.get(entry.id)
-      // Reference equality: React reducer creates new objects for modified entries,
-      // unchanged entries keep the same reference — no need for JSON.stringify
-      if (!prev || prev !== entry) {
-        changedEntries.push(entry)
-      }
+      if (!prev || prev !== entry) changedEntries.push(entry)
     }
 
     // Detect deleted entries
@@ -292,38 +247,29 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
     const newlyDeleted = prevEntriesRef.current
       .filter(e => !currentIds.has(e.id))
       .map(e => e.id)
-
     if (newlyDeleted.length > 0) {
       pendingDeletedIdsRef.current.push(...newlyDeleted)
     }
 
-    // Compute content type changes
+    // Compute content type diff
     const prevCtMap = new Map(prevContentTypesRef.current.map(ct => [ct.id, ct]))
     const changedContentTypes: ContentType[] = []
     for (const ct of currentContentTypes) {
       const prev = prevCtMap.get(ct.id)
-      if (!prev || prev !== ct) {
-        changedContentTypes.push(ct)
-      }
+      if (!prev || prev !== ct) changedContentTypes.push(ct)
     }
-
-    // Detect deleted content types
     const currentCtIds = new Set(currentContentTypes.map(ct => ct.id))
     const deletedContentTypeIds = prevContentTypesRef.current
       .filter(ct => !currentCtIds.has(ct.id) && !ct.builtIn)
       .map(ct => ct.id)
 
-    // Compute media item changes
+    // Compute media item diff
     const prevMiMap = new Map(prevMediaItemsRef.current.map(mi => [mi.id, mi]))
     const changedMediaItems: MediaItem[] = []
     for (const mi of currentMediaItems) {
       const prev = prevMiMap.get(mi.id)
-      if (!prev || prev !== mi) {
-        changedMediaItems.push(mi)
-      }
+      if (!prev || prev !== mi) changedMediaItems.push(mi)
     }
-
-    // Detect deleted media items
     const currentMiIds = new Set(currentMediaItems.map(mi => mi.id))
     const deletedMediaItemIds = prevMediaItemsRef.current
       .filter(mi => !currentMiIds.has(mi.id))
@@ -331,11 +277,10 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
 
     const deletedIds = [...pendingDeletedIdsRef.current]
 
-    // Nothing changed? Skip
+    // Nothing changed? Update refs and skip
     if (changedEntries.length === 0 && deletedIds.length === 0 &&
       changedContentTypes.length === 0 && deletedContentTypeIds.length === 0 &&
       changedMediaItems.length === 0 && deletedMediaItemIds.length === 0) {
-      // Update refs even when nothing changed
       prevEntriesRef.current = [...currentEntries]
       prevContentTypesRef.current = [...currentContentTypes]
       prevMediaItemsRef.current = [...currentMediaItems]
@@ -346,7 +291,6 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
       setSyncState(prev => ({ ...prev, isSyncing: true, error: null }))
 
       const payload: Record<string, unknown> = {}
-
       if (changedEntries.length > 0) payload.entries = changedEntries
       if (deletedIds.length > 0) payload.deletedIds = deletedIds
       if (changedContentTypes.length > 0) payload.contentTypes = changedContentTypes
@@ -357,32 +301,24 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
       const response = await fetch(`${getApiBase()}/api/data`, {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${tokenRef.current}`,
+          'Authorization': `Bearer ${auth.tokenRef.current}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(payload),
       })
 
-      if (!response.ok) {
-        throw new Error('Failed to save data')
-      }
+      if (!response.ok) throw new Error('Failed to save data')
 
-      // Clear pending deletions on success
       pendingDeletedIdsRef.current = []
 
       const now = Date.now()
       localStorage.setItem(LAST_SYNC_KEY, String(now))
 
-      // Update refs to current state
       prevEntriesRef.current = [...currentEntries]
       prevContentTypesRef.current = [...currentContentTypes]
       prevMediaItemsRef.current = [...currentMediaItems]
 
-      setSyncState(prev => ({
-        ...prev,
-        isSyncing: false,
-        lastSynced: now,
-      }))
+      setSyncState(prev => ({ ...prev, isSyncing: false, lastSynced: now }))
     } catch (error) {
       setSyncState(prev => ({
         ...prev,
@@ -390,154 +326,47 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
         error: error instanceof Error ? error.message : 'Unknown error'
       }))
     }
-  }, []) // No dependencies — uses refs for all dynamic data
+  }, [auth.tokenRef])
 
-  // Auto-sync when data changes (debounced)
+  // --- Auto-sync on data changes (debounced) ---
   useEffect(() => {
-    if (!syncState.isLoggedIn) return
+    if (!auth.isLoggedIn) return
     if (isImportingRef.current) return
 
-    if (syncTimeoutRef.current) {
-      clearTimeout(syncTimeoutRef.current)
-    }
-
-    syncTimeoutRef.current = setTimeout(() => {
-      saveToCloud()
-    }, SYNC_DEBOUNCE_MS)
+    if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current)
+    syncTimeoutRef.current = setTimeout(() => saveToCloud(), SYNC_DEBOUNCE_MS)
 
     return () => {
-      if (syncTimeoutRef.current) {
-        clearTimeout(syncTimeoutRef.current)
-      }
+      if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current)
     }
-  }, [entries, contentTypes, mediaItems, syncState.isLoggedIn, saveToCloud])
+  }, [entries, contentTypes, mediaItems, auth.isLoggedIn, saveToCloud])
 
-  // Login with password
-  const login = useCallback(async (password: string): Promise<LoginResult> => {
-    try {
-      setSyncState(prev => ({ ...prev, isSyncing: true, error: null }))
+  // --- Manual sync (bidirectional) ---
+  const sync = useCallback(async () => {
+    if (!auth.tokenRef.current) return
+    await saveToCloud()
+    await fetchRemoteData(auth.tokenRef.current)
+  }, [saveToCloud, fetchRemoteData, auth.tokenRef])
 
-      const response = await fetch(`${getApiBase()}/api/auth`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ password }),
-      })
-
-      const data: AuthResponse = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Login failed')
-      }
-
-      // Save token
-      tokenRef.current = data.token
-      setStorage<CloudAuthData>(STORAGE_KEYS.CLOUD_AUTH, {
-        token: data.token,
-        expiresAt: data.expiresAt,
-      })
-
-      setSyncState(prev => ({
-        ...prev,
-        isLoggedIn: true,
-        isSyncing: false
-      }))
-
-      // Fetch remote data after login (full fetch since we just logged in)
-      localStorage.removeItem(LAST_SYNC_KEY)
-      await fetchRemoteData(data.token)
-
-      return { success: true }
-    } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Unknown error'
-      setSyncState(prev => ({
-        ...prev,
-        isSyncing: false,
-        error: errorMsg
-      }))
-      return { success: false, error: errorMsg }
-    }
-  }, [fetchRemoteData])
-
-  // Logout
+  // --- Logout with cleanup ---
   const logout = useCallback(() => {
-    tokenRef.current = null
-    removeStorage(STORAGE_KEYS.CLOUD_AUTH)
+    auth.logout()
     localStorage.removeItem(LAST_SYNC_KEY)
     prevEntriesRef.current = []
     prevContentTypesRef.current = []
     prevMediaItemsRef.current = []
     pendingDeletedIdsRef.current = []
-    setSyncState({
-      isLoggedIn: false,
-      isSyncing: false,
-      lastSynced: null,
-      error: null,
-    })
-  }, [])
-
-  // Upload image
-  const uploadImage = useCallback(async (file: File): Promise<string> => {
-    if (!tokenRef.current) {
-      throw new Error('Not logged in')
-    }
-
-    const formData = new FormData()
-    formData.append('file', file)
-
-    const response = await fetch(`${getApiBase()}/api/upload`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${tokenRef.current}`,
-      },
-      body: formData,
-    })
-
-    if (!response.ok) {
-      const error = await response.json() as { error?: string }
-      throw new Error(error.error || 'Upload failed')
-    }
-
-    const result = await response.json() as { url: string }
-    return result.url
-  }, [])
-
-  // Manual sync — bidirectional: push local changes, then pull remote changes
-  const sync = useCallback(async () => {
-    if (!tokenRef.current) return
-    await saveToCloud()
-    await fetchRemoteData(tokenRef.current)
-  }, [saveToCloud, fetchRemoteData])
-
-  // Cleanup unreferenced images
-  const cleanupImages = useCallback(async (): Promise<CleanupResult> => {
-    if (!tokenRef.current) {
-      throw new Error('Not logged in')
-    }
-
-    const response = await fetch(`${getApiBase()}/api/cleanup`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${tokenRef.current}`,
-      },
-    })
-
-    if (!response.ok) {
-      const error = await response.json() as { error?: string }
-      throw new Error(error.error || 'Cleanup failed')
-    }
-
-    return await response.json() as CleanupResult
-  }, [])
+    setSyncState({ isSyncing: false, lastSynced: null, error: null })
+  }, [auth])
 
   return {
     ...syncState,
-    login,
+    isLoggedIn: auth.isLoggedIn,
+    login: auth.login,
     logout,
     sync,
     uploadImage,
     cleanupImages,
-    token: tokenRef.current,
+    token: auth.tokenRef.current,
   }
 }
