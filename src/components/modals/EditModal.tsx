@@ -258,14 +258,15 @@ export function EditModal({ isOpen, entry, onSave, onClose }: EditModalProps) {
             {/* Time */}
             <div className="flex items-center gap-2">
               <span className={styles.label}>TIME</span>
-              <input
-                type="datetime-local"
-                value={timestamp}
-                onChange={(e) => setTimestamp(e.target.value)}
-                className={styles.input}
-                style={{ width: 'auto', minWidth: 150 }}
-                lang="en-GB"
-              />
+              <div lang="en-GB">
+                <input
+                  type="datetime-local"
+                  value={timestamp}
+                  onChange={(e) => setTimestamp(e.target.value)}
+                  className={styles.input}
+                  style={{ width: 'auto', minWidth: 150 }}
+                />
+              </div>
             </div>
 
             {/* Entry Type */}

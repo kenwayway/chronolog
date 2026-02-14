@@ -53,7 +53,8 @@ export const BUILTIN_CONTENT_TYPES: ContentType[] = [
     name: 'Note',
     fields: [],
     builtIn: true,
-    order: 0
+    order: 0,
+    version: 1
   },
   {
     id: 'task',
@@ -62,7 +63,8 @@ export const BUILTIN_CONTENT_TYPES: ContentType[] = [
       { id: 'done', name: 'Done', type: 'boolean', default: false }
     ],
     builtIn: true,
-    order: 1
+    order: 1,
+    version: 1
   },
   {
     id: 'bookmark',
@@ -74,7 +76,8 @@ export const BUILTIN_CONTENT_TYPES: ContentType[] = [
       { id: 'status', name: 'Status', type: 'dropdown', options: ['Inbox', 'Reading', 'Archived'], default: 'Inbox' }
     ],
     builtIn: true,
-    order: 2
+    order: 2,
+    version: 1
   },
   {
     id: 'mood',
@@ -85,7 +88,8 @@ export const BUILTIN_CONTENT_TYPES: ContentType[] = [
       { id: 'trigger', name: 'Trigger', type: 'dropdown', options: ['Work', 'Health', 'Social', 'Money', 'Family', 'Sleep', 'Weather', 'Other'] }
     ],
     builtIn: true,
-    order: 3
+    order: 3,
+    version: 1
   },
   {
     id: 'workout',
@@ -96,7 +100,8 @@ export const BUILTIN_CONTENT_TYPES: ContentType[] = [
       { id: 'exercises', name: 'Exercises', type: 'text' } // Comma-separated exercise names
     ],
     builtIn: true,
-    order: 4
+    order: 4,
+    version: 2  // v2: added Cardio, Place; removed duration
   },
   {
     id: 'vault',
@@ -106,21 +111,24 @@ export const BUILTIN_CONTENT_TYPES: ContentType[] = [
       { id: 'obsidianUrl', name: 'Obsidian URL', type: 'text' }
     ],
     builtIn: true,
-    order: 5
+    order: 5,
+    version: 1
   },
   {
     id: 'beans',
     name: 'Beans',
     fields: [],
     builtIn: true,
-    order: 6
+    order: 6,
+    version: 1
   },
   {
     id: 'sparks',
     name: 'Sparks',
     fields: [],
     builtIn: true,
-    order: 6
+    order: 6,
+    version: 1
   },
   {
     id: 'media',
@@ -129,7 +137,8 @@ export const BUILTIN_CONTENT_TYPES: ContentType[] = [
       { id: 'mediaId', name: 'Media', type: 'media-select' }
     ],
     builtIn: true,
-    order: 7
+    order: 7,
+    version: 1
   }
 ]
 

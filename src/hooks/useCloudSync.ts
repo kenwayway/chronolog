@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import type { Entry, ContentType, MediaItem, CloudData, ImportDataPayload } from '../types'
 import { useCloudAuth, getApiBase, type LoginResult } from './useCloudAuth'
 import { useImageUpload, type CleanupResult } from './useImageUpload'
+import { computeDiff } from '../utils/syncDiff'
+
 
 const SYNC_DEBOUNCE_MS = 500
 const POLL_INTERVAL_MS = 30_000 // Poll for changes from other devices every 30s
@@ -234,53 +236,22 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
     const currentContentTypes = contentTypesRef.current
     const currentMediaItems = mediaItemsRef.current
 
-    // Compute entry diff
-    const prevEntryMap = new Map(prevEntriesRef.current.map(e => [e.id, e]))
-    const changedEntries: Entry[] = []
-    for (const entry of currentEntries) {
-      const prev = prevEntryMap.get(entry.id)
-      if (!prev || prev !== entry) changedEntries.push(entry)
-    }
+    // Compute diffs using generic utility
+    const entryDiff = computeDiff(prevEntriesRef.current, currentEntries)
+    const ctDiff = computeDiff(prevContentTypesRef.current, currentContentTypes, ct => !ct.builtIn)
+    const miDiff = computeDiff(prevMediaItemsRef.current, currentMediaItems)
 
-    // Detect deleted entries
-    const currentIds = new Set(currentEntries.map(e => e.id))
-    const newlyDeleted = prevEntriesRef.current
-      .filter(e => !currentIds.has(e.id))
-      .map(e => e.id)
-    if (newlyDeleted.length > 0) {
-      pendingDeletedIdsRef.current.push(...newlyDeleted)
+    // Accumulate entry deletions across calls
+    if (entryDiff.deletedIds.length > 0) {
+      pendingDeletedIdsRef.current.push(...entryDiff.deletedIds)
     }
-
-    // Compute content type diff
-    const prevCtMap = new Map(prevContentTypesRef.current.map(ct => [ct.id, ct]))
-    const changedContentTypes: ContentType[] = []
-    for (const ct of currentContentTypes) {
-      const prev = prevCtMap.get(ct.id)
-      if (!prev || prev !== ct) changedContentTypes.push(ct)
-    }
-    const currentCtIds = new Set(currentContentTypes.map(ct => ct.id))
-    const deletedContentTypeIds = prevContentTypesRef.current
-      .filter(ct => !currentCtIds.has(ct.id) && !ct.builtIn)
-      .map(ct => ct.id)
-
-    // Compute media item diff
-    const prevMiMap = new Map(prevMediaItemsRef.current.map(mi => [mi.id, mi]))
-    const changedMediaItems: MediaItem[] = []
-    for (const mi of currentMediaItems) {
-      const prev = prevMiMap.get(mi.id)
-      if (!prev || prev !== mi) changedMediaItems.push(mi)
-    }
-    const currentMiIds = new Set(currentMediaItems.map(mi => mi.id))
-    const deletedMediaItemIds = prevMediaItemsRef.current
-      .filter(mi => !currentMiIds.has(mi.id))
-      .map(mi => mi.id)
 
     const deletedIds = [...pendingDeletedIdsRef.current]
 
     // Nothing changed? Update refs and skip
-    if (changedEntries.length === 0 && deletedIds.length === 0 &&
-      changedContentTypes.length === 0 && deletedContentTypeIds.length === 0 &&
-      changedMediaItems.length === 0 && deletedMediaItemIds.length === 0) {
+    if (entryDiff.changed.length === 0 && deletedIds.length === 0 &&
+      ctDiff.changed.length === 0 && ctDiff.deletedIds.length === 0 &&
+      miDiff.changed.length === 0 && miDiff.deletedIds.length === 0) {
       prevEntriesRef.current = [...currentEntries]
       prevContentTypesRef.current = [...currentContentTypes]
       prevMediaItemsRef.current = [...currentMediaItems]
@@ -291,12 +262,12 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
       setSyncState(prev => ({ ...prev, isSyncing: true, error: null }))
 
       const payload: Record<string, unknown> = {}
-      if (changedEntries.length > 0) payload.entries = changedEntries
+      if (entryDiff.changed.length > 0) payload.entries = entryDiff.changed
       if (deletedIds.length > 0) payload.deletedIds = deletedIds
-      if (changedContentTypes.length > 0) payload.contentTypes = changedContentTypes
-      if (deletedContentTypeIds.length > 0) payload.deletedContentTypeIds = deletedContentTypeIds
-      if (changedMediaItems.length > 0) payload.mediaItems = changedMediaItems
-      if (deletedMediaItemIds.length > 0) payload.deletedMediaItemIds = deletedMediaItemIds
+      if (ctDiff.changed.length > 0) payload.contentTypes = ctDiff.changed
+      if (ctDiff.deletedIds.length > 0) payload.deletedContentTypeIds = ctDiff.deletedIds
+      if (miDiff.changed.length > 0) payload.mediaItems = miDiff.changed
+      if (miDiff.deletedIds.length > 0) payload.deletedMediaItemIds = miDiff.deletedIds
 
       const response = await fetch(`${getApiBase()}/api/data`, {
         method: 'PUT',

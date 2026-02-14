@@ -148,12 +148,15 @@ export function sessionReducer(state: SessionState, action: SessionAction): Sess
             const loadedContentTypes = action.payload.contentTypes || []
             const builtInIds = BUILTIN_CONTENT_TYPES.map(ct => ct.id)
 
-            // Use loaded versions of built-in types (user may have edited fields)
-            // Add any custom types the user created
+            // Use loaded versions of built-in types if their version >= local,
+            // otherwise prefer local (code updated the schema)
             const mergedContentTypes = [
                 ...BUILTIN_CONTENT_TYPES.map(builtIn => {
                     const loaded = loadedContentTypes.find(ct => ct.id === builtIn.id)
-                    return loaded ? { ...loaded, builtIn: true } : builtIn
+                    if (!loaded) return builtIn
+                    // Local version is newer — use local definition
+                    if ((builtIn.version ?? 0) > (loaded.version ?? 0)) return builtIn
+                    return { ...loaded, builtIn: true }
                 }),
                 ...loadedContentTypes.filter(ct => !builtInIds.includes(ct.id))
             ]
@@ -236,12 +239,14 @@ export function sessionReducer(state: SessionState, action: SessionAction): Sess
                 }
             }
 
-            // Merge content types
+            // Merge content types — prefer local builtIn if version is higher
             const builtInIds = BUILTIN_CONTENT_TYPES.map(ct => ct.id)
             const mergedContentTypes = [
                 ...BUILTIN_CONTENT_TYPES.map(builtIn => {
                     const imported = importedContentTypes.find(ct => ct.id === builtIn.id)
-                    return imported ? { ...imported, builtIn: true } : builtIn
+                    if (!imported) return builtIn
+                    if ((builtIn.version ?? 0) > (imported.version ?? 0)) return builtIn
+                    return { ...imported, builtIn: true }
                 }),
                 ...importedContentTypes.filter(ct => !builtInIds.includes(ct.id))
             ]

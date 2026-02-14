@@ -1,7 +1,8 @@
-import { useState, useRef, useEffect, KeyboardEvent } from 'react';
-import { X, Link2, Search } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
 import { Dropdown } from '../common/Dropdown';
 import { DynamicFieldForm } from './DynamicFieldForm';
+import { TagInput } from './TagInput';
+import { LinkedEntryPicker } from './LinkedEntryPicker';
 import { CATEGORIES, BUILTIN_CONTENT_TYPES } from '../../utils/constants';
 import type { CategoryId, ContentType, Entry, MediaItem } from '../../types';
 
@@ -61,10 +62,7 @@ export function EntryMetadataInput({
   showLinkedEntries = false,
   showAutoOption = true,
 }: EntryMetadataInputProps) {
-  const [tagInput, setTagInput] = useState('');
   const [height, setHeight] = useState(0);
-  const [showLinkSearch, setShowLinkSearch] = useState(false);
-  const [linkSearch, setLinkSearch] = useState('');
   const contentRef = useRef<HTMLDivElement>(null);
 
   const types = contentTypes || BUILTIN_CONTENT_TYPES;
@@ -74,55 +72,7 @@ export function EntryMetadataInput({
     if (contentRef.current) {
       setHeight(isExpanded ? contentRef.current.scrollHeight : 0);
     }
-  }, [isExpanded, tags.length, linkedEntries.length, showLinkSearch, contentType, fieldValues]);
-
-  // Tag handling
-  const handleAddTag = () => {
-    const tag = tagInput.trim().toLowerCase().replace(/^#/, '');
-    if (tag && !tags.includes(tag)) {
-      setTags([...tags, tag]);
-      setTagInput('');
-    }
-  };
-
-  const handleTagKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      e.stopPropagation();
-      handleAddTag();
-    }
-  };
-
-  const handleRemoveTag = (tagToRemove: string) => {
-    setTags(tags.filter(t => t !== tagToRemove));
-  };
-
-  // Linked entries handling
-  const handleAddLinkedEntry = (entryId: string) => {
-    if (setLinkedEntries && !linkedEntries.includes(entryId)) {
-      setLinkedEntries([...linkedEntries, entryId]);
-      setLinkSearch('');
-      setShowLinkSearch(false);
-    }
-  };
-
-  const handleRemoveLinkedEntry = (entryId: string) => {
-    if (setLinkedEntries) {
-      setLinkedEntries(linkedEntries.filter(id => id !== entryId));
-    }
-  };
-
-  const getEntryPreview = (content: string | undefined) => {
-    if (!content) return "(empty)";
-    const firstLine = content.split("\n")[0];
-    return firstLine.length > 40 ? firstLine.slice(0, 40) + "..." : firstLine;
-  };
-
-  // Filter searchable entries
-  const searchableEntries = allEntries
-    .filter(e => e.id !== currentEntryId && !linkedEntries.includes(e.id))
-    .filter(e => linkSearch.trim() === "" || e.content?.toLowerCase().includes(linkSearch.toLowerCase()))
-    .slice(0, 8);
+  }, [isExpanded, tags.length, linkedEntries.length, contentType, fieldValues]);
 
   // Find content type definition for DynamicFieldForm
   const currentContentType = types.find(t => t.id === contentType) || null;
@@ -211,53 +161,8 @@ export function EntryMetadataInput({
             />
           </div>
 
-          {/* Tags - inline with category/type on desktop, wraps to new line on mobile */}
-          <div className="flex items-center gap-2" style={{ flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 10, color: 'var(--text-dim)', userSelect: 'none' }}>
-              TAGS
-            </span>
-            <input
-              type="text"
-              value={tagInput}
-              onChange={(e) => setTagInput(e.target.value)}
-              onKeyDown={handleTagKeyDown}
-              placeholder="add..."
-              style={{
-                width: 60,
-                height: 22,
-                padding: '0 6px',
-                fontSize: 11,
-                fontFamily: 'var(--font-mono)',
-                backgroundColor: 'var(--bg-tertiary)',
-                color: 'var(--text-primary)',
-                border: '1px solid var(--border-subtle)',
-                borderRadius: 0,
-                outline: 'none',
-              }}
-            />
-            {tags.map(tag => (
-              <span
-                key={tag}
-                style={{
-                  fontSize: 10,
-                  padding: '2px 6px',
-                  backgroundColor: 'var(--bg-tertiary)',
-                  color: 'var(--text-secondary)',
-                  fontFamily: 'var(--font-mono)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 4,
-                }}
-              >
-                #{tag}
-                <X
-                  size={10}
-                  style={{ cursor: 'pointer' }}
-                  onClick={() => handleRemoveTag(tag)}
-                />
-              </span>
-            ))}
-          </div>
+          {/* Tags */}
+          <TagInput tags={tags} setTags={setTags} />
         </div>
 
         {/* Row 2: Dynamic Field Form */}
@@ -273,116 +178,13 @@ export function EntryMetadataInput({
 
         {/* Row 3: Linked Entries (optional) */}
         {showLinkedEntries && setLinkedEntries && (
-          <div style={{ padding: '8px 16px', borderTop: '1px solid var(--border-subtle)' }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-              <Link2 size={12} style={{ color: "var(--text-dim)" }} />
-              <span style={{ fontSize: 10, color: "var(--text-dim)", fontWeight: 600 }}>LINKED ENTRIES</span>
-              <button
-                onClick={() => setShowLinkSearch(!showLinkSearch)}
-                className={`btn-action ${showLinkSearch ? 'btn-action-primary' : 'btn-action-secondary'}`}
-              >
-                + ADD
-              </button>
-            </div>
-
-            {/* Current linked entries */}
-            {linkedEntries.length > 0 && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: showLinkSearch ? 8 : 0 }}>
-                {linkedEntries.map(linkId => {
-                  const linkedEntry = allEntries.find(e => e.id === linkId);
-                  if (!linkedEntry) return null;
-                  const isOlder = linkedEntry.timestamp < currentEntryTimestamp;
-                  return (
-                    <div
-                      key={linkId}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 8,
-                        padding: "4px 8px",
-                        backgroundColor: "var(--bg-tertiary)",
-                        borderRadius: 4,
-                        fontSize: 11,
-                        fontFamily: "var(--font-mono)",
-                      }}
-                    >
-                      <span style={{ color: isOlder ? "var(--accent)" : "var(--warning)", fontWeight: 600 }}>
-                        {isOlder ? "↑" : "↓"}
-                      </span>
-                      <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "var(--text-secondary)" }}>
-                        {getEntryPreview(linkedEntry.content)}
-                      </span>
-                      <span style={{ fontSize: 9, color: "var(--text-dim)" }}>
-                        {new Date(linkedEntry.timestamp).toLocaleDateString()}
-                      </span>
-                      <button
-                        onClick={() => handleRemoveLinkedEntry(linkId)}
-                        style={{
-                          background: "none",
-                          border: "none",
-                          cursor: "pointer",
-                          padding: 2,
-                          color: "var(--text-muted)",
-                          display: "flex",
-                          alignItems: "center",
-                        }}
-                      >
-                        <X size={12} />
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* Search input */}
-            {showLinkSearch && (
-              <div style={{ position: "relative" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                  <Search size={12} style={{ color: "var(--text-dim)" }} />
-                  <input
-                    type="text"
-                    value={linkSearch}
-                    onChange={(e) => setLinkSearch(e.target.value)}
-                    placeholder="Search entries..."
-                    className="edit-modal-input"
-                    style={{ flex: 1, fontSize: 11 }}
-                    autoFocus
-                  />
-                </div>
-                {searchableEntries.length > 0 && (
-                  <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                    {searchableEntries.map(e => (
-                      <button
-                        key={e.id}
-                        onClick={() => handleAddLinkedEntry(e.id)}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 8,
-                          padding: "6px 8px",
-                          backgroundColor: "var(--bg-primary)",
-                          border: "1px solid var(--border-subtle)",
-                          borderRadius: 4,
-                          cursor: "pointer",
-                          fontSize: 11,
-                          fontFamily: "var(--font-mono)",
-                          textAlign: "left",
-                        }}
-                      >
-                        <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "var(--text-secondary)" }}>
-                          {getEntryPreview(e.content)}
-                        </span>
-                        <span style={{ fontSize: 9, color: "var(--text-dim)" }}>
-                          {new Date(e.timestamp).toLocaleDateString()}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+          <LinkedEntryPicker
+            linkedEntries={linkedEntries}
+            setLinkedEntries={setLinkedEntries}
+            allEntries={allEntries}
+            currentEntryId={currentEntryId}
+            currentEntryTimestamp={currentEntryTimestamp}
+          />
         )}
       </div>
     </div>

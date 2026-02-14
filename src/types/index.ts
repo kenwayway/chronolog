@@ -66,6 +66,7 @@ export interface ContentType {
   fields: FieldDefinition[]
   builtIn?: boolean     // System types can't be deleted
   order?: number        // Display order
+  version?: number      // Schema version — local builtins override cloud if local version is higher
 }
 
 // ============================================
