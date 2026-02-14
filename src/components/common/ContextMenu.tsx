@@ -18,6 +18,7 @@ interface ContextMenuProps {
     onCopy: (entry: Entry) => void;
     onMarkAsTask: (entry: Entry) => void;
     onLink?: (entry: Entry) => void;
+    onDeleteAIComment?: (entry: Entry) => void;
     googleTasksEnabled?: boolean;
 }
 
@@ -31,6 +32,7 @@ export function ContextMenu({
     onCopy,
     onMarkAsTask,
     onLink,
+    onDeleteAIComment,
     googleTasksEnabled = false,
 }: ContextMenuProps) {
     const menuRef = useRef<HTMLDivElement>(null);
@@ -73,6 +75,10 @@ export function ContextMenu({
     };
     const handleLink = () => {
         onLink?.(entry);
+        onClose();
+    };
+    const handleDeleteAIComment = () => {
+        onDeleteAIComment?.(entry);
         onClose();
     };
 
@@ -120,6 +126,12 @@ export function ContextMenu({
             <button className={styles.item} onClick={handleCopy}>
                 COPY
             </button>
+
+            {entry.aiComment && (
+                <button className={styles.item} onClick={handleDeleteAIComment}>
+                    DELETE AI COMMENT
+                </button>
+            )}
 
             <div className={styles.divider} />
 

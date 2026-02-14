@@ -188,16 +188,15 @@ function App() {
         if (categoryFilter.length > 0) {
             return state.entries
                 .filter(entry => categoryFilter.includes(entry.category as CategoryId))
-                .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+                .sort((a, b) => b.timestamp - a.timestamp);
         }
-        // Otherwise, filter by date
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const targetDate = selectedDate || today;
-        return state.entries.filter(entry => {
-            const entryDate = new Date(entry.timestamp);
-            return entryDate.toDateString() === targetDate.toDateString();
-        });
+        // Otherwise, filter by date using timestamp range (avoids Date object creation per entry)
+        const target = selectedDate || new Date();
+        const dayStart = new Date(target.getFullYear(), target.getMonth(), target.getDate()).getTime();
+        const dayEnd = dayStart + 86_400_000; // 24h in ms
+        return state.entries.filter(entry =>
+            entry.timestamp >= dayStart && entry.timestamp < dayEnd
+        );
     }, [state.entries, categoryFilter, selectedDate]);
 
     return (
@@ -275,6 +274,7 @@ function App() {
                 onCopy={handlers.handleCopyEntry}
                 onMarkAsTask={handlers.handleMarkAsTask}
                 onLink={handleFollowUp}
+                onDeleteAIComment={(entry) => actions.updateEntry(entry.id, { aiComment: undefined })}
                 googleTasksEnabled={googleTasks.isLoggedIn}
             />
 

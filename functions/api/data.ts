@@ -1,7 +1,7 @@
 // GET /api/data - Fetch user data from D1
 // PUT /api/data - Save user data to D1 (incremental upsert)
 
-import { verifyAuth, corsHeaders, unauthorizedResponse } from './_auth.ts';
+import { corsHeaders } from './_auth.ts';
 import {
     entryRowToObject,
     contentTypeRowToObject,
@@ -110,11 +110,7 @@ interface PutData {
 export async function onRequestPut(context: CFContext): Promise<Response> {
     const { request, env, waitUntil } = context;
 
-    // Verify authentication
-    const auth = await verifyAuth(request, env);
-    if (!auth.valid) {
-        return unauthorizedResponse(auth.error);
-    }
+    // Auth already verified by _middleware.ts for non-public routes
 
     try {
         const data = await request.json<PutData>();

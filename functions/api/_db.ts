@@ -76,7 +76,7 @@ export function entryObjectToRow(entry: Entry): EntryRowValues {
         linked_entries: entry.linkedEntries ? JSON.stringify(entry.linkedEntries) : null,
         tags: entry.tags ? JSON.stringify(entry.tags) : null,
         ai_comment: entry.aiComment || null,
-        created_at: entry.createdAt || now,
+        created_at: now,
         updated_at: now,
     };
 }
@@ -169,10 +169,23 @@ export async function upsertEntries(db: D1Database, entries: Entry[]): Promise<n
     if (!entries || entries.length === 0) return 0;
 
     const stmt = db.prepare(`
-    INSERT OR REPLACE INTO entries
+    INSERT INTO entries
       (id, type, content, timestamp, session_id, duration, category, content_type,
        field_values, linked_entries, tags, ai_comment, created_at, updated_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET
+      type = excluded.type,
+      content = excluded.content,
+      timestamp = excluded.timestamp,
+      session_id = excluded.session_id,
+      duration = excluded.duration,
+      category = excluded.category,
+      content_type = excluded.content_type,
+      field_values = excluded.field_values,
+      linked_entries = excluded.linked_entries,
+      tags = excluded.tags,
+      ai_comment = excluded.ai_comment,
+      updated_at = excluded.updated_at
   `);
 
     const batches: D1PreparedStatement[] = [];
