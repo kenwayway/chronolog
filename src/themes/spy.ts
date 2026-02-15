@@ -31,6 +31,7 @@ export const spyTheme: ThemeConfig = {
         done: '☑',
         pending: '▶',
         beans: '△',
+        sparks: '✦',
     },
 
     // Section decorations

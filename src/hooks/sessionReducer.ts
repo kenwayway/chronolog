@@ -1,6 +1,7 @@
 import { ENTRY_TYPES, SESSION_STATUS, ACTIONS, BUILTIN_CONTENT_TYPES } from '../utils/constants'
 import { generateId } from '../utils/formatters'
 import { parseTags } from '../utils/tagParser'
+import { migrateEntries } from '../utils/migrateEntries'
 import type {
     Entry,
     SessionState,
@@ -161,9 +162,12 @@ export function sessionReducer(state: SessionState, action: SessionAction): Sess
                 ...loadedContentTypes.filter(ct => !builtInIds.includes(ct.id))
             ]
 
+            const migratedLoadEntries = migrateEntries(action.payload.entries || [], mergedContentTypes)
+
             return {
                 ...initialState,
                 ...action.payload,
+                entries: migratedLoadEntries,
                 contentTypes: mergedContentTypes,
                 mediaItems: action.payload.mediaItems || state.mediaItems || [],
                 apiKey: state.apiKey ?? action.payload.apiKey ?? initialState.apiKey,
@@ -251,10 +255,13 @@ export function sessionReducer(state: SessionState, action: SessionAction): Sess
                 ...importedContentTypes.filter(ct => !builtInIds.includes(ct.id))
             ]
 
+            const finalContentTypes = mergedContentTypes.length > 0 ? mergedContentTypes : state.contentTypes
+            const migratedImportEntries = migrateEntries(importedEntries, finalContentTypes)
+
             return {
                 ...state,
-                entries: importedEntries,
-                contentTypes: mergedContentTypes.length > 0 ? mergedContentTypes : state.contentTypes,
+                entries: migratedImportEntries,
+                contentTypes: finalContentTypes,
                 mediaItems: action.payload.mediaItems || state.mediaItems,
                 status: inSession ? SESSION_STATUS.STREAMING : SESSION_STATUS.IDLE,
                 sessionStart: lastSessionStart

@@ -133,7 +133,11 @@ export const TimelineEntry = memo(function TimelineEntry({
     const styles = { fontSize: 14 };
 
     if (entry.contentType === 'beans') {
-      return <span style={{ ...styles, color: '#ff9e64' }}>{symbols.beans}</span>;
+      return <span style={{ ...styles, color: 'var(--accent)' }}>{symbols.beans}</span>;
+    }
+
+    if (entry.contentType === 'sparks') {
+      return <span style={{ ...styles, color: 'var(--accent)' }}>{symbols.sparks}</span>;
     }
 
     if (entry.contentType === 'task') {

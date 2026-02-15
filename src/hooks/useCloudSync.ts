@@ -140,18 +140,9 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
         const hasRemoteData = remoteEntries.length > 0 || remoteContentTypes.length > 0
 
         if (hasRemoteData) {
-          // One-time migration: convert category=beans/sparks to contentType=beans/sparks
-          const migratedEntries = remoteEntries.map(entry => {
-            const legacyCategory = entry.category as string | undefined
-            if ((legacyCategory === 'beans' || legacyCategory === 'sparks') && !entry.contentType) {
-              return { ...entry, contentType: legacyCategory, category: undefined }
-            }
-            return entry
-          })
-
           isImportingRef.current = true
           onImportDataRef.current({
-            entries: migratedEntries,
+            entries: remoteEntries,
             contentTypes: remoteData.contentTypes,
             mediaItems: remoteData.mediaItems,
           })

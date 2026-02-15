@@ -30,6 +30,7 @@ export const terminalTheme: ThemeConfig = {
         done: '✓',
         pending: '»',
         beans: '△',
+        sparks: '✦',
     },
 
     // Section decorations
