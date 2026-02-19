@@ -8,13 +8,14 @@ interface DynamicFieldFormProps {
     onChange: (values: Record<string, unknown>) => void;
     mediaItems?: MediaItem[];
     onAddMediaItem?: (mediaItem: MediaItem) => void;
+    onUpdateMediaItem?: (id: string, updates: Partial<Omit<MediaItem, 'id' | 'createdAt'>>) => void;
 }
 
 /**
  * DynamicFieldForm - Renders form fields based on ContentType schema
  * Handles dropdown, number, text, and media-select fields
  */
-export function DynamicFieldForm({ contentType, fieldValues, onChange, mediaItems = [], onAddMediaItem }: DynamicFieldFormProps) {
+export function DynamicFieldForm({ contentType, fieldValues, onChange, mediaItems = [], onAddMediaItem, onUpdateMediaItem }: DynamicFieldFormProps) {
     // Auto-populate missing defaults when contentType changes
     useEffect(() => {
         if (!contentType || !contentType.fields) return;
@@ -146,6 +147,7 @@ export function DynamicFieldForm({ contentType, fieldValues, onChange, mediaItem
                                 selectedMediaId={value as string | undefined}
                                 onChange={(mediaId) => handleFieldChange(field.id, mediaId)}
                                 onAddMediaItem={onAddMediaItem}
+                                onUpdateMediaItem={onUpdateMediaItem}
                             />
                         )}
                     </div>

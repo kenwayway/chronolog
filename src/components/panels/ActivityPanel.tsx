@@ -1,4 +1,6 @@
 import { useMemo } from "react";
+import { Link } from "react-router-dom";
+import { BookOpen } from "lucide-react";
 import { useTheme } from "../../hooks/useTheme";
 import { useSessionContext } from "../../contexts/SessionContext";
 import styles from "./TasksPanel.module.css";
@@ -259,6 +261,42 @@ export function ActivityPanel({
                                 );
                             })}
                         </div>
+                    </div>
+
+                    {/* Library Section */}
+                    <div style={{ marginTop: 32 }}>
+                        <div className={styles.sectionHeader}>
+                            <span>LIBRARY</span>
+                            <div className={styles.sectionLine} />
+                        </div>
+                        <Link
+                            to="/library"
+                            onClick={onClose}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 10,
+                                padding: '10px 12px',
+                                fontSize: 11,
+                                color: 'var(--text-secondary)',
+                                backgroundColor: 'var(--bg-secondary)',
+                                border: '1px solid transparent',
+                                borderRadius: 4,
+                                textDecoration: 'none',
+                                cursor: 'pointer',
+                                transition: 'all 100ms ease',
+                            }}
+                        >
+                            <BookOpen size={14} style={{ flexShrink: 0 }} />
+                            <span style={{ textTransform: 'uppercase', letterSpacing: '0.03em', flex: 1 }}>
+                                Media Library
+                            </span>
+                            <span style={{ fontSize: 10, color: 'var(--text-dim)' }}>
+                                {entries.filter(e => e.contentType === 'media').length > 0
+                                    ? `→`
+                                    : '→'}
+                            </span>
+                        </Link>
                     </div>
                 </div>
             </div>

@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
+import { Routes, Route } from "react-router-dom";
 import { useSession } from "./hooks/useSession";
 import { useCategories } from "./hooks/useCategories";
 import { useTheme } from "./hooks/useTheme";
@@ -23,6 +24,7 @@ import {
 } from "./components";
 import type { Entry, CategoryId } from "./types";
 import type { InputPanelRef } from "./components/input/InputPanel";
+import { LibraryPage } from "./pages/LibraryPage";
 
 interface Position {
     x: number;
@@ -199,89 +201,94 @@ function App() {
     return (
         <SessionContext.Provider value={sessionContextValue}>
             <CloudSyncContext.Provider value={cloudSyncContextValue}>
-                <div className="min-h-screen flex flex-col font-mono" style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
-                    <Header
-                        isStreaming={isStreaming}
-                        pendingTaskCount={0}
-                        selectedDate={selectedDate}
-                        onDateChange={setSelectedDate}
-                        isDark={isDark}
-                        onToggleTheme={toggleTheme}
-                        onOpenSidebar={() => setSidebarOpen(true)}
-                        onOpenLeftSidebar={() => setLeftSidebarOpen(true)}
-                        onOpenSettings={() => setSettingsOpen(true)}
-                    />
-
-                    <main className="flex-1 flex flex-col max-w-4xl w-full mx-auto relative">
-                        {showLanding ? (
-                            <LandingPage onDismiss={() => setShowLanding(false)} />
-                        ) : (
-                            <Timeline
-                                entries={filteredEntries}
-                                status={state.status}
-                                onContextMenu={handleContextMenu}
-                                onEdit={openEditModal}
-                                onDeleteAIComment={(entry) => actions.updateEntry(entry.id, { aiComment: undefined })}
-                                categoryFilter={categoryFilter}
-                                onNavigateToEntry={navigateToEntry}
+                <Routes>
+                    <Route path="/library" element={<LibraryPage />} />
+                    <Route path="/" element={
+                        <div className="min-h-screen flex flex-col font-mono" style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
+                            <Header
+                                isStreaming={isStreaming}
+                                pendingTaskCount={0}
+                                selectedDate={selectedDate}
+                                onDateChange={setSelectedDate}
+                                isDark={isDark}
+                                onToggleTheme={toggleTheme}
+                                onOpenSidebar={() => setSidebarOpen(true)}
+                                onOpenLeftSidebar={() => setLeftSidebarOpen(true)}
+                                onOpenSettings={() => setSettingsOpen(true)}
                             />
-                        )}
-                    </main>
 
-                    <InputPanel
-                        ref={inputPanelRef}
-                        status={state.status}
-                        onLogIn={handlers.handleLogIn}
-                        onSwitch={handlers.handleSwitch}
-                        onNote={handlers.handleNote}
-                        onLogOff={handlers.handleLogOff}
-                        followUpEntry={followUpEntry}
-                        onClearFollowUp={clearFollowUp}
-                    />
+                            <main className="flex-1 flex flex-col max-w-4xl w-full mx-auto relative">
+                                {showLanding ? (
+                                    <LandingPage onDismiss={() => setShowLanding(false)} />
+                                ) : (
+                                    <Timeline
+                                        entries={filteredEntries}
+                                        status={state.status}
+                                        onContextMenu={handleContextMenu}
+                                        onEdit={openEditModal}
+                                        onDeleteAIComment={(entry) => actions.updateEntry(entry.id, { aiComment: undefined })}
+                                        categoryFilter={categoryFilter}
+                                        onNavigateToEntry={navigateToEntry}
+                                    />
+                                )}
+                            </main>
 
-                    <TasksPanel
-                        isOpen={sidebarOpen}
-                        onClose={() => setSidebarOpen(false)}
-                        onCompleteTask={handlers.handleCompleteTask}
-                        googleTasks={googleTasks}
-                    />
+                            <InputPanel
+                                ref={inputPanelRef}
+                                status={state.status}
+                                onLogIn={handlers.handleLogIn}
+                                onSwitch={handlers.handleSwitch}
+                                onNote={handlers.handleNote}
+                                onLogOff={handlers.handleLogOff}
+                                followUpEntry={followUpEntry}
+                                onClearFollowUp={clearFollowUp}
+                            />
 
-                    <ActivityPanel
-                        isOpen={leftSidebarOpen}
-                        onClose={() => setLeftSidebarOpen(false)}
-                        selectedDate={selectedDate}
-                        onDateChange={setSelectedDate}
-                        categoryFilter={categoryFilter}
-                        onCategoryFilterChange={setCategoryFilter}
-                    />
+                            <TasksPanel
+                                isOpen={sidebarOpen}
+                                onClose={() => setSidebarOpen(false)}
+                                onCompleteTask={handlers.handleCompleteTask}
+                                googleTasks={googleTasks}
+                            />
 
-                    <ContextMenu
-                        isOpen={contextMenu.isOpen}
-                        position={contextMenu.position}
-                        entry={contextMenu.entry}
-                        onClose={closeContextMenu}
-                        onEdit={(entry) => handlers.handleEditEntry(entry, openEditModal)}
-                        onDelete={handlers.handleDeleteEntry}
-                        onCopy={handlers.handleCopyEntry}
-                        onMarkAsTask={handlers.handleMarkAsTask}
-                        onLink={handleFollowUp}
-                        onDeleteAIComment={(entry) => actions.updateEntry(entry.id, { aiComment: undefined })}
-                        googleTasksEnabled={googleTasks.isLoggedIn}
-                    />
+                            <ActivityPanel
+                                isOpen={leftSidebarOpen}
+                                onClose={() => setLeftSidebarOpen(false)}
+                                selectedDate={selectedDate}
+                                onDateChange={setSelectedDate}
+                                categoryFilter={categoryFilter}
+                                onCategoryFilterChange={setCategoryFilter}
+                            />
 
-                    <EditModal
-                        isOpen={editModal.isOpen}
-                        entry={editModal.entry}
-                        onSave={handlers.handleSaveEdit}
-                        onClose={closeEditModal}
-                    />
+                            <ContextMenu
+                                isOpen={contextMenu.isOpen}
+                                position={contextMenu.position}
+                                entry={contextMenu.entry}
+                                onClose={closeContextMenu}
+                                onEdit={(entry) => handlers.handleEditEntry(entry, openEditModal)}
+                                onDelete={handlers.handleDeleteEntry}
+                                onCopy={handlers.handleCopyEntry}
+                                onMarkAsTask={handlers.handleMarkAsTask}
+                                onLink={handleFollowUp}
+                                onDeleteAIComment={(entry) => actions.updateEntry(entry.id, { aiComment: undefined })}
+                                googleTasksEnabled={googleTasks.isLoggedIn}
+                            />
 
-                    <SettingsModal
-                        isOpen={settingsOpen}
-                        onClose={() => setSettingsOpen(false)}
-                        googleTasks={googleTasks}
-                    />
-                </div>
+                            <EditModal
+                                isOpen={editModal.isOpen}
+                                entry={editModal.entry}
+                                onSave={handlers.handleSaveEdit}
+                                onClose={closeEditModal}
+                            />
+
+                            <SettingsModal
+                                isOpen={settingsOpen}
+                                onClose={() => setSettingsOpen(false)}
+                                googleTasks={googleTasks}
+                            />
+                        </div>
+                    } />
+                </Routes>
             </CloudSyncContext.Provider>
         </SessionContext.Provider>
     );

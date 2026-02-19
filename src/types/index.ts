@@ -37,6 +37,7 @@ export interface MediaItem {
   title: string           // e.g. "Return to Silent Hill"
   mediaType: MediaType    // Book, Movie, Game, etc.
   notionUrl?: string      // Optional Notion page URL
+  coverUrl?: string       // Optional cover image URL
   createdAt: number       // Timestamp when added
 }
 

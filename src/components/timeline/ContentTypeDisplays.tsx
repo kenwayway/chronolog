@@ -482,6 +482,7 @@ interface MediaDisplayProps {
     title: string;
     mediaType: string;
     notionUrl?: string;
+    coverUrl?: string;
   }>;
 }
 
@@ -501,6 +502,7 @@ export const MediaDisplay = memo(function MediaDisplay({ fieldValues, mediaItems
   const mediaType = mediaItem?.mediaType || fieldValues.mediaType;
   const title = mediaItem?.title || fieldValues.title;
   const notionUrl = mediaItem?.notionUrl;
+  const coverUrl = mediaItem?.coverUrl;
 
   const iconStyle = { width: 14, height: 14, strokeWidth: 2 };
 
@@ -568,6 +570,21 @@ export const MediaDisplay = memo(function MediaDisplay({ fieldValues, mediaItems
         e.currentTarget.style.backgroundColor = 'var(--bg-secondary)';
       }}
     >
+      {coverUrl && (
+        <img
+          src={coverUrl}
+          alt={title || 'cover'}
+          style={{
+            width: 32,
+            height: 44,
+            objectFit: 'cover',
+            borderRadius: 2,
+            flexShrink: 0,
+            border: '1px solid var(--border-subtle)',
+          }}
+        />
+      )}
+
       <span style={{
         color: 'var(--accent)',
         fontWeight: 600,

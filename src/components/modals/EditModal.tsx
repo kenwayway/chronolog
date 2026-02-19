@@ -14,7 +14,7 @@ interface EditModalProps {
 }
 
 export function EditModal({ isOpen, entry, onSave, onClose }: EditModalProps) {
-  const { state: { entries: allEntries, contentTypes: ctFromContext, mediaItems }, categories, actions: { addMediaItem: onAddMediaItem } } = useSessionContext();
+  const { state: { entries: allEntries, contentTypes: ctFromContext, mediaItems }, categories, actions: { addMediaItem: onAddMediaItem, updateMediaItem: onUpdateMediaItem } } = useSessionContext();
   const types = ctFromContext.length > 0 ? ctFromContext : BUILTIN_CONTENT_TYPES;
   // Content state
   const [content, setContent] = useState("");
@@ -249,6 +249,7 @@ export function EditModal({ isOpen, entry, onSave, onClose }: EditModalProps) {
           showAutoOption={false}
           mediaItems={mediaItems}
           onAddMediaItem={onAddMediaItem}
+          onUpdateMediaItem={onUpdateMediaItem}
         />
 
         {/* Footer */}

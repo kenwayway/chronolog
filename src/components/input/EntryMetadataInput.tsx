@@ -30,6 +30,7 @@ interface EntryMetadataInputProps {
   // Media library
   mediaItems?: MediaItem[];
   onAddMediaItem?: (mediaItem: MediaItem) => void;
+  onUpdateMediaItem?: (id: string, updates: Partial<Omit<MediaItem, 'id' | 'createdAt'>>) => void;
   // UI state
   isExpanded: boolean;
   // Modes
@@ -58,6 +59,7 @@ export function EntryMetadataInput({
   contentTypes,
   mediaItems = [],
   onAddMediaItem,
+  onUpdateMediaItem,
   isExpanded,
   showLinkedEntries = false,
   showAutoOption = true,
@@ -173,6 +175,7 @@ export function EntryMetadataInput({
             onChange={setFieldValues}
             mediaItems={mediaItems}
             onAddMediaItem={onAddMediaItem}
+            onUpdateMediaItem={onUpdateMediaItem}
           />
         )}
 

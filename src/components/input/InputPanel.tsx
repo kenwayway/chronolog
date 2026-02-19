@@ -41,7 +41,7 @@ export const InputPanel = forwardRef<InputPanelRef, InputPanelProps>(function In
     onClearFollowUp,
 }, ref) {
     const cloudSync = useCloudSyncContext();
-    const { state: { mediaItems }, actions: { addMediaItem: onAddMediaItem } } = useSessionContext();
+    const { state: { mediaItems }, actions: { addMediaItem: onAddMediaItem, updateMediaItem: onUpdateMediaItem } } = useSessionContext();
     const [input, setInput] = useState("");
     const [isFocused, setIsFocused] = useState(false);
     const [mobileExpanded, setMobileExpanded] = useState(false);
@@ -413,6 +413,7 @@ export const InputPanel = forwardRef<InputPanelRef, InputPanelProps>(function In
                     isExpanded={showMetadata}
                     mediaItems={mediaItems}
                     onAddMediaItem={onAddMediaItem}
+                    onUpdateMediaItem={onUpdateMediaItem}
                 />
             )}
 
