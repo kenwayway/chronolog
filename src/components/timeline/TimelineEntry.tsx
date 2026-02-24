@@ -1,15 +1,15 @@
 import { useState, memo, useMemo, ReactNode, MouseEvent, TouchEvent } from "react";
-import { ENTRY_TYPES } from "../../utils/constants";
-import { formatTime, formatDuration, formatDate } from "../../utils/formatters";
-import { darkenColor } from "../../utils/contentParser";
-import { useTheme } from "../../hooks/useTheme";
+import { ENTRY_TYPES } from "@/utils/constants";
+import { formatTime, formatDuration, formatDate } from "@/utils/formatters";
+import { darkenColor } from "@/utils/contentParser";
+import { useTheme } from "@/hooks/useTheme";
 import { ContentRenderer } from "./ContentRenderer";
 import { LinkedEntryPreview } from "./LinkedEntryPreview";
 import { BookmarkDisplay, MoodDisplay, WorkoutDisplay, VaultDisplay, MediaDisplay } from "./ContentTypeDisplays";
 import { ImageLightbox } from "../common/ImageLightbox";
 import styles from "./TimelineEntry.module.css";
-import type { Entry, Category, MediaItem } from "../../types";
-import { isTaskEntry, getBookmarkFields, getMoodFields, getWorkoutFields, getVaultFields, getMediaFields } from "../../types/guards";
+import type { Entry, Category, MediaItem } from "@/types";
+import { isTaskEntry, getBookmarkFields, getMoodFields, getWorkoutFields, getVaultFields, getMediaFields } from "@/types/guards";
 
 interface Position {
   x: number;

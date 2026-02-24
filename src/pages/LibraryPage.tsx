@@ -1,11 +1,11 @@
 import { useMemo, useState, useRef, ChangeEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Book, Film, Gamepad2, Tv, Clapperboard, Mic, ExternalLink, Pencil, Trash2, Check, X, Plus, Search, Image, Upload } from 'lucide-react';
-import { useSessionContext } from '../contexts/SessionContext';
-import { useCloudSyncContext } from '../contexts/CloudSyncContext';
-import { useTheme } from '../hooks/useTheme';
-import type { MediaItem, MediaType } from '../types';
-import { generateId } from '../utils/formatters';
+import { useSessionContext } from '@/contexts/SessionContext';
+import { useCloudSyncContext } from '@/contexts/CloudSyncContext';
+import { useTheme } from '@/hooks/useTheme';
+import type { MediaItem, MediaType } from '@/types';
+import { generateId } from '@/utils/formatters';
 
 const MEDIA_TYPES: MediaType[] = ['Book', 'Movie', 'Game', 'TV', 'Anime', 'Podcast'];
 

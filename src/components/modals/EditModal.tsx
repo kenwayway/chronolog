@@ -1,10 +1,10 @@
 import { useState, useRef, useEffect, KeyboardEvent, MouseEvent } from "react";
 import { Image, MapPin, Plus, ChevronDown } from "lucide-react";
 import { EntryMetadataInput } from "../input/EntryMetadataInput";
-import { BUILTIN_CONTENT_TYPES, ENTRY_TYPES } from "../../utils/constants";
-import { useSessionContext } from "../../contexts/SessionContext";
+import { BUILTIN_CONTENT_TYPES, ENTRY_TYPES } from "@/utils/constants";
+import { useSessionContext } from "@/contexts/SessionContext";
 import styles from "./EditModal.module.css";
-import type { Entry, CategoryId, UpdateEntryPayload, EntryType } from "../../types";
+import type { Entry, CategoryId, UpdateEntryPayload, EntryType } from "@/types";
 
 interface EditModalProps {
   isOpen: boolean;

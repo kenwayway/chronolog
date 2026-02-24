@@ -1,7 +1,7 @@
 import { useReducer, useEffect, useCallback } from 'react'
-import { ACTIONS } from '../utils/constants'
-import { STORAGE_KEYS, getStorage, getStorageRaw, setStorageRaw } from '../utils/storageService'
-import { SESSION_STATUS } from '../utils/constants'
+import { ACTIONS } from '@/utils/constants'
+import { STORAGE_KEYS, getStorage, getStorageRaw, setStorageRaw } from '@/utils/storageService'
+import { SESSION_STATUS } from '@/utils/constants'
 import { sessionReducer, initialState } from './sessionReducer'
 import { usePersistence } from './usePersistence'
 import type {
@@ -13,7 +13,7 @@ import type {
   UpdateEntryPayload,
   ImportDataPayload,
   CategoryId
-} from '../types'
+} from '@/types'
 
 export function useSession(): UseSessionReturn {
   const [state, dispatch] = useReducer(sessionReducer, initialState)

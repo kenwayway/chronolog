@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
-import { getTheme, getThemeList, ThemeConfig } from '../themes'
-import { STORAGE_KEYS, getStorage, setStorage } from '../utils/storageService'
+import { getTheme, getThemeList, ThemeConfig } from '@/themes'
+import { STORAGE_KEYS, getStorage, setStorage } from '@/utils/storageService'
 
 // ===== Accent Color Palette =====
 export type AccentColorKey = 'blue' | 'indigo' | 'violet' | 'rose' | 'amber' | 'emerald' | 'cyan'

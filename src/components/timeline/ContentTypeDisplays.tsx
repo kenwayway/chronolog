@@ -1,6 +1,6 @@
 import { memo, MouseEvent, ReactNode } from 'react';
 import { Book, Film, Gamepad2, Tv, Clapperboard, Mic, Dumbbell, HeartPulse, StretchHorizontal, Shuffle, Home, Building2, Warehouse, BookOpen, ExternalLink } from 'lucide-react';
-import type { BookmarkFields, MoodFields, WorkoutFields, VaultFields } from '../../types';
+import type { BookmarkFields, MoodFields, WorkoutFields, VaultFields } from '@/types';
 
 interface BookmarkDisplayProps {
   fieldValues: BookmarkFields | null | undefined;

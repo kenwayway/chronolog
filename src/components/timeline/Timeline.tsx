@@ -1,10 +1,10 @@
 import { useState, useEffect, useMemo } from "react";
 import { ChevronLeft, ChevronRight, MessageCircle, MessageCircleOff } from "lucide-react";
-import { ENTRY_TYPES } from "../../utils/constants";
-import { useTheme } from "../../hooks/useTheme";
-import { useSessionContext } from "../../contexts/SessionContext";
+import { ENTRY_TYPES } from "@/utils/constants";
+import { useTheme } from "@/hooks/useTheme";
+import { useSessionContext } from "@/contexts/SessionContext";
 import { TimelineEntry } from "./TimelineEntry";
-import type { Entry, SessionStatus, CategoryId } from "../../types";
+import type { Entry, SessionStatus, CategoryId } from "@/types";
 
 const ENTRIES_PER_PAGE = 20;
 

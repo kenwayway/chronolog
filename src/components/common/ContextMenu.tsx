@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
-import { ENTRY_TYPES } from "../../utils/constants";
+import { ENTRY_TYPES } from "@/utils/constants";
 import styles from "./ContextMenu.module.css";
-import type { Entry } from "../../types";
+import type { Entry } from "@/types";
 
 interface Position {
     x: number;

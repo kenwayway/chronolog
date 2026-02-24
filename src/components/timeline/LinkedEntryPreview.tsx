@@ -1,6 +1,6 @@
 import { memo, MouseEvent } from 'react';
-import { getPreview } from '../../utils/contentParser';
-import type { Entry } from '../../types';
+import { getPreview } from '@/utils/contentParser';
+import type { Entry } from '@/types';
 
 interface LinkedEntryPreviewProps {
     linkedEntry: Entry;

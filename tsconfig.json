@@ -23,7 +23,14 @@
         "noFallthroughCasesInSwitch": true,
         /* Allow JS */
         "allowJs": true,
-        "checkJs": false
+        "checkJs": false,
+        /* Path aliases */
+        "baseUrl": ".",
+        "paths": {
+            "@/*": [
+                "src/*"
+            ]
+        }
     },
     "include": [
         "src"

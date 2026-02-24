@@ -1,5 +1,5 @@
 import { useCallback } from 'react'
-import type { Entry, SessionActions, UpdateEntryPayload, CategoryId } from '../types'
+import type { Entry, SessionActions, UpdateEntryPayload, CategoryId } from '@/types'
 
 interface UseEntryHandlersProps {
     actions: SessionActions

@@ -1,6 +1,6 @@
 import { useMemo, ReactNode } from "react";
 import { MapPin } from "lucide-react";
-import { parseContent } from "../../utils/contentParser";
+import { parseContent } from "@/utils/contentParser";
 
 interface ContentRendererProps {
     content: string;

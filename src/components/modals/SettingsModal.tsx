@@ -1,8 +1,8 @@
 import { useState, MouseEvent } from "react";
 import { Palette, Database, LucideIcon } from "lucide-react";
-import { useSessionContext } from "../../contexts/SessionContext";
-import { useCloudSyncContext } from "../../contexts/CloudSyncContext";
-import type { GoogleTasksStatus } from "../../types";
+import { useSessionContext } from "@/contexts/SessionContext";
+import { useCloudSyncContext } from "@/contexts/CloudSyncContext";
+import type { GoogleTasksStatus } from "@/types";
 import { AppearanceTab, SyncTab } from "./settings";
 import styles from "./SettingsModal.module.css";
 

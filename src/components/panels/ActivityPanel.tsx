@@ -1,10 +1,10 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { BookOpen } from "lucide-react";
-import { useTheme } from "../../hooks/useTheme";
-import { useSessionContext } from "../../contexts/SessionContext";
+import { useTheme } from "@/hooks/useTheme";
+import { useSessionContext } from "@/contexts/SessionContext";
 import styles from "./TasksPanel.module.css";
-import type { CategoryId } from "../../types";
+import type { CategoryId } from "@/types";
 
 interface HeatmapDay {
     date: Date;

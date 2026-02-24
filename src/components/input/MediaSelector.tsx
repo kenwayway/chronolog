@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Book, Film, Gamepad2, Tv, Clapperboard, Mic, Plus, X, ExternalLink, Pencil, Check } from 'lucide-react';
-import type { MediaItem, MediaType } from '../../types';
-import { generateId } from '../../utils/formatters';
+import type { MediaItem, MediaType } from '@/types';
+import { generateId } from '@/utils/formatters';
 
 interface MediaSelectorProps {
     mediaItems: MediaItem[];

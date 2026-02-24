@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import type { Category, CategoryId } from '../types'
+import type { Category, CategoryId } from '@/types'
 
 interface AIConfig {
     apiKey?: string | null

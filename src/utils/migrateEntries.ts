@@ -1,4 +1,4 @@
-import type { Entry, ContentType } from '../types'
+import type { Entry, ContentType } from '@/types'
 
 /**
  * Migrate and clean up entries at load time.

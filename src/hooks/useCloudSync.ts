@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import type { Entry, ContentType, MediaItem, CloudData, ImportDataPayload } from '../types'
+import type { Entry, ContentType, MediaItem, CloudData, ImportDataPayload } from '@/types'
 import { useCloudAuth, getApiBase, type LoginResult } from './useCloudAuth'
 import { useImageUpload, type CleanupResult } from './useImageUpload'
-import { computeDiff } from '../utils/syncDiff'
+import { computeDiff } from '@/utils/syncDiff'
 
 
 const SYNC_DEBOUNCE_MS = 500

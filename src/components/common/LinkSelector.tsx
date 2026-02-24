@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { X, Search, Link2 } from "lucide-react";
-import { formatTime, formatDate } from "../../utils/formatters";
-import type { Entry } from "../../types";
+import { formatTime, formatDate } from "@/utils/formatters";
+import type { Entry } from "@/types";
 
 interface LinkSelectorProps {
     isOpen: boolean;

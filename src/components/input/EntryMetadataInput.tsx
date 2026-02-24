@@ -3,8 +3,8 @@ import { Dropdown } from '../common/Dropdown';
 import { DynamicFieldForm } from './DynamicFieldForm';
 import { TagInput } from './TagInput';
 import { LinkedEntryPicker } from './LinkedEntryPicker';
-import { CATEGORIES, BUILTIN_CONTENT_TYPES } from '../../utils/constants';
-import type { CategoryId, ContentType, Entry, MediaItem } from '../../types';
+import { CATEGORIES, BUILTIN_CONTENT_TYPES } from '@/utils/constants';
+import type { CategoryId, ContentType, Entry, MediaItem } from '@/types';
 
 interface EntryMetadataInputProps {
   // Category

@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
-import type { Entry, ContentType, SessionActions, UpdateEntryPayload } from '../types'
+import type { Entry, ContentType, SessionActions, UpdateEntryPayload } from '@/types'
 import type { CategorizeResult } from './useAICategories'
-import { STORAGE_KEYS, getStorage, type CloudAuthData } from '../utils/storageService'
+import { STORAGE_KEYS, getStorage, type CloudAuthData } from '@/utils/storageService'
 
 interface UseAutoCategorizeProps {
     entries: Entry[]

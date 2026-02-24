@@ -11,11 +11,11 @@ import {
     X,
     Cloud,
 } from "lucide-react";
-import { useTheme } from "../hooks/useTheme";
-import { formatDate } from "../utils/formatters";
+import { useTheme } from "@/hooks/useTheme";
+import { formatDate } from "@/utils/formatters";
 import { Calendar } from "./common/Calendar";
 import styles from "./Header.module.css";
-import { useCloudSyncContext } from "../contexts/CloudSyncContext";
+import { useCloudSyncContext } from "@/contexts/CloudSyncContext";
 
 interface HeaderProps {
     isStreaming: boolean;

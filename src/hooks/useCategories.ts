@@ -1,5 +1,5 @@
-import type { Category } from '../types'
-import { CATEGORIES } from '../utils/constants'
+import type { Category } from '@/types'
+import { CATEGORIES } from '@/utils/constants'
 
 interface UseCategoriesReturn {
     categories: Category[]

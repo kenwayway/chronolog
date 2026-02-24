@@ -1,6 +1,6 @@
 import { useEffect, useCallback, useRef } from 'react'
-import { STORAGE_KEYS, setStorage } from '../utils/storageService'
-import type { SessionState } from '../types'
+import { STORAGE_KEYS, setStorage } from '@/utils/storageService'
+import type { SessionState } from '@/types'
 
 /**
  * Debounced localStorage persistence for session state.

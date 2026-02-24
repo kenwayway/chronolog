@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { X, Link2, Search } from 'lucide-react';
-import type { Entry } from '../../types';
+import type { Entry } from '@/types';
 
 interface LinkedEntryPickerProps {
     linkedEntries: string[];

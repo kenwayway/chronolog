@@ -1,6 +1,6 @@
 import { useState, useRef, KeyboardEvent, ChangeEvent } from 'react';
 import { Download, Upload, Check, FolderOpen, Cloud, CloudOff, RefreshCw, Trash2 } from 'lucide-react';
-import type { Entry, Category, ContentType, MediaItem, CloudSyncFull, GoogleTasksStatus } from '../../../types';
+import type { Entry, Category, ContentType, MediaItem, CloudSyncFull, GoogleTasksStatus } from '@/types';
 
 interface ImportData {
     entries: Entry[];

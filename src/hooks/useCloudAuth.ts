@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { STORAGE_KEYS, getStorage, setStorage, removeStorage, type CloudAuthData } from '../utils/storageService'
+import { STORAGE_KEYS, getStorage, setStorage, removeStorage, type CloudAuthData } from '@/utils/storageService'
 
 interface AuthResponse {
     success?: boolean

@@ -1,5 +1,5 @@
 import { ChangeEvent, useEffect } from "react";
-import type { ContentType, FieldDefinition, MediaItem } from "../../types";
+import type { ContentType, FieldDefinition, MediaItem } from "@/types";
 import { MediaSelector } from "./MediaSelector";
 
 interface DynamicFieldFormProps {

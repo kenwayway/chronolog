@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
-import type { CategoryId, ContentType } from '../types'
-import { CATEGORIES, BUILTIN_CONTENT_TYPES } from '../utils/constants'
+import type { CategoryId, ContentType } from '@/types'
+import { CATEGORIES, BUILTIN_CONTENT_TYPES } from '@/utils/constants'
 
 export interface CategorizeResult {
     category: CategoryId | null

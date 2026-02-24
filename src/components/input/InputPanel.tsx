@@ -1,14 +1,14 @@
 import { useState, useRef, useEffect, forwardRef, useImperativeHandle, ChangeEvent, KeyboardEvent, ClipboardEvent, FocusEvent } from "react";
 import { Terminal, X, Link2 } from "lucide-react";
-import { SESSION_STATUS } from "../../utils/constants";
+import { SESSION_STATUS } from "@/utils/constants";
 import { FocusMode } from "./FocusMode";
 import { AttachmentPreview } from "./AttachmentPreview";
 import { InputActions } from "./InputActions";
 import { EntryMetadataInput } from "./EntryMetadataInput";
 import styles from "./InputPanel.module.css";
-import { useCloudSyncContext } from "../../contexts/CloudSyncContext";
-import { useSessionContext } from "../../contexts/SessionContext";
-import type { Entry, SessionStatus, CategoryId } from "../../types";
+import { useCloudSyncContext } from "@/contexts/CloudSyncContext";
+import { useSessionContext } from "@/contexts/SessionContext";
+import type { Entry, SessionStatus, CategoryId } from "@/types";
 
 interface NoteOptions {
     contentType?: string;

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { STORAGE_KEYS, getStorage, setStorage, removeStorage, type GoogleTokenData } from '../utils/storageService'
+import { STORAGE_KEYS, getStorage, setStorage, removeStorage, type GoogleTokenData } from '@/utils/storageService'
 
 const GOOGLE_CLIENT_ID = '822449560941-p3fd199i26cadg42h8a4um4sclvl38q3.apps.googleusercontent.com'
 const SCOPES = 'https://www.googleapis.com/auth/tasks'

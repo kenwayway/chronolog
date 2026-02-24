@@ -1,4 +1,4 @@
-import type { EntryType, SessionStatus, CategoryId, Category, ContentType } from '../types'
+import type { EntryType, SessionStatus, CategoryId, Category, ContentType } from '@/types'
 
 // Entry types for the timeline (system-level)
 export const ENTRY_TYPES = {

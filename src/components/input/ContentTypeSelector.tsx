@@ -1,5 +1,5 @@
-import { BUILTIN_CONTENT_TYPES } from "../../utils/constants";
-import type { ContentType } from "../../types";
+import { BUILTIN_CONTENT_TYPES } from "@/utils/constants";
+import type { ContentType } from "@/types";
 
 interface ContentTypeSelectorProps {
     value: string | undefined;
