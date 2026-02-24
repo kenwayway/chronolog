@@ -1,8 +1,9 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { BookOpen } from "lucide-react";
+import { BookOpen, ChevronDown, ChevronUp } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 import { useSessionContext } from "@/contexts/SessionContext";
+import { extractAllTags } from "@/utils/tagParser";
 import styles from "./TasksPanel.module.css";
 import type { CategoryId } from "@/types";
 
@@ -32,6 +33,13 @@ export function ActivityPanel({
 }: ActivityPanelProps) {
     const { state: { entries }, categories } = useSessionContext();
     const { tokens } = useTheme();
+
+    // Tag statistics
+    const tagStats = useMemo(() => extractAllTags(entries), [entries]);
+    const [tagsExpanded, setTagsExpanded] = useState(false);
+    const TAG_PREVIEW_COUNT = 15;
+    const visibleTags = tagsExpanded ? tagStats : tagStats.slice(0, TAG_PREVIEW_COUNT);
+    const maxTagCount = tagStats.length > 0 ? tagStats[0].count : 1;
     // Generate heatmap data for last 12 weeks
     const heatmapData = useMemo(() => {
         const weeks: HeatmapDay[][] = [];
@@ -262,6 +270,72 @@ export function ActivityPanel({
                             })}
                         </div>
                     </div>
+
+                    {/* Tag Statistics Section */}
+                    {tagStats.length > 0 && (
+                        <div style={{ marginTop: 32 }}>
+                            <div className={styles.sectionHeader}>
+                                <span>TAGS</span>
+                                <div className={styles.sectionLine} />
+                                <span style={{ fontSize: 9, color: 'var(--text-dim)' }}>
+                                    {tagStats.length}
+                                </span>
+                            </div>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                                {visibleTags.map(({ tag, count }) => {
+                                    const ratio = Math.log(count + 1) / Math.log(maxTagCount + 1);
+                                    const fontSize = 11 + ratio * 7;
+                                    const opacity = 0.5 + ratio * 0.5;
+                                    return (
+                                        <span
+                                            key={tag}
+                                            title={`#${tag}: ${count} ${count === 1 ? 'entry' : 'entries'}`}
+                                            style={{
+                                                fontSize,
+                                                opacity,
+                                                color: 'var(--accent)',
+                                                cursor: 'default',
+                                                lineHeight: 1.4,
+                                                transition: 'all 100ms ease',
+                                            }}
+                                        >
+                                            #{tag}
+                                            <sup style={{
+                                                fontSize: 8,
+                                                color: 'var(--text-dim)',
+                                                marginLeft: 1,
+                                            }}>
+                                                {count}
+                                            </sup>
+                                        </span>
+                                    );
+                                })}
+                            </div>
+                            {tagStats.length > TAG_PREVIEW_COUNT && (
+                                <button
+                                    onClick={() => setTagsExpanded(!tagsExpanded)}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 4,
+                                        marginTop: 10,
+                                        fontSize: 9,
+                                        color: 'var(--text-dim)',
+                                        backgroundColor: 'transparent',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        padding: 0,
+                                    }}
+                                >
+                                    {tagsExpanded ? (
+                                        <><ChevronUp size={10} /> SHOW LESS</>
+                                    ) : (
+                                        <><ChevronDown size={10} /> {tagStats.length - TAG_PREVIEW_COUNT} MORE</>
+                                    )}
+                                </button>
+                            )}
+                        </div>
+                    )}
 
                     {/* Library Section */}
                     <div style={{ marginTop: 32 }}>

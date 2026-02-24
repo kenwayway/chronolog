@@ -64,6 +64,7 @@ export interface MediaItemRow {
     title: string;
     media_type: string;
     notion_url: string | null;
+    cover_url: string | null;
     created_at: number;
 }
 
@@ -109,5 +110,6 @@ export interface MediaItem {
     title: string;
     mediaType: string;
     notionUrl?: string;
+    coverUrl?: string;
     createdAt: number;
 }

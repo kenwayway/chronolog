@@ -137,6 +137,7 @@ export function mediaItemRowToObject(row: MediaItemRow): MediaItem {
         title: row.title,
         mediaType: row.media_type,
         notionUrl: row.notion_url || undefined,
+        coverUrl: row.cover_url || undefined,
         createdAt: row.created_at,
     };
 }
@@ -146,6 +147,7 @@ interface MediaItemRowValues {
     title: string;
     media_type: string;
     notion_url: string | null;
+    cover_url: string | null;
     created_at: number;
 }
 
@@ -158,6 +160,7 @@ export function mediaItemObjectToRow(item: MediaItem): MediaItemRowValues {
         title: item.title,
         media_type: item.mediaType,
         notion_url: item.notionUrl || null,
+        cover_url: item.coverUrl || null,
         created_at: item.createdAt || Date.now(),
     };
 }
@@ -239,13 +242,13 @@ export async function upsertMediaItems(db: D1Database, mediaItems: MediaItem[]):
 
     const stmt = db.prepare(`
     INSERT OR REPLACE INTO media_items
-      (id, title, media_type, notion_url, created_at)
-    VALUES (?, ?, ?, ?, ?)
+      (id, title, media_type, notion_url, cover_url, created_at)
+    VALUES (?, ?, ?, ?, ?, ?)
   `);
 
     const batches = mediaItems.map(item => {
         const row = mediaItemObjectToRow(item);
-        return stmt.bind(row.id, row.title, row.media_type, row.notion_url, row.created_at);
+        return stmt.bind(row.id, row.title, row.media_type, row.notion_url, row.cover_url, row.created_at);
     });
 
     const results = await db.batch(batches);

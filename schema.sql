@@ -40,6 +40,7 @@ CREATE TABLE IF NOT EXISTS media_items (
   title TEXT NOT NULL,
   media_type TEXT NOT NULL,
   notion_url TEXT,
+  cover_url TEXT,
   created_at INTEGER NOT NULL
 );
 

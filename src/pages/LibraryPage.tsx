@@ -208,6 +208,8 @@ export function LibraryPage() {
             fontFamily: 'var(--font-mono)',
             maxWidth: 896,
             margin: '0 auto',
+            cursor: 'default',
+            userSelect: 'none',
         }}>
             {/* Header */}
             <header style={{
