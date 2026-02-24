@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { BookOpen, ChevronDown, ChevronUp } from "lucide-react";
+import { BookOpen } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 import { useSessionContext } from "@/contexts/SessionContext";
 import { extractAllTags } from "@/utils/tagParser";
@@ -21,6 +21,8 @@ interface ActivityPanelProps {
     onDateChange: (date: Date | null) => void;
     categoryFilter: CategoryId[];
     onCategoryFilterChange: (filter: CategoryId[]) => void;
+    tagFilter: string[];
+    onTagFilterChange: (filter: string[]) => void;
 }
 
 export function ActivityPanel({
@@ -30,16 +32,15 @@ export function ActivityPanel({
     onDateChange,
     categoryFilter,
     onCategoryFilterChange,
+    tagFilter,
+    onTagFilterChange,
 }: ActivityPanelProps) {
     const { state: { entries }, categories } = useSessionContext();
     const { tokens } = useTheme();
 
     // Tag statistics
     const tagStats = useMemo(() => extractAllTags(entries), [entries]);
-    const [tagsExpanded, setTagsExpanded] = useState(false);
-    const TAG_PREVIEW_COUNT = 15;
-    const visibleTags = tagsExpanded ? tagStats : tagStats.slice(0, TAG_PREVIEW_COUNT);
-    const maxTagCount = tagStats.length > 0 ? tagStats[0].count : 1;
+    const TAG_PREVIEW_COUNT = 20;
     // Generate heatmap data for last 12 weeks
     const heatmapData = useMemo(() => {
         const weeks: HeatmapDay[][] = [];
@@ -101,6 +102,7 @@ export function ActivityPanel({
     };
 
     const toggleCategory = (catId: CategoryId) => {
+        if (tagFilter.length > 0) onTagFilterChange([]);
         if (categoryFilter.includes(catId)) {
             onCategoryFilterChange(categoryFilter.filter((id) => id !== catId));
         } else {
@@ -271,69 +273,70 @@ export function ActivityPanel({
                         </div>
                     </div>
 
-                    {/* Tag Statistics Section */}
+                    {/* Tag Filter Section */}
                     {tagStats.length > 0 && (
                         <div style={{ marginTop: 32 }}>
                             <div className={styles.sectionHeader}>
                                 <span>TAGS</span>
                                 <div className={styles.sectionLine} />
-                                <span style={{ fontSize: 9, color: 'var(--text-dim)' }}>
-                                    {tagStats.length}
-                                </span>
+                                {tagFilter.length > 0 && (
+                                    <button
+                                        onClick={() => onTagFilterChange([])}
+                                        style={{
+                                            fontSize: 9,
+                                            color: "var(--text-dim)",
+                                            backgroundColor: "transparent",
+                                            border: "none",
+                                            cursor: "pointer",
+                                        }}
+                                    >
+                                        CLEAR
+                                    </button>
+                                )}
                             </div>
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                                {visibleTags.map(({ tag, count }) => {
-                                    const ratio = Math.log(count + 1) / Math.log(maxTagCount + 1);
-                                    const fontSize = 11 + ratio * 7;
-                                    const opacity = 0.5 + ratio * 0.5;
+                            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                                {tagStats.slice(0, TAG_PREVIEW_COUNT).map(({ tag, count }) => {
+                                    const isActive = tagFilter.includes(tag);
                                     return (
-                                        <span
+                                        <button
                                             key={tag}
-                                            title={`#${tag}: ${count} ${count === 1 ? 'entry' : 'entries'}`}
+                                            onClick={() => {
+                                                if (categoryFilter.length > 0) onCategoryFilterChange([]);
+                                                if (isActive) {
+                                                    onTagFilterChange(tagFilter.filter(t => t !== tag));
+                                                } else {
+                                                    onTagFilterChange([...tagFilter, tag]);
+                                                }
+                                            }}
                                             style={{
-                                                fontSize,
-                                                opacity,
-                                                color: 'var(--accent)',
-                                                cursor: 'default',
-                                                lineHeight: 1.4,
-                                                transition: 'all 100ms ease',
+                                                display: "flex",
+                                                alignItems: "center",
+                                                gap: 4,
+                                                padding: "4px 10px",
+                                                fontSize: 10,
+                                                color: isActive ? "var(--accent)" : "var(--text-secondary)",
+                                                backgroundColor: isActive
+                                                    ? "var(--accent-subtle, rgba(99,102,241,0.12))"
+                                                    : "var(--bg-secondary)",
+                                                border: isActive
+                                                    ? "1px solid var(--accent)"
+                                                    : "1px solid transparent",
+                                                borderRadius: 4,
+                                                cursor: "pointer",
+                                                transition: "all 100ms ease",
                                             }}
                                         >
-                                            #{tag}
-                                            <sup style={{
+                                            <span>#{tag}</span>
+                                            <span style={{
                                                 fontSize: 8,
-                                                color: 'var(--text-dim)',
-                                                marginLeft: 1,
+                                                opacity: 0.6,
                                             }}>
                                                 {count}
-                                            </sup>
-                                        </span>
+                                            </span>
+                                        </button>
                                     );
                                 })}
                             </div>
-                            {tagStats.length > TAG_PREVIEW_COUNT && (
-                                <button
-                                    onClick={() => setTagsExpanded(!tagsExpanded)}
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: 4,
-                                        marginTop: 10,
-                                        fontSize: 9,
-                                        color: 'var(--text-dim)',
-                                        backgroundColor: 'transparent',
-                                        border: 'none',
-                                        cursor: 'pointer',
-                                        padding: 0,
-                                    }}
-                                >
-                                    {tagsExpanded ? (
-                                        <><ChevronUp size={10} /> SHOW LESS</>
-                                    ) : (
-                                        <><ChevronDown size={10} /> {tagStats.length - TAG_PREVIEW_COUNT} MORE</>
-                                    )}
-                                </button>
-                            )}
                         </div>
                     )}
 

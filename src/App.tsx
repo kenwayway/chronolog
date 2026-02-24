@@ -77,13 +77,20 @@ function App() {
                 .filter(entry => ui.categoryFilter.includes(entry.category as CategoryId))
                 .sort((a, b) => b.timestamp - a.timestamp);
         }
+        if (ui.tagFilter.length > 0) {
+            return state.entries
+                .filter(entry =>
+                    entry.tags && ui.tagFilter.every(t => entry.tags!.includes(t))
+                )
+                .sort((a, b) => b.timestamp - a.timestamp);
+        }
         const target = ui.selectedDate || new Date();
         const dayStart = new Date(target.getFullYear(), target.getMonth(), target.getDate()).getTime();
         const dayEnd = dayStart + 86_400_000;
         return state.entries.filter(entry =>
             entry.timestamp >= dayStart && entry.timestamp < dayEnd
         );
-    }, [state.entries, ui.categoryFilter, ui.selectedDate]);
+    }, [state.entries, ui.categoryFilter, ui.tagFilter, ui.selectedDate]);
 
     // Context values (memoized to avoid unnecessary re-renders)
     const sessionContextValue = useMemo(() => ({
@@ -155,6 +162,8 @@ function App() {
                                 onDateChange={ui.setSelectedDate}
                                 categoryFilter={ui.categoryFilter}
                                 onCategoryFilterChange={ui.setCategoryFilter}
+                                tagFilter={ui.tagFilter}
+                                onTagFilterChange={ui.setTagFilter}
                             />
 
                             <ContextMenu
