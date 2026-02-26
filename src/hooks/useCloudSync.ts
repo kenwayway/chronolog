@@ -160,17 +160,26 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
           })
         }
       } else {
-        // --- FULL FETCH: replace everything ---
+        // --- FULL FETCH: merge with local to protect unsaved edits ---
         const remoteEntries = remoteData.entries || []
         const remoteContentTypes = remoteData.contentTypes || []
-        const hasRemoteData = remoteEntries.length > 0 || remoteContentTypes.length > 0 || (remoteData.mediaItems?.length ?? 0) > 0
+        const remoteMediaItems = remoteData.mediaItems || []
+        const hasRemoteData = remoteEntries.length > 0 || remoteContentTypes.length > 0 || remoteMediaItems.length > 0
 
         if (hasRemoteData) {
+          // 3-way merge for mediaItems: local edits win over stale remote data
+          const localMedia = mediaItemsRef.current
+          const remoteMediaMap = new Map(remoteMediaItems.map(m => [m.id, m]))
+          const mergedMedia = localMedia.map(m => remoteMediaMap.get(m.id) ?? m)
+          for (const rm of remoteMediaItems) {
+            if (!mergedMedia.find(m => m.id === rm.id)) mergedMedia.push(rm)
+          }
+
           isImportingRef.current = true
           onImportDataRef.current({
             entries: remoteEntries,
             contentTypes: remoteData.contentTypes,
-            mediaItems: remoteData.mediaItems,
+            mediaItems: mergedMedia.length > 0 ? mergedMedia : undefined,
           })
         }
       }
@@ -288,6 +297,7 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
 
       const response = await fetch(`${getApiBase()}/api/data`, {
         method: 'PUT',
+        keepalive: true, // ensures request completes even if page is unloading
         headers: {
           'Authorization': `Bearer ${auth.tokenRef.current}`,
           'Content-Type': 'application/json',
@@ -328,6 +338,20 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
       if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current)
     }
   }, [entries, contentTypes, mediaItems, auth.isLoggedIn, saveToCloud])
+
+  // --- Flush pending cloud save on page unload (bypass debounce) ---
+  useEffect(() => {
+    if (!auth.isLoggedIn) return
+    const handleBeforeUnload = () => {
+      if (syncTimeoutRef.current) {
+        clearTimeout(syncTimeoutRef.current)
+        syncTimeoutRef.current = null
+      }
+      saveToCloud()
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [auth.isLoggedIn, saveToCloud])
 
   // --- Manual sync (bidirectional) ---
   const sync = useCallback(async () => {
