@@ -45,6 +45,8 @@ export interface UIState {
     setCategoryFilter: (filter: CategoryId[]) => void
     tagFilter: string[]
     setTagFilter: (filter: string[]) => void
+    contentTypeFilter: string[]
+    setContentTypeFilter: (filter: string[]) => void
     navigateToEntry: (entry: Entry) => void
 }
 
@@ -57,6 +59,7 @@ export function useUIState(): UIState {
     const [selectedDate, setSelectedDate] = useState<Date | null>(null)
     const [categoryFilter, setCategoryFilter] = useState<CategoryId[]>([])
     const [tagFilter, setTagFilter] = useState<string[]>([])
+    const [contentTypeFilter, setContentTypeFilter] = useState<string[]>([])
 
     // Context menu
     const [contextMenu, setContextMenu] = useState<ContextMenuState>({
@@ -110,6 +113,7 @@ export function useUIState(): UIState {
         selectedDate, setSelectedDate,
         categoryFilter, setCategoryFilter,
         tagFilter, setTagFilter,
+        contentTypeFilter, setContentTypeFilter,
         navigateToEntry,
     }
 }

@@ -20,10 +20,11 @@ interface TimelineProps {
   onEdit?: (entry: Entry) => void;
   onDeleteAIComment?: (entry: Entry) => void;
   categoryFilter?: CategoryId[];
+  isFilterMode?: boolean;
   onNavigateToEntry?: (entry: Entry) => void;
 }
 
-export function Timeline({ entries, status, onContextMenu, onEdit, onDeleteAIComment, categoryFilter = [], onNavigateToEntry }: TimelineProps) {
+export function Timeline({ entries, status, onContextMenu, onEdit, onDeleteAIComment, categoryFilter = [], isFilterMode: isFilterModeProp, onNavigateToEntry }: TimelineProps) {
   const { state: { entries: allEntries, mediaItems }, categories } = useSessionContext();
   const { theme } = useTheme();
   const [currentPage, setCurrentPage] = useState(0);
@@ -35,9 +36,9 @@ export function Timeline({ entries, status, onContextMenu, onEdit, onDeleteAICom
   // Reset page when filter changes
   useEffect(() => {
     setCurrentPage(0);
-  }, [categoryFilterKey]);
+  }, [categoryFilterKey, isFilterModeProp]);
 
-  const isFilterMode = categoryFilter.length > 0;
+  const isFilterMode = isFilterModeProp ?? categoryFilter.length > 0;
   const totalPages = isFilterMode ? Math.ceil(entries.length / ENTRIES_PER_PAGE) : 1;
 
   // Memoize sorted entries to avoid re-sorting on every render

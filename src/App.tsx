@@ -84,13 +84,20 @@ function App() {
                 )
                 .sort((a, b) => b.timestamp - a.timestamp);
         }
+        if (ui.contentTypeFilter.length > 0) {
+            return state.entries
+                .filter(entry =>
+                    entry.contentType && ui.contentTypeFilter.includes(entry.contentType)
+                )
+                .sort((a, b) => b.timestamp - a.timestamp);
+        }
         const target = ui.selectedDate || new Date();
         const dayStart = new Date(target.getFullYear(), target.getMonth(), target.getDate()).getTime();
         const dayEnd = dayStart + 86_400_000;
         return state.entries.filter(entry =>
             entry.timestamp >= dayStart && entry.timestamp < dayEnd
         );
-    }, [state.entries, ui.categoryFilter, ui.tagFilter, ui.selectedDate]);
+    }, [state.entries, ui.categoryFilter, ui.tagFilter, ui.contentTypeFilter, ui.selectedDate]);
 
     // Context values (memoized to avoid unnecessary re-renders)
     const sessionContextValue = useMemo(() => ({
@@ -132,6 +139,7 @@ function App() {
                                         onEdit={ui.openEditModal}
                                         onDeleteAIComment={(entry) => actions.updateEntry(entry.id, { aiComment: undefined })}
                                         categoryFilter={ui.categoryFilter}
+                                        isFilterMode={ui.categoryFilter.length > 0 || ui.tagFilter.length > 0 || ui.contentTypeFilter.length > 0}
                                         onNavigateToEntry={ui.navigateToEntry}
                                     />
                                 )}
@@ -164,6 +172,8 @@ function App() {
                                 onCategoryFilterChange={ui.setCategoryFilter}
                                 tagFilter={ui.tagFilter}
                                 onTagFilterChange={ui.setTagFilter}
+                                contentTypeFilter={ui.contentTypeFilter}
+                                onContentTypeFilterChange={ui.setContentTypeFilter}
                             />
 
                             <ContextMenu

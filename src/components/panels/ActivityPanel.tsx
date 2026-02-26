@@ -23,6 +23,8 @@ interface ActivityPanelProps {
     onCategoryFilterChange: (filter: CategoryId[]) => void;
     tagFilter: string[];
     onTagFilterChange: (filter: string[]) => void;
+    contentTypeFilter: string[];
+    onContentTypeFilterChange: (filter: string[]) => void;
 }
 
 export function ActivityPanel({
@@ -34,13 +36,30 @@ export function ActivityPanel({
     onCategoryFilterChange,
     tagFilter,
     onTagFilterChange,
+    contentTypeFilter,
+    onContentTypeFilterChange,
 }: ActivityPanelProps) {
-    const { state: { entries }, categories } = useSessionContext();
+    const { state: { entries, contentTypes }, categories } = useSessionContext();
     const { tokens } = useTheme();
 
     // Tag statistics
     const tagStats = useMemo(() => extractAllTags(entries), [entries]);
     const TAG_PREVIEW_COUNT = 20;
+
+    // Content type statistics
+    const contentTypeStats = useMemo(() => {
+        const counts: Record<string, number> = {};
+        entries.forEach(e => {
+            if (e.contentType && e.contentType !== 'note') {
+                counts[e.contentType] = (counts[e.contentType] || 0) + 1;
+            }
+        });
+        if (!contentTypes) return [];
+        return contentTypes
+            .filter(ct => ct.id !== 'note' && (counts[ct.id] || 0) > 0)
+            .sort((a, b) => (a.order ?? 999) - (b.order ?? 999))
+            .map(ct => ({ ...ct, count: counts[ct.id] }));
+    }, [entries, contentTypes]);
     // Generate heatmap data for last 12 weeks
     const heatmapData = useMemo(() => {
         const weeks: HeatmapDay[][] = [];
@@ -94,6 +113,9 @@ export function ActivityPanel({
         if (categoryFilter.length > 0) {
             onCategoryFilterChange([]);
         }
+        if (contentTypeFilter.length > 0) {
+            onContentTypeFilterChange([]);
+        }
         if (date.toDateString() === today.toDateString()) {
             onDateChange(null);
         } else {
@@ -103,6 +125,7 @@ export function ActivityPanel({
 
     const toggleCategory = (catId: CategoryId) => {
         if (tagFilter.length > 0) onTagFilterChange([]);
+        if (contentTypeFilter.length > 0) onContentTypeFilterChange([]);
         if (categoryFilter.includes(catId)) {
             onCategoryFilterChange(categoryFilter.filter((id) => id !== catId));
         } else {
@@ -112,6 +135,7 @@ export function ActivityPanel({
 
     const clearFilter = () => {
         onCategoryFilterChange([]);
+        onContentTypeFilterChange([]);
     };
 
     return (
@@ -209,7 +233,7 @@ export function ActivityPanel({
                         <div className={styles.sectionHeader}>
                             <span>FILTER</span>
                             <div className={styles.sectionLine} />
-                            {categoryFilter.length > 0 && (
+                            {(categoryFilter.length > 0 || contentTypeFilter.length > 0) && (
                                 <button
                                     onClick={clearFilter}
                                     style={{
@@ -273,6 +297,74 @@ export function ActivityPanel({
                         </div>
                     </div>
 
+                    {/* Content Type Filter Section */}
+                    {contentTypeStats.length > 0 && (
+                        <div style={{ marginTop: 32 }}>
+                            <div className={styles.sectionHeader}>
+                                <span>TYPES</span>
+                                <div className={styles.sectionLine} />
+                                {contentTypeFilter.length > 0 && (
+                                    <button
+                                        onClick={() => onContentTypeFilterChange([])}
+                                        style={{
+                                            fontSize: 9,
+                                            color: "var(--text-dim)",
+                                            backgroundColor: "transparent",
+                                            border: "none",
+                                            cursor: "pointer",
+                                        }}
+                                    >
+                                        CLEAR
+                                    </button>
+                                )}
+                            </div>
+                            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                                {contentTypeStats.map(ct => {
+                                    const isActive = contentTypeFilter.includes(ct.id);
+                                    return (
+                                        <button
+                                            key={ct.id}
+                                            onClick={() => {
+                                                if (categoryFilter.length > 0) onCategoryFilterChange([]);
+                                                if (tagFilter.length > 0) onTagFilterChange([]);
+                                                if (isActive) {
+                                                    onContentTypeFilterChange(contentTypeFilter.filter(id => id !== ct.id));
+                                                } else {
+                                                    onContentTypeFilterChange([...contentTypeFilter, ct.id]);
+                                                }
+                                            }}
+                                            style={{
+                                                display: "flex",
+                                                alignItems: "center",
+                                                gap: 4,
+                                                padding: "4px 10px",
+                                                fontSize: 10,
+                                                color: isActive ? "var(--accent)" : "var(--text-secondary)",
+                                                backgroundColor: isActive
+                                                    ? "var(--accent-subtle, rgba(99,102,241,0.12))"
+                                                    : "var(--bg-secondary)",
+                                                border: isActive
+                                                    ? "1px solid var(--accent)"
+                                                    : "1px solid transparent",
+                                                borderRadius: 4,
+                                                cursor: "pointer",
+                                                transition: "all 100ms ease",
+                                            }}
+                                        >
+                                            <span>{ct.icon || ct.name.charAt(0).toUpperCase()}</span>
+                                            <span style={{ textTransform: "uppercase", letterSpacing: "0.03em" }}>
+                                                {ct.name}
+                                            </span>
+                                            <span style={{ fontSize: 8, opacity: 0.6 }}>
+                                                {ct.count}
+                                            </span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+
                     {/* Tag Filter Section */}
                     {tagStats.length > 0 && (
                         <div style={{ marginTop: 32 }}>
@@ -302,6 +394,7 @@ export function ActivityPanel({
                                             key={tag}
                                             onClick={() => {
                                                 if (categoryFilter.length > 0) onCategoryFilterChange([]);
+                                                if (contentTypeFilter.length > 0) onContentTypeFilterChange([]);
                                                 if (isActive) {
                                                     onTagFilterChange(tagFilter.filter(t => t !== tag));
                                                 } else {

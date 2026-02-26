@@ -97,32 +97,58 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
       if (remoteData.incremental) {
         // --- INCREMENTAL FETCH: merge with local state ---
         const remoteEntries = remoteData.entries || []
+        const remoteMediaItems = remoteData.mediaItems || []
         const deletedIds = remoteData.deletedIds || []
 
-        if (remoteEntries.length === 0 && deletedIds.length === 0) {
-          // Nothing changed remotely
-        } else {
-          const currentEntries = [...entriesRef.current]
+        const hasEntryChanges = remoteEntries.length > 0 || deletedIds.length > 0
+        const hasMediaChanges = remoteMediaItems.length > 0
 
-          // Remove deleted entries
-          const deletedSet = new Set(deletedIds)
-          const filteredEntries = deletedSet.size > 0
-            ? currentEntries.filter(e => !deletedSet.has(e.id))
-            : currentEntries
+        if (hasEntryChanges || hasMediaChanges || (remoteData.contentTypes?.length ?? 0) > 0) {
+          let mergedEntries = entriesRef.current
 
-          // Merge: update existing + add new from remote
-          const remoteEntryMap = new Map(remoteEntries.map(e => [e.id, e]))
-          const prevEntryMap = new Map(prevEntriesRef.current.map(e => [e.id, e]))
-          const mergedEntries = filteredEntries.map(e => {
-            const remote = remoteEntryMap.get(e.id)
-            if (!remote) return e
-            const prev = prevEntryMap.get(e.id)
-            if (!prev || prev !== e) return e // local modified → keep local
-            return remote // local untouched → accept remote
-          })
-          for (const re of remoteEntries) {
-            if (!mergedEntries.find(e => e.id === re.id)) {
-              mergedEntries.push(re)
+          if (hasEntryChanges) {
+            const currentEntries = [...entriesRef.current]
+
+            // Remove deleted entries
+            const deletedSet = new Set(deletedIds)
+            const filteredEntries = deletedSet.size > 0
+              ? currentEntries.filter(e => !deletedSet.has(e.id))
+              : currentEntries
+
+            // Merge: update existing + add new from remote
+            const remoteEntryMap = new Map(remoteEntries.map(e => [e.id, e]))
+            const prevEntryMap = new Map(prevEntriesRef.current.map(e => [e.id, e]))
+            mergedEntries = filteredEntries.map(e => {
+              const remote = remoteEntryMap.get(e.id)
+              if (!remote) return e
+              const prev = prevEntryMap.get(e.id)
+              if (!prev || prev !== e) return e // local modified → keep local
+              return remote // local untouched → accept remote
+            })
+            for (const re of remoteEntries) {
+              if (!mergedEntries.find(e => e.id === re.id)) {
+                mergedEntries.push(re)
+              }
+            }
+          }
+
+          // Merge media items with same 3-way logic
+          let mergedMediaItems: typeof remoteMediaItems | undefined
+          if (hasMediaChanges) {
+            const currentMedia = [...mediaItemsRef.current]
+            const remoteMediaMap = new Map(remoteMediaItems.map(m => [m.id, m]))
+            const prevMediaMap = new Map(prevMediaItemsRef.current.map(m => [m.id, m]))
+            mergedMediaItems = currentMedia.map(m => {
+              const remote = remoteMediaMap.get(m.id)
+              if (!remote) return m
+              const prev = prevMediaMap.get(m.id)
+              if (!prev || prev !== m) return m // local modified → keep local
+              return remote // local untouched → accept remote
+            })
+            for (const rm of remoteMediaItems) {
+              if (!mergedMediaItems.find(m => m.id === rm.id)) {
+                mergedMediaItems.push(rm)
+              }
             }
           }
 
@@ -130,14 +156,14 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
           onImportDataRef.current({
             entries: mergedEntries,
             contentTypes: remoteData.contentTypes?.length ? remoteData.contentTypes : undefined,
-            mediaItems: remoteData.mediaItems?.length ? remoteData.mediaItems : undefined,
+            mediaItems: mergedMediaItems,
           })
         }
       } else {
         // --- FULL FETCH: replace everything ---
         const remoteEntries = remoteData.entries || []
         const remoteContentTypes = remoteData.contentTypes || []
-        const hasRemoteData = remoteEntries.length > 0 || remoteContentTypes.length > 0
+        const hasRemoteData = remoteEntries.length > 0 || remoteContentTypes.length > 0 || (remoteData.mediaItems?.length ?? 0) > 0
 
         if (hasRemoteData) {
           isImportingRef.current = true

@@ -51,24 +51,27 @@ export const BUILTIN_CONTENT_TYPES: ContentType[] = [
   {
     id: 'note',
     name: 'Note',
+    icon: '📝',
     fields: [],
     builtIn: true,
     order: 0,
-    version: 1
+    version: 2  // v2: added icon
   },
   {
     id: 'task',
     name: 'Task',
+    icon: '✅',
     fields: [
       { id: 'done', name: 'Done', type: 'boolean', default: false }
     ],
     builtIn: true,
     order: 1,
-    version: 1
+    version: 2  // v2: added icon
   },
   {
     id: 'bookmark',
     name: 'Bookmark',
+    icon: '🔖',
     fields: [
       { id: 'url', name: 'URL', type: 'text' },
       { id: 'title', name: 'Title', type: 'text' },
@@ -77,11 +80,12 @@ export const BUILTIN_CONTENT_TYPES: ContentType[] = [
     ],
     builtIn: true,
     order: 2,
-    version: 1
+    version: 2  // v2: added icon
   },
   {
     id: 'mood',
     name: 'Mood',
+    icon: '🫧',
     fields: [
       { id: 'feeling', name: 'Feeling', type: 'dropdown', options: ['Happy', 'Excited', 'Calm', 'Tired', 'Anxious', 'Sad', 'Angry'], default: 'Calm' },
       { id: 'energy', name: 'Energy', type: 'number', default: 3 },
@@ -89,11 +93,12 @@ export const BUILTIN_CONTENT_TYPES: ContentType[] = [
     ],
     builtIn: true,
     order: 3,
-    version: 1
+    version: 2  // v2: added icon
   },
   {
     id: 'workout',
     name: 'Workout',
+    icon: '💪',
     fields: [
       { id: 'workoutType', name: 'Type', type: 'dropdown', options: ['Strength', 'Cardio', 'Flexibility', 'Mixed'], default: 'Strength' },
       { id: 'place', name: 'Place', type: 'dropdown', options: ['Home', 'In Building Gym', 'Outside Gym'] },
@@ -101,44 +106,48 @@ export const BUILTIN_CONTENT_TYPES: ContentType[] = [
     ],
     builtIn: true,
     order: 4,
-    version: 2  // v2: added Cardio, Place; removed duration
+    version: 3  // v3: added icon (v2: added Cardio, Place; removed duration)
   },
   {
     id: 'vault',
     name: 'Vault',
+    icon: '🗄️',
     fields: [
       { id: 'title', name: 'Note Title', type: 'text' },
       { id: 'obsidianUrl', name: 'Obsidian URL', type: 'text' }
     ],
     builtIn: true,
     order: 5,
-    version: 1
+    version: 2  // v2: added icon
   },
   {
     id: 'beans',
     name: 'Beans',
+    icon: '☕',
     fields: [],
     builtIn: true,
     order: 6,
-    version: 1
+    version: 2  // v2: added icon
   },
   {
     id: 'sparks',
     name: 'Sparks',
+    icon: '⚡',
     fields: [],
     builtIn: true,
     order: 6,
-    version: 1
+    version: 2  // v2: added icon
   },
   {
     id: 'media',
     name: 'Media',
+    icon: '🎬',
     fields: [
       { id: 'mediaId', name: 'Media', type: 'media-select' }
     ],
     builtIn: true,
     order: 7,
-    version: 1
+    version: 2  // v2: added icon
   }
 ]
 
