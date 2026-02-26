@@ -167,13 +167,14 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
         const hasRemoteData = remoteEntries.length > 0 || remoteContentTypes.length > 0 || remoteMediaItems.length > 0
 
         if (hasRemoteData) {
-          // 3-way merge for mediaItems: local edits win over stale remote data
+          // Merge media: local always wins (local is authoritative on reload),
+          // only append items that exist on remote but not yet locally (e.g. from other devices)
           const localMedia = mediaItemsRef.current
-          const remoteMediaMap = new Map(remoteMediaItems.map(m => [m.id, m]))
-          const mergedMedia = localMedia.map(m => remoteMediaMap.get(m.id) ?? m)
-          for (const rm of remoteMediaItems) {
-            if (!mergedMedia.find(m => m.id === rm.id)) mergedMedia.push(rm)
-          }
+          const localIds = new Set(localMedia.map(m => m.id))
+          const mergedMedia = [
+            ...localMedia, // keep all local items as-is (may have unsaved edits)
+            ...remoteMediaItems.filter(m => !localIds.has(m.id)) // add new remote-only items
+          ]
 
           isImportingRef.current = true
           onImportDataRef.current({
