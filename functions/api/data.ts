@@ -197,7 +197,8 @@ export async function onRequestPut(context: CFContext): Promise<Response> {
             lastModified: now,
         }, { headers: corsHeaders });
     } catch (error) {
-        console.error('Data save error:', error);
-        return Response.json({ error: 'Failed to save data' }, { status: 500, headers: corsHeaders });
+        console.error('Data save error:', error instanceof Error ? `${error.message}\n${error.stack}` : error);
+        const errMsg = error instanceof Error ? error.message : 'Failed to save data';
+        return Response.json({ error: errMsg }, { status: 500, headers: corsHeaders });
     }
 }

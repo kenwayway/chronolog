@@ -63,6 +63,10 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
   // Flag to skip sync triggers during initial data import
   const isImportingRef = useRef(false)
 
+  // Flag: true when saveToCloud has failed and local edits haven't been pushed yet.
+  // Prevents the poll from overwriting local with stale server data.
+  const hasUnsyncedChangesRef = useRef(false)
+
   // Keep refs in sync with props
   useEffect(() => { entriesRef.current = entries }, [entries])
   useEffect(() => { contentTypesRef.current = contentTypes }, [contentTypes])
@@ -132,22 +136,33 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
             }
           }
 
-          // Merge media items with same 3-way logic
+          // Merge media items: if save has failed, always keep local to prevent data loss
           let mergedMediaItems: typeof remoteMediaItems | undefined
           if (hasMediaChanges) {
-            const currentMedia = [...mediaItemsRef.current]
-            const remoteMediaMap = new Map(remoteMediaItems.map(m => [m.id, m]))
-            const prevMediaMap = new Map(prevMediaItemsRef.current.map(m => [m.id, m]))
-            mergedMediaItems = currentMedia.map(m => {
-              const remote = remoteMediaMap.get(m.id)
-              if (!remote) return m
-              const prev = prevMediaMap.get(m.id)
-              if (!prev || prev !== m) return m // local modified → keep local
-              return remote // local untouched → accept remote
-            })
-            for (const rm of remoteMediaItems) {
-              if (!mergedMediaItems.find(m => m.id === rm.id)) {
-                mergedMediaItems.push(rm)
+            if (hasUnsyncedChangesRef.current) {
+              // Unsynced local edits exist — keep ALL local, only add new remote items
+              const localMedia = mediaItemsRef.current
+              const localIds = new Set(localMedia.map(m => m.id))
+              mergedMediaItems = [
+                ...localMedia,
+                ...remoteMediaItems.filter(m => !localIds.has(m.id))
+              ]
+            } else {
+              // Normal 3-way merge
+              const currentMedia = [...mediaItemsRef.current]
+              const remoteMediaMap = new Map(remoteMediaItems.map(m => [m.id, m]))
+              const prevMediaMap = new Map(prevMediaItemsRef.current.map(m => [m.id, m]))
+              mergedMediaItems = currentMedia.map(m => {
+                const remote = remoteMediaMap.get(m.id)
+                if (!remote) return m
+                const prev = prevMediaMap.get(m.id)
+                if (!prev || prev !== m) return m // local modified → keep local
+                return remote // local untouched → accept remote
+              })
+              for (const rm of remoteMediaItems) {
+                if (!mergedMediaItems.find(m => m.id === rm.id)) {
+                  mergedMediaItems.push(rm)
+                }
               }
             }
           }
@@ -192,7 +207,11 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
       setTimeout(() => {
         prevEntriesRef.current = [...entriesRef.current]
         prevContentTypesRef.current = [...contentTypesRef.current]
-        prevMediaItemsRef.current = [...mediaItemsRef.current]
+        // Only snapshot media items if there are no unsynced local changes,
+        // otherwise we lose the diff baseline and the next poll would overwrite
+        if (!hasUnsyncedChangesRef.current) {
+          prevMediaItemsRef.current = [...mediaItemsRef.current]
+        }
         isImportingRef.current = false
         isInitialFetchRef.current = false
       }, 500)
@@ -306,9 +325,13 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
         body: JSON.stringify(payload),
       })
 
-      if (!response.ok) throw new Error('Failed to save data')
+      if (!response.ok) {
+        const errBody = await response.text().catch(() => '')
+        throw new Error(`Save failed (${response.status}): ${errBody}`)
+      }
 
       pendingDeletedIdsRef.current = []
+      hasUnsyncedChangesRef.current = false
 
       const now = Date.now()
       localStorage.setItem(LAST_SYNC_KEY, String(now))
@@ -319,6 +342,7 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
 
       setSyncState(prev => ({ ...prev, isSyncing: false, lastSynced: now }))
     } catch (error) {
+      hasUnsyncedChangesRef.current = true
       setSyncState(prev => ({
         ...prev,
         isSyncing: false,
