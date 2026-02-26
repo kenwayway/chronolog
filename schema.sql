@@ -41,7 +41,12 @@ CREATE TABLE IF NOT EXISTS media_items (
   media_type TEXT NOT NULL,
   notion_url TEXT,
   cover_url TEXT,
-  created_at INTEGER NOT NULL
+  created_at INTEGER NOT NULL,
+  rating INTEGER,
+  status TEXT,
+  date_finished TEXT,
+  notes TEXT,
+  metadata TEXT                -- JSON string for per-type fields
 );
 
 -- Deleted entries tracking (for incremental sync)

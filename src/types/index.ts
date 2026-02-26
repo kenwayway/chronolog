@@ -31,6 +31,21 @@ export interface Category {
 /** Media type options */
 export type MediaType = 'Book' | 'Movie' | 'Game' | 'TV' | 'Anime' | 'Podcast'
 
+/** Media tracking status */
+export type MediaStatus = 'Planned' | 'In Progress' | 'Completed' | 'Dropped' | 'On Hold'
+
+/** Per-type metadata (flat JSON blob stored alongside MediaItem) */
+export interface MediaMetadata {
+  director?: string      // Movie
+  year?: number          // Movie
+  genre?: string         // Movie, Book, Game
+  releasedDate?: string  // Movie, Game (ISO date YYYY-MM-DD)
+  author?: string        // Book
+  developer?: string     // Game
+  season?: number        // TV, Anime
+  host?: string          // Podcast
+}
+
 /** Media item in the library */
 export interface MediaItem {
   id: string              // Unique ID (uuid)
@@ -39,6 +54,13 @@ export interface MediaItem {
   notionUrl?: string      // Optional Notion page URL
   coverUrl?: string       // Optional cover image URL
   createdAt: number       // Timestamp when added
+  // --- Shared fields ---
+  rating?: number         // 1–10
+  status?: MediaStatus    // Tracking status
+  dateFinished?: string   // ISO date string (YYYY-MM-DD)
+  notes?: string          // Free-text review/thoughts
+  // --- Per-type metadata ---
+  metadata?: MediaMetadata
 }
 
 // ============================================

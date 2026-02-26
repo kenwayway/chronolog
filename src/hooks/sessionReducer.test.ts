@@ -319,9 +319,14 @@ describe('Media Item CRUD', () => {
         title: 'Test Movie',
         mediaType: 'Movie',
         createdAt: 1000,
+        rating: 8,
+        status: 'Completed',
+        dateFinished: '2026-02-20',
+        notes: 'Great movie!',
+        metadata: { director: 'Spielberg', year: 2026, genre: 'Sci-Fi' },
     }
 
-    it('ADD_MEDIA_ITEM adds item', () => {
+    it('ADD_MEDIA_ITEM adds item with all fields', () => {
         const result = sessionReducer(initialState, {
             type: ACTIONS.ADD_MEDIA_ITEM,
             payload: { mediaItem: testMedia },
@@ -329,17 +334,23 @@ describe('Media Item CRUD', () => {
 
         expect(result.mediaItems).toHaveLength(1)
         expect(result.mediaItems[0].title).toBe('Test Movie')
+        expect(result.mediaItems[0].rating).toBe(8)
+        expect(result.mediaItems[0].status).toBe('Completed')
+        expect(result.mediaItems[0].notes).toBe('Great movie!')
+        expect(result.mediaItems[0].metadata?.director).toBe('Spielberg')
     })
 
     it('UPDATE_MEDIA_ITEM updates fields', () => {
         const state = stateWith({ mediaItems: [testMedia] })
         const result = sessionReducer(state, {
             type: ACTIONS.UPDATE_MEDIA_ITEM,
-            payload: { id: 'media-1', updates: { title: 'Updated Movie' } },
+            payload: { id: 'media-1', updates: { title: 'Updated Movie', rating: 9 } },
         })
 
         expect(result.mediaItems[0].title).toBe('Updated Movie')
+        expect(result.mediaItems[0].rating).toBe(9)
         expect(result.mediaItems[0].mediaType).toBe('Movie') // Unchanged
+        expect(result.mediaItems[0].status).toBe('Completed') // Unchanged
     })
 
     it('DELETE_MEDIA_ITEM removes item', () => {

@@ -132,7 +132,7 @@ export function contentTypeObjectToRow(ct: ContentType): ContentTypeRowValues {
  * Convert a D1 media_item row to a frontend MediaItem object
  */
 export function mediaItemRowToObject(row: MediaItemRow): MediaItem {
-    return {
+    const item: MediaItem = {
         id: row.id,
         title: row.title,
         mediaType: row.media_type,
@@ -140,6 +140,16 @@ export function mediaItemRowToObject(row: MediaItemRow): MediaItem {
         coverUrl: row.cover_url || undefined,
         createdAt: row.created_at,
     };
+
+    if (row.rating != null) item.rating = row.rating;
+    if (row.status) item.status = row.status;
+    if (row.date_finished) item.dateFinished = row.date_finished;
+    if (row.notes) item.notes = row.notes;
+    if (row.metadata) {
+        try { item.metadata = JSON.parse(row.metadata); } catch { /* ignore */ }
+    }
+
+    return item;
 }
 
 interface MediaItemRowValues {
@@ -149,6 +159,11 @@ interface MediaItemRowValues {
     notion_url: string | null;
     cover_url: string | null;
     created_at: number;
+    rating: number | null;
+    status: string | null;
+    date_finished: string | null;
+    notes: string | null;
+    metadata: string | null;
 }
 
 /**
@@ -162,6 +177,11 @@ export function mediaItemObjectToRow(item: MediaItem): MediaItemRowValues {
         notion_url: item.notionUrl || null,
         cover_url: item.coverUrl || null,
         created_at: item.createdAt || Date.now(),
+        rating: item.rating ?? null,
+        status: item.status || null,
+        date_finished: item.dateFinished || null,
+        notes: item.notes || null,
+        metadata: item.metadata ? JSON.stringify(item.metadata) : null,
     };
 }
 
@@ -242,13 +262,16 @@ export async function upsertMediaItems(db: D1Database, mediaItems: MediaItem[]):
 
     const stmt = db.prepare(`
     INSERT OR REPLACE INTO media_items
-      (id, title, media_type, notion_url, cover_url, created_at)
-    VALUES (?, ?, ?, ?, ?, ?)
+      (id, title, media_type, notion_url, cover_url, created_at, rating, status, date_finished, notes, metadata)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
     const batches = mediaItems.map(item => {
         const row = mediaItemObjectToRow(item);
-        return stmt.bind(row.id, row.title, row.media_type, row.notion_url, row.cover_url, row.created_at);
+        return stmt.bind(
+            row.id, row.title, row.media_type, row.notion_url, row.cover_url, row.created_at,
+            row.rating, row.status, row.date_finished, row.notes, row.metadata
+        );
     });
 
     const results = await db.batch(batches);

@@ -66,6 +66,11 @@ export interface MediaItemRow {
     notion_url: string | null;
     cover_url: string | null;
     created_at: number;
+    rating: number | null;
+    status: string | null;
+    date_finished: string | null;
+    notes: string | null;
+    metadata: string | null;   // JSON string
 }
 
 // --- Frontend object types (camelCase) ---
@@ -112,4 +117,9 @@ export interface MediaItem {
     notionUrl?: string;
     coverUrl?: string;
     createdAt: number;
+    rating?: number;
+    status?: string;
+    dateFinished?: string;
+    notes?: string;
+    metadata?: Record<string, unknown>;
 }
