@@ -81,9 +81,14 @@ export function MediaEditForm({ form }: MediaEditFormProps) {
             </div>
           ))}
           {/* Notion URL */}
-          <div className={styles.editFieldRowLast}>
+          <div className={styles.editFieldRow}>
             <span className={styles.metaLabel}>NOTION</span>
             <input type="text" value={form.formNotionUrl} onChange={e => form.setFormNotionUrl(e.target.value)} placeholder="URL (optional)" className={`edit-modal-input ${styles.editFieldInput}`} />
+          </div>
+          {/* Spotify URL */}
+          <div className={styles.editFieldRowLast}>
+            <span className={styles.metaLabel}>SPOTIFY</span>
+            <input type="text" value={form.formSpotifyUrl} onChange={e => form.setFormSpotifyUrl(e.target.value)} placeholder="URL (optional)" className={`edit-modal-input ${styles.editFieldInput}`} />
           </div>
         </div>
 

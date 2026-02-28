@@ -80,8 +80,11 @@ export function MediaForm({ form, onSave, onCancel, saveLabel }: MediaFormProps)
           </div>
         )}
 
-        {/* Row 6: Notion URL */}
-        <input type="text" value={form.formNotionUrl} onChange={e => form.setFormNotionUrl(e.target.value)} placeholder="Notion URL (optional)..." className={`edit-modal-input ${styles.formInput}`} />
+        {/* Row 6: Links (Notion & Spotify) */}
+        <div className={styles.formRow}>
+          <input type="text" value={form.formNotionUrl} onChange={e => form.setFormNotionUrl(e.target.value)} placeholder="Notion URL (optional)..." className={`edit-modal-input ${styles.formInput}`} />
+          <input type="text" value={form.formSpotifyUrl} onChange={e => form.setFormSpotifyUrl(e.target.value)} placeholder="Spotify URL (optional)..." className={`edit-modal-input ${styles.formInput}`} />
+        </div>
 
         {/* Row 7: Notes */}
         <textarea

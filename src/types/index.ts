@@ -61,6 +61,7 @@ export interface MediaItem {
   notes?: string          // Free-text review/thoughts
   // --- Per-type metadata ---
   metadata?: MediaMetadata
+  spotifyUrl?: string     // Optional Spotify embed URL
 }
 
 // ============================================

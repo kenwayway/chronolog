@@ -20,6 +20,7 @@ export function useLibraryForm() {
   const [formTitle, setFormTitle] = useState('');
   const [formType, setFormType] = useState<MediaType>('Movie');
   const [formNotionUrl, setFormNotionUrl] = useState('');
+  const [formSpotifyUrl, setFormSpotifyUrl] = useState('');
   const [formCoverUrl, setFormCoverUrl] = useState('');
   const [formRating, setFormRating] = useState(0);
   const [formStatus, setFormStatus] = useState<MediaStatus | ''>('');
@@ -50,6 +51,7 @@ export function useLibraryForm() {
     setFormTitle('');
     setFormType('Movie');
     setFormNotionUrl('');
+    setFormSpotifyUrl('');
     setFormCoverUrl('');
     setFormRating(0);
     setFormStatus('');
@@ -63,6 +65,7 @@ export function useLibraryForm() {
     setFormTitle(item.title);
     setFormType(item.mediaType);
     setFormNotionUrl(item.notionUrl || '');
+    setFormSpotifyUrl(item.spotifyUrl || '');
     setFormCoverUrl(item.coverUrl || '');
     setFormRating(item.rating || 0);
     setFormStatus(item.status || '');
@@ -91,6 +94,7 @@ export function useLibraryForm() {
       title: formTitle.trim(),
       mediaType: formType,
       notionUrl: formNotionUrl.trim() || undefined,
+      spotifyUrl: formSpotifyUrl.trim() || undefined,
       coverUrl: formCoverUrl.trim() || undefined,
       rating: formRating || undefined,
       status: (formStatus as MediaStatus) || undefined,
@@ -98,7 +102,7 @@ export function useLibraryForm() {
       notes: formNotes.trim() || undefined,
       metadata: Object.keys(cleanMeta).length > 0 ? cleanMeta : undefined,
     };
-  }, [formTitle, formType, formNotionUrl, formCoverUrl, formRating, formStatus, formDateFinished, formNotes, formMetadata]);
+  }, [formTitle, formType, formNotionUrl, formSpotifyUrl, formCoverUrl, formRating, formStatus, formDateFinished, formNotes, formMetadata]);
 
   const saveEdit = useCallback(() => {
     if (!editingId || !formTitle.trim()) return;
@@ -120,6 +124,7 @@ export function useLibraryForm() {
       title: item.title!,
       mediaType: item.mediaType!,
       notionUrl: item.notionUrl,
+      spotifyUrl: item.spotifyUrl,
       coverUrl: item.coverUrl,
       rating: item.rating,
       status: item.status,
@@ -183,6 +188,7 @@ export function useLibraryForm() {
     formTitle, setFormTitle,
     formType, handleFormTypeChange,
     formNotionUrl, setFormNotionUrl,
+    formSpotifyUrl, setFormSpotifyUrl,
     formCoverUrl, setFormCoverUrl,
     formRating, setFormRating,
     formStatus, setFormStatus,

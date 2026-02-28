@@ -7,6 +7,23 @@ import { MediaEditForm } from './MediaEditForm';
 import type { UseLibraryFormReturn } from '@/hooks/useLibraryForm';
 import styles from './MediaDetailView.module.css';
 
+// Helper to reliably format any spotify link (open.spotify.com/...) into the widget embed url
+function formatSpotifyEmbedUrl(url: string): string {
+  try {
+    const rawUrl = new URL(url);
+    if (rawUrl.hostname === 'open.spotify.com') {
+      const parts = rawUrl.pathname.split('/').filter(Boolean);
+      if (parts.length >= 2) {
+        // e.g. ['track', '123456']
+        return `https://open.spotify.com/embed/${parts[0]}/${parts[1]}?utm_source=generator&theme=0&autoplay=1`;
+      }
+    }
+    return url;
+  } catch {
+    return url;
+  }
+}
+
 interface MediaDetailViewProps {
   item: MediaItem;
   form: UseLibraryFormReturn;
@@ -79,6 +96,23 @@ export function MediaDetailView({ item, form }: MediaDetailViewProps) {
                 )}
               </div>
               <MetadataTable item={item} />
+
+              {/* Spotify Embed */}
+              {item.spotifyUrl && (
+                <div className={styles.spotifyEmbed}>
+                  <iframe
+                    src={formatSpotifyEmbedUrl(item.spotifyUrl)}
+                    width="100%"
+                    height="152"
+                    frameBorder="0"
+                    scrolling="no"
+                    style={{ display: 'block', borderRadius: '12px', border: 'none', overflow: 'hidden' }}
+                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                    loading="lazy"
+                    title="Spotify Player"
+                  ></iframe>
+                </div>
+              )}
             </div>
 
             {/* RIGHT: Title + Notes */}

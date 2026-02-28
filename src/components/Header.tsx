@@ -16,17 +16,13 @@ import { formatDate } from "@/utils/formatters";
 import { Calendar } from "./common/Calendar";
 import styles from "./Header.module.css";
 import { useCloudSyncContext } from "@/contexts/CloudSyncContext";
+import { useUIStateContext } from "@/contexts/UIStateContext";
 
 interface HeaderProps {
     isStreaming: boolean;
     pendingTaskCount: number;
     selectedDate: Date | null;
     onDateChange: (date: Date | null) => void;
-    isDark: boolean;
-    onToggleTheme: () => void;
-    onOpenSidebar: () => void;
-    onOpenLeftSidebar: () => void;
-    onOpenSettings: () => void;
 }
 
 export function Header({
@@ -34,14 +30,13 @@ export function Header({
     pendingTaskCount,
     selectedDate,
     onDateChange,
-    isDark,
-    onToggleTheme,
-    onOpenSidebar,
-    onOpenLeftSidebar,
-    onOpenSettings,
 }: HeaderProps) {
     const cloudSync = useCloudSyncContext();
-    const { canToggleMode } = useTheme();
+    const { isDark, toggleTheme: onToggleTheme, canToggleMode } = useTheme();
+    const ui = useUIStateContext();
+    const onOpenSidebar = () => ui.setSidebarOpen(true);
+    const onOpenLeftSidebar = () => ui.setLeftSidebarOpen(true);
+    const onOpenSettings = () => ui.setSettingsOpen(true);
     const [showCalendar, setShowCalendar] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const mobileMenuRef = useRef<HTMLDivElement>(null);

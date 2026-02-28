@@ -15,8 +15,17 @@
 }
 
 @keyframes modalFadeIn {
-  from { opacity: 0; transform: scale(1.02); filter: blur(8px); }
-  to   { opacity: 1; transform: scale(1);    filter: blur(0); }
+  from {
+    opacity: 0;
+    transform: scale(1.02);
+    filter: blur(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
 }
 
 /* ===== Background blur ===== */
@@ -99,7 +108,7 @@
   position: relative;
   z-index: 10;
   width: 100%;
-  max-width: 896px;
+  max-width: 1024px;
   flex: 1;
   display: flex;
   overflow-y: auto;
@@ -107,10 +116,22 @@
   padding: 24px 20px 64px;
 }
 
-.scrollArea::-webkit-scrollbar { width: 6px; }
-.scrollArea::-webkit-scrollbar-track { background: transparent; }
-.scrollArea::-webkit-scrollbar-thumb { background: var(--border-subtle); border-radius: 3px; }
-.scrollArea:hover::-webkit-scrollbar-thumb { background: var(--text-dim); }
+.scrollArea::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollArea::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollArea::-webkit-scrollbar-thumb {
+  background: var(--border-subtle);
+  border-radius: 3px;
+}
+
+.scrollArea:hover::-webkit-scrollbar-thumb {
+  background: var(--text-dim);
+}
 
 /* ===== Detail layout (two-column) ===== */
 .detailLayout {
@@ -120,7 +141,7 @@
 }
 
 .coverColumn {
-  width: 240px;
+  width: 280px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
@@ -129,7 +150,7 @@
 }
 
 .coverColumnEdit {
-  width: 240px;
+  width: 280px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
@@ -139,7 +160,7 @@
 
 .infoColumn {
   flex: 1;
-  padding-left: 40px;
+  padding-left: 10%;
   display: flex;
   flex-direction: column;
 }
@@ -172,9 +193,7 @@
 .metaTable {
   display: flex;
   flex-direction: column;
-  gap: 0;
-  border: 1px solid var(--border-subtle);
-  background-color: var(--bg-secondary);
+  gap: 2px;
 }
 
 .metaRow {
@@ -182,7 +201,9 @@
   align-items: center;
   justify-content: space-between;
   padding: 8px 12px;
-  border-bottom: 1px solid var(--border-subtle);
+  background: color-mix(in srgb, var(--bg-primary) 20%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 
 .metaRowLast {
@@ -190,12 +211,16 @@
   align-items: center;
   justify-content: space-between;
   padding: 8px 12px;
+  background: color-mix(in srgb, var(--bg-primary) 20%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 
 .metaLabel {
   font-size: 9px;
-  color: var(--text-dim);
+  color: var(--text-secondary);
   letter-spacing: 0.05em;
+  opacity: 0.8;
 }
 
 .metaValue {
@@ -241,6 +266,15 @@
   background-color: var(--bg-tertiary);
 }
 
+/* ===== Spotify Embed ===== */
+.spotifyEmbed {
+  margin-top: 12px;
+  border-radius: 12px;
+  /* Spotify embed uses 12px radius */
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
 /* ===== Title ===== */
 .title {
   font-family: "Limelight", "Times New Roman", serif;
@@ -250,6 +284,7 @@
   line-height: 1.2;
   letter-spacing: 0.02em;
   color: var(--text-primary);
+  text-align: left;
 }
 
 /* ===== Notes section ===== */
