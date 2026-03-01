@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS media_items (
   media_type TEXT NOT NULL,
   notion_url TEXT,
   cover_url TEXT,
+  spotify_url TEXT,
   created_at INTEGER NOT NULL,
   rating INTEGER,
   status TEXT,

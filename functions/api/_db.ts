@@ -138,6 +138,7 @@ export function mediaItemRowToObject(row: MediaItemRow): MediaItem {
         mediaType: row.media_type,
         notionUrl: row.notion_url || undefined,
         coverUrl: row.cover_url || undefined,
+        spotifyUrl: row.spotify_url || undefined,
         createdAt: row.created_at,
     };
 
@@ -158,6 +159,7 @@ interface MediaItemRowValues {
     media_type: string;
     notion_url: string | null;
     cover_url: string | null;
+    spotify_url: string | null;
     created_at: number;
     rating: number | null;
     status: string | null;
@@ -176,6 +178,7 @@ export function mediaItemObjectToRow(item: MediaItem): MediaItemRowValues {
         media_type: item.mediaType,
         notion_url: item.notionUrl || null,
         cover_url: item.coverUrl || null,
+        spotify_url: item.spotifyUrl || null,
         created_at: item.createdAt || Date.now(),
         rating: item.rating ?? null,
         status: item.status || null,
@@ -262,14 +265,14 @@ export async function upsertMediaItems(db: D1Database, mediaItems: MediaItem[]):
 
     const stmt = db.prepare(`
     INSERT OR REPLACE INTO media_items
-      (id, title, media_type, notion_url, cover_url, created_at, rating, status, date_finished, notes, metadata)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      (id, title, media_type, notion_url, cover_url, spotify_url, created_at, rating, status, date_finished, notes, metadata)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
     const batches = mediaItems.map(item => {
         const row = mediaItemObjectToRow(item);
         return stmt.bind(
-            row.id, row.title, row.media_type, row.notion_url, row.cover_url, row.created_at,
+            row.id, row.title, row.media_type, row.notion_url, row.cover_url, row.spotify_url, row.created_at,
             row.rating, row.status, row.date_finished, row.notes, row.metadata
         );
     });

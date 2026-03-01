@@ -65,6 +65,7 @@ export interface MediaItemRow {
     media_type: string;
     notion_url: string | null;
     cover_url: string | null;
+    spotify_url: string | null;
     created_at: number;
     rating: number | null;
     status: string | null;
@@ -116,6 +117,7 @@ export interface MediaItem {
     mediaType: string;
     notionUrl?: string;
     coverUrl?: string;
+    spotifyUrl?: string;
     createdAt: number;
     rating?: number;
     status?: string;
