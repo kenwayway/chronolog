@@ -28,16 +28,29 @@ export async function onRequestPost(context: CFContext): Promise<Response> {
 
         // Extract all image filenames from entries
         const usedImages = new Set<string>();
-        for (const row of result.results) {
-            if (row.content) {
-                const matches = row.content.match(/\/api\/image\/([^\s\n]+)/g);
-                if (matches) {
-                    matches.forEach(match => {
-                        const filename = match.replace('/api/image/', '');
-                        usedImages.add(filename);
-                    });
-                }
+        const extractImages = (text: string) => {
+            const matches = text.match(/\/api\/image\/([^\s\n"')]+)/g);
+            if (matches) {
+                matches.forEach(match => {
+                    const filename = match.replace('/api/image/', '');
+                    usedImages.add(filename);
+                });
             }
+        };
+
+        for (const row of result.results) {
+            if (row.content) extractImages(row.content);
+        }
+
+        // Also scan media_items for image references (cover_url, notes, metadata)
+        const mediaResult = await db.prepare(
+            "SELECT cover_url, notes, metadata FROM media_items"
+        ).all<{ cover_url: string | null; notes: string | null; metadata: string | null }>();
+
+        for (const row of mediaResult.results) {
+            if (row.cover_url) extractImages(row.cover_url);
+            if (row.notes) extractImages(row.notes);
+            if (row.metadata) extractImages(row.metadata);
         }
 
         // List ALL objects in R2 (paginated - R2 returns max 1000 per request)
