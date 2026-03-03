@@ -137,16 +137,12 @@ export function LandingPage({ onDismiss }: { onDismiss: () => void }) {
           {/* Row 2 Right: Phrase 2 */}
           <div style={styles.cell3}>
             <div style={styles.phrase2Label}>MORNING MSG</div>
-            <div style={styles.phrase2}>早上好中国，现在我有冰淇凌 🍦</div>
+            <div style={styles.phrase2}>我能吞下玻璃而不伤身体</div>
           </div>
 
           {/* Row 3: Countdown */}
           <div style={styles.cell4}>
-            <span style={styles.countdownLabel}>下一次大冒险还有</span>
-            <div style={styles.countdownValue}>
-              <span style={styles.countdownNumber}>{daysUntilAdventure}</span>
-              <span style={styles.countdownUnit}>天</span>
-            </div>
+            <span style={styles.countdownLabel}>下一次大冒险去哪里？</span>
           </div>
         </div>
 
