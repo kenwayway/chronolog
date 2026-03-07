@@ -61,14 +61,20 @@ function mergeContentTypes(incoming: ContentType[]): ContentType[] {
 // ============================================
 
 function handleLogIn(state: SessionState, payload: LogInPayload): SessionState {
-    const { cleanContent, tags } = parseTags(payload.content)
+    const { cleanContent, tags: parsedTags } = parseTags(payload.content)
+    const finalTags = payload.tags && payload.tags.length > 0
+        ? payload.tags
+        : (parsedTags.length > 0 ? parsedTags : undefined)
     const newEntry: Entry = {
         id: generateId(),
         type: ENTRY_TYPES.SESSION_START,
         content: cleanContent,
         timestamp: Date.now(),
         sessionId: generateId(),
-        tags: tags.length > 0 ? tags : undefined
+        contentType: payload.contentType,
+        fieldValues: payload.fieldValues,
+        category: payload.category,
+        tags: finalTags
     }
     return {
         ...state,
@@ -95,14 +101,20 @@ function handleSwitch(state: SessionState, payload: SwitchPayload): SessionState
         newEntries.push(endEntry)
     }
 
-    const { cleanContent, tags } = parseTags(payload.content)
+    const { cleanContent, tags: parsedTags } = parseTags(payload.content)
+    const finalTags = payload.tags && payload.tags.length > 0
+        ? payload.tags
+        : (parsedTags.length > 0 ? parsedTags : undefined)
     const startEntry: Entry = {
         id: generateId(),
         type: ENTRY_TYPES.SESSION_START,
         content: cleanContent,
         timestamp: now,
         sessionId: newSessionId,
-        tags: tags.length > 0 ? tags : undefined
+        contentType: payload.contentType,
+        fieldValues: payload.fieldValues,
+        category: payload.category,
+        tags: finalTags
     }
     newEntries.push(startEntry)
 

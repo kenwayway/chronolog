@@ -19,8 +19,8 @@ interface NoteOptions {
 
 interface InputPanelProps {
     status: SessionStatus;
-    onLogIn: (content: string) => void;
-    onSwitch: (content: string) => void;
+    onLogIn: (content: string, options?: NoteOptions) => void;
+    onSwitch: (content: string, options?: NoteOptions) => void;
     onNote: (content: string, options?: NoteOptions) => void;
     onLogOff: (content: string) => void;
     followUpEntry: Entry | null;
@@ -202,24 +202,22 @@ export const InputPanel = forwardRef<InputPanelRef, InputPanelProps>(function In
         if (!input.trim() && action !== "logOff") return;
         const content = buildEntryContent();
 
-        switch (action) {
-            case "logIn": onLogIn(content); break;
-            case "switch": onSwitch(content); break;
-            case "note": {
-                // Pass metadata if manually set
-                const options: NoteOptions = {};
-                if (contentType) {
-                    options.contentType = contentType;
-                    // Use fieldValues from state (set by DynamicFieldForm)
-                    if (Object.keys(fieldValues).length > 0) {
-                        options.fieldValues = fieldValues;
-                    }
-                }
-                if (category) options.category = category;
-                if (tags.length > 0) options.tags = tags;
-                onNote(content, Object.keys(options).length > 0 ? options : undefined);
-                break;
+        // Build metadata options for all entry-creating actions
+        const options: NoteOptions = {};
+        if (contentType) {
+            options.contentType = contentType;
+            if (Object.keys(fieldValues).length > 0) {
+                options.fieldValues = fieldValues;
             }
+        }
+        if (category) options.category = category;
+        if (tags.length > 0) options.tags = tags;
+        const hasOptions = Object.keys(options).length > 0;
+
+        switch (action) {
+            case "logIn": onLogIn(content, hasOptions ? options : undefined); break;
+            case "switch": onSwitch(content, hasOptions ? options : undefined); break;
+            case "note": onNote(content, hasOptions ? options : undefined); break;
             case "logOff": onLogOff(content); break;
         }
 

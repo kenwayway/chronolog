@@ -186,10 +186,18 @@ export interface SessionState {
 /** Action payloads */
 export interface LogInPayload {
   content: string
+  contentType?: string
+  fieldValues?: Record<string, unknown>
+  category?: CategoryId
+  tags?: string[]
 }
 
 export interface SwitchPayload {
   content: string
+  contentType?: string
+  fieldValues?: Record<string, unknown>
+  category?: CategoryId
+  tags?: string[]
 }
 
 export interface NotePayload {
@@ -303,8 +311,8 @@ export type SessionAction =
 
 /** Actions returned by useSession */
 export interface SessionActions {
-  logIn: (content: string) => void
-  switchSession: (content: string) => void
+  logIn: (content: string, options?: { contentType?: string; fieldValues?: Record<string, unknown>; category?: CategoryId; tags?: string[] }) => void
+  switchSession: (content: string, options?: { contentType?: string; fieldValues?: Record<string, unknown>; category?: CategoryId; tags?: string[] }) => void
   addNote: (content: string, options?: { contentType?: string; fieldValues?: Record<string, unknown>; category?: CategoryId; tags?: string[] }) => void
   logOff: (content?: string) => void
   deleteEntry: (entryId: string) => void

@@ -46,8 +46,17 @@ export function useSession(): UseSessionReturn {
 
   // --- Actions ---
 
-  const logIn = useCallback((content: string) => {
-    dispatch({ type: ACTIONS.LOG_IN, payload: { content } })
+  const logIn = useCallback((content: string, options?: { contentType?: string; fieldValues?: Record<string, unknown>; category?: CategoryId; tags?: string[] }) => {
+    dispatch({
+      type: ACTIONS.LOG_IN,
+      payload: {
+        content,
+        contentType: options?.contentType,
+        fieldValues: options?.fieldValues,
+        category: options?.category,
+        tags: options?.tags
+      }
+    })
   }, [])
 
   const addNote = useCallback((content: string, options?: { contentType?: string; fieldValues?: Record<string, unknown>; category?: CategoryId; tags?: string[] }) => {
@@ -96,8 +105,17 @@ export function useSession(): UseSessionReturn {
     dispatch({ type: ACTIONS.UPDATE_ENTRY, payload: { entryId, ...updates } })
   }, [])
 
-  const switchSession = useCallback((content: string) => {
-    dispatch({ type: ACTIONS.SWITCH, payload: { content } })
+  const switchSession = useCallback((content: string, options?: { contentType?: string; fieldValues?: Record<string, unknown>; category?: CategoryId; tags?: string[] }) => {
+    dispatch({
+      type: ACTIONS.SWITCH,
+      payload: {
+        content,
+        contentType: options?.contentType,
+        fieldValues: options?.fieldValues,
+        category: options?.category,
+        tags: options?.tags
+      }
+    })
   }, [])
 
   const importData = useCallback((data: ImportDataPayload) => {

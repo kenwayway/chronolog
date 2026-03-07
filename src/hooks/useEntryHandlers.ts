@@ -12,8 +12,8 @@ interface UseEntryHandlersProps {
 
 interface EntryHandlers {
     requireLogin: () => boolean
-    handleLogIn: (content: string) => void
-    handleSwitch: (content: string) => void
+    handleLogIn: (content: string, options?: { contentType?: string; fieldValues?: Record<string, unknown>; category?: CategoryId; tags?: string[] }) => void
+    handleSwitch: (content: string, options?: { contentType?: string; fieldValues?: Record<string, unknown>; category?: CategoryId; tags?: string[] }) => void
     handleNote: (content: string, options?: { contentType?: string; fieldValues?: Record<string, unknown>; category?: CategoryId; tags?: string[] }) => void
     handleLogOff: (content: string) => void
     handleEditEntry: (entry: Entry, openModal: (entry: Entry) => void) => void
@@ -43,12 +43,12 @@ export function useEntryHandlers({
         return true
     }, [isLoggedIn])
 
-    const handleLogIn = useCallback((content: string) => {
-        actions.logIn(content)
+    const handleLogIn = useCallback((content: string, options?: { contentType?: string; fieldValues?: Record<string, unknown>; category?: CategoryId; tags?: string[] }) => {
+        actions.logIn(content, options)
     }, [actions])
 
-    const handleSwitch = useCallback((content: string) => {
-        actions.switchSession(content)
+    const handleSwitch = useCallback((content: string, options?: { contentType?: string; fieldValues?: Record<string, unknown>; category?: CategoryId; tags?: string[] }) => {
+        actions.switchSession(content, options)
     }, [actions])
 
     const handleNote = useCallback((content: string, options?: { contentType?: string; fieldValues?: Record<string, unknown>; category?: CategoryId; tags?: string[] }) => {
