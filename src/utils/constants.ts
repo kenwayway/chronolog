@@ -135,7 +135,7 @@ export const BUILTIN_CONTENT_TYPES: ContentType[] = [
     icon: '⚡',
     fields: [],
     builtIn: true,
-    order: 6,
+    order: 7,
     version: 2  // v2: added icon
   },
   {
@@ -146,7 +146,7 @@ export const BUILTIN_CONTENT_TYPES: ContentType[] = [
       { id: 'mediaId', name: 'Media', type: 'media-select' }
     ],
     builtIn: true,
-    order: 7,
+    order: 8,
     version: 2  // v2: added icon
   }
 ]

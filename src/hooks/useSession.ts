@@ -1,4 +1,4 @@
-import { useReducer, useEffect, useCallback } from 'react'
+import { useReducer, useEffect, useCallback, useMemo } from 'react'
 import { ACTIONS } from '@/utils/constants'
 import { STORAGE_KEYS, getStorage, getStorageRaw, setStorageRaw } from '@/utils/storageService'
 import { SESSION_STATUS } from '@/utils/constants'
@@ -146,27 +146,36 @@ export function useSession(): UseSessionReturn {
     dispatch({ type: ACTIONS.DELETE_MEDIA_ITEM, payload: { id } })
   }, [])
 
+  // Memoize the actions object so consumers don't re-render when state changes.
+  // All individual functions are useCallback with [] deps, so this memo is stable.
+  const actions = useMemo(() => ({
+    logIn,
+    switchSession,
+    addNote,
+    logOff,
+    deleteEntry,
+    editEntry,
+    setApiKey,
+    setAIConfig,
+    setEntryCategory,
+    updateEntry,
+    importData,
+    addContentType,
+    updateContentType,
+    deleteContentType,
+    addMediaItem,
+    updateMediaItem,
+    deleteMediaItem
+  }), [
+    logIn, switchSession, addNote, logOff, deleteEntry, editEntry,
+    setApiKey, setAIConfig, setEntryCategory, updateEntry, importData,
+    addContentType, updateContentType, deleteContentType,
+    addMediaItem, updateMediaItem, deleteMediaItem
+  ])
+
   return {
     state,
     isStreaming: state.status === SESSION_STATUS.STREAMING,
-    actions: {
-      logIn,
-      switchSession,
-      addNote,
-      logOff,
-      deleteEntry,
-      editEntry,
-      setApiKey,
-      setAIConfig,
-      setEntryCategory,
-      updateEntry,
-      importData,
-      addContentType,
-      updateContentType,
-      deleteContentType,
-      addMediaItem,
-      updateMediaItem,
-      deleteMediaItem
-    }
+    actions
   }
 }

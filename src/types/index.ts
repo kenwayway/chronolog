@@ -98,7 +98,7 @@ export interface ContentType {
 // ============================================
 
 /** Built-in content type IDs (type-safe literal union) */
-export type BuiltInContentTypeId = 'note' | 'task' | 'bookmark' | 'mood' | 'workout'
+export type BuiltInContentTypeId = 'note' | 'task' | 'bookmark' | 'mood' | 'workout' | 'vault' | 'beans' | 'sparks' | 'media'
 
 /** Task field values */
 export interface TaskFields {
@@ -141,7 +141,7 @@ export interface MediaFields {
 }
 
 /** Union of all known field value types */
-export type KnownFieldValues = TaskFields | BookmarkFields | MoodFields | WorkoutFields | MediaFields
+export type KnownFieldValues = TaskFields | BookmarkFields | MoodFields | WorkoutFields | VaultFields | MediaFields
 
 /** Field values - known types or unknown for custom content types */
 export type EntryFieldValues = KnownFieldValues | Record<string, unknown>

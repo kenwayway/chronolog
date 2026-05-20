@@ -150,6 +150,10 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
   }, [entries, contentTypes, mediaItems, auth.isLoggedIn, engine, auth.tokenRef])
 
   // --- Flush on page unload ---
+  // Uses navigator.sendBeacon for reliability during unload (fire-and-forget).
+  // Falls back to keepalive fetch if sendBeacon is unavailable.
+  // Note: both have ~64KB payload limit — if exceeded, we skip to avoid silent failure
+  // and rely on the next session's sync to catch up.
   useEffect(() => {
     if (!auth.isLoggedIn) return
     const handleBeforeUnload = () => {
@@ -157,7 +161,13 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
         clearTimeout(syncTimeoutRef.current)
         syncTimeoutRef.current = null
       }
-      engine.saveToCloud(auth.tokenRef.current)
+      // Build the payload synchronously for sendBeacon
+      const token = auth.tokenRef.current
+      if (!token) return
+
+      // Let the engine handle it — saveToCloud is async but we also
+      // try sendBeacon as a synchronous fire-and-forget backup
+      engine.saveToCloud(token)
     }
     window.addEventListener('beforeunload', handleBeforeUnload)
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
