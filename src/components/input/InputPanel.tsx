@@ -45,7 +45,6 @@ export const InputPanel = forwardRef<InputPanelRef, InputPanelProps>(function In
     const [input, setInput] = useState("");
     const [isFocused, setIsFocused] = useState(false);
     const [mobileExpanded, setMobileExpanded] = useState(false);
-    const [textareaHeight, setTextareaHeight] = useState(24);
     const [showImageInput, setShowImageInput] = useState(false);
     const [imageUrl, setImageUrl] = useState("");
     const [showLocationInput, setShowLocationInput] = useState(false);
@@ -128,12 +127,10 @@ export const InputPanel = forwardRef<InputPanelRef, InputPanelProps>(function In
         if (inputRef.current) {
             if (!isFocused) {
                 inputRef.current.style.height = "24px";
-                setTextareaHeight(24);
             } else {
                 inputRef.current.style.height = "24px";
                 const scrollHeight = inputRef.current.scrollHeight;
                 const newHeight = Math.min(Math.max(scrollHeight, 24), 200);
-                setTextareaHeight(newHeight);
                 inputRef.current.style.height = newHeight + "px";
             }
         }
@@ -226,7 +223,6 @@ export const InputPanel = forwardRef<InputPanelRef, InputPanelProps>(function In
         setLocation("");
         setShowImageInput(false);
         setShowLocationInput(false);
-        setTextareaHeight(24);
         setIsFocused(false);
         setMobileExpanded(false);
         setFocusMode(false);

@@ -185,7 +185,6 @@ export function LinkSelector({
                     ) : (
                         filteredEntries.map((entry) => {
                             const isLinked = selectedIds.includes(entry.id);
-                            const date = new Date(entry.timestamp);
                             const isOlder = entry.timestamp < sourceEntry.timestamp;
 
                             return (

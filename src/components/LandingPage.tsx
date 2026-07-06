@@ -1,16 +1,6 @@
-import { useMemo, CSSProperties } from "react";
+import { CSSProperties } from "react";
 
 export function LandingPage({ onDismiss }: { onDismiss: () => void }) {
-  const daysUntilAdventure = useMemo(() => {
-    const now = new Date();
-    const target = new Date(now.getFullYear(), 11, 24);
-    if (now > target) {
-      target.setFullYear(now.getFullYear() + 1);
-    }
-    const diff = target.getTime() - now.getTime();
-    return Math.ceil(diff / (1000 * 60 * 60 * 24));
-  }, []);
-
   const styles: Record<string, CSSProperties> = {
     page: {
       flex: 1,
