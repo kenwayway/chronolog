@@ -188,10 +188,15 @@ export function useSyncEngine({
                     }
                 }
 
-                const now = Date.now()
-                localStorage.setItem(LAST_SYNC_KEY, String(now))
+                // Use the server's lastModified as the incremental cursor.
+                // The ?since= filter compares against server-side updated_at,
+                // so a client clock running ahead of the server would silently
+                // skip writes made by other devices in the skew window.
+                if (remoteData.lastModified != null) {
+                    localStorage.setItem(LAST_SYNC_KEY, String(remoteData.lastModified))
+                }
 
-                setSyncState(prev => ({ ...prev, isSyncing: false, lastSynced: now }))
+                setSyncState(prev => ({ ...prev, isSyncing: false, lastSynced: Date.now() }))
             } catch (error) {
                 setSyncState(prev => ({
                     ...prev,
@@ -263,17 +268,21 @@ export function useSyncEngine({
                     throw new Error(`Save failed (${response.status}): ${errBody}`)
                 }
 
+                // Server clock cursor — see comment in fetchRemoteData
+                const result = await response.json().catch(() => null) as { lastModified?: number } | null
+
                 pendingDeletedIdsRef.current = []
                 hasUnsyncedChangesRef.current = false
 
-                const now = Date.now()
-                localStorage.setItem(LAST_SYNC_KEY, String(now))
+                if (result?.lastModified != null) {
+                    localStorage.setItem(LAST_SYNC_KEY, String(result.lastModified))
+                }
 
                 prevEntriesRef.current = [...currentEntries]
                 prevContentTypesRef.current = [...currentContentTypes]
                 prevMediaItemsRef.current = [...currentMediaItems]
 
-                setSyncState(prev => ({ ...prev, isSyncing: false, lastSynced: now }))
+                setSyncState(prev => ({ ...prev, isSyncing: false, lastSynced: Date.now() }))
             } catch (error) {
                 hasUnsyncedChangesRef.current = true
                 setSyncState(prev => ({
