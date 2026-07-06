@@ -5,7 +5,6 @@ import type { Entry, ContentType } from '@/types'
 // Minimal content types for testing
 const testContentTypes: ContentType[] = [
     { id: 'note', name: 'Note', fields: [], builtIn: true },
-    { id: 'task', name: 'Task', fields: [{ id: 'done', name: 'Done', type: 'boolean' }], builtIn: true },
     {
         id: 'workout', name: 'Workout', fields: [
             { id: 'workoutType', name: 'Type', type: 'dropdown', options: ['Strength', 'Cardio'] },
@@ -74,8 +73,8 @@ describe('migrateEntries', () => {
 
     it('leaves valid entries unchanged', () => {
         const entry = makeEntry({
-            contentType: 'task',
-            fieldValues: { done: false },
+            contentType: 'workout',
+            fieldValues: { workoutType: 'Strength', duration: 30 },
             category: 'craft',
         })
         const result = migrateEntries([entry], testContentTypes)

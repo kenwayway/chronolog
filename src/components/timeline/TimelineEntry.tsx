@@ -9,7 +9,7 @@ import { BookmarkDisplay, MoodDisplay, WorkoutDisplay, VaultDisplay, MediaDispla
 import { ImageLightbox } from "../common/ImageLightbox";
 import styles from "./TimelineEntry.module.css";
 import type { Entry, Category, MediaItem } from "@/types";
-import { isTaskEntry, getBookmarkFields, getMoodFields, getWorkoutFields, getVaultFields, getMediaFields } from "@/types/guards";
+import { getBookmarkFields, getMoodFields, getWorkoutFields, getVaultFields, getMediaFields } from "@/types/guards";
 
 interface Position {
   x: number;
@@ -28,12 +28,10 @@ interface TimelineEntryProps {
   categories: Category[];
   onContextMenu?: (entry: Entry, position: Position) => void;
   onEdit?: (entry: Entry) => void;
-  onDeleteAIComment?: (entry: Entry) => void;
   lineState: LineState | string;
   isLightMode: boolean;
   showDate?: boolean;
   onNavigateToEntry?: (entry: Entry) => void;
-  showAIComment?: boolean;
   mediaItems?: MediaItem[];
 }
 
@@ -50,12 +48,10 @@ export const TimelineEntry = memo(function TimelineEntry({
   categories,
   onContextMenu,
   onEdit,
-  onDeleteAIComment,
   lineState,
   isLightMode,
   showDate = false,
   onNavigateToEntry,
-  showAIComment = true,
   mediaItems = [],
 }: TimelineEntryProps) {
   const { symbols } = useTheme();
@@ -104,8 +100,6 @@ export const TimelineEntry = memo(function TimelineEntry({
 
   const isSessionStart = entry.type === ENTRY_TYPES.SESSION_START;
   const isSessionEnd = entry.type === ENTRY_TYPES.SESSION_END;
-  const isTask = entry.contentType === 'task';
-  const isTaskDone = isTaskEntry(entry) && entry.fieldValues.done;
 
   // Linked entries
   const linkedEntryData = useMemo(() => {
@@ -140,14 +134,6 @@ export const TimelineEntry = memo(function TimelineEntry({
       return <span style={{ ...styles, color: 'var(--accent)' }}>{symbols.sparks}</span>;
     }
 
-    if (entry.contentType === 'task') {
-      const isDone = isTaskEntry(entry) ? entry.fieldValues.done : false;
-      if (isDone) {
-        return <span style={{ ...styles, color: "var(--success)", fontWeight: 700 }}>{symbols.done}</span>;
-      }
-      return <span style={{ ...styles, color: "var(--warning)" }}>{symbols.todo}</span>;
-    }
-
     switch (entry.type) {
       case ENTRY_TYPES.SESSION_START:
         return <span style={{ ...styles, color: "var(--success)", fontWeight: 700, fontSize: 14 }}>{symbols.sessionStart}</span>;
@@ -169,15 +155,13 @@ export const TimelineEntry = memo(function TimelineEntry({
   const getContentColor = (): string => {
     if (isSessionStart) return "var(--text-primary)";
     if (isSessionEnd) return "var(--text-muted)";
-    if (isTaskDone) return "var(--text-muted)";
-    if (isTask) return "var(--warning)";
     return "var(--text-secondary)";
   };
 
   return (
     <>
       <div
-        className={`${styles.entry} ${isTaskDone ? styles.entryDone : ''}`}
+        className={styles.entry}
         data-entry-id={entry.id}
         style={{
           display: "flex",
@@ -305,25 +289,11 @@ export const TimelineEntry = memo(function TimelineEntry({
                   whiteSpace: "pre-wrap",
                   color: getContentColor(),
                   fontStyle: isSessionEnd ? "italic" : "normal",
-                  textDecoration: isTaskDone ? "line-through" : "none",
                 }}
               >
                 <ContentRenderer content={entry.content} onImageClick={setLightboxImage} />
               </span>
             )}
-
-            {isTaskDone && (
-              <span style={{ fontSize: 11, color: "var(--success)", fontWeight: 700, userSelect: "none" }}>
-                {"[DONE]" as any}
-              </span>
-            )}
-
-            {isTask && !isTaskDone && (
-              <span style={{ fontSize: 11, color: "var(--warning)", fontWeight: 700, userSelect: "none" }}>
-                [TODO]
-              </span>
-            )}
-
 
           </div>
 
@@ -394,34 +364,6 @@ export const TimelineEntry = memo(function TimelineEntry({
             </div>
           )}
 
-          {/* AI Comment */}
-          {showAIComment && entry.aiComment && (
-            <div
-              className={styles.aiCommentWrapper}
-              onContextMenu={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onDeleteAIComment?.(entry);
-              }}
-              onTouchStart={(e) => {
-                e.stopPropagation();
-                const timer = setTimeout(() => {
-                  onDeleteAIComment?.(entry);
-                }, 500);
-                const el = e.currentTarget;
-                const cleanup = () => { clearTimeout(timer); el.removeEventListener('touchend', cleanup); el.removeEventListener('touchcancel', cleanup); };
-                el.addEventListener('touchend', cleanup);
-                el.addEventListener('touchcancel', cleanup);
-              }}
-            >
-              <div className={styles.aiComment}>
-                <span className={styles.aiCommentLabel}>Zaddy:</span>
-                <p className={styles.aiCommentText}>
-                  {entry.aiComment}
-                </p>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 

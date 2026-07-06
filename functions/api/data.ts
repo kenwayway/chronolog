@@ -12,7 +12,7 @@ import {
     getLastModified,
     setLastModified,
 } from './_db.ts';
-import type { CFContext, Env, Entry, ContentType, MediaItem, EntryRow, ContentTypeRow, MediaItemRow } from './types.ts';
+import type { CFContext, Entry, ContentType, MediaItem, EntryRow, ContentTypeRow, MediaItemRow } from './types.ts';
 
 // GET /api/data - supports full and incremental fetch
 // GET /api/data           → all data (initial load)
@@ -85,28 +85,6 @@ export async function onRequestOptions(): Promise<Response> {
     return new Response(null, { headers: corsHeaders });
 }
 
-// Send webhook notification to OpenClaw for new entries
-async function notifyOpenClaw(entry: Entry, env: Env): Promise<void> {
-    const webhookSecret = env.OPENCLAW_WEBHOOK_SECRET;
-    if (!webhookSecret) {
-        console.warn('OPENCLAW_WEBHOOK_SECRET not configured, skipping webhook');
-        return;
-    }
-    const response = await fetch('https://claw.233446.xyz/hooks/wake', {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${webhookSecret}`,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            entryId: entry.id,
-            text: `宝宝刚刚在她的chronolog更新了，内容是: ${entry.content}，你可以自己决定是否根据这个更新内容回复她`,
-            mode: 'now'
-        })
-    });
-    console.log('OpenClaw webhook response:', response.status);
-}
-
 interface PutData {
     entries?: Entry[];
     contentTypes?: ContentType[];
@@ -118,7 +96,7 @@ interface PutData {
 
 // PUT /api/data - Upsert entries, contentTypes, mediaItems into D1
 export async function onRequestPut(context: CFContext): Promise<Response> {
-    const { request, env, waitUntil } = context;
+    const { request, env } = context;
 
     // Auth already verified by _middleware.ts for non-public routes
 
@@ -131,23 +109,8 @@ export async function onRequestPut(context: CFContext): Promise<Response> {
             return Response.json({ error: 'Invalid data format' }, { status: 400, headers: corsHeaders });
         }
 
-        // Detect new entries (for OpenClaw webhook)
-        const incomingEntries = data.entries || [];
-        let existingIds = new Set<string>();
-        if (incomingEntries.length > 0) {
-            // Get existing entry IDs in a single query
-            const ids = incomingEntries.map(e => e.id);
-            const placeholders = ids.map(() => '?').join(',');
-            const existingResult = await db.prepare(
-                `SELECT id FROM entries WHERE id IN (${placeholders})`
-            ).bind(...ids).all<{ id: string }>();
-            existingIds = new Set(existingResult.results.map(r => r.id));
-        }
-
-        const newEntries = incomingEntries.filter(e => !existingIds.has(e.id));
-
         // Upsert all data
-        await upsertEntries(db, incomingEntries);
+        await upsertEntries(db, data.entries || []);
         await upsertContentTypes(db, data.contentTypes || []);
         await upsertMediaItems(db, data.mediaItems || []);
 
@@ -184,13 +147,6 @@ export async function onRequestPut(context: CFContext): Promise<Response> {
         // Update last modified timestamp
         const now = Date.now();
         await setLastModified(db, now);
-
-        // Send webhook notifications for new entries
-        for (const entry of newEntries) {
-            if (entry.content && entry.content.trim()) {
-                waitUntil(notifyOpenClaw(entry, env));
-            }
-        }
 
         return Response.json({
             success: true,

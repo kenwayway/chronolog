@@ -14,7 +14,7 @@ interface EditModalProps {
 }
 
 export function EditModal({ isOpen, entry, onSave, onClose }: EditModalProps) {
-  const { state: { entries: allEntries, contentTypes: ctFromContext, mediaItems }, categories, actions: { addMediaItem: onAddMediaItem, updateMediaItem: onUpdateMediaItem } } = useSessionContext();
+  const { state: { entries: allEntries, contentTypes: ctFromContext, mediaItems }, actions: { addMediaItem: onAddMediaItem, updateMediaItem: onUpdateMediaItem } } = useSessionContext();
   const types = ctFromContext.length > 0 ? ctFromContext : BUILTIN_CONTENT_TYPES;
   // Content state
   const [content, setContent] = useState("");
@@ -44,7 +44,7 @@ export function EditModal({ isOpen, entry, onSave, onClose }: EditModalProps) {
   useEffect(() => {
     if (isOpen && entry) {
       // Parse content for image and location
-      let mainContent = entry.content || "";
+      const mainContent = entry.content || "";
       let extractedImage = "";
       let extractedLocation = "";
 
@@ -314,17 +314,6 @@ export function EditModal({ isOpen, entry, onSave, onClose }: EditModalProps) {
                 <MapPin size={16} />
               </button>
 
-              {/* Task done checkbox */}
-              {contentType === 'task' && (
-                <label className="flex items-center gap-2" style={{ cursor: 'pointer' }}>
-                  <input
-                    type="checkbox"
-                    checked={(fieldValues.done as boolean) || false}
-                    onChange={(e) => setFieldValues(prev => ({ ...prev, done: e.target.checked }))}
-                  />
-                  <span style={{ fontSize: 10, color: "var(--text-dim)" }}>DONE</span>
-                </label>
-              )}
             </div>
 
             <button onClick={handleSave} className="btn-action btn-action-primary">

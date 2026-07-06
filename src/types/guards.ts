@@ -1,14 +1,8 @@
-import type { Entry, TaskFields, BookmarkFields, MoodFields, WorkoutFields, VaultFields, MediaFields } from './index'
+import type { Entry, BookmarkFields, MoodFields, WorkoutFields, VaultFields, MediaFields } from './index'
 
 // ============================================
 // Typed Entry interfaces (narrowed)
 // ============================================
-
-/** Entry with task content type */
-export interface TaskEntry extends Entry {
-    contentType: 'task'
-    fieldValues: TaskFields
-}
 
 /** Entry with bookmark content type */
 export interface BookmarkEntry extends Entry {
@@ -44,11 +38,6 @@ export interface MediaEntry extends Entry {
 // Type Guards
 // ============================================
 
-/** Check if entry is a task */
-export function isTaskEntry(entry: Entry): entry is TaskEntry {
-    return entry.contentType === 'task' && entry.fieldValues !== undefined
-}
-
 /** Check if entry is a bookmark */
 export function isBookmarkEntry(entry: Entry): entry is BookmarkEntry {
     return entry.contentType === 'bookmark' && entry.fieldValues !== undefined
@@ -77,11 +66,6 @@ export function isMediaEntry(entry: Entry): entry is MediaEntry {
 // ============================================
 // Field Value Helpers
 // ============================================
-
-/** Safely get task fields (returns undefined if not a task) */
-export function getTaskFields(entry: Entry): TaskFields | undefined {
-    return isTaskEntry(entry) ? entry.fieldValues : undefined
-}
 
 /** Safely get bookmark fields */
 export function getBookmarkFields(entry: Entry): BookmarkFields | undefined {

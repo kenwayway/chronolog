@@ -23,9 +23,6 @@ export interface ThemeConfig {
     sessionStart: string
     sessionEnd: string
     note: string
-    todo: string
-    done: string
-    pending: string
     beans: string
     sparks: string
   }

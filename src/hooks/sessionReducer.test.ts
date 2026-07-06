@@ -219,18 +219,6 @@ describe('UPDATE_ENTRY', () => {
         expect(result.entries[0].content).toBe('test') // Unchanged
     })
 
-    it('can clear aiComment with explicit undefined', () => {
-        const entry = makeEntry({ id: 'e1', aiComment: 'old comment' })
-        const state = stateWith({ entries: [entry] })
-
-        const result = sessionReducer(state, {
-            type: ACTIONS.UPDATE_ENTRY,
-            payload: { entryId: 'e1', aiComment: undefined },
-        })
-
-        expect(result.entries[0].aiComment).toBeUndefined()
-    })
-
     it('clears tags when empty array provided', () => {
         const entry = makeEntry({ id: 'e1', tags: ['old'] })
         const state = stateWith({ entries: [entry] })

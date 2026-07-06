@@ -68,13 +68,11 @@ Return ONLY a valid JSON object with these fields:
 
 Content type detection rules:
 - If entry contains a URL (http/https) that is NOT an image (not ending in .jpg, .jpeg, .png, .gif, .webp, .svg, .ico), it's likely a "bookmark"
-- If entry is a todo/reminder/action item (买/记得/要/todo), it's "task"
 - If entry expresses feelings, emotions, or mood (feeling/心情/feel/累/开心/sad/happy/tired/stressed/anxious), it's "mood"
 - If entry describes exercise/workout/running/gym/training/锻炼/跑步/健身, it's "workout"
 - Otherwise, it's "note"
 
 FieldValues by content type:
-- task: {done: false}
 - bookmark: {url: "extracted URL", title: "title from content", type: "Article"|"Video"|"Tool"|"Paper", status: "Inbox"}
 - mood: {feeling: "Happy"|"Calm"|"Tired"|"Anxious"|"Sad"|"Angry", energy: 1-5, trigger: "Work"|"Health"|"Social"|"Money"|"Family"|"Sleep"|"Weather"|"Other"}
 - workout: {workoutType: "Strength"|"Cardio"|"Flexibility"|"Mixed", place: "Home"|"In Building Gym"|"Outside Gym", exercises: "comma-separated exercise names"}
@@ -88,7 +86,6 @@ Vault hints: if content contains "obsidian://" URL, use vault contentType. Extra
 
 Example responses:
 {"category":"hustle","contentType":"note","fieldValues":null}
-{"category":"craft","contentType":"task","fieldValues":{"done":false}}
 {"category":"sparks","contentType":"bookmark","fieldValues":{"url":"https://example.com/article","title":"Great Article","type":"Article","status":"Inbox"}}
 {"category":"hardware","contentType":"mood","fieldValues":{"feeling":"Tired","energy":2,"trigger":"Work"}}
 {"category":"hardware","contentType":"workout","fieldValues":{"workoutType":"Strength","place":"Outside Gym","exercises":"bench press, squat, deadlift"}}

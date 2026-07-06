@@ -19,8 +19,6 @@ interface EditModalState {
 
 export interface UIState {
     // Sidebars & modals
-    sidebarOpen: boolean
-    setSidebarOpen: (open: boolean) => void
     leftSidebarOpen: boolean
     setLeftSidebarOpen: (open: boolean) => void
     settingsOpen: boolean
@@ -52,7 +50,6 @@ export interface UIState {
 
 export function useUIState(): UIState {
     // Panel states
-    const [sidebarOpen, setSidebarOpen] = useState(false)
     const [leftSidebarOpen, setLeftSidebarOpen] = useState(false)
     const [settingsOpen, setSettingsOpen] = useState(false)
     const [showLanding, setShowLanding] = useState(true)
@@ -104,7 +101,6 @@ export function useUIState(): UIState {
     }, [])
 
     return {
-        sidebarOpen, setSidebarOpen,
         leftSidebarOpen, setLeftSidebarOpen,
         settingsOpen, setSettingsOpen,
         showLanding, setShowLanding,

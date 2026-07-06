@@ -11,10 +11,6 @@
   background-color: var(--bg-secondary);
 }
 
-.entryDone .contentCol {
-  opacity: 0.7;
-}
-
 /* Timeline Images */
 .imageContainer {
   margin-top: 8px;
@@ -169,47 +165,3 @@
   }
 }
 
-/* AI Comment */
-.aiCommentWrapper {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 12px;
-}
-
-.aiComment {
-  display: inline-block;
-  max-width: 80%;
-  padding: 10px 14px;
-  background-color: var(--bg-secondary);
-  border: 1px solid var(--border-subtle);
-  border-radius: 0;
-}
-
-.aiCommentLabel {
-  display: block;
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--accent);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 4px;
-  opacity: 0.9;
-}
-
-.aiCommentText {
-  margin: 0;
-  font-size: 13px;
-  color: var(--text-secondary);
-  line-height: 1.6;
-}
-
-@media (max-width: 640px) {
-  .aiComment {
-    max-width: 90%;
-    padding: 8px 12px;
-  }
-
-  .aiCommentText {
-    font-size: 13px;
-  }
-}

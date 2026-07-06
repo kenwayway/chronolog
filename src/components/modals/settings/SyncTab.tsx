@@ -1,10 +1,9 @@
 import { useState, useRef, KeyboardEvent, ChangeEvent } from 'react';
 import { Download, Upload, Check, FolderOpen, Cloud, CloudOff, RefreshCw, Trash2 } from 'lucide-react';
-import type { Entry, Category, ContentType, MediaItem, CloudSyncFull, GoogleTasksStatus } from '@/types';
+import type { Entry, Category, ContentType, MediaItem, CloudSyncFull } from '@/types';
 
 interface ImportData {
     entries: Entry[];
-    tasks: unknown[];
     categories?: Category[];
     contentTypes?: ContentType[];
     mediaItems?: MediaItem[];
@@ -18,9 +17,7 @@ interface CleanupResult {
 
 interface SyncTabProps {
     cloudSync?: CloudSyncFull;
-    googleTasks?: GoogleTasksStatus;
     entries?: Entry[];
-    tasks?: unknown[];
     categories?: Category[];
     contentTypes?: ContentType[];
     mediaItems?: MediaItem[];
@@ -28,13 +25,11 @@ interface SyncTabProps {
 }
 
 /**
- * Sync settings tab - cloud sync, Google Tasks, data import/export
+ * Sync settings tab - cloud sync, data import/export
  */
 export function SyncTab({
     cloudSync,
-    googleTasks,
     entries,
-    tasks,
     categories,
     contentTypes,
     mediaItems,
@@ -49,7 +44,6 @@ export function SyncTab({
     const handleExport = () => {
         const data = {
             entries,
-            tasks,
             categories,
             contentTypes,
             mediaItems,
@@ -77,7 +71,6 @@ export function SyncTab({
                 if (data.entries) {
                     onImportData({
                         entries: data.entries,
-                        tasks: data.tasks || [],
                         categories: data.categories,
                         contentTypes: data.contentTypes,
                         mediaItems: data.mediaItems,
@@ -186,42 +179,6 @@ export function SyncTab({
                 )}
             </div>
 
-            {/* Google Tasks */}
-            <div>
-                <div className="settings-section-label">GOOGLE TASKS</div>
-                {googleTasks?.isLoggedIn ? (
-                    <div className="space-y-2">
-                        <div className="settings-sync-status">
-                            <Cloud size={14} style={{ color: "var(--success)" }} />
-                            <span style={{ flex: 1, fontSize: 12, color: "var(--text-primary)" }}>已连接 Google Tasks</span>
-                        </div>
-                        <button
-                            onClick={() => googleTasks.logout()}
-                            className="btn-action btn-action-secondary"
-                            style={{ width: "100%", justifyContent: "center", color: "var(--error)" }}
-                        >
-                            <CloudOff size={14} />
-                            断开连接
-                        </button>
-                        <p className="settings-hint">右键条目选择"MARK TODO"添加到 Google Tasks</p>
-                    </div>
-                ) : (
-                    <div className="space-y-2">
-                        <button
-                            onClick={() => googleTasks?.login()}
-                            disabled={googleTasks?.isLoading}
-                            className="btn-action btn-action-primary"
-                            style={{ width: "100%", justifyContent: "center" }}
-                        >
-                            <Cloud size={14} />
-                            {googleTasks?.isLoading ? "连接中..." : "连接 Google Tasks"}
-                        </button>
-                        {googleTasks?.error && <p className="settings-error">{googleTasks.error}</p>}
-                        <p className="settings-hint">连接后任务会同步到 Google Tasks</p>
-                    </div>
-                )}
-            </div>
-
             {/* Import/Export */}
             <div>
                 <div className="settings-section-label">DATA</div>
@@ -257,7 +214,7 @@ export function SyncTab({
                     />
                 </div>
                 <p className="settings-hint" style={{ marginTop: 8 }}>
-                    {entries?.length || 0} 条记录 · {tasks?.length || 0} 个任务
+                    {entries?.length || 0} 条记录
                 </p>
             </div>
 

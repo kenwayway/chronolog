@@ -16,9 +16,9 @@ npm run build    # Build for production
 | **Frontend** | React 19, TypeScript, Vite, CSS Modules + Vanilla CSS |
 | **Backend** | Cloudflare Pages Functions (TypeScript) |
 | **Data Storage** | Cloudflare D1 (SQLite) |
-| **Auth/Config** | Cloudflare KV (auth tokens, AI config) |
+| **Auth/Config** | Cloudflare KV (auth tokens) |
 | **Image Storage** | Cloudflare R2 |
-| **AI** | OpenAI-compatible API (categorization + AI comments) |
+| **AI** | OpenAI-compatible API (categorization) |
 | **PWA** | vite-plugin-pwa, Workbox service worker |
 
 ---
@@ -37,11 +37,10 @@ interface Entry {
   sessionId?: string            // SESSION_START only
   duration?: number             // SESSION_END only (ms since session start)
   category?: CategoryId         // Life area category
-  contentType?: string          // 'note' | 'task' | 'bookmark' | 'mood' | 'workout' | 'beans' | 'sparks' | 'media' | custom
+  contentType?: string          // 'note' | 'bookmark' | 'mood' | 'workout' | 'beans' | 'sparks' | 'media' | custom
   fieldValues?: Record<string, unknown>  // Dynamic field values
   linkedEntries?: string[]      // Bidirectional linked entry IDs
   tags?: string[]               // Free-form tags (without # prefix)
-  aiComment?: string            // AI-generated comment (collapsible bubble)
 }
 ```
 
@@ -64,7 +63,6 @@ ContentTypes define schemas for structured entries. Built-in types:
 | ID | Name | Fields |
 |----|------|--------|
 | `note` | Note | (none) |
-| `task` | Task | `done: boolean` |
 | `bookmark` | Bookmark | `url, title, type (Article/Video/Tool/Paper), status (Inbox/Reading/Archived)` |
 | `mood` | Mood | `feeling (Happy/Excited/Calm/Tired/Anxious/Sad/Angry), energy (1-5), trigger` |
 | `workout` | Workout | `workoutType (Strength/Flexibility/Mixed), duration, exercises` |
@@ -116,7 +114,6 @@ interface SessionState {
   apiKey: string | null         // OpenAI API key
   aiBaseUrl: string             // AI endpoint base URL
   aiModel: string               // AI model name
-  aiPersona?: string            // Customizable AI persona/system prompt
 }
 ```
 
@@ -138,19 +135,19 @@ interface SessionState {
 │  │  │  │ debounced   │ │ ref-equality │ │ categorize)  │  │  │  │
 │  │  │  │ persist)    │ │ diffing)     │ │              │  │  │  │
 │  │  │  └─────────────┘ └──────────────┘ └──────────────┘  │  │  │
-│  │  │  ┌──────────────┐ ┌──────────────┐ ┌─────────────┐  │  │  │
-│  │  │  │useEntryHandl.│ │useAutoCateg. │ │useGoogleTask│  │  │  │
-│  │  │  └──────────────┘ └──────────────┘ └─────────────┘  │  │  │
+│  │  │  ┌──────────────┐ ┌──────────────┐                  │  │  │
+│  │  │  │useEntryHandl.│ │useAutoCateg. │                  │  │  │
+│  │  │  └──────────────┘ └──────────────┘                  │  │  │
 │  │  └──────────────────────────────────────────────────────┘  │  │
 │  └────────────────────────────────────────────────────────────┘  │
 └──────────────────────────────────────────────────────────────────┘
                 │              │              │              │
     ┌───────────┘    ┌─────────┘    ┌─────────┘    ┌────────┘
     ▼                ▼              ▼              ▼
-┌────────┐    ┌──────────┐   ┌──────────┐   ┌───────────┐
-│ Header │    │ Timeline │   │InputPanel│   │TasksPanel │
-│        │    │(memoized)│   │(+Focus)  │   │           │
-└────────┘    └──────────┘   └──────────┘   └───────────┘
+┌────────┐    ┌──────────┐   ┌──────────┐   ┌─────────────┐
+│ Header │    │ Timeline │   │InputPanel│   │ActivityPanel│
+│        │    │(memoized)│   │(+Focus)  │   │             │
+└────────┘    └──────────┘   └──────────┘   └─────────────┘
                    │              │
     ┌──────────────┤              │
     ▼              ▼              ▼
@@ -168,8 +165,6 @@ Additional panels: `ActivityPanel` (left sidebar — calendar heatmap, category 
 4. **Cloud Sync** → `useCloudSync` uses reference-equality diffing to detect changes, PUTs only modified entries to `/api/data` (D1 incremental upsert)
 5. **Polling** → Every 30s, fetches remote changes from other devices (incremental via `?since=`)
 6. **AI Detection** → `useAutoCategorize` triggers `/api/categorize` for new entries → auto-detects category + contentType + fieldValues
-7. **Webhook** → Backend notifies OpenClaw on new entries for AI comment generation
-8. **AI Comments** → OpenClaw writes back via `POST /api/entries/:id/comment` → synced to client on next poll
 
 ---
 
@@ -203,9 +198,8 @@ Additional panels: `ActivityPanel` (left sidebar — calendar heatmap, category 
 │   │   │   ├── SettingsModal.tsx       # Settings (tabs: Appearance, Sync, etc.)
 │   │   │   └── settings/
 │   │   │       ├── AppearanceTab.tsx   # Theme, accent color settings
-│   │   │       └── SyncTab.tsx         # Cloud sync, Google Tasks config
+│   │   │       └── SyncTab.tsx         # Cloud sync, data import/export
 │   │   ├── panels/
-│   │   │   ├── TasksPanel.tsx          # Right sidebar: tasks + Google Tasks
 │   │   │   └── ActivityPanel.tsx       # Left sidebar: calendar heatmap, category filter
 │   │   └── timeline/
 │   │       ├── Timeline.tsx            # Entry list (memoized sorting + session durations)
@@ -220,8 +214,7 @@ Additional panels: `ActivityPanel` (left sidebar — calendar heatmap, category 
 │   │   ├── useAICategories.ts  # Server-side AI categorization (calls /api/categorize)
 │   │   ├── useAutoCategorize.ts # Auto-triggers categorization for new entries
 │   │   ├── useEntryHandlers.ts # Entry action handlers (extracted from App)
-│   │   ├── useCategories.ts    # Category list provider
-│   │   └── useGoogleTasks.ts   # Google Tasks OAuth + CRUD
+│   │   └── useCategories.ts    # Category list provider
 │   ├── styles/
 │   │   ├── base.css            # CSS variables, reset, design tokens
 │   │   ├── index.css           # Import aggregator
@@ -251,15 +244,12 @@ Additional panels: `ActivityPanel` (left sidebar — calendar heatmap, category 
 │       ├── _auth.ts            # Shared auth helpers (verifyAuth, corsHeaders)
 │       ├── _db.ts              # D1 helpers (row↔object mapping, upsert, batch)
 │       ├── auth.ts             # POST /api/auth (password → multi-device token)
-│       ├── data.ts             # GET/PUT /api/data (D1 incremental sync + OpenClaw webhook)
+│       ├── data.ts             # GET/PUT /api/data (D1 incremental sync)
 │       ├── categorize.ts       # POST /api/categorize (AI category + contentType detection)
-│       ├── ai-config.ts        # GET/PUT /api/ai-config (AI comment configuration)
 │       ├── upload.ts           # POST /api/upload (image → R2)
 │       ├── cleanup.ts          # POST /api/cleanup (R2 unreferenced image cleanup)
 │       ├── entries/
-│       │   ├── public.ts       # GET /api/entries/public?token= (read-only external API)
-│       │   └── [id]/
-│       │       └── comment.ts  # POST /api/entries/:id/comment (OpenClaw webhook writes AI comments)
+│       │   └── public.ts       # GET /api/entries/public?token= (read-only external API)
 │       └── image/
 │           └── [id].ts         # GET /api/image/:id (R2 image serving)
 ├── wrangler.toml               # Cloudflare bindings (D1, KV, R2)
@@ -281,7 +271,7 @@ import styles from './Component.module.css';
 </div>
 ```
 
-**Migrated Components:** Header, InputPanel, EditModal, TimelineEntry, Calendar, ContextMenu, Dropdown, SettingsModal, TasksPanel
+**Migrated Components:** Header, InputPanel, EditModal, TimelineEntry, Calendar, ContextMenu, Dropdown, SettingsModal, ActivityPanel
 
 ### CSS Variables
 Use design tokens from `base.css`:
@@ -338,7 +328,7 @@ Shared component for editing entry metadata. Used by:
 | `LOG_OFF` | End session, creates SESSION_END with duration |
 | `DELETE_ENTRY` | Remove entry |
 | `EDIT_ENTRY` | Update entry content only |
-| `UPDATE_ENTRY` | Update content, timestamp, category, contentType, fieldValues, linkedEntries, tags, type, aiComment |
+| `UPDATE_ENTRY` | Update content, timestamp, category, contentType, fieldValues, linkedEntries, tags, type |
 | `SET_ENTRY_CATEGORY` | Set category on an entry |
 | `SET_API_KEY` | Update client-side AI API key |
 | `SET_AI_CONFIG` | Update AI settings (apiKey, baseUrl, model) |
@@ -357,6 +347,7 @@ Shared component for editing entry metadata. Used by:
 
 ### Performance Notes
 - **Sync diffing** uses reference equality (`prev !== entry`) instead of JSON.stringify — relies on reducer's immutable update pattern where modified objects get new references
+- **Sync cursor** (`chronolog_last_sync_at`) stores the server-returned `lastModified`, not the client clock, so incremental fetches can't miss writes due to clock skew
 - **localStorage writes** are debounced (500ms) with `beforeunload` flush to avoid serializing full state on every keystroke
 - **Timeline** memoizes sorted entries and session duration/line-state calculations via `useMemo`
 
@@ -378,11 +369,13 @@ Response 401: { "error": "Invalid password" }
 
 ### Data Sync (D1)
 ```http
-# Full fetch — no auth required (public read)
+# Full fetch (requires auth)
 GET /api/data
+Authorization: Bearer <token>
 
-# Incremental fetch — only changes since timestamp
+# Incremental fetch — only changes since timestamp (server clock)
 GET /api/data?since=<timestamp>
+Authorization: Bearer <token>
 
 Response 200: {
   "entries": Entry[],
@@ -409,7 +402,7 @@ Body: {
 Response 200: { "success": true, "lastModified": number }
 ```
 
-Note: PUT triggers OpenClaw webhook for new entries (sends entry content to external AI for comment generation).
+Note: the client stores the server-returned `lastModified` as its incremental sync cursor (`?since=`), so the cursor and `updated_at` share the same clock.
 
 ### AI Categorization + ContentType Detection
 ```http
@@ -427,33 +420,8 @@ Response 200: {
 ```
 
 **AI Detection Examples:**
-- Input: "买牛奶" → `{contentType: "task", fieldValues: {done: false}, category: "hustle"}`
 - Input: "Feeling tired after work" → `{contentType: "mood", fieldValues: {feeling: "Tired", trigger: "Work"}, category: "hardware"}`
 - Input: "https://example.com/article" → `{contentType: "bookmark", fieldValues: {url: "...", status: "Inbox"}}`
-
-### AI Comment Config
-```http
-# Get current AI comment configuration
-GET /api/ai-config
-Authorization: Bearer <token>
-
-Response 200: { "hasApiKey": boolean, "baseUrl": "string", "model": "string", "persona": "string" }
-
-# Update AI comment configuration (non-sensitive fields only)
-PUT /api/ai-config
-Authorization: Bearer <token>
-Body: { "baseUrl?": "string", "model?": "string", "persona?": "string" }
-```
-
-### External Comment Write (OpenClaw Webhook)
-```http
-POST /api/entries/:id/comment
-Authorization: Bearer <OPENCLAW_WEBHOOK_SECRET>
-Content-Type: application/json
-Body: { "comment": "string" }
-
-Response 200: { "success": true, "entryId": "string", "comment": "string", "lastModified": number }
-```
 
 ### Public Read API
 ```http
@@ -510,13 +478,11 @@ Categories are defined in `constants.ts`. To add:
 |----------|-------------|
 | `AUTH_PASSWORD` | Password for cloud sync authentication |
 | `CHRONOLOG_DB` | D1 database binding |
-| `CHRONOLOG_KV` | KV namespace binding (auth tokens + AI config) |
+| `CHRONOLOG_KV` | KV namespace binding (auth tokens) |
 | `CHRONOLOG_R2` | R2 bucket binding (image storage) |
 | `AI_API_KEY` | OpenAI API key for categorization |
-| `AI_COMMENT_API_KEY` | Separate API key for AI comment generation |
 | `AI_BASE_URL` | (Optional) Custom AI API base URL |
 | `AI_MODEL` | (Optional) AI model name, default: gpt-4o-mini |
-| `OPENCLAW_WEBHOOK_SECRET` | Secret for OpenClaw webhook authentication |
 | `PUBLIC_API_TOKEN` | Token for public read-only API access |
 
 ---

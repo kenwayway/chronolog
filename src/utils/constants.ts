@@ -58,17 +58,6 @@ export const BUILTIN_CONTENT_TYPES: ContentType[] = [
     version: 2  // v2: added icon
   },
   {
-    id: 'task',
-    name: 'Task',
-    icon: '✅',
-    fields: [
-      { id: 'done', name: 'Done', type: 'boolean', default: false }
-    ],
-    builtIn: true,
-    order: 1,
-    version: 2  // v2: added icon
-  },
-  {
     id: 'bookmark',
     name: 'Bookmark',
     icon: '🔖',

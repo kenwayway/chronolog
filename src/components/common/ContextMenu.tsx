@@ -16,10 +16,7 @@ interface ContextMenuProps {
     onEdit: (entry: Entry) => void;
     onDelete: (entry: Entry) => void;
     onCopy: (entry: Entry) => void;
-    onMarkAsTask: (entry: Entry) => void;
     onLink?: (entry: Entry) => void;
-    onDeleteAIComment?: (entry: Entry) => void;
-    googleTasksEnabled?: boolean;
 }
 
 export function ContextMenu({
@@ -30,10 +27,7 @@ export function ContextMenu({
     onEdit,
     onDelete,
     onCopy,
-    onMarkAsTask,
     onLink,
-    onDeleteAIComment,
-    googleTasksEnabled = false,
 }: ContextMenuProps) {
     const menuRef = useRef<HTMLDivElement>(null);
 
@@ -69,25 +63,10 @@ export function ContextMenu({
         onCopy(entry);
         onClose();
     };
-    const handleMarkAsTask = () => {
-        onMarkAsTask(entry);
-        onClose();
-    };
     const handleLink = () => {
         onLink?.(entry);
         onClose();
     };
-    const handleDeleteAIComment = () => {
-        onDeleteAIComment?.(entry);
-        onClose();
-    };
-
-    // Can mark as task: NOTE or SESSION_START, not already a task
-    const isTask = entry.contentType === 'task';
-    const canMarkAsTask =
-        (entry.type === ENTRY_TYPES.NOTE || entry.type === ENTRY_TYPES.SESSION_START) &&
-        !isTask;
-
     return (
         <div
             ref={menuRef}
@@ -97,22 +76,6 @@ export function ContextMenu({
                 top: position.y,
             }}
         >
-            {canMarkAsTask && (
-                <button
-                    className={styles.item}
-                    onClick={handleMarkAsTask}
-                    title={googleTasksEnabled ? "Adds to Google Tasks" : "Connect Google Tasks in Settings"}
-                >
-                    MARK TODO
-                </button>
-            )}
-
-            {isTask && (
-                <span className={styles.item} style={{ color: "var(--text-dim)", cursor: "default" }}>
-                    [PENDING TASK]
-                </span>
-            )}
-
             <button className={styles.item} onClick={handleEdit}>
                 EDIT
             </button>
@@ -126,12 +89,6 @@ export function ContextMenu({
             <button className={styles.item} onClick={handleCopy}>
                 COPY
             </button>
-
-            {entry.aiComment && (
-                <button className={styles.item} onClick={handleDeleteAIComment}>
-                    DELETE AI COMMENT
-                </button>
-            )}
 
             <div className={styles.divider} />
 

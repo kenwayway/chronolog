@@ -8,14 +8,12 @@ A minimalist personal timeline and activity tracker with cloud sync support.
 - **Timeline View** — Track daily activities with timestamps
 - **Session Tracking** — Log in/out to track work sessions with duration
 - **Notes** — Add quick notes throughout the day
-- **Task Management** — Mark notes as todos and track completion
 - **Categories** — Organize entries with custom color-coded categories
 - **Tags** — Add #hashtags to entries for easy filtering
 - **Calendar Navigation** — Browse entries by date
 
 ### Content Types
 - **Note** — Default text entry
-- **Task** — Todo items with completion tracking
 - **Bookmark** — Save links with title, type, and status; YouTube thumbnails auto-detected
 - **Mood** — Track feelings, energy level (1–5), and triggers
 - **Workout** — Log exercises with type (Strength/Cardio/Flexibility/Mixed) and place (Home/In Building Gym/Outside Gym)
@@ -60,7 +58,7 @@ A minimalist personal timeline and activity tracker with cloud sync support.
 |------------|-------|
 | **Cloudflare Pages Functions** | Serverless API (TypeScript) |
 | **Cloudflare D1** | SQLite database for entries, content types, media |
-| **Cloudflare KV** | Auth tokens, AI config |
+| **Cloudflare KV** | Auth tokens |
 | **Cloudflare R2** | Image storage |
 
 ### Architecture
@@ -98,7 +96,12 @@ npm install
 # Start dev server
 npm run dev
 
-# Build for production
+# Run tests / lint / typecheck
+npm test
+npm run lint
+npm run typecheck
+
+# Build for production (runs tsc first)
 npm run build
 ```
 
@@ -135,8 +138,7 @@ functions/             # Cloudflare Pages Functions (TypeScript)
 │   ├── categorize.ts  # AI categorization
 │   ├── upload.ts      # Image upload to R2
 │   ├── cleanup.ts     # Unreferenced image cleanup
-│   ├── ai-config.ts   # AI configuration
-│   ├── entries/       # Public API & webhooks
+│   ├── entries/       # Public read-only API
 │   └── image/[id].ts  # Image serving from R2
 └── _middleware.ts     # Auth & CORS middleware
 ```

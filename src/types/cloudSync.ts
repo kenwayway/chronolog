@@ -23,12 +23,3 @@ export interface CloudSyncFull extends CloudSyncStatus {
     sync: () => void;
     cleanupImages: () => Promise<{ deleted: string[]; kept: string[] }>;
 }
-
-/** Google Tasks integration interface */
-export interface GoogleTasksStatus {
-    isLoggedIn: boolean;
-    isLoading: boolean;
-    error?: string | null;
-    login: () => void;
-    logout: () => void;
-}

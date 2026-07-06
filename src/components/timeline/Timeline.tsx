@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { ChevronLeft, ChevronRight, MessageCircle, MessageCircleOff } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { ENTRY_TYPES } from "@/utils/constants";
 import { useTheme } from "@/hooks/useTheme";
 import { useSessionContext } from "@/contexts/SessionContext";
@@ -18,17 +18,15 @@ interface TimelineProps {
   status: SessionStatus;
   onContextMenu: (entry: Entry, position: Position) => void;
   onEdit?: (entry: Entry) => void;
-  onDeleteAIComment?: (entry: Entry) => void;
   categoryFilter?: CategoryId[];
   isFilterMode?: boolean;
   onNavigateToEntry?: (entry: Entry) => void;
 }
 
-export function Timeline({ entries, status, onContextMenu, onEdit, onDeleteAIComment, categoryFilter = [], isFilterMode: isFilterModeProp, onNavigateToEntry }: TimelineProps) {
+export function Timeline({ entries, onContextMenu, onEdit, categoryFilter = [], isFilterMode: isFilterModeProp, onNavigateToEntry }: TimelineProps) {
   const { state: { entries: allEntries, mediaItems }, categories } = useSessionContext();
   const { theme } = useTheme();
   const [currentPage, setCurrentPage] = useState(0);
-  const [showAIComments, setShowAIComments] = useState(true);
 
   // Stable key for categoryFilter to avoid re-creating strings on every render
   const categoryFilterKey = categoryFilter.join(',');
@@ -101,29 +99,6 @@ export function Timeline({ entries, status, onContextMenu, onEdit, onDeleteAICom
         position: "relative",
       }}
     >
-      {/* AI Comment Toggle */}
-      <button
-        onClick={() => setShowAIComments(!showAIComments)}
-        title={showAIComments ? "Hide AI Comments" : "Show AI Comments"}
-        style={{
-          position: "absolute",
-          top: 8,
-          right: 16,
-          padding: 6,
-          backgroundColor: "var(--bg-secondary)",
-          border: "1px solid var(--border-subtle)",
-          borderRadius: 4,
-          cursor: "pointer",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          color: showAIComments ? "var(--accent)" : "var(--text-dim)",
-          opacity: showAIComments ? 1 : 0.5,
-          zIndex: 10,
-        }}
-      >
-        {showAIComments ? <MessageCircle size={16} /> : <MessageCircleOff size={16} />}
-      </button>
       {/* Filter mode header with pagination */}
       {isFilterMode && entries.length > 0 && (
         <div
@@ -213,12 +188,10 @@ export function Timeline({ entries, status, onContextMenu, onEdit, onDeleteAICom
           categories={categories}
           onContextMenu={onContextMenu}
           onEdit={onEdit}
-          onDeleteAIComment={onDeleteAIComment}
           lineState={entryLineStates[entry.id]}
           isLightMode={theme.mode === "light"}
           showDate={isFilterMode}
           onNavigateToEntry={onNavigateToEntry}
-          showAIComment={showAIComments}
           mediaItems={mediaItems}
         />
       ))}

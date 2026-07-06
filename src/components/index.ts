@@ -15,4 +15,4 @@ export { Dropdown, ContextMenu, Calendar, LinkSelector } from './common'
 export { SettingsModal, EditModal } from './modals'
 
 // Panels
-export { TasksPanel, ActivityPanel } from './panels'
+export { ActivityPanel } from './panels'

@@ -140,9 +140,7 @@ export function EntryMetadataInput({
                 setContentType(val || null);
                 // Reset fieldValues when changing type
                 if (setFieldValues) {
-                  if (val === 'task') {
-                    setFieldValues({ done: false });
-                  } else if (val === 'bookmark') {
+                  if (val === 'bookmark') {
                     setFieldValues({ type: 'Article', status: 'Inbox' });
                   } else if (val === 'mood') {
                     setFieldValues({ feeling: 'Calm', energy: 3 });

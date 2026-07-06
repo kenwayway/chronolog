@@ -4,7 +4,7 @@ import { BookOpen } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 import { useSessionContext } from "@/contexts/SessionContext";
 import { extractAllTags } from "@/utils/tagParser";
-import styles from "./TasksPanel.module.css";
+import styles from "./ActivityPanel.module.css";
 import type { CategoryId } from "@/types";
 
 interface HeatmapDay {

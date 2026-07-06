@@ -2,10 +2,8 @@ import { useRef, useMemo } from "react";
 import { Routes, Route } from "react-router-dom";
 import { useSession } from "./hooks/useSession";
 import { useCategories } from "./hooks/useCategories";
-import { useTheme } from "./hooks/useTheme";
 import { useCloudSync } from "./hooks/useCloudSync";
 import { useAICategories } from "./hooks/useAICategories";
-import { useGoogleTasks } from "./hooks/useGoogleTasks";
 import { useEntryHandlers } from "./hooks/useEntryHandlers";
 import { useAutoCategorize } from "./hooks/useAutoCategorize";
 import { useFollowUpLink } from "./hooks/useFollowUpLink";
@@ -18,7 +16,6 @@ import {
     LandingPage,
     Timeline,
     InputPanel,
-    TasksPanel,
     ContextMenu,
     SettingsModal,
     EditModal,
@@ -31,7 +28,6 @@ import { LibraryPage } from "./pages/LibraryPage";
 function App() {
     const { state, isStreaming, actions } = useSession();
     const { categories } = useCategories();
-    const googleTasks = useGoogleTasks();
     const { categorize } = useAICategories();
 
     // Cloud sync
@@ -55,7 +51,6 @@ function App() {
     const handlers = useEntryHandlers({
         actions,
         isLoggedIn: cloudSync.isLoggedIn,
-        googleTasks,
     });
 
     // Context values — memoized with stable deps to prevent unnecessary re-renders
@@ -101,7 +96,6 @@ function App() {
                             <MainView
                                 isStreaming={isStreaming}
                                 handlers={handlers}
-                                googleTasks={googleTasks}
                             />
                         } />
                     </Routes>
@@ -118,11 +112,9 @@ function App() {
 function MainView({
     isStreaming,
     handlers,
-    googleTasks,
 }: {
     isStreaming: boolean;
     handlers: ReturnType<typeof useEntryHandlers>;
-    googleTasks: ReturnType<typeof useGoogleTasks>;
 }) {
     const { state, actions } = useSessionContext();
     const ui = useUIStateContext();
@@ -170,7 +162,6 @@ function MainView({
         <div className="min-h-screen flex flex-col font-mono" style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
             <Header
                 isStreaming={isStreaming}
-                pendingTaskCount={0}
                 selectedDate={ui.selectedDate}
                 onDateChange={ui.setSelectedDate}
             />
@@ -184,7 +175,6 @@ function MainView({
                         status={state.status}
                         onContextMenu={ui.handleContextMenu}
                         onEdit={ui.openEditModal}
-                        onDeleteAIComment={(entry: Entry) => actions.updateEntry(entry.id, { aiComment: undefined })}
                         categoryFilter={ui.categoryFilter}
                         isFilterMode={ui.categoryFilter.length > 0 || ui.tagFilter.length > 0 || ui.contentTypeFilter.length > 0}
                         onNavigateToEntry={ui.navigateToEntry}
@@ -201,13 +191,6 @@ function MainView({
                 onLogOff={handlers.handleLogOff}
                 followUpEntry={followUp.followUpEntry}
                 onClearFollowUp={followUp.clearFollowUp}
-            />
-
-            <TasksPanel
-                isOpen={ui.sidebarOpen}
-                onClose={() => ui.setSidebarOpen(false)}
-                onCompleteTask={handlers.handleCompleteTask}
-                googleTasks={googleTasks}
             />
 
             <ActivityPanel
@@ -231,10 +214,7 @@ function MainView({
                 onEdit={(entry) => handlers.handleEditEntry(entry, ui.openEditModal)}
                 onDelete={handlers.handleDeleteEntry}
                 onCopy={handlers.handleCopyEntry}
-                onMarkAsTask={handlers.handleMarkAsTask}
                 onLink={followUp.handleFollowUp}
-                onDeleteAIComment={(entry) => actions.updateEntry(entry.id, { aiComment: undefined })}
-                googleTasksEnabled={googleTasks.isLoggedIn}
             />
 
             <EditModal
@@ -247,7 +227,6 @@ function MainView({
             <SettingsModal
                 isOpen={ui.settingsOpen}
                 onClose={() => ui.setSettingsOpen(false)}
-                googleTasks={googleTasks}
             />
         </div>
     );

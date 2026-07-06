@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect, MouseEvent, TouchEvent } from "react";
 import {
-    ClipboardList,
     Settings,
     ChevronLeft,
     ChevronRight,
@@ -20,21 +19,18 @@ import { useUIStateContext } from "@/contexts/UIStateContext";
 
 interface HeaderProps {
     isStreaming: boolean;
-    pendingTaskCount: number;
     selectedDate: Date | null;
     onDateChange: (date: Date | null) => void;
 }
 
 export function Header({
     isStreaming,
-    pendingTaskCount,
     selectedDate,
     onDateChange,
 }: HeaderProps) {
     const cloudSync = useCloudSyncContext();
     const { isDark, toggleTheme: onToggleTheme, canToggleMode } = useTheme();
     const ui = useUIStateContext();
-    const onOpenSidebar = () => ui.setSidebarOpen(true);
     const onOpenLeftSidebar = () => ui.setLeftSidebarOpen(true);
     const onOpenSettings = () => ui.setSettingsOpen(true);
     const [showCalendar, setShowCalendar] = useState(false);
@@ -189,27 +185,6 @@ export function Header({
                 </button>
 
                 <button
-                    className="btn btn-ghost relative rounded-lg"
-                    style={{ width: 36, height: 36, padding: 0 }}
-                    onClick={onOpenSidebar}
-                    title="Tasks"
-                >
-                    <ClipboardList size={20} strokeWidth={1.5} />
-                    {pendingTaskCount > 0 && (
-                        <span
-                            className="absolute rounded-full"
-                            style={{
-                                top: 5,
-                                right: 5,
-                                width: 5,
-                                height: 5,
-                                backgroundColor: "var(--accent)",
-                            }}
-                        />
-                    )}
-                </button>
-
-                <button
                     className="btn btn-ghost rounded-lg"
                     style={{
                         width: 36,
@@ -250,18 +225,6 @@ export function Header({
                     ) : (
                         <Menu size={22} strokeWidth={1.5} />
                     )}
-                    {!mobileMenuOpen && pendingTaskCount > 0 && (
-                        <span
-                            className="absolute rounded-full"
-                            style={{
-                                top: 5,
-                                right: 5,
-                                width: 5,
-                                height: 5,
-                                backgroundColor: "var(--accent)",
-                            }}
-                        />
-                    )}
                 </button>
 
                 {/* Mobile dropdown menu */}
@@ -273,16 +236,6 @@ export function Header({
                         >
                             <Activity size={18} />
                             <span>Activity</span>
-                        </button>
-                        <button
-                            className={styles.mobileMenuItem}
-                            onClick={() => { onOpenSidebar(); setMobileMenuOpen(false); }}
-                        >
-                            <ClipboardList size={18} />
-                            <span>Tasks</span>
-                            {pendingTaskCount > 0 && (
-                                <span className={styles.mobileMenuBadge}>{pendingTaskCount}</span>
-                            )}
                         </button>
                         <button
                             className={styles.mobileMenuItem}

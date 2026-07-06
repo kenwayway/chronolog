@@ -18,7 +18,6 @@ export function entryRowToObject(row: EntryRow): Entry {
     if (row.duration != null) entry.duration = row.duration;
     if (row.category) entry.category = row.category;
     if (row.content_type && row.content_type !== 'note') entry.contentType = row.content_type;
-    if (row.ai_comment) entry.aiComment = row.ai_comment;
 
     // Parse JSON fields
     if (row.field_values) {
@@ -52,7 +51,6 @@ interface EntryRowValues {
     field_values: string | null;
     linked_entries: string | null;
     tags: string | null;
-    ai_comment: string | null;
     created_at: number;
     updated_at: number;
 }
@@ -75,7 +73,6 @@ export function entryObjectToRow(entry: Entry): EntryRowValues {
         field_values: entry.fieldValues ? JSON.stringify(entry.fieldValues) : null,
         linked_entries: entry.linkedEntries ? JSON.stringify(entry.linkedEntries) : null,
         tags: entry.tags ? JSON.stringify(entry.tags) : null,
-        ai_comment: entry.aiComment || null,
         created_at: now,
         updated_at: now,
     };
@@ -197,8 +194,8 @@ export async function upsertEntries(db: D1Database, entries: Entry[]): Promise<n
     const stmt = db.prepare(`
     INSERT INTO entries
       (id, type, content, timestamp, session_id, duration, category, content_type,
-       field_values, linked_entries, tags, ai_comment, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       field_values, linked_entries, tags, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(id) DO UPDATE SET
       type = excluded.type,
       content = excluded.content,
@@ -210,7 +207,6 @@ export async function upsertEntries(db: D1Database, entries: Entry[]): Promise<n
       field_values = excluded.field_values,
       linked_entries = excluded.linked_entries,
       tags = excluded.tags,
-      ai_comment = excluded.ai_comment,
       updated_at = excluded.updated_at
   `);
 
@@ -220,7 +216,7 @@ export async function upsertEntries(db: D1Database, entries: Entry[]): Promise<n
         batches.push(stmt.bind(
             row.id, row.type, row.content, row.timestamp,
             row.session_id, row.duration, row.category, row.content_type,
-            row.field_values, row.linked_entries, row.tags, row.ai_comment,
+            row.field_values, row.linked_entries, row.tags,
             row.created_at, row.updated_at
         ));
     }

@@ -1,7 +1,7 @@
 // ============================================
 // Re-exports
 // ============================================
-export type { CloudSyncStatus, CloudSyncWithUpload, CloudSyncFull, GoogleTasksStatus } from './cloudSync'
+export type { CloudSyncStatus, CloudSyncWithUpload, CloudSyncFull } from './cloudSync'
 
 // ============================================
 // Core Data Types
@@ -98,12 +98,7 @@ export interface ContentType {
 // ============================================
 
 /** Built-in content type IDs (type-safe literal union) */
-export type BuiltInContentTypeId = 'note' | 'task' | 'bookmark' | 'mood' | 'workout' | 'vault' | 'beans' | 'sparks' | 'media'
-
-/** Task field values */
-export interface TaskFields {
-  done: boolean
-}
+export type BuiltInContentTypeId = 'note' | 'bookmark' | 'mood' | 'workout' | 'vault' | 'beans' | 'sparks' | 'media'
 
 /** Bookmark field values */
 export interface BookmarkFields {
@@ -141,7 +136,7 @@ export interface MediaFields {
 }
 
 /** Union of all known field value types */
-export type KnownFieldValues = TaskFields | BookmarkFields | MoodFields | WorkoutFields | VaultFields | MediaFields
+export type KnownFieldValues = BookmarkFields | MoodFields | WorkoutFields | VaultFields | MediaFields
 
 /** Field values - known types or unknown for custom content types */
 export type EntryFieldValues = KnownFieldValues | Record<string, unknown>
@@ -163,7 +158,6 @@ export interface Entry {
   fieldValues?: EntryFieldValues  // Typed field values
   linkedEntries?: string[]        // Bidirectional linked entry IDs
   tags?: string[]                 // Free-form tags (without # prefix)
-  aiComment?: string              // AI-generated comment (collapsible bubble)
 }
 
 // ============================================
@@ -180,7 +174,6 @@ export interface SessionState {
   apiKey: string | null
   aiBaseUrl: string
   aiModel: string
-  aiPersona?: string              // Customizable AI persona/system prompt
 }
 
 /** Action payloads */
@@ -231,7 +224,6 @@ export interface UpdateEntryPayload {
   linkedEntries?: string[]
   tags?: string[]
   type?: EntryType
-  aiComment?: string
 }
 
 export interface SetEntryCategoryPayload {
@@ -247,7 +239,6 @@ export interface SetAIConfigPayload {
   apiKey?: string
   aiBaseUrl?: string
   aiModel?: string
-  aiPersona?: string
 }
 
 export interface ImportDataPayload {

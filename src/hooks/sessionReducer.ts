@@ -189,7 +189,6 @@ function handleEditEntry(state: SessionState, payload: EditEntryPayload): Sessio
 
 function handleUpdateEntry(state: SessionState, payload: UpdateEntryPayload): SessionState {
     const { entryId, content, timestamp, category, contentType, fieldValues, linkedEntries, tags, type } = payload
-    const hasAiCommentKey = 'aiComment' in payload
     return {
         ...state,
         entries: state.entries.map(e => {
@@ -203,7 +202,6 @@ function handleUpdateEntry(state: SessionState, payload: UpdateEntryPayload): Se
             if (linkedEntries !== undefined) updated.linkedEntries = linkedEntries
             if (tags !== undefined) updated.tags = tags.length > 0 ? tags : undefined
             if (type !== undefined) updated.type = type
-            if (hasAiCommentKey) updated.aiComment = payload.aiComment
             return updated
         })
     }

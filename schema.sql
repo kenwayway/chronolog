@@ -12,7 +12,6 @@ CREATE TABLE IF NOT EXISTS entries (
   field_values TEXT,          -- JSON string
   linked_entries TEXT,        -- JSON array string
   tags TEXT,                  -- JSON array string
-  ai_comment TEXT,
   created_at INTEGER NOT NULL DEFAULT (unixepoch() * 1000),
   updated_at INTEGER NOT NULL DEFAULT (unixepoch() * 1000)
 );

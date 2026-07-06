@@ -5,7 +5,7 @@ export interface Env {
     // D1 Database
     CHRONOLOG_DB: D1Database;
 
-    // KV Namespace (auth tokens + AI config)
+    // KV Namespace (auth tokens)
     CHRONOLOG_KV: KVNamespace;
 
     // R2 Bucket (image storage)
@@ -13,10 +13,8 @@ export interface Env {
 
     // Environment variables
     AUTH_PASSWORD: string;
-    OPENCLAW_WEBHOOK_SECRET?: string;
     PUBLIC_API_TOKEN?: string;
     AI_API_KEY?: string;
-    AI_COMMENT_API_KEY?: string;
     AI_BASE_URL?: string;
     AI_MODEL?: string;
 }
@@ -44,7 +42,6 @@ export interface EntryRow {
     field_values: string | null;
     linked_entries: string | null;
     tags: string | null;
-    ai_comment: string | null;
     created_at: number;
     updated_at: number;
 }
@@ -88,7 +85,6 @@ export interface Entry {
     fieldValues?: Record<string, unknown>;
     linkedEntries?: string[];
     tags?: string[];
-    aiComment?: string;
     createdAt?: number;
     updatedAt?: number;
 }

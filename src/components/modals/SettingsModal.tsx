@@ -2,7 +2,6 @@ import { useState, MouseEvent } from "react";
 import { Palette, Database, LucideIcon } from "lucide-react";
 import { useSessionContext } from "@/contexts/SessionContext";
 import { useCloudSyncContext } from "@/contexts/CloudSyncContext";
-import type { GoogleTasksStatus } from "@/types";
 import { AppearanceTab, SyncTab } from "./settings";
 import styles from "./SettingsModal.module.css";
 
@@ -21,7 +20,6 @@ const TABS: Tab[] = [
 interface SettingsModalProps {
     isOpen: boolean;
     onClose: () => void;
-    googleTasks?: GoogleTasksStatus;
 }
 
 /**
@@ -31,7 +29,6 @@ interface SettingsModalProps {
 export function SettingsModal({
     isOpen,
     onClose,
-    googleTasks,
 }: SettingsModalProps) {
     const { state: { entries, contentTypes, mediaItems }, categories, actions: { importData: onImportData } } = useSessionContext();
     const cloudSync = useCloudSyncContext();
@@ -84,7 +81,6 @@ export function SettingsModal({
                         {activeTab === "sync" && (
                             <SyncTab
                                 cloudSync={cloudSync}
-                                googleTasks={googleTasks}
                                 entries={entries}
                                 categories={categories}
                                 contentTypes={contentTypes}

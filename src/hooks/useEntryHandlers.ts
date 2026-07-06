@@ -4,10 +4,6 @@ import type { Entry, SessionActions, UpdateEntryPayload, CategoryId } from '@/ty
 interface UseEntryHandlersProps {
     actions: SessionActions
     isLoggedIn: boolean
-    googleTasks: {
-        isLoggedIn: boolean
-        createTask: (title: string, entryId: string) => Promise<unknown>
-    }
 }
 
 interface EntryHandlers {
@@ -20,8 +16,6 @@ interface EntryHandlers {
     handleSaveEdit: (entryId: string, updates: Omit<UpdateEntryPayload, 'entryId'>) => void
     handleDeleteEntry: (entry: Entry) => void
     handleCopyEntry: (entry: Entry) => void
-    handleMarkAsTask: (entry: Entry) => Promise<void>
-    handleCompleteTask: (entryId: string | null, title: string) => void
 }
 
 /**
@@ -31,7 +25,6 @@ interface EntryHandlers {
 export function useEntryHandlers({
     actions,
     isLoggedIn,
-    googleTasks,
 }: UseEntryHandlersProps): EntryHandlers {
 
     // Check if user is logged in, show alert if not
@@ -83,31 +76,6 @@ export function useEntryHandlers({
         navigator.clipboard.writeText(entry.content || '')
     }, [])
 
-    const handleMarkAsTask = useCallback(async (entry: Entry) => {
-        if (!requireLogin()) return
-
-        // Mark entry as task by setting contentType to 'task'
-        actions.updateEntry(entry.id, {
-            contentType: 'task',
-            fieldValues: { done: false }
-        })
-
-        // Create Google Task if logged in
-        if (googleTasks.isLoggedIn) {
-            try {
-                await googleTasks.createTask(entry.content, entry.id)
-            } catch (err) {
-                console.error('Failed to create Google Task:', err)
-            }
-        }
-    }, [actions, requireLogin, googleTasks])
-
-    const handleCompleteTask = useCallback((entryId: string | null, _title: string) => {
-        if (entryId) {
-            actions.updateEntry(entryId, { fieldValues: { done: true } })
-        }
-    }, [actions])
-
     return {
         requireLogin,
         handleLogIn,
@@ -118,7 +86,5 @@ export function useEntryHandlers({
         handleSaveEdit,
         handleDeleteEntry,
         handleCopyEntry,
-        handleMarkAsTask,
-        handleCompleteTask,
     }
 }
