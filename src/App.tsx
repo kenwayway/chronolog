@@ -24,6 +24,7 @@ import {
 import type { CategoryId, Entry } from "./types";
 import type { InputPanelRef } from "./components/input/InputPanel";
 import { LibraryPage } from "./pages/LibraryPage";
+import { GalleryPage } from "./pages/GalleryPage";
 
 function App() {
     const { state, isStreaming, actions } = useSession();
@@ -92,6 +93,7 @@ function App() {
                 <UIStateProvider>
                     <Routes>
                         <Route path="/library" element={<LibraryPage />} />
+                        <Route path="/gallery" element={<GalleryPage />} />
                         <Route path="/" element={
                             <MainView
                                 isStreaming={isStreaming}

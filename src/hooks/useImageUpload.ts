@@ -1,5 +1,6 @@
 import { useCallback } from 'react'
 import { getApiBase } from './useCloudAuth'
+import { compressImage } from '@/utils/imageCompressor'
 
 export interface CleanupResult {
     deleted: string[]
@@ -19,7 +20,7 @@ export function useImageUpload(tokenRef: React.MutableRefObject<string | null>) 
         }
 
         const formData = new FormData()
-        formData.append('file', file)
+        formData.append('file', await compressImage(file))
 
         const response = await fetch(`${getApiBase()}/api/upload`, {
             method: 'POST',

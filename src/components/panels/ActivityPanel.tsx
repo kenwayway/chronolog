@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { BookOpen } from "lucide-react";
+import { BookOpen, Images } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 import { useSessionContext } from "@/contexts/SessionContext";
 import { extractAllTags } from "@/utils/tagParser";
@@ -461,11 +461,32 @@ export function ActivityPanel({
                             <span style={{ textTransform: 'uppercase', letterSpacing: '0.03em', flex: 1 }}>
                                 Media Library
                             </span>
-                            <span style={{ fontSize: 10, color: 'var(--text-dim)' }}>
-                                {entries.filter(e => e.contentType === 'media').length > 0
-                                    ? `→`
-                                    : '→'}
+                            <span style={{ fontSize: 10, color: 'var(--text-dim)' }}>→</span>
+                        </Link>
+                        <Link
+                            to="/gallery"
+                            onClick={onClose}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 10,
+                                padding: '10px 12px',
+                                marginTop: 6,
+                                fontSize: 11,
+                                color: 'var(--text-secondary)',
+                                backgroundColor: 'var(--bg-secondary)',
+                                border: '1px solid transparent',
+                                borderRadius: 4,
+                                textDecoration: 'none',
+                                cursor: 'pointer',
+                                transition: 'all 100ms ease',
+                            }}
+                        >
+                            <Images size={14} style={{ flexShrink: 0 }} />
+                            <span style={{ textTransform: 'uppercase', letterSpacing: '0.03em', flex: 1 }}>
+                                Gallery
                             </span>
+                            <span style={{ fontSize: 10, color: 'var(--text-dim)' }}>→</span>
                         </Link>
                     </div>
                 </div>

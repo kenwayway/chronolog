@@ -87,17 +87,24 @@ export function useUIState(): UIState {
     // Navigate to an entry
     const navigateToEntry = useCallback((targetEntry: Entry) => {
         if (!targetEntry) return
+        setShowLanding(false)
         const targetDate = new Date(targetEntry.timestamp)
         targetDate.setHours(0, 0, 0, 0)
         setSelectedDate(targetDate)
-        setTimeout(() => {
+        // Retry a few times: when jumping from another route (e.g. /gallery)
+        // the timeline may not be mounted yet on the first attempt
+        let attempts = 0
+        const tryScroll = () => {
             const el = document.querySelector(`[data-entry-id="${targetEntry.id}"]`) as HTMLElement | null
             if (el) {
                 el.scrollIntoView({ behavior: 'smooth', block: 'center' })
                 el.style.backgroundColor = 'var(--accent-subtle)'
                 setTimeout(() => { el.style.backgroundColor = '' }, 1500)
+            } else if (++attempts < 5) {
+                setTimeout(tryScroll, 150)
             }
-        }, 100)
+        }
+        setTimeout(tryScroll, 100)
     }, [])
 
     return {
