@@ -12,46 +12,54 @@ export function parseInlineMarkdown(text: string, keyPrefix: string = ''): React
   if (!text) return [];
 
   // Combined regex for all inline patterns
-  const inlineRegex = /(\*\*[^*]+\*\*|`[^`]+`|==[^=]+=\s*=|~~[^~]+~~|https?:\/\/[^\s]+)/g;
-  const parts = text.split(inlineRegex);
+  const inlineRegex = /(\*\*[^*]+\*\*|`[^`]+`|==[^=]+==|~~[^~]+~~|https?:\/\/[^\s]+)/g;
 
-  return parts.map((part, i) => {
-    const key = `${keyPrefix}-${i}`;
+  // Walk actual regex matches instead of String.split(): split() would also
+  // hand the untouched filler text between matches through the same
+  // startsWith/endsWith check below, so plain text that merely *looks* like
+  // a delimiter (e.g. two unrelated "==" in "a==b and c==d") got misrendered
+  // as if it had matched.
+  const nodes: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let i = 0;
+  let match: RegExpExecArray | null;
 
-    // Bold: **text**
-    if (part.startsWith('**') && part.endsWith('**')) {
-      return React.createElement('strong', { key, className: 'md-bold' }, part.slice(2, -2));
+  while ((match = inlineRegex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      nodes.push(text.slice(lastIndex, match.index));
     }
 
-    // Inline code: `code`
-    if (part.startsWith('`') && part.endsWith('`')) {
-      return React.createElement('code', { key, className: 'md-inline-code' }, part.slice(1, -1));
-    }
+    const part = match[0];
+    const key = `${keyPrefix}-${i++}`;
 
-    // Highlight: ==text==
-    if (part.startsWith('==') && part.endsWith('==')) {
-      return React.createElement('mark', { key, className: 'md-highlight' }, part.slice(2, -2));
-    }
-
-    // Strikethrough: ~~text~~
-    if (part.startsWith('~~') && part.endsWith('~~')) {
-      return React.createElement('del', { key, className: 'md-strikethrough' }, part.slice(2, -2));
-    }
-
-    // URL
-    if (part.match(/^https?:\/\//)) {
-      return React.createElement('a', {
+    if (part.startsWith('**')) {
+      nodes.push(React.createElement('strong', { key, className: 'md-bold' }, part.slice(2, -2)));
+    } else if (part.startsWith('`')) {
+      nodes.push(React.createElement('code', { key, className: 'md-inline-code' }, part.slice(1, -1)));
+    } else if (part.startsWith('==')) {
+      nodes.push(React.createElement('mark', { key, className: 'md-highlight' }, part.slice(2, -2)));
+    } else if (part.startsWith('~~')) {
+      nodes.push(React.createElement('del', { key, className: 'md-strikethrough' }, part.slice(2, -2)));
+    } else {
+      // URL
+      nodes.push(React.createElement('a', {
         key,
         href: part,
         target: '_blank',
         rel: 'noopener noreferrer',
         style: { color: 'var(--accent)', wordBreak: 'break-all' },
         onClick: (e: React.MouseEvent) => e.stopPropagation(),
-      }, part);
+      }, part));
     }
 
-    return part;
-  });
+    lastIndex = match.index + part.length;
+  }
+
+  if (lastIndex < text.length) {
+    nodes.push(text.slice(lastIndex));
+  }
+
+  return nodes;
 }
 
 interface HeadingContent {
@@ -59,15 +67,46 @@ interface HeadingContent {
   text: React.ReactNode[];
 }
 
+export type TableAlign = 'left' | 'center' | 'right' | null;
+
+export interface TableContent {
+  headers: React.ReactNode[][];
+  alignments: TableAlign[];
+  rows: React.ReactNode[][][];
+}
+
 interface ContentParseResult {
-  type: 'text' | 'image' | 'location' | 'blockquote' | 'heading' | 'codeblock';
-  content: React.ReactNode | HeadingContent | string;
+  type: 'text' | 'image' | 'location' | 'blockquote' | 'heading' | 'codeblock' | 'table';
+  content: React.ReactNode | HeadingContent | TableContent | string;
   key: string;
+}
+
+/** Split a `| a | b |` (or `a | b`, no outer pipes) row into trimmed cells */
+function splitTableRow(line: string): string[] {
+  const trimmed = line.trim().replace(/^\|/, '').replace(/\|$/, '');
+  return trimmed.split('|').map(cell => cell.trim());
+}
+
+/** GFM-style separator row: `| --- | :---: | ---: |` */
+function isTableSeparatorRow(line: string): boolean {
+  const trimmed = line.trim();
+  return /^\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)*\|?$/.test(trimmed) && trimmed.includes('-');
+}
+
+function parseTableAlignment(separatorLine: string): TableAlign[] {
+  return splitTableRow(separatorLine).map((cell): TableAlign => {
+    const left = cell.startsWith(':');
+    const right = cell.endsWith(':');
+    if (left && right) return 'center';
+    if (right) return 'right';
+    if (left) return 'left';
+    return null;
+  });
 }
 
 /**
  * Parse content with markdown-like syntax
- * Supports: code blocks, images, locations, blockquotes, headings
+ * Supports: code blocks, images, locations, blockquotes, headings, tables
  */
 export function parseContent(text: string): ContentParseResult[] {
   if (!text) return [];
@@ -132,6 +171,29 @@ export function parseContent(text: string): ContentParseResult[] {
         content: locationMatch[1].trim(),
         key,
       });
+      continue;
+    }
+
+    // Table: a row containing "|" followed by a "| --- | --- |" separator row
+    if (trimmedLine.includes('|') && lineIdx + 1 < lines.length && isTableSeparatorRow(lines[lineIdx + 1])) {
+      const alignments = parseTableAlignment(lines[lineIdx + 1]);
+      const headers = splitTableRow(trimmedLine).map((cell, ci) => parseInlineMarkdown(cell, `${key}-h${ci}`));
+
+      const rows: React.ReactNode[][][] = [];
+      let bodyIdx = lineIdx + 2;
+      while (bodyIdx < lines.length) {
+        const bodyLine = lines[bodyIdx].trim();
+        if (!bodyLine || !bodyLine.includes('|')) break;
+        rows.push(splitTableRow(bodyLine).map((cell, ci) => parseInlineMarkdown(cell, `${key}-r${bodyIdx}-${ci}`)));
+        bodyIdx++;
+      }
+
+      result.push({
+        type: 'table',
+        content: { headers, alignments, rows },
+        key: `table-${lineIdx}`,
+      });
+      lineIdx = bodyIdx - 1;
       continue;
     }
 

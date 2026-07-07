@@ -285,3 +285,32 @@ a:hover {
   color: var(--heading-h3);
   font-weight: 600;
 }
+
+.md-table-wrapper {
+  overflow-x: auto;
+  margin: 8px 0;
+}
+
+.md-table {
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.md-table th,
+.md-table td {
+  padding: 6px 12px;
+  border: 1px solid var(--border-light);
+  text-align: left;
+}
+
+.md-table th {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.md-table td {
+  color: var(--text-secondary);
+}

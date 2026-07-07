@@ -1,6 +1,6 @@
 import { useMemo, ReactNode } from "react";
 import { MapPin } from "lucide-react";
-import { parseContent } from "@/utils/contentParser";
+import { parseContent, TableContent } from "@/utils/contentParser";
 
 interface ContentRendererProps {
     content: string;
@@ -74,6 +74,36 @@ export function ContentRenderer({ content, onImageClick }: ContentRendererProps)
                         {item.content as string}
                     </blockquote>
                 );
+
+            case 'table': {
+                const { headers, alignments, rows } = item.content as TableContent;
+                return (
+                    <div key={item.key} className="md-table-wrapper">
+                        <table className="md-table">
+                            <thead>
+                                <tr>
+                                    {headers.map((cell, ci) => (
+                                        <th key={ci} style={alignments[ci] ? { textAlign: alignments[ci] as 'left' | 'center' | 'right' } : undefined}>
+                                            {cell}
+                                        </th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {rows.map((row, ri) => (
+                                    <tr key={ri}>
+                                        {row.map((cell, ci) => (
+                                            <td key={ci} style={alignments[ci] ? { textAlign: alignments[ci] as 'left' | 'center' | 'right' } : undefined}>
+                                                {cell}
+                                            </td>
+                                        ))}
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                );
+            }
 
             case 'heading': {
                 const { level, text } = item.content as { level: number; text: string };
