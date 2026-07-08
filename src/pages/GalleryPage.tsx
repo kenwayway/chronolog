@@ -6,6 +6,7 @@ import { useUIStateContext } from '@/contexts/UIStateContext';
 import { extractImages, EntryImage } from '@/utils/imageExtractor';
 import { formatDate, formatTime } from '@/utils/formatters';
 import { ContentRenderer } from '@/components/timeline/ContentRenderer';
+import { ImageLightbox } from '@/components/common/ImageLightbox';
 import styles from './GalleryPage.module.css';
 
 /**
@@ -18,6 +19,7 @@ export function GalleryPage() {
     const ui = useUIStateContext();
     const { state: { entries } } = useSessionContext();
     const [selected, setSelected] = useState<EntryImage | null>(null);
+    const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
     const images = useMemo(() => extractImages(entries), [entries]);
 
@@ -25,6 +27,14 @@ export function GalleryPage() {
         setSelected(null);
         navigate('/');
         ui.navigateToEntry(item.entry);
+    };
+
+    /** Append ?w= to an image URL for on-the-fly resizing */
+    const thumbUrl = (url: string, w = 300) => {
+        // Only transform our own /api/image/ URLs
+        if (!url.includes('/api/image/')) return url;
+        const sep = url.includes('?') ? '&' : '?';
+        return `${url}${sep}w=${w}`;
     };
 
     return (
@@ -47,7 +57,7 @@ export function GalleryPage() {
                             className={styles.cell}
                             onClick={() => setSelected(item)}
                         >
-                            <img src={item.url} alt="" loading="lazy" />
+                            <img src={thumbUrl(item.url)} alt="" loading="lazy" />
                             <span className={styles.cellDate}>{formatDate(item.entry.timestamp)}</span>
                         </button>
                     ))}
@@ -64,7 +74,7 @@ export function GalleryPage() {
                             <button onClick={() => setSelected(null)} className={styles.detailClose}>×</button>
                         </div>
                         <div className={styles.detailBody}>
-                            <ContentRenderer content={selected.entry.content} />
+                            <ContentRenderer content={selected.entry.content} onImageClick={setLightboxImage} />
                         </div>
                         <div className={styles.detailFooter}>
                             <button onClick={() => jumpToTimeline(selected)} className={styles.jumpBtn}>
@@ -74,6 +84,10 @@ export function GalleryPage() {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {lightboxImage && (
+                <ImageLightbox src={lightboxImage} onClose={() => setLightboxImage(null)} />
             )}
         </div>
     );
