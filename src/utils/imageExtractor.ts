@@ -33,3 +33,12 @@ export function extractImages(entries: Entry[]): EntryImage[] {
 
     return images.sort((a, b) => b.entry.timestamp - a.entry.timestamp)
 }
+
+/**
+ * Thumbnail URL for an app-hosted image ("X" → "X.thumb").
+ * External URLs are returned unchanged. Readers should fall back to the
+ * original via onError since old uploads have no thumbnail object.
+ */
+export function thumbUrl(url: string): string {
+    return url.includes('/api/image/') ? `${url}.thumb` : url
+}

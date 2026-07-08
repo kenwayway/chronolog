@@ -11,9 +11,6 @@ export interface Env {
     // R2 Bucket (image storage)
     CHRONOLOG_R2: R2Bucket;
 
-    // Cloudflare Images binding (on-the-fly resizing)
-    IMAGES: ImagesBinding;
-
     // Environment variables
     AUTH_PASSWORD: string;
     PUBLIC_API_TOKEN?: string;

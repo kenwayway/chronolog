@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
 import { getApiBase } from './useCloudAuth'
-import { compressImage } from '@/utils/imageCompressor'
+import { compressImage, generateThumbnail } from '@/utils/imageCompressor'
 
 export interface CleanupResult {
     deleted: string[]
@@ -19,8 +19,12 @@ export function useImageUpload(tokenRef: React.MutableRefObject<string | null>) 
             throw new Error('Not logged in')
         }
 
+        const compressed = await compressImage(file)
+        const thumb = await generateThumbnail(compressed)
+
         const formData = new FormData()
-        formData.append('file', await compressImage(file))
+        formData.append('file', compressed)
+        if (thumb) formData.append('thumb', thumb)
 
         const response = await fetch(`${getApiBase()}/api/upload`, {
             method: 'POST',

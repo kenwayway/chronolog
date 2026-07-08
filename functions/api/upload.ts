@@ -52,6 +52,18 @@ export async function onRequestPost(context: CFContext): Promise<Response> {
                 },
             });
 
+            // Optional client-generated thumbnail, stored alongside the
+            // original as "<filename>.thumb" (see /api/image/[id])
+            const thumb = formData.get('thumb') as File | null;
+            if (thumb && typeof thumb !== 'string' &&
+                allowedTypes.includes(thumb.type) && thumb.size <= 2 * 1024 * 1024) {
+                await env.CHRONOLOG_R2.put(`${filename}.thumb`, thumb.stream(), {
+                    httpMetadata: {
+                        contentType: thumb.type,
+                    },
+                });
+            }
+
             // Return the image URL
             const url = new URL(request.url);
             const imageUrl = `${url.origin}/api/image/${filename}`;

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { extractImages } from './imageExtractor'
+import { extractImages, thumbUrl } from './imageExtractor'
 import type { Entry } from '@/types'
 
 function makeEntry(overrides: Partial<Entry>): Entry {
@@ -48,5 +48,16 @@ describe('extractImages', () => {
         // Mid-line 🖼 without a leading position still matches after trim only
         // if the line *starts* with it — this one starts with "I love"
         expect(extractImages([entry])).toEqual([])
+    })
+})
+
+describe('thumbUrl', () => {
+    it('appends .thumb to app-hosted image urls', () => {
+        expect(thumbUrl('/api/image/a.webp')).toBe('/api/image/a.webp.thumb')
+        expect(thumbUrl('https://x.dev/api/image/b.jpg')).toBe('https://x.dev/api/image/b.jpg.thumb')
+    })
+
+    it('leaves external urls unchanged', () => {
+        expect(thumbUrl('https://example.com/pic.png')).toBe('https://example.com/pic.png')
     })
 })

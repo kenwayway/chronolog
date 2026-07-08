@@ -63,8 +63,12 @@ export async function onRequestPost(context: CFContext): Promise<Response> {
             cursor = listed.truncated ? listed.cursor : undefined;
         } while (cursor);
 
-        // Find unreferenced images
-        const unreferencedImages = allImages.filter(img => !usedImages.has(img));
+        // Find unreferenced images. Thumbnails ("X.thumb") aren't referenced
+        // in content directly — they live and die with their base image.
+        const unreferencedImages = allImages.filter(key => {
+            const baseKey = key.endsWith('.thumb') ? key.slice(0, -'.thumb'.length) : key;
+            return !usedImages.has(baseKey);
+        });
 
         // Delete unreferenced images
         let deletedCount = 0;

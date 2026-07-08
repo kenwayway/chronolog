@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, CalendarDays } from 'lucide-react';
 import { useSessionContext } from '@/contexts/SessionContext';
 import { useUIStateContext } from '@/contexts/UIStateContext';
-import { extractImages, EntryImage } from '@/utils/imageExtractor';
+import { extractImages, thumbUrl, EntryImage } from '@/utils/imageExtractor';
 import { formatDate, formatTime } from '@/utils/formatters';
 import { ContentRenderer } from '@/components/timeline/ContentRenderer';
 import { ImageLightbox } from '@/components/common/ImageLightbox';
@@ -29,14 +29,6 @@ export function GalleryPage() {
         ui.navigateToEntry(item.entry);
     };
 
-    /** Append ?w= to an image URL for on-the-fly resizing */
-    const thumbUrl = (url: string, w = 300) => {
-        // Only transform our own /api/image/ URLs
-        if (!url.includes('/api/image/')) return url;
-        const sep = url.includes('?') ? '&' : '?';
-        return `${url}${sep}w=${w}`;
-    };
-
     return (
         <div className={styles.page}>
             <div className={styles.header}>
@@ -57,7 +49,18 @@ export function GalleryPage() {
                             className={styles.cell}
                             onClick={() => setSelected(item)}
                         >
-                            <img src={thumbUrl(item.url)} alt="" loading="lazy" />
+                            <img
+                                src={thumbUrl(item.url)}
+                                alt=""
+                                loading="lazy"
+                                decoding="async"
+                                onError={(e) => {
+                                    // Old uploads have no .thumb object — fall
+                                    // back to the original (once, no retry loop)
+                                    const img = e.currentTarget;
+                                    if (img.src.endsWith('.thumb')) img.src = item.url;
+                                }}
+                            />
                             <span className={styles.cellDate}>{formatDate(item.entry.timestamp)}</span>
                         </button>
                     ))}

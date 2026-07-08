@@ -53,6 +53,9 @@
   border: 1px solid var(--border-subtle);
   padding: 0;
   cursor: pointer;
+  /* Skip layout/paint work for offscreen cells */
+  content-visibility: auto;
+  contain-intrinsic-size: 150px;
 }
 
 .cell img {
