@@ -74,6 +74,7 @@ function App() {
         sync: cloudSync.sync,
         uploadImage: cloudSync.uploadImage,
         cleanupImages: cloudSync.cleanupImages,
+        testAI: cloudSync.testAI,
         token: cloudSync.token,
     }), [
         cloudSync.isLoggedIn,
@@ -85,6 +86,7 @@ function App() {
         cloudSync.sync,
         cloudSync.uploadImage,
         cloudSync.cleanupImages,
+        cloudSync.testAI,
         cloudSync.token,
     ]);
 

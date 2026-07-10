@@ -14,8 +14,6 @@ import type {
     DeleteEntryPayload,
     EditEntryPayload,
     UpdateEntryPayload,
-    SetApiKeyPayload,
-    SetAIConfigPayload,
     SetEntryCategoryPayload,
     ImportDataPayload,
     AddContentTypePayload,
@@ -32,10 +30,7 @@ export const initialState: SessionState = {
     sessionStart: null,
     entries: [],
     contentTypes: [...BUILTIN_CONTENT_TYPES],
-    mediaItems: [],
-    apiKey: null,
-    aiBaseUrl: 'https://api.openai.com/v1',
-    aiModel: 'gpt-4o-mini'
+    mediaItems: []
 }
 
 // ============================================
@@ -216,19 +211,6 @@ function handleSetEntryCategory(state: SessionState, payload: SetEntryCategoryPa
     }
 }
 
-function handleSetApiKey(state: SessionState, payload: SetApiKeyPayload): SessionState {
-    return { ...state, apiKey: payload.apiKey }
-}
-
-function handleSetAIConfig(state: SessionState, payload: SetAIConfigPayload): SessionState {
-    return {
-        ...state,
-        apiKey: payload.apiKey ?? state.apiKey,
-        aiBaseUrl: payload.aiBaseUrl ?? state.aiBaseUrl,
-        aiModel: payload.aiModel ?? state.aiModel
-    }
-}
-
 function handleLoadState(state: SessionState, payload: Partial<SessionState>): SessionState {
     const loadedContentTypes = payload.contentTypes || []
     const mergedContentTypes = mergeContentTypes(loadedContentTypes)
@@ -240,9 +222,6 @@ function handleLoadState(state: SessionState, payload: Partial<SessionState>): S
         entries: migratedEntries,
         contentTypes: mergedContentTypes,
         mediaItems: payload.mediaItems || state.mediaItems || [],
-        apiKey: state.apiKey ?? payload.apiKey ?? initialState.apiKey,
-        aiBaseUrl: state.aiBaseUrl ?? payload.aiBaseUrl ?? initialState.aiBaseUrl,
-        aiModel: state.aiModel ?? payload.aiModel ?? initialState.aiModel,
         status: payload.sessionStart ? SESSION_STATUS.STREAMING : SESSION_STATUS.IDLE
     }
 }
@@ -343,8 +322,6 @@ export function sessionReducer(state: SessionState, action: SessionAction): Sess
         case ACTIONS.EDIT_ENTRY: return handleEditEntry(state, action.payload)
         case ACTIONS.UPDATE_ENTRY: return handleUpdateEntry(state, action.payload)
         case ACTIONS.SET_ENTRY_CATEGORY: return handleSetEntryCategory(state, action.payload)
-        case ACTIONS.SET_API_KEY: return handleSetApiKey(state, action.payload)
-        case ACTIONS.SET_AI_CONFIG: return handleSetAIConfig(state, action.payload)
         case ACTIONS.LOAD_STATE: return handleLoadState(state, action.payload)
         case ACTIONS.IMPORT_DATA: return handleImportData(state, action.payload)
         case ACTIONS.ADD_CONTENT_TYPE: return handleAddContentType(state, action.payload)

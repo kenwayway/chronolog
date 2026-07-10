@@ -11,9 +11,10 @@
  * Public API is identical to the pre-refactor version.
  */
 import { useEffect, useCallback, useRef } from 'react'
-import type { Entry, ContentType, MediaItem, ImportDataPayload } from '@/types'
+import type { Entry, ContentType, MediaItem, ImportDataPayload, TestAIResult } from '@/types'
 import { useCloudAuth, type LoginResult } from './useCloudAuth'
 import { useImageUpload, type CleanupResult } from './useImageUpload'
+import { useAIHealthCheck } from './useAIHealthCheck'
 import { useSyncEngine, type SyncState } from './useSyncEngine'
 import { useToast } from './useToast'
 
@@ -34,6 +35,7 @@ interface UseCloudSyncReturn extends SyncState {
   sync: () => Promise<void>
   uploadImage: (file: File) => Promise<string>
   cleanupImages: () => Promise<CleanupResult>
+  testAI: () => Promise<TestAIResult>
   token: string | null
 }
 
@@ -83,6 +85,9 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
 
   // --- Image operations ---
   const { uploadImage, cleanupImages } = useImageUpload(auth.tokenRef)
+
+  // --- AI health check (backend AI_API_KEY validity) ---
+  const { testAI } = useAIHealthCheck(auth.tokenRef)
 
   // --- Visibility-aware periodic polling ---
   // Pauses when the tab is hidden, resumes immediately when visible
@@ -195,6 +200,7 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
     sync,
     uploadImage,
     cleanupImages,
+    testAI,
     token: auth.tokenRef.current,
   }
 }

@@ -7,9 +7,6 @@
 export const STORAGE_KEYS = {
     // Session state
     STATE: 'chronolog_state',
-    API_KEY: 'chronolog_api_key',
-    AI_BASE_URL: 'chronolog_ai_base_url',
-    AI_MODEL: 'chronolog_ai_model',
 
     // Auth tokens
     CLOUD_AUTH: 'chronolog_cloud_auth',

@@ -1,6 +1,6 @@
 import { useState, useRef, KeyboardEvent, ChangeEvent } from 'react';
-import { Download, Upload, Check, FolderOpen, Cloud, CloudOff, RefreshCw, Trash2 } from 'lucide-react';
-import type { Entry, Category, ContentType, MediaItem, CloudSyncFull } from '@/types';
+import { Download, Upload, Check, FolderOpen, Cloud, CloudOff, RefreshCw, Trash2, Sparkles } from 'lucide-react';
+import type { Entry, Category, ContentType, MediaItem, CloudSyncFull, TestAIResult } from '@/types';
 
 interface ImportData {
     entries: Entry[];
@@ -39,6 +39,8 @@ export function SyncTab({
     const [cloudLoginError, setCloudLoginError] = useState("");
     const [isCleaningUp, setIsCleaningUp] = useState(false);
     const [cleanupResult, setCleanupResult] = useState<CleanupResult | null>(null);
+    const [isTestingAI, setIsTestingAI] = useState(false);
+    const [aiTestResult, setAiTestResult] = useState<TestAIResult | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleExport = () => {
@@ -93,6 +95,19 @@ export function SyncTab({
                 setCloudPassword("");
                 setCloudLoginError("");
             }
+        }
+    };
+
+    const handleTestAI = async () => {
+        if (!cloudSync?.testAI) return;
+        setIsTestingAI(true);
+        setAiTestResult(null);
+        try {
+            setAiTestResult(await cloudSync.testAI());
+        } catch (error) {
+            setAiTestResult({ ok: false, error: (error as Error).message });
+        } finally {
+            setIsTestingAI(false);
         }
     };
 
@@ -217,6 +232,33 @@ export function SyncTab({
                     {entries?.length || 0} 条记录
                 </p>
             </div>
+
+            {/* AI Health Check */}
+            {cloudSync?.isLoggedIn && (
+                <div>
+                    <div className="settings-section-label">AI</div>
+                    <button
+                        onClick={handleTestAI}
+                        disabled={isTestingAI}
+                        className="btn-action btn-action-secondary"
+                        style={{ width: "100%", justifyContent: "center" }}
+                    >
+                        <Sparkles size={14} />
+                        {isTestingAI ? "测试中..." : "Test AI"}
+                    </button>
+                    {aiTestResult && (
+                        <p className={aiTestResult.ok ? "settings-hint" : "settings-error"} style={{ marginTop: 8 }}>
+                            {aiTestResult.ok
+                                ? `✓ AI 正常 (${aiTestResult.model})`
+                                : `✗ AI 不可用: ${aiTestResult.error}`
+                            }
+                        </p>
+                    )}
+                    <p className="settings-hint" style={{ marginTop: 4 }}>
+                        检查 Cloudflare 后台 AI_API_KEY 是否有效(自动分类依赖它)
+                    </p>
+                </div>
+            )}
 
             {/* Cleanup Images */}
             {cloudSync?.isLoggedIn && (

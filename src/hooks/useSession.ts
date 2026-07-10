@@ -1,6 +1,6 @@
 import { useReducer, useEffect, useCallback, useMemo } from 'react'
 import { ACTIONS } from '@/utils/constants'
-import { STORAGE_KEYS, getStorage, getStorageRaw, setStorageRaw } from '@/utils/storageService'
+import { STORAGE_KEYS, getStorage } from '@/utils/storageService'
 import { SESSION_STATUS } from '@/utils/constants'
 import { sessionReducer, initialState } from './sessionReducer'
 import { usePersistence } from './usePersistence'
@@ -9,11 +9,14 @@ import type {
   MediaItem,
   SessionState,
   UseSessionReturn,
-  SetAIConfigPayload,
   UpdateEntryPayload,
   ImportDataPayload,
   CategoryId
 } from '@/types'
+
+// Legacy client-side AI config keys — removed feature; purge stale data
+// (chronolog_api_key held a plaintext API key in localStorage)
+const LEGACY_STORAGE_KEYS = ['chronolog_api_key', 'chronolog_ai_base_url', 'chronolog_ai_model']
 
 export function useSession(): UseSessionReturn {
   const [state, dispatch] = useReducer(sessionReducer, initialState)
@@ -24,24 +27,12 @@ export function useSession(): UseSessionReturn {
   // Load saved state on mount
   useEffect(() => {
     const savedState = getStorage<Partial<SessionState>>(STORAGE_KEYS.STATE)
-    const savedApiKey = getStorageRaw(STORAGE_KEYS.API_KEY)
-    const savedBaseUrl = getStorageRaw(STORAGE_KEYS.AI_BASE_URL)
-    const savedModel = getStorageRaw(STORAGE_KEYS.AI_MODEL)
 
     if (savedState) {
       dispatch({ type: ACTIONS.LOAD_STATE, payload: savedState })
     }
 
-    if (savedApiKey || savedBaseUrl || savedModel) {
-      dispatch({
-        type: ACTIONS.SET_AI_CONFIG,
-        payload: {
-          apiKey: savedApiKey || undefined,
-          aiBaseUrl: savedBaseUrl || 'https://api.openai.com/v1',
-          aiModel: savedModel || 'gpt-4o-mini'
-        }
-      })
-    }
+    LEGACY_STORAGE_KEYS.forEach(key => localStorage.removeItem(key))
   }, [])
 
   // --- Actions ---
@@ -82,19 +73,6 @@ export function useSession(): UseSessionReturn {
 
   const editEntry = useCallback((entryId: string, content: string) => {
     dispatch({ type: ACTIONS.EDIT_ENTRY, payload: { entryId, content } })
-  }, [])
-
-  const setApiKey = useCallback((apiKey: string) => {
-    setStorageRaw(STORAGE_KEYS.API_KEY, apiKey)
-    dispatch({ type: ACTIONS.SET_API_KEY, payload: { apiKey } })
-  }, [])
-
-  const setAIConfig = useCallback((config: SetAIConfigPayload) => {
-    const { apiKey, aiBaseUrl, aiModel } = config
-    if (apiKey !== undefined) setStorageRaw(STORAGE_KEYS.API_KEY, apiKey)
-    if (aiBaseUrl !== undefined) setStorageRaw(STORAGE_KEYS.AI_BASE_URL, aiBaseUrl)
-    if (aiModel !== undefined) setStorageRaw(STORAGE_KEYS.AI_MODEL, aiModel)
-    dispatch({ type: ACTIONS.SET_AI_CONFIG, payload: config })
   }, [])
 
   const setEntryCategory = useCallback((entryId: string, category: CategoryId) => {
@@ -155,8 +133,6 @@ export function useSession(): UseSessionReturn {
     logOff,
     deleteEntry,
     editEntry,
-    setApiKey,
-    setAIConfig,
     setEntryCategory,
     updateEntry,
     importData,
@@ -168,7 +144,7 @@ export function useSession(): UseSessionReturn {
     deleteMediaItem
   }), [
     logIn, switchSession, addNote, logOff, deleteEntry, editEntry,
-    setApiKey, setAIConfig, setEntryCategory, updateEntry, importData,
+    setEntryCategory, updateEntry, importData,
     addContentType, updateContentType, deleteContentType,
     addMediaItem, updateMediaItem, deleteMediaItem
   ])

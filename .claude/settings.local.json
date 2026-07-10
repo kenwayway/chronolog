@@ -8,7 +8,16 @@
       "Bash(git push)",
       "Bash(npm run build)",
       "Bash(npm run test:*)",
-      "Bash(npx eslint:*)"
+      "Bash(npx eslint:*)",
+      "Bash(npm view *)",
+      "Bash(npm install *)",
+      "Bash(npm ls *)",
+      "Bash(npm test *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(git rm *)",
+      "Bash(npm run *)"
     ]
   }
 }

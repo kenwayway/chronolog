@@ -233,21 +233,6 @@ describe('UPDATE_ENTRY', () => {
 })
 
 // ========================================
-// SET_AI_CONFIG
-// ========================================
-describe('SET_AI_CONFIG', () => {
-    it('merges partial config', () => {
-        const result = sessionReducer(initialState, {
-            type: ACTIONS.SET_AI_CONFIG,
-            payload: { aiModel: 'gpt-4o' },
-        })
-
-        expect(result.aiModel).toBe('gpt-4o')
-        expect(result.aiBaseUrl).toBe(initialState.aiBaseUrl) // Unchanged
-    })
-})
-
-// ========================================
 // Content Type CRUD
 // ========================================
 describe('Content Type CRUD', () => {

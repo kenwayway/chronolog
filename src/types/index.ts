@@ -1,7 +1,7 @@
 // ============================================
 // Re-exports
 // ============================================
-export type { CloudSyncStatus, CloudSyncWithUpload, CloudSyncFull } from './cloudSync'
+export type { CloudSyncStatus, CloudSyncWithUpload, CloudSyncFull, TestAIResult } from './cloudSync'
 
 // ============================================
 // Core Data Types
@@ -171,9 +171,6 @@ export interface SessionState {
   entries: Entry[]
   contentTypes: ContentType[]     // User's content types (includes built-in)
   mediaItems: MediaItem[]         // User's media library
-  apiKey: string | null
-  aiBaseUrl: string
-  aiModel: string
 }
 
 /** Action payloads */
@@ -231,16 +228,6 @@ export interface SetEntryCategoryPayload {
   category: CategoryId
 }
 
-export interface SetApiKeyPayload {
-  apiKey: string
-}
-
-export interface SetAIConfigPayload {
-  apiKey?: string
-  aiBaseUrl?: string
-  aiModel?: string
-}
-
 export interface ImportDataPayload {
   entries?: Entry[]
   contentTypes?: ContentType[]
@@ -285,8 +272,6 @@ export type SessionAction =
   | { type: 'EDIT_ENTRY'; payload: EditEntryPayload }
   | { type: 'UPDATE_ENTRY'; payload: UpdateEntryPayload }
   | { type: 'SET_ENTRY_CATEGORY'; payload: SetEntryCategoryPayload }
-  | { type: 'SET_API_KEY'; payload: SetApiKeyPayload }
-  | { type: 'SET_AI_CONFIG'; payload: SetAIConfigPayload }
   | { type: 'LOAD_STATE'; payload: Partial<SessionState> }
   | { type: 'IMPORT_DATA'; payload: ImportDataPayload }
   | { type: 'ADD_CONTENT_TYPE'; payload: AddContentTypePayload }
@@ -308,8 +293,6 @@ export interface SessionActions {
   logOff: (content?: string) => void
   deleteEntry: (entryId: string) => void
   editEntry: (entryId: string, content: string) => void
-  setApiKey: (apiKey: string) => void
-  setAIConfig: (config: SetAIConfigPayload) => void
   setEntryCategory: (entryId: string, category: CategoryId) => void
   updateEntry: (entryId: string, updates: Omit<UpdateEntryPayload, 'entryId'>) => void
   importData: (data: ImportDataPayload) => void

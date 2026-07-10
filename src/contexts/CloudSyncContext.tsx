@@ -1,4 +1,5 @@
 import { createContext, useContext } from 'react'
+import type { TestAIResult } from '@/types'
 
 export interface CloudSyncContextValue {
     isLoggedIn: boolean
@@ -10,6 +11,7 @@ export interface CloudSyncContextValue {
     sync: () => Promise<void>
     uploadImage: (file: File) => Promise<string>
     cleanupImages: () => Promise<{ deleted: string[]; kept: string[] }>
+    testAI: () => Promise<TestAIResult>
     token: string | null
 }
 

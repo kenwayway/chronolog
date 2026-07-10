@@ -111,9 +111,6 @@ interface SessionState {
   entries: Entry[]              // All timeline entries
   contentTypes: ContentType[]   // User's content types (includes built-in)
   mediaItems: MediaItem[]       // User's media library
-  apiKey: string | null         // OpenAI API key
-  aiBaseUrl: string             // AI endpoint base URL
-  aiModel: string               // AI model name
 }
 ```
 
@@ -210,7 +207,6 @@ Additional panels: `ActivityPanel` (left sidebar — calendar heatmap, category 
 │   │   ├── useSession.ts       # Core state: entries, contentTypes, mediaItems, reducer + debounced localStorage
 │   │   ├── useCloudSync.ts     # Auth, sync (ref-equality diffing), polling, image upload
 │   │   ├── useTheme.tsx        # ThemeProvider context, theme + accent colors
-│   │   ├── useAI.ts            # Client-side AI category suggestion (OpenAI-compatible)
 │   │   ├── useAICategories.ts  # Server-side AI categorization (calls /api/categorize)
 │   │   ├── useAutoCategorize.ts # Auto-triggers categorization for new entries
 │   │   ├── useEntryHandlers.ts # Entry action handlers (extracted from App)
@@ -330,8 +326,6 @@ Shared component for editing entry metadata. Used by:
 | `EDIT_ENTRY` | Update entry content only |
 | `UPDATE_ENTRY` | Update content, timestamp, category, contentType, fieldValues, linkedEntries, tags, type |
 | `SET_ENTRY_CATEGORY` | Set category on an entry |
-| `SET_API_KEY` | Update client-side AI API key |
-| `SET_AI_CONFIG` | Update AI settings (apiKey, baseUrl, model) |
 | `LOAD_STATE` | Initialize from localStorage |
 | `IMPORT_DATA` | Replace entries/contentTypes/mediaItems from cloud data |
 | `ADD_CONTENT_TYPE` | Create new content type |

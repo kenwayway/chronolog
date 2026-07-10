@@ -22,6 +22,56 @@ interface AIResponse {
     fieldValues: Record<string, unknown> | null;
 }
 
+// GET /api/categorize - AI health check
+// Verifies AI_API_KEY is configured and actually works by making a minimal completion call.
+// Auth is enforced by _middleware.ts like every other non-public API route.
+export async function onRequestGet(context: CFContext): Promise<Response> {
+    const { env } = context;
+
+    const aiApiKey = env.AI_API_KEY;
+    const aiBaseUrl = env.AI_BASE_URL || 'https://api.openai.com/v1';
+    const aiModel = env.AI_MODEL || 'gpt-4o-mini';
+
+    if (!aiApiKey) {
+        return Response.json(
+            { ok: false, error: 'AI_API_KEY 未配置 (Cloudflare 环境变量)' },
+            { headers: corsHeaders }
+        );
+    }
+
+    try {
+        const response = await fetch(`${aiBaseUrl}/chat/completions`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${aiApiKey}`,
+            },
+            body: JSON.stringify({
+                model: aiModel,
+                messages: [{ role: 'user', content: 'ping' }],
+                max_tokens: 1,
+            }),
+        });
+
+        if (!response.ok) {
+            const error = await response.json<{ error?: { message?: string } }>().catch(() => ({}));
+            const detail = (error as { error?: { message?: string } }).error?.message;
+            return Response.json(
+                { ok: false, model: aiModel, error: detail || `AI API 返回 ${response.status}` },
+                { headers: corsHeaders }
+            );
+        }
+
+        return Response.json({ ok: true, model: aiModel }, { headers: corsHeaders });
+    } catch (error) {
+        const message = error instanceof Error ? error.message : 'AI API 无法访问';
+        return Response.json(
+            { ok: false, model: aiModel, error: message },
+            { headers: corsHeaders }
+        );
+    }
+}
+
 export async function onRequestPost(context: CFContext): Promise<Response> {
     const { request, env } = context;
 
