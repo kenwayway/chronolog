@@ -17,7 +17,11 @@
       "Bash(git commit -m ' *)",
       "Bash(git push *)",
       "Bash(git rm *)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(npx wrangler *)",
+      "Bash(curl -s http://localhost:*)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:*)",
+      "Bash(curl -s -X POST http://localhost:*)"
     ]
   }
 }

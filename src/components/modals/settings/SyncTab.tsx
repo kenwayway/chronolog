@@ -249,7 +249,7 @@ export function SyncTab({
                     {aiTestResult && (
                         <p className={aiTestResult.ok ? "settings-hint" : "settings-error"} style={{ marginTop: 8 }}>
                             {aiTestResult.ok
-                                ? `✓ AI 正常 (${aiTestResult.model})`
+                                ? `✓ AI 正常 (${aiTestResult.model})${aiTestResult.sample ? ` — 样例识别: ${aiTestResult.sample.contentType}/${aiTestResult.sample.category ?? '无分类'}` : ''}`
                                 : `✗ AI 不可用: ${aiTestResult.error}`
                             }
                         </p>

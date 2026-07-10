@@ -25,3 +25,4 @@ dist-ssr
 
 # Wrangler local dev state
 .wrangler
+.dev.vars

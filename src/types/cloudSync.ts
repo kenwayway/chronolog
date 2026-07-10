@@ -19,6 +19,8 @@ export interface TestAIResult {
     ok: boolean;
     model?: string;
     error?: string;
+    /** Sample categorization result proving the full round-trip works */
+    sample?: { category: string | null; contentType: string };
 }
 
 /** Full cloud sync interface with all methods - used by SettingsModal */
