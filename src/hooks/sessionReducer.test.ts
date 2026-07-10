@@ -123,7 +123,7 @@ describe('NOTE', () => {
 // ========================================
 describe('LOG_OFF', () => {
     const streamingState = stateWith({
-        status: SESSION_STATUS.STREAMING as any,
+        status: SESSION_STATUS.STREAMING,
         sessionStart: 1000,
     })
 
@@ -358,7 +358,7 @@ describe('Media Item CRUD', () => {
 describe('SWITCH', () => {
     it('ends current session and starts new one', () => {
         const streamingState = stateWith({
-            status: SESSION_STATUS.STREAMING as any,
+            status: SESSION_STATUS.STREAMING,
             sessionStart: 1000,
         })
 

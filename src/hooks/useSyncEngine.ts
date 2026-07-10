@@ -205,7 +205,7 @@ export function useSyncEngine({
                 }))
             }
         })
-    }, []) // eslint-disable-line react-hooks/exhaustive-deps
+    }, [])
 
     // --- Save changes to cloud (incremental diff) ---
     const saveToCloud = useCallback(async (token: string | null) => {
@@ -292,7 +292,7 @@ export function useSyncEngine({
                 }))
             }
         })
-    }, []) // eslint-disable-line react-hooks/exhaustive-deps
+    }, [])
 
     const isImporting = useCallback(() => isImportPending(), [])
 

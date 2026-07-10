@@ -33,7 +33,7 @@ export function DynamicFieldForm({ contentType, fieldValues, onChange, mediaItem
         if (hasMissing) {
             onChange({ ...fieldValues, ...missingDefaults });
         }
-    }, [contentType?.id]); // Only run when contentType changes
+    }, [contentType, fieldValues, onChange]);
 
     if (!contentType || !contentType.fields || contentType.fields.length === 0) {
         return null;

@@ -15,7 +15,7 @@ import { formatDate } from "@/utils/formatters";
 import { Calendar } from "./common/Calendar";
 import styles from "./Header.module.css";
 import { useCloudSyncContext } from "@/contexts/CloudSyncContext";
-import { useUIStateContext } from "@/contexts/UIStateContext";
+import { useUIStateContext } from "@/hooks/useUIStateContext";
 
 interface HeaderProps {
     isStreaming: boolean;

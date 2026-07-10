@@ -70,7 +70,7 @@ export const TimelineEntry = memo(function TimelineEntry({
 
   const handleTouchStart = (e: TouchEvent<HTMLDivElement>) => {
     e.currentTarget.style.userSelect = 'none';
-    (e.currentTarget.style as any).webkitUserSelect = 'none';
+    e.currentTarget.style.setProperty('-webkit-user-select', 'none');
     const timer = setTimeout(() => {
       const touch = e.touches[0];
       onContextMenu?.(entry, { x: touch.clientX, y: touch.clientY });
@@ -80,7 +80,7 @@ export const TimelineEntry = memo(function TimelineEntry({
 
   const handleTouchEnd = (e: TouchEvent<HTMLDivElement>) => {
     e.currentTarget.style.userSelect = '';
-    (e.currentTarget.style as any).webkitUserSelect = '';
+    e.currentTarget.style.removeProperty('-webkit-user-select');
     if (pressTimer) {
       clearTimeout(pressTimer);
       setPressTimer(null);
@@ -377,4 +377,3 @@ export const TimelineEntry = memo(function TimelineEntry({
     </>
   );
 });
-

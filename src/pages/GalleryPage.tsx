@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, CalendarDays } from 'lucide-react';
 import { useSessionContext } from '@/contexts/SessionContext';
-import { useUIStateContext } from '@/contexts/UIStateContext';
+import { useUIStateContext } from '@/hooks/useUIStateContext';
 import { extractImages, thumbUrl, EntryImage } from '@/utils/imageExtractor';
 import { formatDate, formatTime } from '@/utils/formatters';
 import { ContentRenderer } from '@/components/timeline/ContentRenderer';

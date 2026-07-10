@@ -13,26 +13,80 @@ interface EditModalProps {
   onClose: () => void;
 }
 
+interface EditFormState {
+  content: string;
+  imageUrl: string;
+  location: string;
+  timestamp: string;
+  category: CategoryId | null;
+  contentType: string | null;
+  fieldValues: Record<string, unknown>;
+  linkedEntries: string[];
+  tags: string[];
+  entryType: string;
+}
+
+function getInitialEditFormState(entry: Entry): EditFormState {
+  let imageUrl = "";
+  let location = "";
+  const content = (entry.content || "").split("\n").filter((line) => {
+    if (line.startsWith("🖼️ ")) {
+      imageUrl = line.replace("🖼️ ", "").trim();
+      return false;
+    }
+    if (line.startsWith("📍 ")) {
+      location = line.replace("📍 ", "").trim();
+      return false;
+    }
+    return true;
+  }).join("\n");
+
+  const date = new Date(entry.timestamp);
+  const timestamp = new Date(date.getTime() - date.getTimezoneOffset() * 60_000)
+    .toISOString()
+    .slice(0, 16);
+
+  return {
+    content,
+    imageUrl,
+    location,
+    timestamp,
+    category: entry.category || null,
+    contentType: entry.contentType || null,
+    fieldValues: (entry.fieldValues || {}) as Record<string, unknown>,
+    linkedEntries: entry.linkedEntries || [],
+    tags: entry.tags || [],
+    entryType: entry.type || ENTRY_TYPES.NOTE,
+  };
+}
+
 export function EditModal({ isOpen, entry, onSave, onClose }: EditModalProps) {
+  if (!isOpen || !entry) return null;
+
+  return <EditModalForm key={entry.id} entry={entry} onSave={onSave} onClose={onClose} />;
+}
+
+function EditModalForm({ entry, onSave, onClose }: Omit<EditModalProps, 'isOpen' | 'entry'> & { entry: Entry }) {
   const { state: { entries: allEntries, contentTypes: ctFromContext, mediaItems }, actions: { addMediaItem: onAddMediaItem, updateMediaItem: onUpdateMediaItem } } = useSessionContext();
   const types = ctFromContext.length > 0 ? ctFromContext : BUILTIN_CONTENT_TYPES;
+  const [initialState] = useState(() => getInitialEditFormState(entry));
   // Content state
-  const [content, setContent] = useState("");
-  const [timestamp, setTimestamp] = useState("");
-  const [entryType, setEntryType] = useState<string>(ENTRY_TYPES.NOTE);
+  const [content, setContent] = useState(initialState.content);
+  const [timestamp, setTimestamp] = useState(initialState.timestamp);
+  const [entryType, setEntryType] = useState<string>(initialState.entryType);
 
   // Metadata state (passed to EntryMetadataInput)
-  const [category, setCategory] = useState<CategoryId | null>(null);
-  const [contentType, setContentType] = useState<string | null>(null);
-  const [fieldValues, setFieldValues] = useState<Record<string, unknown>>({});
-  const [linkedEntries, setLinkedEntries] = useState<string[]>([]);
-  const [tags, setTags] = useState<string[]>([]);
+  const [category, setCategory] = useState<CategoryId | null>(initialState.category);
+  const [contentType, setContentType] = useState<string | null>(initialState.contentType);
+  const [fieldValues, setFieldValues] = useState<Record<string, unknown>>(initialState.fieldValues);
+  const [linkedEntries, setLinkedEntries] = useState<string[]>(initialState.linkedEntries);
+  const [tags, setTags] = useState<string[]>(initialState.tags);
 
   // Attachments state
-  const [imageUrl, setImageUrl] = useState("");
-  const [location, setLocation] = useState("");
-  const [showImageInput, setShowImageInput] = useState(false);
-  const [showLocationInput, setShowLocationInput] = useState(false);
+  const [imageUrl, setImageUrl] = useState(initialState.imageUrl);
+  const [location, setLocation] = useState(initialState.location);
+  const [showImageInput, setShowImageInput] = useState(Boolean(initialState.imageUrl));
+  const [showLocationInput, setShowLocationInput] = useState(Boolean(initialState.location));
 
   // UI state
   const [showMetadata, setShowMetadata] = useState(false);
@@ -42,50 +96,9 @@ export function EditModal({ isOpen, entry, onSave, onClose }: EditModalProps) {
 
 
   useEffect(() => {
-    if (isOpen && entry) {
-      // Parse content for image and location
-      const mainContent = entry.content || "";
-      let extractedImage = "";
-      let extractedLocation = "";
-
-      const lines = mainContent.split("\n");
-      const filteredLines = lines.filter((line) => {
-        if (line.startsWith("🖼️ ")) {
-          extractedImage = line.replace("🖼️ ", "").trim();
-          return false;
-        }
-        if (line.startsWith("📍 ")) {
-          extractedLocation = line.replace("📍 ", "").trim();
-          return false;
-        }
-        return true;
-      });
-
-      setContent(filteredLines.join("\n"));
-      setImageUrl(extractedImage);
-      setLocation(extractedLocation);
-      setShowImageInput(!!extractedImage);
-      setShowLocationInput(!!extractedLocation);
-
-      const date = new Date(entry.timestamp);
-      const localISOTime = new Date(
-        date.getTime() - date.getTimezoneOffset() * 60000,
-      )
-        .toISOString()
-        .slice(0, 16);
-      setTimestamp(localISOTime);
-      setCategory(entry.category || null);
-      setContentType(entry.contentType || null);
-      setFieldValues((entry.fieldValues || {}) as Record<string, unknown>);
-      setLinkedEntries(entry.linkedEntries || []);
-      setTags(entry.tags || []);
-      setEntryType(entry.type || ENTRY_TYPES.NOTE);
-      setShowMetadata(false);
-      setTimeout(() => textareaRef.current?.focus(), 50);
-    }
-  }, [isOpen, entry]);
-
-  if (!isOpen || !entry) return null;
+    const focusTimer = setTimeout(() => textareaRef.current?.focus(), 50);
+    return () => clearTimeout(focusTimer);
+  }, []);
 
   const getCurrentLocation = async () => {
     if (!navigator.geolocation) {

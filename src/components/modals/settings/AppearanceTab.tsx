@@ -1,5 +1,6 @@
 import type { Category } from '@/types';
-import { useTheme, ACCENT_COLORS, type AccentColorKey } from '@/hooks/useTheme';
+import { useTheme } from '@/hooks/useTheme';
+import { ACCENT_COLORS, type AccentColorKey } from '@/contexts/ThemeContext';
 
 interface AppearanceTabProps {
     categories?: Category[];

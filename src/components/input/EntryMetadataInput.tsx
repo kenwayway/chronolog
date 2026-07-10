@@ -1,4 +1,3 @@
-import { useState, useRef, useEffect } from 'react';
 import { Dropdown } from '../common/Dropdown';
 import { DynamicFieldForm } from './DynamicFieldForm';
 import { TagInput } from './TagInput';
@@ -55,7 +54,7 @@ export function EntryMetadataInput({
   setLinkedEntries,
   allEntries = [],
   currentEntryId,
-  currentEntryTimestamp = Date.now(),
+  currentEntryTimestamp = 0,
   contentTypes,
   mediaItems = [],
   onAddMediaItem,
@@ -64,17 +63,7 @@ export function EntryMetadataInput({
   showLinkedEntries = false,
   showAutoOption = true,
 }: EntryMetadataInputProps) {
-  const [height, setHeight] = useState(0);
-  const contentRef = useRef<HTMLDivElement>(null);
-
   const types = contentTypes || BUILTIN_CONTENT_TYPES;
-
-  // Measure content height for smooth animation
-  useEffect(() => {
-    if (contentRef.current) {
-      setHeight(isExpanded ? contentRef.current.scrollHeight : 0);
-    }
-  }, [isExpanded, tags.length, linkedEntries.length, contentType, fieldValues]);
 
   // Find content type definition for DynamicFieldForm
   const currentContentType = types.find(t => t.id === contentType) || null;
@@ -83,17 +72,18 @@ export function EntryMetadataInput({
     <div
       className="entry-metadata-input"
       style={{
-        overflow: isExpanded && height > 0 ? 'visible' : 'hidden',
-        height: height,
-        transition: 'height 0.2s ease-out',
+        display: 'grid',
+        gridTemplateRows: isExpanded ? '1fr' : '0fr',
+        overflow: 'hidden',
+        transition: 'grid-template-rows 0.2s ease-out',
         borderTop: isExpanded ? '1px solid var(--border-subtle)' : 'none',
         position: 'relative',
         zIndex: 50,
       }}
     >
       <div
-        ref={contentRef}
         style={{
+          minHeight: 0,
           backgroundColor: 'var(--bg-secondary)',
         }}
       >

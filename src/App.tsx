@@ -9,7 +9,8 @@ import { useAutoCategorize } from "./hooks/useAutoCategorize";
 import { useFollowUpLink } from "./hooks/useFollowUpLink";
 import { SessionContext, useSessionContext } from "./contexts/SessionContext";
 import { CloudSyncContext } from "./contexts/CloudSyncContext";
-import { UIStateProvider, useUIStateContext } from "./contexts/UIStateContext";
+import { UIStateProvider } from "./components/providers/UIStateProvider";
+import { useUIStateContext } from "./hooks/useUIStateContext";
 
 import {
     Header,

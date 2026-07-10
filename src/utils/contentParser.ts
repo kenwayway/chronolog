@@ -75,7 +75,7 @@ export interface TableContent {
   rows: React.ReactNode[][][];
 }
 
-interface ContentParseResult {
+export interface ContentParseResult {
   type: 'text' | 'image' | 'location' | 'blockquote' | 'heading' | 'codeblock' | 'table';
   content: React.ReactNode | HeadingContent | TableContent | string;
   key: string;

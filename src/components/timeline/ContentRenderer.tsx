@@ -1,6 +1,6 @@
 import { useMemo, ReactNode } from "react";
 import { MapPin } from "lucide-react";
-import { parseContent, TableContent } from "@/utils/contentParser";
+import { parseContent, type ContentParseResult, TableContent } from "@/utils/contentParser";
 
 interface ContentRendererProps {
     content: string;
@@ -13,7 +13,7 @@ interface ContentRendererProps {
 export function ContentRenderer({ content, onImageClick }: ContentRendererProps): ReactNode {
     const parsed = useMemo(() => parseContent(content), [content]);
 
-    return parsed.map((item: any, idx: number) => {
+    return parsed.map((item: ContentParseResult, idx: number) => {
         switch (item.type) {
             case 'codeblock':
                 return (
@@ -106,7 +106,7 @@ export function ContentRenderer({ content, onImageClick }: ContentRendererProps)
             }
 
             case 'heading': {
-                const { level, text } = item.content as { level: number; text: string };
+                const { level, text } = item.content as unknown as { level: number; text: ReactNode };
                 if (level === 1) {
                     return (
                         <div key={item.key} className="md-h1">

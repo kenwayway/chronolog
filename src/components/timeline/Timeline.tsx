@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { ENTRY_TYPES } from "@/utils/constants";
 import { useTheme } from "@/hooks/useTheme";
@@ -26,15 +26,12 @@ interface TimelineProps {
 export function Timeline({ entries, onContextMenu, onEdit, categoryFilter = [], isFilterMode: isFilterModeProp, onNavigateToEntry }: TimelineProps) {
   const { state: { entries: allEntries, mediaItems }, categories } = useSessionContext();
   const { theme } = useTheme();
-  const [currentPage, setCurrentPage] = useState(0);
 
   // Stable key for categoryFilter to avoid re-creating strings on every render
   const categoryFilterKey = categoryFilter.join(',');
-
-  // Reset page when filter changes
-  useEffect(() => {
-    setCurrentPage(0);
-  }, [categoryFilterKey, isFilterModeProp]);
+  const paginationKey = `${isFilterModeProp ?? 'auto'}:${categoryFilterKey}`;
+  const [pagination, setPagination] = useState({ key: paginationKey, page: 0 });
+  const currentPage = pagination.key === paginationKey ? pagination.page : 0;
 
   const isFilterMode = isFilterModeProp ?? categoryFilter.length > 0;
   const totalPages = isFilterMode ? Math.ceil(entries.length / ENTRIES_PER_PAGE) : 1;
@@ -118,7 +115,7 @@ export function Timeline({ entries, onContextMenu, onEdit, categoryFilter = [], 
           {totalPages > 1 && (
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
+                onClick={() => setPagination({ key: paginationKey, page: Math.max(0, currentPage - 1) })}
                 disabled={currentPage === 0}
                 style={{
                   padding: 4,
@@ -137,7 +134,7 @@ export function Timeline({ entries, onContextMenu, onEdit, categoryFilter = [], 
                 {currentPage + 1} / {totalPages}
               </span>
               <button
-                onClick={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
+                onClick={() => setPagination({ key: paginationKey, page: Math.min(totalPages - 1, currentPage + 1) })}
                 disabled={currentPage === totalPages - 1}
                 style={{
                   padding: 4,

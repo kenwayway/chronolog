@@ -19,6 +19,11 @@ export function useFollowUpLink({ entries, updateEntry, inputPanelRef }: UseFoll
     const pendingLinkRef = useRef<string | null>(null)
     const prevEntriesLengthRef = useRef(entries.length)
 
+    const clearFollowUp = useCallback(() => {
+        setFollowUpEntry(null)
+        pendingLinkRef.current = null
+    }, [])
+
     // Watch for new entries and create bidirectional links
     useEffect(() => {
         if (entries.length > prevEntriesLengthRef.current && pendingLinkRef.current) {
@@ -41,11 +46,15 @@ export function useFollowUpLink({ entries, updateEntry, inputPanelRef }: UseFoll
                 }
             }
 
-            pendingLinkRef.current = null
-            setFollowUpEntry(null)
+            const completedLinkToId = linkToId
+            window.setTimeout(() => {
+                if (pendingLinkRef.current === completedLinkToId) {
+                    clearFollowUp()
+                }
+            }, 0)
         }
         prevEntriesLengthRef.current = entries.length
-    }, [entries, updateEntry])
+    }, [entries, updateEntry, clearFollowUp])
 
     const handleFollowUp = useCallback((entry: Entry) => {
         setFollowUpEntry(entry)
@@ -54,11 +63,6 @@ export function useFollowUpLink({ entries, updateEntry, inputPanelRef }: UseFoll
             inputPanelRef.current?.focus()
         }, 100)
     }, [inputPanelRef])
-
-    const clearFollowUp = useCallback(() => {
-        setFollowUpEntry(null)
-        pendingLinkRef.current = null
-    }, [])
 
     return { followUpEntry, handleFollowUp, clearFollowUp }
 }

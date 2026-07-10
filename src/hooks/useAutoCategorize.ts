@@ -61,5 +61,5 @@ export function useAutoCategorize({
         }
 
         lastEntryCountRef.current = currentCount
-    }, [entries.length, contentTypes, isLoggedIn, categorize, updateEntry])
+    }, [entries, contentTypes, isLoggedIn, categorize, updateEntry])
 }

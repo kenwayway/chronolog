@@ -174,11 +174,11 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
   }, [auth.isLoggedIn, engine, auth.tokenRef])
 
   // --- Manual sync (bidirectional) ---
-  const sync = useCallback(async () => {
+  const sync = async () => {
     if (!auth.tokenRef.current) return
     await engine.saveToCloud(auth.tokenRef.current)
     await engine.fetchRemoteData(auth.tokenRef.current)
-  }, [engine, auth.tokenRef])
+  }
 
   // --- Logout with cleanup ---
   const logout = useCallback(() => {

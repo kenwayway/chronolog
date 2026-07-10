@@ -19,20 +19,36 @@ export function LinkSelector({
     onLink,
     onClose,
 }: LinkSelectorProps) {
+    if (!isOpen || !sourceEntry) return null;
+
+    return (
+        <LinkSelectorDialog
+            key={sourceEntry.id}
+            sourceEntry={sourceEntry}
+            entries={entries}
+            onLink={onLink}
+            onClose={onClose}
+        />
+    );
+}
+
+interface LinkSelectorDialogProps {
+    sourceEntry: Entry;
+    entries: Entry[];
+    onLink: (sourceId: string, linkedIds: string[]) => void;
+    onClose: () => void;
+}
+
+function LinkSelectorDialog({ sourceEntry, entries, onLink, onClose }: LinkSelectorDialogProps) {
     const [search, setSearch] = useState("");
-    const [selectedIds, setSelectedIds] = useState<string[]>([]);
+    const [selectedIds, setSelectedIds] = useState<string[]>(() => sourceEntry.linkedEntries || []);
     const inputRef = useRef<HTMLInputElement>(null);
 
-    // Initialize with existing links
+    // Focus the newly mounted dialog without synchronously resetting state in an effect.
     useEffect(() => {
-        if (isOpen && sourceEntry) {
-            setSelectedIds(sourceEntry.linkedEntries || []);
-            setSearch("");
-            setTimeout(() => inputRef.current?.focus(), 100);
-        }
-    }, [isOpen, sourceEntry]);
-
-    if (!isOpen || !sourceEntry) return null;
+        const focusTimer = setTimeout(() => inputRef.current?.focus(), 100);
+        return () => clearTimeout(focusTimer);
+    }, []);
 
     // Filter entries (exclude self, match search)
     const filteredEntries = entries

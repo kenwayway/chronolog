@@ -9,12 +9,9 @@ type PersistedState = Pick<SessionState, 'status' | 'sessionStart' | 'entries' |
  * Batches rapid state changes into a single write (500ms debounce)
  * and flushes on page unload to prevent data loss.
  *
- * latestStateRef is updated synchronously during render (not in an effect)
- * so the beforeunload handler always has the most current state even if the
- * user refreshes before React's effects have run.
+ * latestStateRef is updated from the persistence effect so render stays pure.
  */
 export function usePersistence(state: SessionState) {
-    // Updated synchronously during render — always reflects current state
     const latestStateRef = useRef<PersistedState>({
         status: state.status,
         sessionStart: state.sessionStart,
@@ -22,14 +19,6 @@ export function usePersistence(state: SessionState) {
         contentTypes: state.contentTypes,
         mediaItems: state.mediaItems,
     })
-    latestStateRef.current = {
-        status: state.status,
-        sessionStart: state.sessionStart,
-        entries: state.entries,
-        contentTypes: state.contentTypes,
-        mediaItems: state.mediaItems,
-    }
-
     const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
     const flushSave = useCallback(() => {
@@ -42,6 +31,13 @@ export function usePersistence(state: SessionState) {
 
     // Debounced save: batches rapid state changes into a single localStorage write
     useEffect(() => {
+        latestStateRef.current = {
+            status: state.status,
+            sessionStart: state.sessionStart,
+            entries: state.entries,
+            contentTypes: state.contentTypes,
+            mediaItems: state.mediaItems,
+        }
         if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
         saveTimerRef.current = setTimeout(flushSave, 500)
     }, [state.status, state.sessionStart, state.entries, state.contentTypes, state.mediaItems, flushSave])

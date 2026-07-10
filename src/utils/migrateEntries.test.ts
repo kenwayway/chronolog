@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { migrateEntries } from './migrateEntries'
-import type { Entry, ContentType } from '@/types'
+import type { Entry, ContentType, CategoryId } from '@/types'
 
 // Minimal content types for testing
 const testContentTypes: ContentType[] = [
@@ -25,7 +25,7 @@ function makeEntry(overrides: Partial<Entry>): Entry {
 
 describe('migrateEntries', () => {
     it('migrates legacy beans category to contentType', () => {
-        const entry = makeEntry({ category: 'beans' as any })
+        const entry = makeEntry({ category: 'beans' as unknown as CategoryId })
         const typesWithBeans = [...testContentTypes, { id: 'beans', name: 'Beans', fields: [] }]
         const result = migrateEntries([entry], typesWithBeans)
         expect(result[0].contentType).toBe('beans')
@@ -34,7 +34,7 @@ describe('migrateEntries', () => {
 
     it('migrates legacy sparks category to contentType', () => {
         const typesWithSparks = [...testContentTypes, { id: 'sparks', name: 'Sparks', fields: [] }]
-        const entry = makeEntry({ category: 'sparks' as any })
+        const entry = makeEntry({ category: 'sparks' as unknown as CategoryId })
         const result = migrateEntries([entry], typesWithSparks)
         expect(result[0].contentType).toBe('sparks')
         expect(result[0].category).toBeUndefined()
