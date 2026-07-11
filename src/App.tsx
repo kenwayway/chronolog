@@ -201,8 +201,6 @@ function MainView({
             <ActivityPanel
                 isOpen={ui.leftSidebarOpen}
                 onClose={() => ui.setLeftSidebarOpen(false)}
-                selectedDate={ui.selectedDate}
-                onDateChange={ui.setSelectedDate}
                 categoryFilter={ui.categoryFilter}
                 onCategoryFilterChange={ui.setCategoryFilter}
                 tagFilter={ui.tagFilter}

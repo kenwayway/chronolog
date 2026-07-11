@@ -18,20 +18,27 @@ import type {
 // (chronolog_api_key held a plaintext API key in localStorage)
 const LEGACY_STORAGE_KEYS = ['chronolog_api_key', 'chronolog_ai_base_url', 'chronolog_ai_model']
 
+/**
+ * Hydrate saved state synchronously so the very first render already holds
+ * the persisted data. Hydrating in a mount effect instead opens a window
+ * where the pristine empty state can be flushed back to localStorage
+ * (StrictMode's simulated unmount / HMR remounts), wiping the saved data.
+ */
+function hydrateState(): SessionState {
+  const savedState = getStorage<Partial<SessionState>>(STORAGE_KEYS.STATE)
+  return savedState
+    ? sessionReducer(initialState, { type: ACTIONS.LOAD_STATE, payload: savedState })
+    : initialState
+}
+
 export function useSession(): UseSessionReturn {
-  const [state, dispatch] = useReducer(sessionReducer, initialState)
+  const [state, dispatch] = useReducer(sessionReducer, undefined, hydrateState)
 
   // Debounced localStorage persistence
   usePersistence(state)
 
-  // Load saved state on mount
+  // One-time cleanup of legacy keys
   useEffect(() => {
-    const savedState = getStorage<Partial<SessionState>>(STORAGE_KEYS.STATE)
-
-    if (savedState) {
-      dispatch({ type: ACTIONS.LOAD_STATE, payload: savedState })
-    }
-
     LEGACY_STORAGE_KEYS.forEach(key => localStorage.removeItem(key))
   }, [])
 

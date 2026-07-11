@@ -21,7 +21,10 @@
       "Bash(npx wrangler *)",
       "Bash(curl -s http://localhost:*)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:*)",
-      "Bash(curl -s -X POST http://localhost:*)"
+      "Bash(curl -s -X POST http://localhost:*)",
+      "Skill(dataviz)",
+      "Skill(dataviz:*)",
+      "Bash(node scripts/validate_palette.js \"#7aa2f7,#bb9af7,#4dcc59,#c8e068,#f7768e,#f59e0b\" --mode light --surface \"#ffffff\")"
     ]
   }
 }
