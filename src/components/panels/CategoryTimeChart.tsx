@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ENTRY_TYPES } from "@/utils/constants";
 import type { Category, CategoryId, Entry } from "@/types";
 
@@ -11,6 +11,7 @@ interface CategoryTimeChartProps {
 
 const HOUR_MS = 3_600_000;
 const UNCATEGORIZED = "__uncategorized__";
+const MODULE_LOAD_TIME = Date.now();
 
 interface HourCell {
     hour: number;
@@ -77,8 +78,22 @@ export function CategoryTimeChart({
     categoryFilter,
     onToggleCategory,
 }: CategoryTimeChartProps) {
+    const [now, setNow] = useState(MODULE_LOAD_TIME);
+
+    // Keep the live-session total and current-hour marker fresh without reading
+    // an impure clock during render. The zero-delay update also covers cases where
+    // this panel mounts long after the application module was first loaded.
+    useEffect(() => {
+        const updateNow = () => setNow(Date.now());
+        const initialTimer = window.setTimeout(updateNow, 0);
+        const interval = window.setInterval(updateNow, 60_000);
+        return () => {
+            window.clearTimeout(initialTimer);
+            window.clearInterval(interval);
+        };
+    }, []);
+
     const { cells, legend, totalMs, currentHour } = useMemo(() => {
-        const now = Date.now();
         const day = new Date(now);
         day.setHours(0, 0, 0, 0);
         const dayStart = day.getTime();
@@ -136,7 +151,7 @@ export function CategoryTimeChart({
         const currentHour = Math.floor((now - dayStart) / HOUR_MS);
 
         return { cells, legend, totalMs, currentHour };
-    }, [entries, categories]);
+    }, [entries, categories, now]);
 
     return (
         <div style={{ marginBottom: 32 }}>

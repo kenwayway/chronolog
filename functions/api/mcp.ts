@@ -103,7 +103,8 @@ const TOOLS = [
         description:
             'Aggregate time-tracking stats for a date range: tracked duration and entry counts per category, ' +
             'plus totals and daily average. Use this for "how much time did I spend on X" questions — ' +
-            'it sums in the database, so prefer it over adding up raw entries yourself.',
+            'it pairs session start/end timestamps and attributes time to the start category, so prefer it ' +
+            'over adding up raw entries yourself.',
         inputSchema: {
             type: 'object',
             properties: {
@@ -178,8 +179,95 @@ function formatDuration(ms: number): string {
     return hours > 0 ? `${hours}h ${minutes % 60}m` : `${minutes}m`;
 }
 
-/** Compact entry representation to keep tool output token-friendly */
-function toCompactEntry(row: EntryRow, timeZone: string): Record<string, unknown> {
+interface SessionRow {
+    id: string;
+    type: string;
+    timestamp: number;
+    category: string | null;
+}
+
+interface Session {
+    startId: string;
+    startTimestamp: number;
+    category: string | null;
+    durationMs: number;
+}
+
+/**
+ * Pair SESSION_START/SESSION_END chronologically and compute durations from timestamps
+ * (mirrors Timeline.tsx). The stored duration field is NOT used: it goes stale when the
+ * user edits an entry's time afterwards. Duration is attributed to the START entry,
+ * which is the one carrying the category.
+ */
+export function computeSessions(rows: SessionRow[]): Session[] {
+    const sessions: Session[] = [];
+    let start: SessionRow | null = null;
+    for (const row of rows) {
+        if (row.type === 'SESSION_START') {
+            start = row;
+        } else if (row.type === 'SESSION_END' && start) {
+            sessions.push({
+                startId: start.id,
+                startTimestamp: start.timestamp,
+                category: start.category,
+                durationMs: row.timestamp - start.timestamp,
+            });
+            start = null;
+        }
+    }
+    return sessions;
+}
+
+/**
+ * Load the session boundaries needed to calculate sessions that START in a range.
+ * The nearest row before/after the range is included so a session crossing a date
+ * boundary can still be paired without scanning the full entries table.
+ */
+async function getSessionsForRange(db: D1Database, start: number, end: number): Promise<Session[]> {
+    const previous = await db
+        .prepare(
+            "SELECT id, type, timestamp, category FROM entries " +
+            "WHERE type IN ('SESSION_START', 'SESSION_END') AND timestamp < ? " +
+            'ORDER BY timestamp DESC LIMIT 1'
+        )
+        .bind(start)
+        .all<SessionRow>();
+
+    const within = await db
+        .prepare(
+            "SELECT id, type, timestamp, category FROM entries " +
+            "WHERE type IN ('SESSION_START', 'SESSION_END') AND timestamp >= ? AND timestamp <= ? " +
+            'ORDER BY timestamp ASC'
+        )
+        .bind(start, end)
+        .all<SessionRow>();
+
+    const next = await db
+        .prepare(
+            "SELECT id, type, timestamp, category FROM entries " +
+            "WHERE type IN ('SESSION_START', 'SESSION_END') AND timestamp > ? " +
+            'ORDER BY timestamp ASC LIMIT 1'
+        )
+        .bind(end)
+        .all<SessionRow>();
+
+    const rows = [
+        ...previous.results.reverse(),
+        ...within.results,
+        ...next.results,
+    ];
+
+    return computeSessions(rows).filter(
+        session => session.startTimestamp >= start && session.startTimestamp <= end
+    );
+}
+
+/**
+ * Compact entry representation to keep tool output token-friendly.
+ * When sessionDurations is given (get_day), computed durations are shown on START entries
+ * and the stale stored field is hidden; otherwise (search) the stored duration is best effort.
+ */
+function toCompactEntry(row: EntryRow, timeZone: string, sessionDurations?: Map<string, number>): Record<string, unknown> {
     const entry: Entry = entryRowToObject(row);
     const out: Record<string, unknown> = {
         id: entry.id,
@@ -189,7 +277,12 @@ function toCompactEntry(row: EntryRow, timeZone: string): Record<string, unknown
     };
     if (entry.category) out.category = entry.category;
     if (entry.tags) out.tags = entry.tags;
-    if (entry.duration != null) out.duration = formatDuration(entry.duration);
+    if (sessionDurations) {
+        const computed = sessionDurations.get(entry.id);
+        if (computed !== undefined) out.duration = formatDuration(computed);
+    } else if (entry.duration != null) {
+        out.duration = formatDuration(entry.duration);
+    }
     if (entry.contentType) out.contentType = entry.contentType;
     if (entry.fieldValues) out.fieldValues = entry.fieldValues;
     return out;
@@ -263,20 +356,23 @@ async function searchEntries(args: Record<string, unknown>, db: D1Database): Pro
 async function getDay(args: Record<string, unknown>, db: D1Database): Promise<unknown> {
     const timeZone = resolveTimezone(args.timezone);
     const start = dayStartMs(args.date, timeZone);
+    const end = start + DAY_MS - 1;
 
     const result = await db
         .prepare('SELECT * FROM entries WHERE timestamp >= ? AND timestamp <= ? ORDER BY timestamp ASC')
-        .bind(start, start + DAY_MS - 1)
+        .bind(start, end)
         .all<EntryRow>();
 
+    const sessions = await getSessionsForRange(db, start, end);
+    const sessionDurations = new Map(
+        sessions.map(session => [session.startId, session.durationMs])
+    );
     const byCategory: Record<string, number> = {};
     let totalMs = 0;
-    for (const row of result.results) {
-        if (row.type === 'SESSION_END' && row.duration != null) {
-            const key = row.category || 'uncategorized';
-            byCategory[key] = (byCategory[key] || 0) + row.duration;
-            totalMs += row.duration;
-        }
+    for (const session of sessions) {
+        const key = session.category || 'uncategorized';
+        byCategory[key] = (byCategory[key] || 0) + session.durationMs;
+        totalMs += session.durationMs;
     }
 
     return {
@@ -288,7 +384,7 @@ async function getDay(args: Record<string, unknown>, db: D1Database): Promise<un
                 .sort((a, b) => b[1] - a[1])
                 .map(([category, ms]) => [category, formatDuration(ms)])
         ),
-        entries: result.results.map(row => toCompactEntry(row, timeZone)),
+        entries: result.results.map(row => toCompactEntry(row, timeZone, sessionDurations)),
     };
 }
 
@@ -298,13 +394,7 @@ async function getStats(args: Record<string, unknown>, db: D1Database): Promise<
     const end = dayStartMs(args.end, timeZone) + DAY_MS - 1;
     if (end < start) throw new Error('end date is before start date');
 
-    const durations = await db
-        .prepare(
-            "SELECT category, COUNT(*) AS sessions, SUM(duration) AS total_ms FROM entries " +
-            "WHERE type = 'SESSION_END' AND duration IS NOT NULL AND timestamp >= ? AND timestamp <= ? GROUP BY category"
-        )
-        .bind(start, end)
-        .all<{ category: string | null; sessions: number; total_ms: number }>();
+    const sessions = await getSessionsForRange(db, start, end);
 
     const counts = await db
         .prepare('SELECT category, COUNT(*) AS entry_count FROM entries WHERE timestamp >= ? AND timestamp <= ? GROUP BY category')
@@ -321,16 +411,16 @@ async function getStats(args: Record<string, unknown>, db: D1Database): Promise<
         }
         return stats;
     };
-    for (const row of durations.results) {
-        const stats = get(row.category);
-        stats.trackedMs = row.total_ms;
-        stats.sessions = row.sessions;
+    for (const session of sessions) {
+        const stats = get(session.category);
+        stats.trackedMs += session.durationMs;
+        stats.sessions += 1;
     }
     for (const row of counts.results) {
         get(row.category).entries = row.entry_count;
     }
 
-    const totalMs = durations.results.reduce((sum, row) => sum + row.total_ms, 0);
+    const totalMs = sessions.reduce((sum, session) => sum + session.durationMs, 0);
     const days = Math.round((end + 1 - start) / DAY_MS);
 
     return {
