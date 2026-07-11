@@ -423,6 +423,29 @@ GET /api/entries/public?token=<PUBLIC_API_TOKEN>&start=<date>&end=<date>&limit=<
 Response 200: { "entries": Entry[], "contentTypes": ContentType[], "mediaItems": MediaItem[], "count": number }
 ```
 
+### MCP Server (Remote, Streamable HTTP)
+Stateless MCP server for AI clients (Claude Code, claude.ai connectors). JSON-RPC over POST, no SSE/sessions.
+
+```http
+POST /api/mcp
+Authorization: Bearer <PUBLIC_API_TOKEN>   # or ?token=<PUBLIC_API_TOKEN>
+Content-Type: application/json
+```
+
+Tools (all read-only, timestamps displayed in `+08:00` by default, overridable via `timezone` param):
+
+| Tool | Purpose |
+|------|---------|
+| `search_entries(keywords[], start?, end?, category?, tags?, limit?)` | Substring search over content/tags/fieldValues. Keywords are OR-matched; tool description instructs the calling LLM to pass 3-6 synonym variants |
+| `get_day(date)` | All entries for a day + per-category tracked-time summary |
+| `get_stats(start, end)` | Per-category duration sums (SESSION_END), session/entry counts, daily average |
+| `list_categories_and_tags()` | Fixed categories with descriptions, content types, top tags with counts |
+
+Connect from Claude Code:
+```bash
+claude mcp add --transport http chronolog https://<domain>/api/mcp --header "Authorization: Bearer <PUBLIC_API_TOKEN>"
+```
+
 ### Image Upload
 ```http
 POST /api/upload

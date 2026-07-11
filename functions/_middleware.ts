@@ -19,11 +19,13 @@ export async function onRequest(context: EventContext<Env, string, unknown>): Pr
     // Skip auth for public endpoints
     const url = new URL(request.url);
 
-    // Public routes: auth, image serving, and public entries API
+    // Public routes: auth, image serving, public entries API, and MCP server
+    // (/api/mcp does its own PUBLIC_API_TOKEN check; its Bearer token is not a KV auth token)
     const isPublicRoute =
         url.pathname === '/api/auth' ||
         url.pathname.startsWith('/api/image/') ||
-        url.pathname === '/api/entries/public';
+        url.pathname === '/api/entries/public' ||
+        url.pathname === '/api/mcp';
 
     if (isPublicRoute) {
         const response = await next();
