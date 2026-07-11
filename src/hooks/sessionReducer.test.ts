@@ -230,6 +230,43 @@ describe('UPDATE_ENTRY', () => {
 
         expect(result.entries[0].tags).toBeUndefined()
     })
+
+    it('clears category when null provided', () => {
+        const entry = makeEntry({ id: 'e1', category: 'craft' })
+        const state = stateWith({ entries: [entry] })
+
+        const result = sessionReducer(state, {
+            type: ACTIONS.UPDATE_ENTRY,
+            payload: { entryId: 'e1', category: null },
+        })
+
+        expect(result.entries[0].category).toBeUndefined()
+    })
+
+    it('leaves category unchanged when undefined', () => {
+        const entry = makeEntry({ id: 'e1', category: 'craft' })
+        const state = stateWith({ entries: [entry] })
+
+        const result = sessionReducer(state, {
+            type: ACTIONS.UPDATE_ENTRY,
+            payload: { entryId: 'e1', content: 'edited' },
+        })
+
+        expect(result.entries[0].category).toBe('craft')
+    })
+
+    it('clears contentType and its fieldValues when null provided', () => {
+        const entry = makeEntry({ id: 'e1', contentType: 'workout', fieldValues: { workoutType: 'Cardio' } })
+        const state = stateWith({ entries: [entry] })
+
+        const result = sessionReducer(state, {
+            type: ACTIONS.UPDATE_ENTRY,
+            payload: { entryId: 'e1', contentType: null, fieldValues: { workoutType: 'Cardio' } },
+        })
+
+        expect(result.entries[0].contentType).toBeUndefined()
+        expect(result.entries[0].fieldValues).toBeUndefined()
+    })
 })
 
 // ========================================

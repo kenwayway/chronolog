@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { ENTRY_TYPES } from "@/utils/constants";
 import type { Category, CategoryId, Entry } from "@/types";
 
@@ -9,57 +9,27 @@ interface CategoryTimeChartProps {
     onToggleCategory: (catId: CategoryId) => void;
 }
 
-type Period = "7d" | "30d";
-
-const PERIOD_MS: Record<Period, number> = {
-    "7d": 7 * 24 * 60 * 60 * 1000,
-    "30d": 30 * 24 * 60 * 60 * 1000,
-};
-
+const HOUR_MS = 3_600_000;
 const UNCATEGORIZED = "__uncategorized__";
 
-// Fixed slice order chosen so visually confusable colors are never adjacent
-// (hustle-blue vs craft-purple, hardware-green vs barter-yellow-green).
-const SLICE_ORDER = ["hustle", "barter", "craft", "hardware", "wander", "work", UNCATEGORIZED];
+interface HourCell {
+    hour: number;
+    /** Dominant occupant of this hour (category id or UNCATEGORIZED), null when empty */
+    catId: string | null;
+    color: string;
+    label: string;
+    /** Fraction of the hour covered by sessions, 0..1 */
+    coverage: number;
+    /** Per-category breakdown for the tooltip */
+    breakdown: Array<{ label: string; ms: number }>;
+}
 
-interface Slice {
+interface LegendItem {
     id: string;
     label: string;
     color: string;
     ms: number;
-    fraction: number;
     isCategory: boolean;
-}
-
-/** Sum session durations per category within the time window (includes the live session). */
-function computeCategoryTime(entries: Entry[], windowMs: number): Map<string, number> {
-    const cutoff = Date.now() - windowMs;
-    const sorted = [...entries].sort((a, b) => a.timestamp - b.timestamp);
-    const totals = new Map<string, number>();
-
-    let startTs: number | null = null;
-    let startCat: string | null = null;
-
-    const attribute = (endTs: number) => {
-        if (startTs === null || endTs <= cutoff) return;
-        const key = startCat || UNCATEGORIZED;
-        totals.set(key, (totals.get(key) || 0) + (endTs - Math.max(startTs, cutoff)));
-    };
-
-    for (const entry of sorted) {
-        if (entry.type === ENTRY_TYPES.SESSION_START) {
-            startTs = entry.timestamp;
-            startCat = entry.category || null;
-        } else if (entry.type === ENTRY_TYPES.SESSION_END && startTs !== null) {
-            attribute(entry.timestamp);
-            startTs = null;
-            startCat = null;
-        }
-    }
-    // Ongoing session counts up to now
-    attribute(Date.now());
-
-    return totals;
 }
 
 function formatHours(ms: number): string {
@@ -70,17 +40,35 @@ function formatHours(ms: number): string {
     return m > 0 ? `${h}h ${m}m` : `${h}h`;
 }
 
-/** Donut segment path with angular padding so the surface shows through between slices. */
-function arcPath(cx: number, cy: number, rOuter: number, rInner: number, start: number, end: number): string {
-    const p = (r: number, a: number) => `${cx + r * Math.sin(a)} ${cy - r * Math.cos(a)}`;
-    const large = end - start > Math.PI ? 1 : 0;
-    return [
-        `M ${p(rOuter, start)}`,
-        `A ${rOuter} ${rOuter} 0 ${large} 1 ${p(rOuter, end)}`,
-        `L ${p(rInner, end)}`,
-        `A ${rInner} ${rInner} 0 ${large} 0 ${p(rInner, start)}`,
-        "Z",
-    ].join(" ");
+/** Collect today's sessions as [start, end, category] intervals (includes the live session). */
+function todaySessions(entries: Entry[], dayStart: number, now: number): Array<[number, number, string]> {
+    const sorted = [...entries].sort((a, b) => a.timestamp - b.timestamp);
+    const sessions: Array<[number, number, string]> = [];
+
+    let startTs: number | null = null;
+    let startCat: string | null = null;
+
+    const push = (endTs: number) => {
+        if (startTs === null) return;
+        const s = Math.max(startTs, dayStart);
+        const e = Math.min(endTs, dayStart + 24 * HOUR_MS);
+        if (e > s) sessions.push([s, e, startCat || UNCATEGORIZED]);
+    };
+
+    for (const entry of sorted) {
+        if (entry.type === ENTRY_TYPES.SESSION_START) {
+            startTs = entry.timestamp;
+            startCat = entry.category || null;
+        } else if (entry.type === ENTRY_TYPES.SESSION_END && startTs !== null) {
+            push(entry.timestamp);
+            startTs = null;
+            startCat = null;
+        }
+    }
+    // Ongoing session counts up to now
+    push(now);
+
+    return sessions;
 }
 
 export function CategoryTimeChart({
@@ -89,161 +77,155 @@ export function CategoryTimeChart({
     categoryFilter,
     onToggleCategory,
 }: CategoryTimeChartProps) {
-    const [period, setPeriod] = useState<Period>("7d");
-    const [hovered, setHovered] = useState<string | null>(null);
+    const { cells, legend, totalMs, currentHour } = useMemo(() => {
+        const now = Date.now();
+        const day = new Date(now);
+        day.setHours(0, 0, 0, 0);
+        const dayStart = day.getTime();
 
-    const { slices, totalMs } = useMemo(() => {
-        const totals = computeCategoryTime(entries, PERIOD_MS[period]);
-        const total = [...totals.values()].reduce((a, b) => a + b, 0);
-        const result: Slice[] = SLICE_ORDER.flatMap((id) => {
-            const ms = totals.get(id) || 0;
-            if (ms <= 0) return [];
-            const cat = categories.find((c) => c.id === id);
-            return [{
+        const sessions = todaySessions(entries, dayStart, now);
+
+        // Distribute session time into per-hour, per-category buckets
+        const hourBuckets: Array<Map<string, number>> = Array.from({ length: 24 }, () => new Map());
+        const dayTotals = new Map<string, number>();
+        for (const [s, e, cat] of sessions) {
+            dayTotals.set(cat, (dayTotals.get(cat) || 0) + (e - s));
+            const firstHour = Math.floor((s - dayStart) / HOUR_MS);
+            const lastHour = Math.min(23, Math.floor((e - 1 - dayStart) / HOUR_MS));
+            for (let h = firstHour; h <= lastHour; h++) {
+                const hs = dayStart + h * HOUR_MS;
+                const overlap = Math.min(e, hs + HOUR_MS) - Math.max(s, hs);
+                if (overlap > 0) {
+                    const bucket = hourBuckets[h];
+                    bucket.set(cat, (bucket.get(cat) || 0) + overlap);
+                }
+            }
+        }
+
+        const labelOf = (id: string) => categories.find((c) => c.id === id)?.label || "Unsorted";
+        const colorOf = (id: string) => categories.find((c) => c.id === id)?.color || "var(--text-dim)";
+
+        const cells: HourCell[] = hourBuckets.map((bucket, hour) => {
+            const ranked = [...bucket.entries()].sort((a, b) => b[1] - a[1]);
+            if (ranked.length === 0) {
+                return { hour, catId: null, color: "", label: "", coverage: 0, breakdown: [] };
+            }
+            const [topId] = ranked[0];
+            const covered = ranked.reduce((sum, [, ms]) => sum + ms, 0);
+            return {
+                hour,
+                catId: topId,
+                color: colorOf(topId),
+                label: labelOf(topId),
+                coverage: Math.min(1, covered / HOUR_MS),
+                breakdown: ranked.map(([id, ms]) => ({ label: labelOf(id), ms })),
+            };
+        });
+
+        const legend: LegendItem[] = [...dayTotals.entries()]
+            .sort((a, b) => b[1] - a[1])
+            .map(([id, ms]) => ({
                 id,
-                label: cat?.label || "Unsorted",
-                color: cat?.color || "var(--text-dim)",
+                label: labelOf(id),
+                color: colorOf(id),
                 ms,
-                fraction: ms / total,
-                isCategory: !!cat,
-            }];
-        });
-        return { slices: result, totalMs: total };
-    }, [entries, categories, period]);
+                isCategory: id !== UNCATEGORIZED,
+            }));
 
-    // Geometry
-    const SIZE = 170;
-    const CX = SIZE / 2;
-    const R_OUTER = 78;
-    const R_INNER = 52;
+        const totalMs = [...dayTotals.values()].reduce((a, b) => a + b, 0);
+        const currentHour = Math.floor((now - dayStart) / HOUR_MS);
 
-    const arcs = useMemo(() => {
-        const pad = slices.length > 1 ? 2 / R_OUTER : 0; // ~2px surface gap at the rim
-        const sweeps = slices.map((s) => s.fraction * Math.PI * 2);
-        return slices.map((s, i) => {
-            const offset = sweeps.slice(0, i).reduce((a, b) => a + b, 0);
-            const start = offset + pad / 2;
-            const end = offset + sweeps[i] - pad / 2;
-            // Degenerate sliver: still render a hairline so the legend never orphans
-            const path = end > start
-                ? arcPath(CX, CX, R_OUTER, R_INNER, start, end)
-                : arcPath(CX, CX, R_OUTER, R_INNER, offset, offset + sweeps[i]);
-            return { ...s, path };
-        });
-    }, [slices, CX]);
-
-    const dimOthers = hovered !== null;
+        return { cells, legend, totalMs, currentHour };
+    }, [entries, categories]);
 
     return (
         <div style={{ marginBottom: 32 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
-                <span style={{ fontSize: 10, letterSpacing: "0.1em", color: "var(--text-dim)" }}>TIME</span>
+                <span style={{ fontSize: 10, letterSpacing: "0.1em", color: "var(--text-dim)" }}>TODAY</span>
                 <div style={{ flex: 1, height: 1, backgroundColor: "var(--border-light)" }} />
-                {(["7d", "30d"] as const).map((p) => (
-                    <button
-                        key={p}
-                        onClick={() => setPeriod(p)}
-                        style={{
-                            fontSize: 9,
-                            letterSpacing: "0.08em",
-                            padding: "2px 6px",
-                            color: period === p ? "var(--accent)" : "var(--text-dim)",
-                            backgroundColor: period === p ? "var(--accent-subtle, rgba(99,102,241,0.12))" : "transparent",
-                            border: period === p ? "1px solid var(--accent)" : "1px solid transparent",
-                            borderRadius: 3,
-                            cursor: "pointer",
-                        }}
-                    >
-                        {p.toUpperCase()}
-                    </button>
-                ))}
+                <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", color: "var(--text-secondary)" }}>
+                    {totalMs > 0 ? formatHours(totalMs) : "—"}
+                </span>
             </div>
 
-            {slices.length === 0 ? (
-                <div style={{ fontSize: 11, color: "var(--text-dim)", textAlign: "center", padding: "24px 0" }}>
-                    该时段暂无会话记录
-                </div>
-            ) : (
-                <>
-                    <div style={{ display: "flex", justifyContent: "center" }}>
-                        <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} role="img" aria-label="分类时间分布">
-                            {arcs.map((a) => (
-                                <path
-                                    key={a.id}
-                                    d={a.path}
-                                    fill={a.color}
-                                    opacity={dimOthers && hovered !== a.id ? 0.35 : 1}
-                                    style={{ cursor: a.isCategory ? "pointer" : "default", transition: "opacity 120ms ease" }}
-                                    onMouseEnter={() => setHovered(a.id)}
-                                    onMouseLeave={() => setHovered(null)}
-                                    onClick={() => a.isCategory && onToggleCategory(a.id as CategoryId)}
-                                >
-                                    <title>{`${a.label}: ${formatHours(a.ms)} (${Math.round(a.fraction * 100)}%)`}</title>
-                                </path>
-                            ))}
-                            <text
-                                x={CX}
-                                y={CX - 4}
-                                textAnchor="middle"
-                                style={{ fontSize: 20, fontFamily: "var(--font-mono)", fill: "var(--text-primary)" }}
+            {/* 24-hour grid: 6 per row × 4 rows, one cell per hour */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 28px)", gap: 3, justifyContent: "center" }}>
+                {cells.map((cell) => {
+                    const filled = cell.catId !== null;
+                    const tooltip = filled
+                        ? `${String(cell.hour).padStart(2, "0")}:00–${String(cell.hour + 1).padStart(2, "0")}:00 · ` +
+                          cell.breakdown.map((b) => `${b.label} ${formatHours(b.ms)}`).join(" · ")
+                        : `${String(cell.hour).padStart(2, "0")}:00–${String(cell.hour + 1).padStart(2, "0")}:00`;
+                    return (
+                        <div
+                            key={cell.hour}
+                            title={tooltip}
+                            style={{
+                                position: "relative",
+                                width: 28,
+                                height: 28,
+                                borderRadius: 3,
+                                backgroundColor: filled ? cell.color : "var(--heatmap-empty, var(--bg-secondary))",
+                                opacity: filled ? 0.35 + 0.65 * cell.coverage : 0.5,
+                                border: cell.hour === currentHour ? "1px solid var(--text-dim)" : "1px solid transparent",
+                                boxSizing: "border-box",
+                                transition: "opacity 120ms ease",
+                            }}
+                        >
+                            <span
+                                style={{
+                                    position: "absolute",
+                                    top: 2,
+                                    left: 4,
+                                    fontSize: 8,
+                                    fontFamily: "var(--font-mono)",
+                                    color: "var(--text-dim)",
+                                    opacity: 0.8,
+                                    pointerEvents: "none",
+                                }}
                             >
-                                {formatHours(hovered ? (arcs.find(a => a.id === hovered)?.ms ?? totalMs) : totalMs)}
-                            </text>
-                            <text
-                                x={CX}
-                                y={CX + 14}
-                                textAnchor="middle"
-                                style={{ fontSize: 9, letterSpacing: "0.1em", fill: "var(--text-dim)" }}
-                            >
-                                {hovered
-                                    ? (arcs.find(a => a.id === hovered)?.label ?? "").toUpperCase()
-                                    : period === "7d" ? "LAST 7 DAYS" : "LAST 30 DAYS"}
-                            </text>
-                        </svg>
-                    </div>
+                                {cell.hour}
+                            </span>
+                        </div>
+                    );
+                })}
+            </div>
 
-                    <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 12 }}>
-                        {arcs.map((a) => {
-                            const isActive = a.isCategory && categoryFilter.includes(a.id as CategoryId);
-                            const isHovered = hovered === a.id;
-                            return (
-                                <button
-                                    key={a.id}
-                                    onClick={() => a.isCategory && onToggleCategory(a.id as CategoryId)}
-                                    onMouseEnter={() => setHovered(a.id)}
-                                    onMouseLeave={() => setHovered(null)}
-                                    style={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: 8,
-                                        padding: "4px 8px",
-                                        fontSize: 10,
-                                        color: isActive ? a.color : "var(--text-secondary)",
-                                        backgroundColor: isActive
-                                            ? `${a.color}20`
-                                            : isHovered ? "var(--bg-secondary)" : "transparent",
-                                        border: isActive ? `1px solid ${a.color}40` : "1px solid transparent",
-                                        borderRadius: 4,
-                                        cursor: a.isCategory ? "pointer" : "default",
-                                        textAlign: "left",
-                                        transition: "all 100ms ease",
-                                    }}
-                                >
-                                    <span style={{ width: 10, height: 10, borderRadius: 2, backgroundColor: a.color, flexShrink: 0 }} />
-                                    <span style={{ flex: 1, textTransform: "uppercase", letterSpacing: "0.03em" }}>
-                                        {a.label}
-                                    </span>
-                                    <span style={{ fontFamily: "var(--font-mono)", color: "var(--text-secondary)" }}>
-                                        {formatHours(a.ms)}
-                                    </span>
-                                    <span style={{ fontFamily: "var(--font-mono)", color: "var(--text-dim)", width: 32, textAlign: "right" }}>
-                                        {Math.round(a.fraction * 100)}%
-                                    </span>
-                                </button>
-                            );
-                        })}
-                    </div>
-                </>
+            {/* Legend: categories active today, click to filter the timeline */}
+            {legend.length > 0 && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 12 }}>
+                    {legend.map((item) => {
+                        const isActive = item.isCategory && categoryFilter.includes(item.id as CategoryId);
+                        return (
+                            <button
+                                key={item.id}
+                                onClick={() => item.isCategory && onToggleCategory(item.id as CategoryId)}
+                                style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 8,
+                                    padding: "4px 8px",
+                                    fontSize: 10,
+                                    color: isActive ? item.color : "var(--text-secondary)",
+                                    backgroundColor: isActive ? `${item.color}20` : "transparent",
+                                    border: isActive ? `1px solid ${item.color}40` : "1px solid transparent",
+                                    borderRadius: 4,
+                                    cursor: item.isCategory ? "pointer" : "default",
+                                    textAlign: "left",
+                                    transition: "all 100ms ease",
+                                }}
+                            >
+                                <span style={{ width: 10, height: 10, borderRadius: 2, backgroundColor: item.color, flexShrink: 0 }} />
+                                <span style={{ flex: 1, textTransform: "uppercase", letterSpacing: "0.03em" }}>
+                                    {item.label}
+                                </span>
+                                <span style={{ fontFamily: "var(--font-mono)", color: "var(--text-secondary)" }}>
+                                    {formatHours(item.ms)}
+                                </span>
+                            </button>
+                        );
+                    })}
+                </div>
             )}
         </div>
     );

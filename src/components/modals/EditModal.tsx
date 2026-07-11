@@ -153,8 +153,8 @@ function EditModalForm({ entry, onSave, onClose }: Omit<EditModalProps, 'isOpen'
     onSave(entry.id, {
       content: newContent !== entry.content ? newContent : undefined,
       timestamp: newTimestamp !== entry.timestamp ? newTimestamp : undefined,
-      category: category !== entry.category ? (category ?? undefined) : undefined,
-      contentType: contentType !== entry.contentType ? (contentType ?? undefined) : undefined,
+      category: category !== (entry.category ?? null) ? category : undefined,
+      contentType: contentType !== (entry.contentType ?? null) ? contentType : undefined,
       fieldValues: JSON.stringify(fieldValues) !== JSON.stringify(entry.fieldValues) ? fieldValues : undefined,
       linkedEntries: JSON.stringify(linkedEntries) !== JSON.stringify(entry.linkedEntries || []) ? linkedEntries : undefined,
       tags: tagsChanged ? tags : undefined,

@@ -191,9 +191,13 @@ function handleUpdateEntry(state: SessionState, payload: UpdateEntryPayload): Se
             const updated = { ...e }
             if (content !== undefined) updated.content = content
             if (timestamp !== undefined) updated.timestamp = timestamp
-            if (category !== undefined) updated.category = category
-            if (contentType !== undefined) updated.contentType = contentType
-            if (fieldValues !== undefined) updated.fieldValues = fieldValues
+            if (category !== undefined) updated.category = category ?? undefined
+            if (contentType !== undefined) {
+                updated.contentType = contentType ?? undefined
+                // Clearing the content type orphans its field values — drop them
+                if (contentType === null) updated.fieldValues = undefined
+            }
+            if (fieldValues !== undefined && contentType !== null) updated.fieldValues = fieldValues
             if (linkedEntries !== undefined) updated.linkedEntries = linkedEntries
             if (tags !== undefined) updated.tags = tags.length > 0 ? tags : undefined
             if (type !== undefined) updated.type = type

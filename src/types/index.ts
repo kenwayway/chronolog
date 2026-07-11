@@ -215,8 +215,8 @@ export interface UpdateEntryPayload {
   entryId: string
   content?: string
   timestamp?: number
-  category?: CategoryId
-  contentType?: string
+  category?: CategoryId | null   // null = clear (undefined = leave unchanged)
+  contentType?: string | null    // null = clear (undefined = leave unchanged)
   fieldValues?: Record<string, unknown>
   linkedEntries?: string[]
   tags?: string[]
