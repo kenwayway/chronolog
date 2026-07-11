@@ -7,7 +7,7 @@ import type { CFContext, Env, EntryRow, Entry } from './types.ts';
 
 const SERVER_INFO = { name: 'chronolog', version: '1.0.0' };
 const SUPPORTED_PROTOCOL_VERSIONS = ['2025-06-18', '2025-03-26', '2024-11-05'];
-const DEFAULT_TIMEZONE = '+08:00';
+const DEFAULT_TIMEZONE = 'America/Toronto';
 
 // Mirrors CATEGORIES in src/utils/constants.ts (fixed, not user-editable)
 const CATEGORIES = [
@@ -79,7 +79,7 @@ const TOOLS = [
                     description: 'Only return entries that have ALL of these exact tags (optional)',
                 },
                 limit: { type: 'number', description: 'Max results, default 50, max 200' },
-                timezone: { type: 'string', description: 'UTC offset for date boundaries and display, e.g. "+08:00" (default)' },
+                timezone: { type: 'string', description: 'Timezone for date boundaries and display: IANA name like "America/Toronto" (default) or UTC offset like "-04:00"' },
             },
             required: ['keywords'],
         },
@@ -93,7 +93,7 @@ const TOOLS = [
             type: 'object',
             properties: {
                 date: { type: 'string', description: 'Date YYYY-MM-DD' },
-                timezone: { type: 'string', description: 'UTC offset defining the day boundary, e.g. "+08:00" (default)' },
+                timezone: { type: 'string', description: 'Timezone defining the day boundary: IANA name like "America/Toronto" (default) or UTC offset like "-04:00"' },
             },
             required: ['date'],
         },
@@ -109,7 +109,7 @@ const TOOLS = [
             properties: {
                 start: { type: 'string', description: 'Start date YYYY-MM-DD, inclusive' },
                 end: { type: 'string', description: 'End date YYYY-MM-DD, inclusive' },
-                timezone: { type: 'string', description: 'UTC offset for date boundaries, e.g. "+08:00" (default)' },
+                timezone: { type: 'string', description: 'Timezone for date boundaries: IANA name like "America/Toronto" (default) or UTC offset like "-04:00"' },
             },
             required: ['start', 'end'],
         },
@@ -125,28 +125,51 @@ const TOOLS = [
 
 // --- Shared helpers ---
 
-function parseTimezone(tz: unknown): number {
+/** Validate a timezone: IANA name like "America/Toronto" or fixed UTC offset like "-04:00" */
+function resolveTimezone(tz: unknown): string {
     const value = typeof tz === 'string' && tz ? tz : DEFAULT_TIMEZONE;
-    const match = /^([+-])(\d{2}):(\d{2})$/.exec(value);
-    if (!match) throw new Error(`Invalid timezone "${value}", expected UTC offset like "+08:00"`);
-    const minutes = parseInt(match[2], 10) * 60 + parseInt(match[3], 10);
+    if (/^[+-]\d{2}:\d{2}$/.test(value)) return value;
+    try {
+        new Intl.DateTimeFormat('en-US', { timeZone: value });
+        return value;
+    } catch {
+        throw new Error(`Invalid timezone "${value}", expected IANA name like "America/Toronto" or UTC offset like "-04:00"`);
+    }
+}
+
+/** UTC offset in minutes for the given timezone at the given instant (DST-aware for IANA names) */
+function offsetMinutesAt(timestamp: number, timeZone: string): number {
+    const fixed = /^([+-])(\d{2}):(\d{2})$/.exec(timeZone);
+    if (fixed) {
+        const minutes = parseInt(fixed[2], 10) * 60 + parseInt(fixed[3], 10);
+        return fixed[1] === '-' ? -minutes : minutes;
+    }
+    const parts = new Intl.DateTimeFormat('en-US', { timeZone, timeZoneName: 'longOffset' })
+        .formatToParts(new Date(timestamp));
+    const name = parts.find(p => p.type === 'timeZoneName')?.value || '';
+    const match = /GMT([+-])(\d{1,2}):?(\d{2})?/.exec(name);
+    if (!match) return 0; // plain "GMT" = UTC
+    const minutes = parseInt(match[2], 10) * 60 + parseInt(match[3] || '0', 10);
     return match[1] === '-' ? -minutes : minutes;
 }
 
-function dayStartMs(date: unknown, offsetMinutes: number): number {
+function dayStartMs(date: unknown, timeZone: string): number {
     if (typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
         throw new Error(`Invalid date "${String(date)}", expected YYYY-MM-DD`);
     }
-    const ms = Date.parse(`${date}T00:00:00Z`) - offsetMinutes * 60_000;
-    if (Number.isNaN(ms)) throw new Error(`Invalid date "${date}"`);
-    return ms;
+    const utcGuess = Date.parse(`${date}T00:00:00Z`);
+    if (Number.isNaN(utcGuess)) throw new Error(`Invalid date "${date}"`);
+    // Two passes so a DST transition near midnight resolves to the correct offset
+    const start = utcGuess - offsetMinutesAt(utcGuess, timeZone) * 60_000;
+    return utcGuess - offsetMinutesAt(start, timeZone) * 60_000;
 }
 
 const DAY_MS = 86_400_000;
 
-/** Format a timestamp as "YYYY-MM-DD HH:mm" in the given UTC offset */
-function formatLocal(timestamp: number, offsetMinutes: number): string {
-    return new Date(timestamp + offsetMinutes * 60_000).toISOString().slice(0, 16).replace('T', ' ');
+/** Format a timestamp as "YYYY-MM-DD HH:mm" in the given timezone */
+function formatLocal(timestamp: number, timeZone: string): string {
+    return new Date(timestamp + offsetMinutesAt(timestamp, timeZone) * 60_000)
+        .toISOString().slice(0, 16).replace('T', ' ');
 }
 
 function formatDuration(ms: number): string {
@@ -156,11 +179,11 @@ function formatDuration(ms: number): string {
 }
 
 /** Compact entry representation to keep tool output token-friendly */
-function toCompactEntry(row: EntryRow, offsetMinutes: number): Record<string, unknown> {
+function toCompactEntry(row: EntryRow, timeZone: string): Record<string, unknown> {
     const entry: Entry = entryRowToObject(row);
     const out: Record<string, unknown> = {
         id: entry.id,
-        time: formatLocal(entry.timestamp, offsetMinutes),
+        time: formatLocal(entry.timestamp, timeZone),
         type: entry.type,
         content: entry.content,
     };
@@ -183,7 +206,7 @@ async function searchEntries(args: Record<string, unknown>, db: D1Database): Pro
     const keywords = rawKeywords.filter((k): k is string => typeof k === 'string' && k.trim() !== '').slice(0, 8);
     if (keywords.length === 0) throw new Error('keywords must be a non-empty array of strings');
 
-    const offsetMinutes = parseTimezone(args.timezone);
+    const timeZone = resolveTimezone(args.timezone);
     const conditions: string[] = [];
     const bindings: (string | number)[] = [];
 
@@ -198,11 +221,11 @@ async function searchEntries(args: Record<string, unknown>, db: D1Database): Pro
 
     if (args.start !== undefined) {
         conditions.push('timestamp >= ?');
-        bindings.push(dayStartMs(args.start, offsetMinutes));
+        bindings.push(dayStartMs(args.start, timeZone));
     }
     if (args.end !== undefined) {
         conditions.push('timestamp <= ?');
-        bindings.push(dayStartMs(args.end, offsetMinutes) + DAY_MS - 1);
+        bindings.push(dayStartMs(args.end, timeZone) + DAY_MS - 1);
     }
     if (args.category !== undefined) {
         if (!CATEGORY_IDS.includes(args.category as string)) {
@@ -233,13 +256,13 @@ async function searchEntries(args: Record<string, unknown>, db: D1Database): Pro
         note: result.results.length === 0
             ? 'No matches. Try different keyword variants, or use get_day to read raw entries for a specific date.'
             : undefined,
-        entries: result.results.map(row => toCompactEntry(row, offsetMinutes)),
+        entries: result.results.map(row => toCompactEntry(row, timeZone)),
     };
 }
 
 async function getDay(args: Record<string, unknown>, db: D1Database): Promise<unknown> {
-    const offsetMinutes = parseTimezone(args.timezone);
-    const start = dayStartMs(args.date, offsetMinutes);
+    const timeZone = resolveTimezone(args.timezone);
+    const start = dayStartMs(args.date, timeZone);
 
     const result = await db
         .prepare('SELECT * FROM entries WHERE timestamp >= ? AND timestamp <= ? ORDER BY timestamp ASC')
@@ -265,14 +288,14 @@ async function getDay(args: Record<string, unknown>, db: D1Database): Promise<un
                 .sort((a, b) => b[1] - a[1])
                 .map(([category, ms]) => [category, formatDuration(ms)])
         ),
-        entries: result.results.map(row => toCompactEntry(row, offsetMinutes)),
+        entries: result.results.map(row => toCompactEntry(row, timeZone)),
     };
 }
 
 async function getStats(args: Record<string, unknown>, db: D1Database): Promise<unknown> {
-    const offsetMinutes = parseTimezone(args.timezone);
-    const start = dayStartMs(args.start, offsetMinutes);
-    const end = dayStartMs(args.end, offsetMinutes) + DAY_MS - 1;
+    const timeZone = resolveTimezone(args.timezone);
+    const start = dayStartMs(args.start, timeZone);
+    const end = dayStartMs(args.end, timeZone) + DAY_MS - 1;
     if (end < start) throw new Error('end date is before start date');
 
     const durations = await db

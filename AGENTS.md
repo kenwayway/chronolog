@@ -432,7 +432,7 @@ Authorization: Bearer <PUBLIC_API_TOKEN>   # or ?token=<PUBLIC_API_TOKEN>
 Content-Type: application/json
 ```
 
-Tools (all read-only, timestamps displayed in `+08:00` by default, overridable via `timezone` param):
+Tools (all read-only; date boundaries and displayed times use `America/Toronto` by default, overridable via `timezone` param — IANA name or fixed UTC offset):
 
 | Tool | Purpose |
 |------|---------|
