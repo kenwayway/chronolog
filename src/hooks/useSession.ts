@@ -1,13 +1,12 @@
-import { useReducer, useEffect, useCallback, useMemo } from 'react'
+import { useReducer, useEffect, useCallback, useMemo, useState } from 'react'
 import { ACTIONS } from '@/utils/constants'
-import { STORAGE_KEYS, getStorage } from '@/utils/storageService'
+import { loadPersistedSessionState } from '@/utils/indexedDbService'
 import { SESSION_STATUS } from '@/utils/constants'
 import { sessionReducer, initialState } from './sessionReducer'
 import { usePersistence } from './usePersistence'
 import type {
   ContentType,
   MediaItem,
-  SessionState,
   UseSessionReturn,
   UpdateEntryPayload,
   ImportDataPayload,
@@ -18,24 +17,30 @@ import type {
 // (chronolog_api_key held a plaintext API key in localStorage)
 const LEGACY_STORAGE_KEYS = ['chronolog_api_key', 'chronolog_ai_base_url', 'chronolog_ai_model']
 
-/**
- * Hydrate saved state synchronously so the very first render already holds
- * the persisted data. Hydrating in a mount effect instead opens a window
- * where the pristine empty state can be flushed back to localStorage
- * (StrictMode's simulated unmount / HMR remounts), wiping the saved data.
- */
-function hydrateState(): SessionState {
-  const savedState = getStorage<Partial<SessionState>>(STORAGE_KEYS.STATE)
-  return savedState
-    ? sessionReducer(initialState, { type: ACTIONS.LOAD_STATE, payload: savedState })
-    : initialState
-}
-
 export function useSession(): UseSessionReturn {
-  const [state, dispatch] = useReducer(sessionReducer, undefined, hydrateState)
+  const [state, dispatch] = useReducer(sessionReducer, initialState)
+  const [isHydrated, setIsHydrated] = useState(false)
 
-  // Debounced localStorage persistence
-  usePersistence(state)
+  // IndexedDB is asynchronous. Persistence remains disabled until hydration
+  // completes so the pristine initial state can never overwrite saved data.
+  useEffect(() => {
+    let active = true
+    loadPersistedSessionState()
+      .then(savedState => {
+        if (!active) return
+        if (savedState) {
+          dispatch({ type: ACTIONS.LOAD_STATE, payload: savedState })
+        }
+        setIsHydrated(true)
+      })
+      .catch(error => {
+        console.error('Failed to hydrate session state:', error)
+        if (active) setIsHydrated(true)
+      })
+    return () => { active = false }
+  }, [])
+
+  usePersistence(state, isHydrated)
 
   // One-time cleanup of legacy keys
   useEffect(() => {
@@ -158,6 +163,7 @@ export function useSession(): UseSessionReturn {
 
   return {
     state,
+    isHydrated,
     isStreaming: state.status === SESSION_STATUS.STREAMING,
     actions
   }

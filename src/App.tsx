@@ -22,13 +22,27 @@ import {
     EditModal,
     ActivityPanel,
 } from "./components";
-import type { CategoryId, Entry } from "./types";
+import type { CategoryId, Entry, UseSessionReturn } from "./types";
 import type { InputPanelRef } from "./components/input/InputPanel";
 import { LibraryPage } from "./pages/LibraryPage";
 import { GalleryPage } from "./pages/GalleryPage";
 
 function App() {
-    const { state, isStreaming, actions } = useSession();
+    const session = useSession();
+
+    if (!session.isHydrated) {
+        return (
+            <div className="min-h-screen flex items-center justify-center font-mono" style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-muted)' }}>
+                INITIALIZING STORAGE...
+            </div>
+        );
+    }
+
+    return <HydratedApp session={session} />;
+}
+
+function HydratedApp({ session }: { session: UseSessionReturn }) {
+    const { state, isStreaming, actions } = session;
     const { categories } = useCategories();
     const { categorize } = useAICategories();
 
@@ -132,36 +146,32 @@ function MainView({
         inputPanelRef,
     });
 
-    // Optimized filtered entries: pre-sort once, then filter
-    const sortedEntries = useMemo(
-        () => [...state.entries].sort((a, b) => b.timestamp - a.timestamp),
-        [state.entries]
-    );
-
     const filteredEntries = useMemo(() => {
         if (ui.categoryFilter.length > 0) {
-            return sortedEntries.filter(entry =>
-                ui.categoryFilter.includes(entry.category as CategoryId)
-            );
+            return state.entries
+                .filter(entry => ui.categoryFilter.includes(entry.category as CategoryId))
+                .sort((a, b) => b.timestamp - a.timestamp);
         }
         if (ui.tagFilter.length > 0) {
-            return sortedEntries.filter(entry =>
-                entry.tags && ui.tagFilter.every(t => entry.tags!.includes(t))
-            );
+            return state.entries
+                .filter(entry => entry.tags && ui.tagFilter.every(t => entry.tags!.includes(t)))
+                .sort((a, b) => b.timestamp - a.timestamp);
         }
         if (ui.contentTypeFilter.length > 0) {
-            return sortedEntries.filter(entry =>
-                entry.contentType && ui.contentTypeFilter.includes(entry.contentType)
-            );
+            return state.entries
+                .filter(entry => entry.contentType && ui.contentTypeFilter.includes(entry.contentType))
+                .sort((a, b) => b.timestamp - a.timestamp);
         }
-        // Date filter — no sort needed, just filter from sorted
+
+        // The default timeline only needs one day. Filter first and let Timeline
+        // sort that small result, avoiding an O(n log n) sort of all history.
         const target = ui.selectedDate || new Date();
         const dayStart = new Date(target.getFullYear(), target.getMonth(), target.getDate()).getTime();
         const dayEnd = dayStart + 86_400_000;
         return state.entries.filter(entry =>
             entry.timestamp >= dayStart && entry.timestamp < dayEnd
         );
-    }, [sortedEntries, state.entries, ui.categoryFilter, ui.tagFilter, ui.contentTypeFilter, ui.selectedDate]);
+    }, [state.entries, ui.categoryFilter, ui.tagFilter, ui.contentTypeFilter, ui.selectedDate]);
 
     return (
         <div className="min-h-screen flex flex-col font-mono" style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}>

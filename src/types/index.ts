@@ -307,6 +307,7 @@ export interface SessionActions {
 /** useSession hook return type */
 export interface UseSessionReturn {
   state: SessionState
+  isHydrated: boolean
   isStreaming: boolean
   actions: SessionActions
 }

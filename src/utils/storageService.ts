@@ -5,7 +5,7 @@
 
 // All storage keys in one place
 export const STORAGE_KEYS = {
-    // Session state
+    // Legacy session blob — read only for one-time IndexedDB migration
     STATE: 'chronolog_state',
 
     // Auth tokens
