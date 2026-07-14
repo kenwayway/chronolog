@@ -236,17 +236,19 @@ export async function upsertEntries(db: D1Database, entries: Entry[]): Promise<n
     return total;
 }
 
-/** Atomically write one entry and advance the incremental-sync cursor. */
-export async function upsertEntryWithLastModified(
+/** Atomically write entries and advance the incremental-sync cursor. */
+export async function upsertEntriesWithLastModified(
     db: D1Database,
-    entry: Entry,
+    entries: Entry[],
     lastModified: number = Date.now(),
 ): Promise<number> {
-    const entryStatement = bindEntryUpsert(db.prepare(ENTRY_UPSERT_SQL), entry, lastModified);
+    if (entries.length > 99) throw new Error('Cannot atomically upsert more than 99 entries');
+    const statement = db.prepare(ENTRY_UPSERT_SQL);
+    const entryStatements = entries.map(entry => bindEntryUpsert(statement, entry, lastModified));
     const metadataStatement = db.prepare(
         "INSERT OR REPLACE INTO sync_meta (key, value) VALUES ('last_modified', ?)"
     ).bind(String(lastModified));
-    await db.batch([entryStatement, metadataStatement]);
+    await db.batch([...entryStatements, metadataStatement]);
     return lastModified;
 }
 

@@ -440,7 +440,7 @@ Content-Type: application/json
 | `get_day(date)` | All entries for a day + per-category tracked-time summary |
 | `get_stats(start, end)` | Per-category duration sums (SESSION_END), session/entry counts, daily average |
 | `list_categories_and_tags()` | Fixed categories with descriptions, content types, top tags with counts |
-| `add_entry(content, timestamp?, category?, tags?, contentType?, fieldValues?)` | Create one NOTE entry (write token only); timestamp defaults to now and explicit timestamps require ISO 8601 with an offset |
+| `add_entry(type?, content?, id?, timestamp?, sessionId?, duration?, category?, tags?, contentType?, fieldValues?, linkedEntries?)` | Create a complete NOTE, SESSION_START, or SESSION_END entry (write token only); session IDs and end durations are auto-derived when omitted, and links are bidirectional |
 
 Connect from Claude Code:
 ```bash

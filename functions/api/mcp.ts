@@ -1,11 +1,12 @@
 // POST /api/mcp - Remote MCP server (Streamable HTTP, stateless) for AI access to entries
 // Auth: PUBLIC_API_TOKEN grants read access; MCP_WRITE_TOKEN grants read + write access
-// Tools: search_entries, get_day, get_stats, list_categories_and_tags, add_entry (write token only)
+// Tools: search_entries, get_day, get_stats, get_active_session, list_categories_and_tags,
+//        add_entry, start_session, end_session (write token only)
 
-import { entryRowToObject, upsertEntryWithLastModified } from './_db.ts';
+import { entryRowToObject, upsertEntriesWithLastModified } from './_db.ts';
 import type { CFContext, Env, EntryRow, Entry } from './types.ts';
 
-const SERVER_INFO = { name: 'chronolog', version: '1.1.0' };
+const SERVER_INFO = { name: 'chronolog', version: '1.2.0' };
 const SUPPORTED_PROTOCOL_VERSIONS = ['2025-06-18', '2025-03-26', '2024-11-05'];
 const DEFAULT_TIMEZONE = 'America/Toronto';
 
@@ -122,24 +123,49 @@ const READ_TOOLS = [
             'Call this first when you need to pick a category filter or want to know what vocabulary the user tags with.',
         inputSchema: { type: 'object', properties: {} },
     },
+    {
+        name: 'get_active_session',
+        description:
+            'Return the currently active timed session, if any. Use this before starting or ending a session ' +
+            'when the caller needs to display or reconcile timer state.',
+        inputSchema: {
+            type: 'object',
+            properties: {
+                timezone: { type: 'string', description: 'Timezone used to format the returned start time (default America/Toronto)' },
+            },
+            additionalProperties: false,
+        },
+    },
 ];
 
 const WRITE_TOOLS = [
     {
         name: 'add_entry',
         description:
-            'Create one NOTE entry in Chronolog. Use this only when the user explicitly asks to log, save, ' +
+            'Create one complete Chronolog entry. Use this only when the user explicitly asks to log, save, ' +
             'record, or add something to Chronolog; never infer write consent from ordinary conversation. ' +
             'Use list_categories_and_tags first when choosing a category or structured content type. ' +
-            'The timestamp defaults to now. This tool does not start or end a timed session.',
+            'type defaults to NOTE. Use SESSION_START to begin a timed session (sessionId is generated when omitted), ' +
+            'or SESSION_END to end one (duration is calculated from the latest open session when omitted). ' +
+            'The timestamp defaults to now. linkedEntries are maintained bidirectionally.',
         inputSchema: {
             type: 'object',
             properties: {
-                content: {
+                id: {
                     type: 'string',
                     minLength: 1,
+                    maxLength: 100,
+                    description: 'Optional custom entry ID. A UUID is generated when omitted; existing IDs are rejected.',
+                },
+                type: {
+                    type: 'string',
+                    enum: ['SESSION_START', 'NOTE', 'SESSION_END'],
+                    description: 'Entry type; defaults to NOTE',
+                },
+                content: {
+                    type: 'string',
                     maxLength: 100000,
-                    description: 'Journal content to save',
+                    description: 'Entry content. Required and non-empty for NOTE; defaults to empty for session boundaries.',
                 },
                 timestamp: {
                     type: 'string',
@@ -149,6 +175,17 @@ const WRITE_TOOLS = [
                     type: 'string',
                     enum: CATEGORY_IDS,
                     description: 'Optional life-area category',
+                },
+                sessionId: {
+                    type: 'string',
+                    minLength: 1,
+                    maxLength: 100,
+                    description: 'Optional session ID; generated automatically for SESSION_START',
+                },
+                duration: {
+                    type: 'number',
+                    minimum: 0,
+                    description: 'Optional duration in milliseconds; automatically calculated for SESSION_END when omitted',
                 },
                 tags: {
                     type: 'array',
@@ -167,12 +204,17 @@ const WRITE_TOOLS = [
                     additionalProperties: true,
                     description: 'Optional structured fields for contentType',
                 },
+                linkedEntries: {
+                    type: 'array',
+                    items: { type: 'string', minLength: 1, maxLength: 100 },
+                    maxItems: 50,
+                    description: 'Optional existing entry IDs to link bidirectionally',
+                },
                 timezone: {
                     type: 'string',
                     description: 'Timezone used only to format the returned time (default America/Toronto)',
                 },
             },
-            required: ['content'],
             additionalProperties: false,
         },
         annotations: {
@@ -180,6 +222,49 @@ const WRITE_TOOLS = [
             readOnlyHint: false,
             destructiveHint: false,
             idempotentHint: false,
+            openWorldHint: false,
+        },
+    },
+    {
+        name: 'start_session',
+        description:
+            'Start a timed Chronolog session in a required category. This is idempotent while a session is active: ' +
+            'it returns the existing session instead of creating a duplicate.',
+        inputSchema: {
+            type: 'object',
+            properties: {
+                category: { type: 'string', enum: CATEGORY_IDS, description: 'Life-area category for the session' },
+                content: { type: 'string', maxLength: 100000, description: 'Optional start label; defaults to "Session started"' },
+                timezone: { type: 'string', description: 'Timezone used to format the returned start time (default America/Toronto)' },
+            },
+            required: ['category'],
+            additionalProperties: false,
+        },
+        annotations: {
+            title: 'Start Chronolog session',
+            readOnlyHint: false,
+            destructiveHint: false,
+            idempotentHint: true,
+            openWorldHint: false,
+        },
+    },
+    {
+        name: 'end_session',
+        description:
+            'End the currently active timed Chronolog session. This is idempotent when no session is active.',
+        inputSchema: {
+            type: 'object',
+            properties: {
+                content: { type: 'string', maxLength: 100000, description: 'Optional end label; defaults to "Session ended"' },
+                timezone: { type: 'string', description: 'Timezone used to format the returned end time (default America/Toronto)' },
+            },
+            additionalProperties: false,
+        },
+        annotations: {
+            title: 'End Chronolog session',
+            readOnlyHint: false,
+            destructiveHint: false,
+            idempotentHint: true,
             openWorldHint: false,
         },
     },
@@ -347,9 +432,12 @@ function toCompactEntry(row: EntryRow, timeZone: string, sessionDurations?: Map<
         if (computed !== undefined) out.duration = formatDuration(computed);
     } else if (entry.duration != null) {
         out.duration = formatDuration(entry.duration);
+        out.durationMs = entry.duration;
     }
+    if (entry.sessionId) out.sessionId = entry.sessionId;
     if (entry.contentType) out.contentType = entry.contentType;
     if (entry.fieldValues) out.fieldValues = entry.fieldValues;
+    if (entry.linkedEntries) out.linkedEntries = entry.linkedEntries;
     return out;
 }
 
@@ -359,16 +447,31 @@ function escapeLike(value: string): string {
 
 const ISO_TIMESTAMP_WITH_ZONE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?(?:Z|[+-]\d{2}:\d{2})$/;
 
-/** Build and validate a NOTE entry without touching D1 (exported for tests). */
-export function buildNoteEntry(
+/** Build and validate an Entry without touching D1 (exported for tests). */
+export function buildEntry(
     args: Record<string, unknown>,
     now: number = Date.now(),
-    id: string = crypto.randomUUID(),
+    generatedId: string = crypto.randomUUID(),
+    generatedSessionId: string = crypto.randomUUID(),
 ): Entry {
-    if (typeof args.content !== 'string' || args.content.trim() === '') {
-        throw new Error('content must be a non-empty string');
+    const type = args.type ?? 'NOTE';
+    if (type !== 'NOTE' && type !== 'SESSION_START' && type !== 'SESSION_END') {
+        throw new Error('type must be SESSION_START, NOTE, or SESSION_END');
     }
-    if (args.content.length > 100_000) {
+
+    let id = generatedId;
+    if (args.id !== undefined) {
+        if (typeof args.id !== 'string' || args.id.trim() === '' || args.id.length > 100) {
+            throw new Error('id must be a non-empty string of at most 100 characters');
+        }
+        id = args.id.trim();
+    }
+
+    const content = args.content ?? '';
+    if (typeof content !== 'string' || (type === 'NOTE' && content.trim() === '')) {
+        throw new Error('content must be a non-empty string for NOTE entries');
+    }
+    if (content.length > 100_000) {
         throw new Error('content exceeds the 100000 character limit');
     }
 
@@ -421,15 +524,49 @@ export function buildNoteEntry(
         fieldValues = args.fieldValues as Record<string, unknown>;
     }
 
+    let sessionId: string | undefined;
+    if (args.sessionId !== undefined) {
+        if (typeof args.sessionId !== 'string' || args.sessionId.trim() === '' || args.sessionId.length > 100) {
+            throw new Error('sessionId must be a non-empty string of at most 100 characters');
+        }
+        sessionId = args.sessionId.trim();
+    } else if (type === 'SESSION_START') {
+        sessionId = generatedSessionId;
+    }
+
+    let duration: number | undefined;
+    if (args.duration !== undefined) {
+        if (typeof args.duration !== 'number' || !Number.isFinite(args.duration) || args.duration < 0) {
+            throw new Error('duration must be a non-negative number of milliseconds');
+        }
+        duration = args.duration;
+    }
+
+    let linkedEntries: string[] | undefined;
+    if (args.linkedEntries !== undefined) {
+        if (!Array.isArray(args.linkedEntries) || args.linkedEntries.some(link => typeof link !== 'string')) {
+            throw new Error('linkedEntries must be an array of entry ID strings');
+        }
+        if (args.linkedEntries.length > 50) throw new Error('linkedEntries cannot contain more than 50 items');
+        linkedEntries = [...new Set(args.linkedEntries.map(link => (link as string).trim()).filter(Boolean))];
+        if (linkedEntries.some(link => link.length > 100)) {
+            throw new Error('each linked entry ID must be at most 100 characters');
+        }
+        if (linkedEntries.includes(id)) throw new Error('an entry cannot link to itself');
+    }
+
     return {
         id,
-        type: 'NOTE',
-        content: args.content,
+        type,
+        content,
         timestamp,
+        ...(sessionId ? { sessionId } : {}),
+        ...(duration !== undefined ? { duration } : {}),
         ...(category ? { category } : {}),
         ...(tags && tags.length > 0 ? { tags } : {}),
         ...(contentType ? { contentType } : {}),
         ...(fieldValues ? { fieldValues } : {}),
+        ...(linkedEntries && linkedEntries.length > 0 ? { linkedEntries } : {}),
     };
 }
 
@@ -437,7 +574,13 @@ export function buildNoteEntry(
 
 async function addEntry(args: Record<string, unknown>, db: D1Database): Promise<unknown> {
     const timeZone = resolveTimezone(args.timezone);
-    const entry = buildNoteEntry(args);
+    const entry = buildEntry(args);
+
+    const duplicate = await db
+        .prepare('SELECT id FROM entries WHERE id = ?')
+        .bind(entry.id)
+        .first<{ id: string }>();
+    if (duplicate) throw new Error(`Entry ID "${entry.id}" already exists`);
 
     if (entry.contentType) {
         const contentType = await db
@@ -449,7 +592,49 @@ async function addEntry(args: Record<string, unknown>, db: D1Database): Promise<
         }
     }
 
-    const lastModified = await upsertEntryWithLastModified(db, entry);
+    if (entry.type === 'SESSION_START' || (entry.type === 'SESSION_END' && entry.duration === undefined)) {
+        const latestBoundary = await db
+            .prepare(
+                "SELECT id, type, timestamp, category FROM entries " +
+                "WHERE type IN ('SESSION_START', 'SESSION_END') AND timestamp <= ? " +
+                'ORDER BY timestamp DESC LIMIT 1'
+            )
+            .bind(entry.timestamp)
+            .first<SessionRow>();
+
+        if (entry.type === 'SESSION_START' && latestBoundary?.type === 'SESSION_START') {
+            throw new Error(`Session "${latestBoundary.id}" is already open at this timestamp; end it before starting another`);
+        }
+        if (entry.type === 'SESSION_END' && (!latestBoundary || latestBoundary.type !== 'SESSION_START')) {
+            throw new Error('No open session found at this timestamp; provide duration explicitly to create a standalone SESSION_END');
+        }
+        if (entry.type === 'SESSION_END' && latestBoundary) {
+            entry.duration = entry.timestamp - latestBoundary.timestamp;
+        }
+    }
+
+    const entriesToWrite: Entry[] = [entry];
+    if (entry.linkedEntries && entry.linkedEntries.length > 0) {
+        const placeholders = entry.linkedEntries.map(() => '?').join(', ');
+        const linkedRows = await db
+            .prepare(`SELECT * FROM entries WHERE id IN (${placeholders})`)
+            .bind(...entry.linkedEntries)
+            .all<EntryRow>();
+        const foundIds = new Set(linkedRows.results.map(row => row.id));
+        const missingIds = entry.linkedEntries.filter(id => !foundIds.has(id));
+        if (missingIds.length > 0) {
+            throw new Error(`Unknown linkedEntries: ${missingIds.join(', ')}`);
+        }
+        entriesToWrite.push(...linkedRows.results.map(row => {
+            const linked = entryRowToObject(row);
+            return {
+                ...linked,
+                linkedEntries: [...new Set([...(linked.linkedEntries ?? []), entry.id])],
+            };
+        }));
+    }
+
+    const lastModified = await upsertEntriesWithLastModified(db, entriesToWrite);
 
     return {
         success: true,

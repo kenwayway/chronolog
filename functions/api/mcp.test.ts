@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildNoteEntry, computeSessions, onRequestPost } from './mcp.ts';
+import { buildEntry, computeSessions, onRequestPost } from './mcp.ts';
 
 describe('computeSessions', () => {
     it('derives duration from edited timestamps and uses the start category', () => {
@@ -38,40 +38,70 @@ describe('computeSessions', () => {
     });
 });
 
-describe('buildNoteEntry', () => {
-    it('normalizes tags and builds a structured note', () => {
-        const entry = buildNoteEntry({
+describe('buildEntry', () => {
+    it('normalizes tags and supports every optional Entry field', () => {
+        const entry = buildEntry({
+            id: 'custom-id',
+            type: 'NOTE',
             content: 'Finished the migration',
             timestamp: '2026-07-14T09:30:00-04:00',
             category: 'craft',
+            sessionId: 'manual-session',
+            duration: 42,
             tags: ['#codex', ' codex ', 'release'],
             contentType: 'sparks',
             fieldValues: { source: 'MCP' },
+            linkedEntries: ['older-entry'],
         }, 1, 'entry-id');
 
         expect(entry).toEqual({
-            id: 'entry-id',
+            id: 'custom-id',
             type: 'NOTE',
             content: 'Finished the migration',
             timestamp: Date.parse('2026-07-14T09:30:00-04:00'),
+            sessionId: 'manual-session',
+            duration: 42,
             category: 'craft',
             tags: ['codex', 'release'],
             contentType: 'sparks',
             fieldValues: { source: 'MCP' },
+            linkedEntries: ['older-entry'],
         });
     });
 
     it('defaults to now and rejects ambiguous timestamps or unknown categories', () => {
-        expect(buildNoteEntry({ content: 'Now' }, 123, 'id').timestamp).toBe(123);
-        expect(() => buildNoteEntry({ content: 'Bad time', timestamp: '2026-07-14T09:30:00' }))
+        expect(buildEntry({ content: 'Now' }, 123, 'id').timestamp).toBe(123);
+        expect(() => buildEntry({ content: 'Bad time', timestamp: '2026-07-14T09:30:00' }))
             .toThrow('explicit UTC offset or Z');
-        expect(() => buildNoteEntry({ content: 'Bad category', category: 'other' }))
+        expect(() => buildEntry({ content: 'Bad category', category: 'other' }))
             .toThrow('Unknown category');
     });
 
     it('requires a structured content type when fieldValues are provided', () => {
-        expect(() => buildNoteEntry({ content: 'Invalid fields', fieldValues: { energy: 3 } }))
+        expect(() => buildEntry({ content: 'Invalid fields', fieldValues: { energy: 3 } }))
             .toThrow('fieldValues requires a non-note contentType');
+    });
+
+    it('generates session IDs for starts and allows empty session boundary content', () => {
+        expect(buildEntry(
+            { type: 'SESSION_START' },
+            123,
+            'start-id',
+            'generated-session-id',
+        )).toEqual({
+            id: 'start-id',
+            type: 'SESSION_START',
+            content: '',
+            timestamp: 123,
+            sessionId: 'generated-session-id',
+        });
+        expect(buildEntry({ type: 'SESSION_END', duration: 60_000 }, 456, 'end-id')).toEqual({
+            id: 'end-id',
+            type: 'SESSION_END',
+            content: '',
+            timestamp: 456,
+            duration: 60_000,
+        });
     });
 });
 
@@ -133,6 +163,9 @@ describe('MCP write permissions', () => {
                         return {
                             sql,
                             values,
+                            async first() {
+                                return null;
+                            },
                             async run() {
                                 runs.push({ sql, values });
                                 return { success: true };
@@ -173,5 +206,103 @@ describe('MCP write permissions', () => {
         expect(batchedStatements.some(statement => statement.sql.includes('sync_meta'))).toBe(true);
         expect(runs).toHaveLength(0);
         expect(data.lastModified).toEqual(expect.any(Number));
+    });
+
+    it('calculates SESSION_END duration from the latest open session', async () => {
+        const batches: unknown[][] = [];
+        const db = {
+            prepare(sql: string) {
+                return {
+                    bind(...values: unknown[]) {
+                        return {
+                            sql,
+                            values,
+                            async first() {
+                                if (sql.includes("type IN ('SESSION_START', 'SESSION_END')")) {
+                                    return { id: 'start', type: 'SESSION_START', timestamp: 1_000, category: 'craft' };
+                                }
+                                return null;
+                            },
+                        };
+                    },
+                };
+            },
+            async batch(statements: unknown[]) {
+                batches.push(statements);
+                return statements.map(() => ({ meta: { changes: 1 } }));
+            },
+        } as unknown as D1Database;
+
+        const response = await requestMcp('write-token', {
+            jsonrpc: '2.0',
+            id: 4,
+            method: 'tools/call',
+            params: {
+                name: 'add_entry',
+                arguments: { type: 'SESSION_END', timestamp: '1970-01-01T00:00:03Z' },
+            },
+        }, db);
+        const body = await response.json() as { result: { content: Array<{ text: string }> } };
+        const data = JSON.parse(body.result.content[0].text) as {
+            entry: { type: string; durationMs: number };
+        };
+
+        expect(data.entry).toMatchObject({ type: 'SESSION_END', durationMs: 2_000 });
+        expect(batches).toHaveLength(1);
+    });
+
+    it('updates linked entries bidirectionally in the atomic write batch', async () => {
+        const batches: unknown[][] = [];
+        const linkedRow = {
+            id: 'older-entry',
+            type: 'NOTE',
+            content: 'Older',
+            timestamp: 1,
+            session_id: null,
+            duration: null,
+            category: null,
+            content_type: 'note',
+            field_values: null,
+            linked_entries: null,
+            tags: null,
+            created_at: 1,
+            updated_at: 1,
+        };
+        const db = {
+            prepare(sql: string) {
+                return {
+                    bind(...values: unknown[]) {
+                        return {
+                            sql,
+                            values,
+                            async first() { return null; },
+                            async all() { return { results: [linkedRow] }; },
+                        };
+                    },
+                };
+            },
+            async batch(statements: unknown[]) {
+                batches.push(statements);
+                return statements.map(() => ({ meta: { changes: 1 } }));
+            },
+        } as unknown as D1Database;
+
+        const response = await requestMcp('write-token', {
+            jsonrpc: '2.0',
+            id: 5,
+            method: 'tools/call',
+            params: {
+                name: 'add_entry',
+                arguments: { id: 'new-entry', content: 'New', linkedEntries: ['older-entry'] },
+            },
+        }, db);
+        const body = await response.json() as { result: { content: Array<{ text: string }> } };
+        const data = JSON.parse(body.result.content[0].text) as { success: boolean };
+        const statements = batches[0] as Array<{ values: unknown[] }>;
+
+        expect(data.success).toBe(true);
+        expect(statements).toHaveLength(3); // new entry, linked entry, sync metadata
+        expect(JSON.parse(statements[0].values[9] as string)).toEqual(['older-entry']);
+        expect(JSON.parse(statements[1].values[9] as string)).toEqual(['new-entry']);
     });
 });
