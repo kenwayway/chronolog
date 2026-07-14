@@ -1,11 +1,11 @@
 // POST /api/mcp - Remote MCP server (Streamable HTTP, stateless) for AI access to entries
-// Auth: "Authorization: Bearer <PUBLIC_API_TOKEN>" header, or ?token=<PUBLIC_API_TOKEN>
-// Tools: search_entries, get_day, get_stats, list_categories_and_tags
+// Auth: PUBLIC_API_TOKEN grants read access; MCP_WRITE_TOKEN grants read + write access
+// Tools: search_entries, get_day, get_stats, list_categories_and_tags, add_entry (write token only)
 
-import { entryRowToObject } from './_db.ts';
+import { entryRowToObject, upsertEntryWithLastModified } from './_db.ts';
 import type { CFContext, Env, EntryRow, Entry } from './types.ts';
 
-const SERVER_INFO = { name: 'chronolog', version: '1.0.0' };
+const SERVER_INFO = { name: 'chronolog', version: '1.1.0' };
 const SUPPORTED_PROTOCOL_VERSIONS = ['2025-06-18', '2025-03-26', '2024-11-05'];
 const DEFAULT_TIMEZONE = 'America/Toronto';
 
@@ -46,7 +46,7 @@ function rpcError(id: number | string | null, code: number, message: string): Js
 
 // --- Tool definitions ---
 
-const TOOLS = [
+const READ_TOOLS = [
     {
         name: 'search_entries',
         description:
@@ -123,6 +123,71 @@ const TOOLS = [
         inputSchema: { type: 'object', properties: {} },
     },
 ];
+
+const WRITE_TOOLS = [
+    {
+        name: 'add_entry',
+        description:
+            'Create one NOTE entry in Chronolog. Use this only when the user explicitly asks to log, save, ' +
+            'record, or add something to Chronolog; never infer write consent from ordinary conversation. ' +
+            'Use list_categories_and_tags first when choosing a category or structured content type. ' +
+            'The timestamp defaults to now. This tool does not start or end a timed session.',
+        inputSchema: {
+            type: 'object',
+            properties: {
+                content: {
+                    type: 'string',
+                    minLength: 1,
+                    maxLength: 100000,
+                    description: 'Journal content to save',
+                },
+                timestamp: {
+                    type: 'string',
+                    description: 'Optional ISO 8601 time with explicit offset or Z, e.g. 2026-07-14T09:30:00-04:00. Defaults to now.',
+                },
+                category: {
+                    type: 'string',
+                    enum: CATEGORY_IDS,
+                    description: 'Optional life-area category',
+                },
+                tags: {
+                    type: 'array',
+                    items: { type: 'string', minLength: 1, maxLength: 100 },
+                    maxItems: 30,
+                    description: 'Optional tags; leading # characters are removed',
+                },
+                contentType: {
+                    type: 'string',
+                    minLength: 1,
+                    maxLength: 100,
+                    description: 'Optional structured content type ID returned by list_categories_and_tags',
+                },
+                fieldValues: {
+                    type: 'object',
+                    additionalProperties: true,
+                    description: 'Optional structured fields for contentType',
+                },
+                timezone: {
+                    type: 'string',
+                    description: 'Timezone used only to format the returned time (default America/Toronto)',
+                },
+            },
+            required: ['content'],
+            additionalProperties: false,
+        },
+        annotations: {
+            title: 'Add Chronolog entry',
+            readOnlyHint: false,
+            destructiveHint: false,
+            idempotentHint: false,
+            openWorldHint: false,
+        },
+    },
+];
+
+function toolsForAccess(canWrite: boolean) {
+    return canWrite ? [...READ_TOOLS, ...WRITE_TOOLS] : READ_TOOLS;
+}
 
 // --- Shared helpers ---
 
@@ -292,7 +357,120 @@ function escapeLike(value: string): string {
     return value.replace(/[\\%_]/g, c => '\\' + c);
 }
 
+const ISO_TIMESTAMP_WITH_ZONE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?(?:Z|[+-]\d{2}:\d{2})$/;
+
+/** Build and validate a NOTE entry without touching D1 (exported for tests). */
+export function buildNoteEntry(
+    args: Record<string, unknown>,
+    now: number = Date.now(),
+    id: string = crypto.randomUUID(),
+): Entry {
+    if (typeof args.content !== 'string' || args.content.trim() === '') {
+        throw new Error('content must be a non-empty string');
+    }
+    if (args.content.length > 100_000) {
+        throw new Error('content exceeds the 100000 character limit');
+    }
+
+    let timestamp = now;
+    if (args.timestamp !== undefined) {
+        if (typeof args.timestamp !== 'string' || !ISO_TIMESTAMP_WITH_ZONE.test(args.timestamp)) {
+            throw new Error('timestamp must be ISO 8601 with an explicit UTC offset or Z');
+        }
+        timestamp = Date.parse(args.timestamp);
+        if (!Number.isFinite(timestamp)) throw new Error(`Invalid timestamp "${args.timestamp}"`);
+    }
+
+    let category: string | undefined;
+    if (args.category !== undefined) {
+        if (typeof args.category !== 'string' || !CATEGORY_IDS.includes(args.category)) {
+            throw new Error(`Unknown category "${String(args.category)}", valid: ${CATEGORY_IDS.join(', ')}`);
+        }
+        category = args.category;
+    }
+
+    let tags: string[] | undefined;
+    if (args.tags !== undefined) {
+        if (!Array.isArray(args.tags) || args.tags.some(tag => typeof tag !== 'string')) {
+            throw new Error('tags must be an array of strings');
+        }
+        if (args.tags.length > 30) throw new Error('tags cannot contain more than 30 items');
+        const normalized = args.tags
+            .map(tag => (tag as string).trim().replace(/^#+/, ''))
+            .filter(Boolean);
+        if (normalized.some(tag => tag.length > 100)) throw new Error('each tag must be at most 100 characters');
+        tags = [...new Set(normalized)];
+    }
+
+    let contentType: string | undefined;
+    if (args.contentType !== undefined) {
+        if (typeof args.contentType !== 'string' || args.contentType.trim() === '') {
+            throw new Error('contentType must be a non-empty string');
+        }
+        contentType = args.contentType.trim();
+        if (contentType.length > 100) throw new Error('contentType must be at most 100 characters');
+        if (contentType === 'note') contentType = undefined;
+    }
+
+    let fieldValues: Record<string, unknown> | undefined;
+    if (args.fieldValues !== undefined) {
+        if (!args.fieldValues || typeof args.fieldValues !== 'object' || Array.isArray(args.fieldValues)) {
+            throw new Error('fieldValues must be an object');
+        }
+        if (!contentType) throw new Error('fieldValues requires a non-note contentType');
+        fieldValues = args.fieldValues as Record<string, unknown>;
+    }
+
+    return {
+        id,
+        type: 'NOTE',
+        content: args.content,
+        timestamp,
+        ...(category ? { category } : {}),
+        ...(tags && tags.length > 0 ? { tags } : {}),
+        ...(contentType ? { contentType } : {}),
+        ...(fieldValues ? { fieldValues } : {}),
+    };
+}
+
 // --- Tool implementations ---
+
+async function addEntry(args: Record<string, unknown>, db: D1Database): Promise<unknown> {
+    const timeZone = resolveTimezone(args.timezone);
+    const entry = buildNoteEntry(args);
+
+    if (entry.contentType) {
+        const contentType = await db
+            .prepare('SELECT id FROM content_types WHERE id = ?')
+            .bind(entry.contentType)
+            .first<{ id: string }>();
+        if (!contentType) {
+            throw new Error(`Unknown contentType "${entry.contentType}"; use list_categories_and_tags to get valid IDs`);
+        }
+    }
+
+    const lastModified = await upsertEntryWithLastModified(db, entry);
+
+    return {
+        success: true,
+        entry: toCompactEntry({
+            id: entry.id,
+            type: entry.type,
+            content: entry.content,
+            timestamp: entry.timestamp,
+            session_id: entry.sessionId ?? null,
+            duration: entry.duration ?? null,
+            category: entry.category ?? null,
+            content_type: entry.contentType ?? 'note',
+            field_values: entry.fieldValues ? JSON.stringify(entry.fieldValues) : null,
+            linked_entries: entry.linkedEntries ? JSON.stringify(entry.linkedEntries) : null,
+            tags: entry.tags ? JSON.stringify(entry.tags) : null,
+            created_at: lastModified,
+            updated_at: lastModified,
+        }, timeZone),
+        lastModified,
+    };
+}
 
 async function searchEntries(args: Record<string, unknown>, db: D1Database): Promise<unknown> {
     const rawKeywords = Array.isArray(args.keywords) ? args.keywords : [args.keywords];
@@ -470,13 +648,21 @@ async function listCategoriesAndTags(db: D1Database): Promise<unknown> {
     };
 }
 
-async function callTool(params: Record<string, unknown> | undefined, db: D1Database): Promise<unknown> {
+async function callTool(
+    params: Record<string, unknown> | undefined,
+    db: D1Database,
+    canWrite: boolean,
+): Promise<unknown> {
     const name = params?.name;
     const args = (params?.arguments ?? {}) as Record<string, unknown>;
 
     try {
         let data: unknown;
         switch (name) {
+            case 'add_entry':
+                if (!canWrite) throw new Error('add_entry requires MCP_WRITE_TOKEN');
+                data = await addEntry(args, db);
+                break;
             case 'search_entries':
                 data = await searchEntries(args, db);
                 break;
@@ -501,7 +687,7 @@ async function callTool(params: Record<string, unknown> | undefined, db: D1Datab
 
 // --- JSON-RPC dispatch ---
 
-async function handleMessage(message: unknown, env: Env): Promise<JsonRpcResponse | null> {
+async function handleMessage(message: unknown, env: Env, canWrite: boolean): Promise<JsonRpcResponse | null> {
     if (!message || typeof message !== 'object') {
         return rpcError(null, -32600, 'Invalid Request');
     }
@@ -529,10 +715,10 @@ async function handleMessage(message: unknown, env: Env): Promise<JsonRpcRespons
             result = {};
             break;
         case 'tools/list':
-            result = { tools: TOOLS };
+            result = { tools: toolsForAccess(canWrite) };
             break;
         case 'tools/call':
-            result = await callTool(params, env.CHRONOLOG_DB);
+            result = await callTool(params, env.CHRONOLOG_DB, canWrite);
             break;
         default:
             return id === undefined ? null : rpcError(id ?? null, -32601, `Method not found: ${method}`);
@@ -546,7 +732,7 @@ async function handleMessage(message: unknown, env: Env): Promise<JsonRpcRespons
 export async function onRequestPost(context: CFContext): Promise<Response> {
     const { request, env } = context;
 
-    if (!env.PUBLIC_API_TOKEN) {
+    if (!env.PUBLIC_API_TOKEN && !env.MCP_WRITE_TOKEN) {
         return Response.json({ error: 'MCP server not configured' }, { status: 503 });
     }
 
@@ -554,7 +740,9 @@ export async function onRequestPost(context: CFContext): Promise<Response> {
     const token = authHeader?.startsWith('Bearer ')
         ? authHeader.slice(7)
         : new URL(request.url).searchParams.get('token');
-    if (token !== env.PUBLIC_API_TOKEN) {
+    const canWrite = !!env.MCP_WRITE_TOKEN && token === env.MCP_WRITE_TOKEN;
+    const canRead = canWrite || (!!env.PUBLIC_API_TOKEN && token === env.PUBLIC_API_TOKEN);
+    if (!canRead) {
         return Response.json({ error: 'Invalid or missing token' }, { status: 401 });
     }
 
@@ -567,11 +755,11 @@ export async function onRequestPost(context: CFContext): Promise<Response> {
 
     try {
         if (Array.isArray(body)) {
-            const responses = (await Promise.all(body.map(msg => handleMessage(msg, env))))
+            const responses = (await Promise.all(body.map(msg => handleMessage(msg, env, canWrite))))
                 .filter((r): r is JsonRpcResponse => r !== null);
             return responses.length === 0 ? new Response(null, { status: 202 }) : Response.json(responses);
         }
-        const response = await handleMessage(body, env);
+        const response = await handleMessage(body, env, canWrite);
         return response === null ? new Response(null, { status: 202 }) : Response.json(response);
     } catch (error) {
         console.error('MCP error:', error);

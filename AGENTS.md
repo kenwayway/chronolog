@@ -428,11 +428,11 @@ Stateless MCP server for AI clients (Claude Code, claude.ai connectors). JSON-RP
 
 ```http
 POST /api/mcp
-Authorization: Bearer <PUBLIC_API_TOKEN>   # or ?token=<PUBLIC_API_TOKEN>
+Authorization: Bearer <PUBLIC_API_TOKEN|MCP_WRITE_TOKEN>
 Content-Type: application/json
 ```
 
-Tools (all read-only; date boundaries and displayed times use `America/Toronto` by default, overridable via `timezone` param — IANA name or fixed UTC offset):
+`PUBLIC_API_TOKEN` exposes only read tools. `MCP_WRITE_TOKEN` exposes the same read tools plus `add_entry`. Date boundaries and displayed times use `America/Toronto` by default, overridable via `timezone` param — IANA name or fixed UTC offset.
 
 | Tool | Purpose |
 |------|---------|
@@ -440,11 +440,14 @@ Tools (all read-only; date boundaries and displayed times use `America/Toronto` 
 | `get_day(date)` | All entries for a day + per-category tracked-time summary |
 | `get_stats(start, end)` | Per-category duration sums (SESSION_END), session/entry counts, daily average |
 | `list_categories_and_tags()` | Fixed categories with descriptions, content types, top tags with counts |
+| `add_entry(content, timestamp?, category?, tags?, contentType?, fieldValues?)` | Create one NOTE entry (write token only); timestamp defaults to now and explicit timestamps require ISO 8601 with an offset |
 
 Connect from Claude Code:
 ```bash
-claude mcp add --transport http chronolog https://<domain>/api/mcp --header "Authorization: Bearer <PUBLIC_API_TOKEN>"
+claude mcp add --transport http chronolog https://<domain>/api/mcp --header "Authorization: Bearer <MCP_WRITE_TOKEN>"
 ```
+
+Use `PUBLIC_API_TOKEN` in the command instead when the client should remain read-only.
 
 ### Image Upload
 ```http
@@ -501,6 +504,7 @@ Categories are defined in `constants.ts`. To add:
 | `AI_BASE_URL` | (Optional) Custom AI API base URL |
 | `AI_MODEL` | (Optional) AI model name, default: gpt-4o-mini |
 | `PUBLIC_API_TOKEN` | Token for public read-only API access |
+| `MCP_WRITE_TOKEN` | Separate token for MCP read access plus `add_entry` writes |
 
 ---
 

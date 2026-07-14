@@ -59,8 +59,7 @@ interface EntryRowValues {
  * Convert a frontend Entry object (camelCase) to D1 row values (snake_case)
  * Stringifies JSON fields
  */
-export function entryObjectToRow(entry: Entry): EntryRowValues {
-    const now = Date.now();
+export function entryObjectToRow(entry: Entry, now: number = Date.now()): EntryRowValues {
     return {
         id: entry.id,
         type: entry.type,
@@ -76,6 +75,35 @@ export function entryObjectToRow(entry: Entry): EntryRowValues {
         created_at: now,
         updated_at: now,
     };
+}
+
+const ENTRY_UPSERT_SQL = `
+    INSERT INTO entries
+      (id, type, content, timestamp, session_id, duration, category, content_type,
+       field_values, linked_entries, tags, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET
+      type = excluded.type,
+      content = excluded.content,
+      timestamp = excluded.timestamp,
+      session_id = excluded.session_id,
+      duration = excluded.duration,
+      category = excluded.category,
+      content_type = excluded.content_type,
+      field_values = excluded.field_values,
+      linked_entries = excluded.linked_entries,
+      tags = excluded.tags,
+      updated_at = excluded.updated_at
+`;
+
+function bindEntryUpsert(statement: D1PreparedStatement, entry: Entry, now?: number): D1PreparedStatement {
+    const row = entryObjectToRow(entry, now);
+    return statement.bind(
+        row.id, row.type, row.content, row.timestamp,
+        row.session_id, row.duration, row.category, row.content_type,
+        row.field_values, row.linked_entries, row.tags,
+        row.created_at, row.updated_at
+    );
 }
 
 /**
@@ -191,34 +219,10 @@ export function mediaItemObjectToRow(item: MediaItem): MediaItemRowValues {
 export async function upsertEntries(db: D1Database, entries: Entry[]): Promise<number> {
     if (!entries || entries.length === 0) return 0;
 
-    const stmt = db.prepare(`
-    INSERT INTO entries
-      (id, type, content, timestamp, session_id, duration, category, content_type,
-       field_values, linked_entries, tags, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(id) DO UPDATE SET
-      type = excluded.type,
-      content = excluded.content,
-      timestamp = excluded.timestamp,
-      session_id = excluded.session_id,
-      duration = excluded.duration,
-      category = excluded.category,
-      content_type = excluded.content_type,
-      field_values = excluded.field_values,
-      linked_entries = excluded.linked_entries,
-      tags = excluded.tags,
-      updated_at = excluded.updated_at
-  `);
-
+    const statement = db.prepare(ENTRY_UPSERT_SQL);
     const batches: D1PreparedStatement[] = [];
     for (const entry of entries) {
-        const row = entryObjectToRow(entry);
-        batches.push(stmt.bind(
-            row.id, row.type, row.content, row.timestamp,
-            row.session_id, row.duration, row.category, row.content_type,
-            row.field_values, row.linked_entries, row.tags,
-            row.created_at, row.updated_at
-        ));
+        batches.push(bindEntryUpsert(statement, entry));
     }
 
     // D1 batch limit is 100 statements
@@ -230,6 +234,20 @@ export async function upsertEntries(db: D1Database, entries: Entry[]): Promise<n
     }
 
     return total;
+}
+
+/** Atomically write one entry and advance the incremental-sync cursor. */
+export async function upsertEntryWithLastModified(
+    db: D1Database,
+    entry: Entry,
+    lastModified: number = Date.now(),
+): Promise<number> {
+    const entryStatement = bindEntryUpsert(db.prepare(ENTRY_UPSERT_SQL), entry, lastModified);
+    const metadataStatement = db.prepare(
+        "INSERT OR REPLACE INTO sync_meta (key, value) VALUES ('last_modified', ?)"
+    ).bind(String(lastModified));
+    await db.batch([entryStatement, metadataStatement]);
+    return lastModified;
 }
 
 /**

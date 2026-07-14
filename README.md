@@ -177,7 +177,8 @@ Cloud sync is optional. Configure these bindings and variables in the Cloudflare
 | `AI_API_KEY` | API key used by server-side categorization |
 | `AI_BASE_URL` | Optional OpenAI-compatible API base URL |
 | `AI_MODEL` | Optional categorization model name |
-| `PUBLIC_API_TOKEN` | Token for the read-only public entries endpoint |
+| `PUBLIC_API_TOKEN` | Token for the read-only public entries endpoint and read-only MCP access |
+| `MCP_WRITE_TOKEN` | Separate MCP token granting read access plus `add_entry` write access |
 
 Apply [schema.sql](schema.sql) to the D1 database before first deployment.
 
