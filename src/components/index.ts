@@ -9,7 +9,7 @@ export { Timeline, TimelineEntry } from './timeline'
 export { InputPanel } from './input'
 
 // Common
-export { Dropdown, ContextMenu, Calendar, LinkSelector } from './common'
+export { Dropdown, ContextMenu, Calendar, LinkSelector, SearchPanel } from './common'
 
 // Modals
 export { SettingsModal, EditModal } from './modals'

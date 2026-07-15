@@ -20,16 +20,17 @@ interface TimelineProps {
   onEdit?: (entry: Entry) => void;
   categoryFilter?: CategoryId[];
   isFilterMode?: boolean;
+  filterKey?: string;
   onNavigateToEntry?: (entry: Entry) => void;
 }
 
-export function Timeline({ entries, onContextMenu, onEdit, categoryFilter = [], isFilterMode: isFilterModeProp, onNavigateToEntry }: TimelineProps) {
+export function Timeline({ entries, onContextMenu, onEdit, categoryFilter = [], isFilterMode: isFilterModeProp, filterKey = '', onNavigateToEntry }: TimelineProps) {
   const { state: { entries: allEntries, mediaItems }, categories } = useSessionContext();
   const { theme } = useTheme();
 
   // Stable key for categoryFilter to avoid re-creating strings on every render
   const categoryFilterKey = categoryFilter.join(',');
-  const paginationKey = `${isFilterModeProp ?? 'auto'}:${categoryFilterKey}`;
+  const paginationKey = `${isFilterModeProp ?? 'auto'}:${categoryFilterKey}:${filterKey}`;
   const [pagination, setPagination] = useState({ key: paginationKey, page: 0 });
   const currentPage = pagination.key === paginationKey ? pagination.page : 0;
 

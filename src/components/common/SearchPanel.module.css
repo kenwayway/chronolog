@@ -1,0 +1,200 @@
+.overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1100;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: min(14vh, 120px) 20px 20px;
+    background: rgba(0, 0, 0, 0.58);
+    backdrop-filter: blur(6px);
+}
+
+.panel {
+    width: min(680px, 100%);
+    max-height: min(680px, 76vh);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+    font-family: var(--font-mono);
+}
+
+.searchRow {
+    min-height: 58px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 16px;
+    color: var(--accent);
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-light);
+}
+
+.input {
+    flex: 1;
+    min-width: 0;
+    padding: 16px 0;
+    color: var(--text-primary);
+    background: transparent;
+    border: 0;
+    outline: 0;
+    font: 14px/1.5 var(--font-mono);
+}
+
+.input::placeholder {
+    color: var(--text-dim);
+}
+
+.clearButton {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    color: var(--text-muted);
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+}
+
+.clearButton:hover {
+    color: var(--text-primary);
+}
+
+.shortcut,
+.keyboardHint kbd {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 20px;
+    padding: 0 5px;
+    color: var(--text-dim);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-sm);
+    font: 9px var(--font-mono);
+    box-shadow: 0 1px 0 var(--border-light);
+}
+
+.results {
+    flex: 1;
+    min-height: 220px;
+    overflow-y: auto;
+    padding: 6px;
+}
+
+.result {
+    width: 100%;
+    display: block;
+    padding: 11px 12px;
+    color: var(--text-secondary);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    text-align: left;
+    cursor: pointer;
+}
+
+.activeResult {
+    color: var(--text-primary);
+    background: var(--accent-subtle);
+    border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+.resultMeta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px 10px;
+    margin-bottom: 5px;
+    color: var(--text-dim);
+    font-size: 9px;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+
+.preview {
+    display: -webkit-box;
+    overflow: hidden;
+    color: inherit;
+    font-family: var(--font-primary);
+    font-size: 13px;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+
+.preview mark {
+    padding: 0 1px;
+    color: var(--text-primary);
+    background: color-mix(in srgb, var(--accent) 38%, transparent);
+}
+
+.emptyState {
+    min-height: 220px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    color: var(--text-muted);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+}
+
+.emptyState small {
+    color: var(--text-dim);
+    font-size: 10px;
+    letter-spacing: 0;
+    text-align: center;
+}
+
+.emptyPrompt {
+    color: var(--accent);
+    font-size: 24px;
+}
+
+.footer {
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 0 14px;
+    color: var(--text-dim);
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border-subtle);
+    font-size: 9px;
+    letter-spacing: 0.04em;
+}
+
+.keyboardHint {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+@media (max-width: 640px) {
+    .overlay {
+        padding: 56px 10px 10px;
+    }
+
+    .panel {
+        max-height: calc(100vh - 66px);
+    }
+
+    .shortcut,
+    .keyboardHint {
+        display: none;
+    }
+
+    .results {
+        min-height: 180px;
+    }
+}

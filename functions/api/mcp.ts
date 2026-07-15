@@ -1,7 +1,6 @@
 // POST /api/mcp - Remote MCP server (Streamable HTTP, stateless) for AI access to entries
 // Auth: PUBLIC_API_TOKEN grants read access; MCP_WRITE_TOKEN grants read + write access
-// Tools: search_entries, get_day, get_stats, get_active_session, list_categories_and_tags,
-//        add_entry, start_session, end_session (write token only)
+// Tools: search_entries, get_day, get_stats, list_categories_and_tags, add_entry (write token only)
 
 import { entryRowToObject, upsertEntriesWithLastModified } from './_db.ts';
 import type { CFContext, Env, EntryRow, Entry } from './types.ts';
@@ -123,19 +122,6 @@ const READ_TOOLS = [
             'Call this first when you need to pick a category filter or want to know what vocabulary the user tags with.',
         inputSchema: { type: 'object', properties: {} },
     },
-    {
-        name: 'get_active_session',
-        description:
-            'Return the currently active timed session, if any. Use this before starting or ending a session ' +
-            'when the caller needs to display or reconcile timer state.',
-        inputSchema: {
-            type: 'object',
-            properties: {
-                timezone: { type: 'string', description: 'Timezone used to format the returned start time (default America/Toronto)' },
-            },
-            additionalProperties: false,
-        },
-    },
 ];
 
 const WRITE_TOOLS = [
@@ -222,49 +208,6 @@ const WRITE_TOOLS = [
             readOnlyHint: false,
             destructiveHint: false,
             idempotentHint: false,
-            openWorldHint: false,
-        },
-    },
-    {
-        name: 'start_session',
-        description:
-            'Start a timed Chronolog session in a required category. This is idempotent while a session is active: ' +
-            'it returns the existing session instead of creating a duplicate.',
-        inputSchema: {
-            type: 'object',
-            properties: {
-                category: { type: 'string', enum: CATEGORY_IDS, description: 'Life-area category for the session' },
-                content: { type: 'string', maxLength: 100000, description: 'Optional start label; defaults to "Session started"' },
-                timezone: { type: 'string', description: 'Timezone used to format the returned start time (default America/Toronto)' },
-            },
-            required: ['category'],
-            additionalProperties: false,
-        },
-        annotations: {
-            title: 'Start Chronolog session',
-            readOnlyHint: false,
-            destructiveHint: false,
-            idempotentHint: true,
-            openWorldHint: false,
-        },
-    },
-    {
-        name: 'end_session',
-        description:
-            'End the currently active timed Chronolog session. This is idempotent when no session is active.',
-        inputSchema: {
-            type: 'object',
-            properties: {
-                content: { type: 'string', maxLength: 100000, description: 'Optional end label; defaults to "Session ended"' },
-                timezone: { type: 'string', description: 'Timezone used to format the returned end time (default America/Toronto)' },
-            },
-            additionalProperties: false,
-        },
-        annotations: {
-            title: 'End Chronolog session',
-            readOnlyHint: false,
-            destructiveHint: false,
-            idempotentHint: true,
             openWorldHint: false,
         },
     },
@@ -917,7 +860,7 @@ async function handleMessage(message: unknown, env: Env, canWrite: boolean): Pro
 export async function onRequestPost(context: CFContext): Promise<Response> {
     const { request, env } = context;
 
-    if (!env.PUBLIC_API_TOKEN && !env.MCP_WRITE_TOKEN) {
+    if (!env.PUBLIC_API_TOKEN && !env.MCP_WRITE_TOKEN && !env.DASHBOARD_MCP_TOKEN) {
         return Response.json({ error: 'MCP server not configured' }, { status: 503 });
     }
 
@@ -925,7 +868,10 @@ export async function onRequestPost(context: CFContext): Promise<Response> {
     const token = authHeader?.startsWith('Bearer ')
         ? authHeader.slice(7)
         : new URL(request.url).searchParams.get('token');
-    const canWrite = !!env.MCP_WRITE_TOKEN && token === env.MCP_WRITE_TOKEN;
+    const canWrite = !!token && (
+        (!!env.MCP_WRITE_TOKEN && token === env.MCP_WRITE_TOKEN) ||
+        (!!env.DASHBOARD_MCP_TOKEN && token === env.DASHBOARD_MCP_TOKEN)
+    );
     const canRead = canWrite || (!!env.PUBLIC_API_TOKEN && token === env.PUBLIC_API_TOKEN);
     if (!canRead) {
         return Response.json({ error: 'Invalid or missing token' }, { status: 401 });

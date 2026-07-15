@@ -21,6 +21,7 @@ import {
     SettingsModal,
     EditModal,
     ActivityPanel,
+    SearchPanel,
 } from "./components";
 import type { CategoryId, Entry, UseSessionReturn } from "./types";
 import type { InputPanelRef } from "./components/input/InputPanel";
@@ -147,20 +148,22 @@ function MainView({
     });
 
     const filteredEntries = useMemo(() => {
-        if (ui.categoryFilter.length > 0) {
-            return state.entries
-                .filter(entry => ui.categoryFilter.includes(entry.category as CategoryId))
-                .sort((a, b) => b.timestamp - a.timestamp);
-        }
-        if (ui.tagFilter.length > 0) {
-            return state.entries
-                .filter(entry => entry.tags && ui.tagFilter.every(t => entry.tags!.includes(t)))
-                .sort((a, b) => b.timestamp - a.timestamp);
-        }
-        if (ui.contentTypeFilter.length > 0) {
-            return state.entries
-                .filter(entry => entry.contentType && ui.contentTypeFilter.includes(entry.contentType))
-                .sort((a, b) => b.timestamp - a.timestamp);
+        const hasFilters = ui.categoryFilter.length > 0
+            || ui.tagFilter.length > 0
+            || ui.contentTypeFilter.length > 0;
+
+        if (hasFilters) {
+            let results = state.entries;
+            if (ui.categoryFilter.length > 0) {
+                results = results.filter(entry => ui.categoryFilter.includes(entry.category as CategoryId));
+            }
+            if (ui.tagFilter.length > 0) {
+                results = results.filter(entry => entry.tags && ui.tagFilter.every(tag => entry.tags!.includes(tag)));
+            }
+            if (ui.contentTypeFilter.length > 0) {
+                results = results.filter(entry => entry.contentType && ui.contentTypeFilter.includes(entry.contentType));
+            }
+            return [...results].sort((a, b) => b.timestamp - a.timestamp);
         }
 
         // The default timeline only needs one day. Filter first and let Timeline
@@ -192,6 +195,7 @@ function MainView({
                         onEdit={ui.openEditModal}
                         categoryFilter={ui.categoryFilter}
                         isFilterMode={ui.categoryFilter.length > 0 || ui.tagFilter.length > 0 || ui.contentTypeFilter.length > 0}
+                        filterKey={`${ui.categoryFilter.join(',')}|${ui.tagFilter.join(',')}|${ui.contentTypeFilter.join(',')}`}
                         onNavigateToEntry={ui.navigateToEntry}
                     />
                 )}
@@ -207,6 +211,8 @@ function MainView({
                 followUpEntry={followUp.followUpEntry}
                 onClearFollowUp={followUp.clearFollowUp}
             />
+
+            <SearchPanel />
 
             <ActivityPanel
                 isOpen={ui.leftSidebarOpen}

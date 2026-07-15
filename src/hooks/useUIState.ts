@@ -23,6 +23,8 @@ export interface UIState {
     setLeftSidebarOpen: (open: boolean) => void
     settingsOpen: boolean
     setSettingsOpen: (open: boolean) => void
+    searchOpen: boolean
+    setSearchOpen: (open: boolean) => void
     showLanding: boolean
     setShowLanding: (show: boolean) => void
 
@@ -52,6 +54,7 @@ export function useUIState(): UIState {
     // Panel states
     const [leftSidebarOpen, setLeftSidebarOpen] = useState(false)
     const [settingsOpen, setSettingsOpen] = useState(false)
+    const [searchOpen, setSearchOpen] = useState(false)
     const [showLanding, setShowLanding] = useState(true)
     const [selectedDate, setSelectedDate] = useState<Date | null>(null)
     const [categoryFilter, setCategoryFilter] = useState<CategoryId[]>([])
@@ -110,6 +113,7 @@ export function useUIState(): UIState {
     return {
         leftSidebarOpen, setLeftSidebarOpen,
         settingsOpen, setSettingsOpen,
+        searchOpen, setSearchOpen,
         showLanding, setShowLanding,
         contextMenu, handleContextMenu, closeContextMenu,
         editModal, openEditModal, closeEditModal,

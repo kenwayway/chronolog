@@ -15,6 +15,7 @@ export interface Env {
     AUTH_PASSWORD: string;
     PUBLIC_API_TOKEN?: string;
     MCP_WRITE_TOKEN?: string;
+    DASHBOARD_MCP_TOKEN?: string;
     AI_API_KEY?: string;
     AI_BASE_URL?: string;
     AI_MODEL?: string;

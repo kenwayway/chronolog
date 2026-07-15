@@ -9,6 +9,7 @@ import {
     Menu,
     X,
     Cloud,
+    Search,
 } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 import { formatDate } from "@/utils/formatters";
@@ -33,6 +34,7 @@ export function Header({
     const ui = useUIStateContext();
     const onOpenLeftSidebar = () => ui.setLeftSidebarOpen(true);
     const onOpenSettings = () => ui.setSettingsOpen(true);
+    const onOpenSearch = () => ui.setSearchOpen(true);
     const [showCalendar, setShowCalendar] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const mobileMenuRef = useRef<HTMLDivElement>(null);
@@ -178,6 +180,15 @@ export function Header({
                 <button
                     className="btn btn-ghost relative rounded-lg"
                     style={{ width: 36, height: 36, padding: 0 }}
+                    onClick={onOpenSearch}
+                    title="Search entries (Ctrl/Command + K)"
+                >
+                    <Search size={20} strokeWidth={1.5} />
+                </button>
+
+                <button
+                    className="btn btn-ghost relative rounded-lg"
+                    style={{ width: 36, height: 36, padding: 0 }}
                     onClick={onOpenLeftSidebar}
                     title="Activity & Filters"
                 >
@@ -230,6 +241,13 @@ export function Header({
                 {/* Mobile dropdown menu */}
                 {mobileMenuOpen && (
                     <div className={styles.mobileMenuDropdown}>
+                        <button
+                            className={styles.mobileMenuItem}
+                            onClick={() => { onOpenSearch(); setMobileMenuOpen(false); }}
+                        >
+                            <Search size={18} />
+                            <span>Search</span>
+                        </button>
                         <button
                             className={styles.mobileMenuItem}
                             onClick={() => { onOpenLeftSidebar(); setMobileMenuOpen(false); }}
