@@ -36,6 +36,24 @@ describe('computeSessions', () => {
             { startId: 'work-start', category: 'work', durationMs: 120_000 },
         ]);
     });
+
+    it('pairs interleaved sessions by session_id and leaves orphan STARTs open', () => {
+        const sessions = computeSessions([
+            { id: 'a-start', type: 'SESSION_START', timestamp: 1_000, category: 'craft', session_id: 's-a' },
+            { id: 'b-start', type: 'SESSION_START', timestamp: 2_000, category: 'work', session_id: 's-b' },
+            { id: 'b-end', type: 'SESSION_END', timestamp: 3_000, category: null, session_id: 's-b' },
+            { id: 'a-end', type: 'SESSION_END', timestamp: 5_000, category: null, session_id: 's-a' },
+            { id: 'orphan-start', type: 'SESSION_START', timestamp: 6_000, category: 'wander', session_id: 's-c' },
+        ]);
+
+        expect(sessions.map(session => ({
+            startId: session.startId,
+            durationMs: session.durationMs,
+        }))).toEqual([
+            { startId: 'a-start', durationMs: 4_000 },
+            { startId: 'b-start', durationMs: 1_000 },
+        ]);
+    });
 });
 
 describe('buildEntry', () => {
@@ -47,7 +65,6 @@ describe('buildEntry', () => {
             timestamp: '2026-07-14T09:30:00-04:00',
             category: 'craft',
             sessionId: 'manual-session',
-            duration: 42,
             tags: ['#codex', ' codex ', 'release'],
             contentType: 'sparks',
             fieldValues: { source: 'MCP' },
@@ -60,7 +77,6 @@ describe('buildEntry', () => {
             content: 'Finished the migration',
             timestamp: Date.parse('2026-07-14T09:30:00-04:00'),
             sessionId: 'manual-session',
-            duration: 42,
             category: 'craft',
             tags: ['codex', 'release'],
             contentType: 'sparks',
@@ -95,12 +111,11 @@ describe('buildEntry', () => {
             timestamp: 123,
             sessionId: 'generated-session-id',
         });
-        expect(buildEntry({ type: 'SESSION_END', duration: 60_000 }, 456, 'end-id')).toEqual({
+        expect(buildEntry({ type: 'SESSION_END' }, 456, 'end-id')).toEqual({
             id: 'end-id',
             type: 'SESSION_END',
             content: '',
             timestamp: 456,
-            duration: 60_000,
         });
     });
 });
@@ -208,7 +223,7 @@ describe('MCP write permissions', () => {
         expect(data.lastModified).toEqual(expect.any(Number));
     });
 
-    it('calculates SESSION_END duration from the latest open session', async () => {
+    it('inherits the open session\'s sessionId for SESSION_END', async () => {
         const batches: unknown[][] = [];
         const db = {
             prepare(sql: string) {
@@ -219,7 +234,7 @@ describe('MCP write permissions', () => {
                             values,
                             async first() {
                                 if (sql.includes("type IN ('SESSION_START', 'SESSION_END')")) {
-                                    return { id: 'start', type: 'SESSION_START', timestamp: 1_000, category: 'craft' };
+                                    return { id: 'start', type: 'SESSION_START', timestamp: 1_000, category: 'craft', session_id: 'open-session' };
                                 }
                                 return null;
                             },
@@ -244,10 +259,10 @@ describe('MCP write permissions', () => {
         }, db);
         const body = await response.json() as { result: { content: Array<{ text: string }> } };
         const data = JSON.parse(body.result.content[0].text) as {
-            entry: { type: string; durationMs: number };
+            entry: { type: string; sessionId: string };
         };
 
-        expect(data.entry).toMatchObject({ type: 'SESSION_END', durationMs: 2_000 });
+        expect(data.entry).toMatchObject({ type: 'SESSION_END', sessionId: 'open-session' });
         expect(batches).toHaveLength(1);
     });
 
@@ -259,7 +274,6 @@ describe('MCP write permissions', () => {
             content: 'Older',
             timestamp: 1,
             session_id: null,
-            duration: null,
             category: null,
             content_type: 'note',
             field_values: null,
@@ -302,7 +316,7 @@ describe('MCP write permissions', () => {
 
         expect(data.success).toBe(true);
         expect(statements).toHaveLength(3); // new entry, linked entry, sync metadata
-        expect(JSON.parse(statements[0].values[9] as string)).toEqual(['older-entry']);
-        expect(JSON.parse(statements[1].values[9] as string)).toEqual(['new-entry']);
+        expect(JSON.parse(statements[0].values[8] as string)).toEqual(['older-entry']);
+        expect(JSON.parse(statements[1].values[8] as string)).toEqual(['new-entry']);
     });
 });

@@ -38,7 +38,6 @@ export interface EntryRow {
     content: string;
     timestamp: number;
     session_id: string | null;
-    duration: number | null;
     category: string | null;
     content_type: string;
     field_values: string | null;
@@ -81,7 +80,6 @@ export interface Entry {
     content: string;
     timestamp: number;
     sessionId?: string;
-    duration?: number;
     category?: string;
     contentType?: string;
     fieldValues?: Record<string, unknown>;

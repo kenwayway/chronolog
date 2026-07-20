@@ -1,4 +1,35 @@
 import type { Entry, ContentType } from '@/types'
+import { generateId } from '@/utils/formatters'
+import { pairSessions } from '@/utils/sessionPairing'
+
+/**
+ * One-time sessionId backfill for legacy data: SESSION_STARTs without a
+ * sessionId get a generated one, and each SESSION_END inherits the sessionId
+ * of the START it pairs with chronologically. From then on pairing no longer
+ * depends on timestamp order.
+ * Returns entryId → sessionId for every entry that needs patching.
+ */
+function computeSessionIdBackfill(entries: Entry[]): Map<string, string> {
+    const backfill = new Map<string, string>()
+
+    for (const entry of entries) {
+        if (entry.type === 'SESSION_START' && !entry.sessionId) {
+            backfill.set(entry.id, generateId())
+        }
+    }
+
+    const effective = backfill.size > 0
+        ? entries.map(e => backfill.has(e.id) ? { ...e, sessionId: backfill.get(e.id) } : e)
+        : entries
+
+    for (const session of pairSessions(effective)) {
+        if (session.end && !session.end.sessionId && session.start.sessionId) {
+            backfill.set(session.end.id, session.start.sessionId)
+        }
+    }
+
+    return backfill
+}
 
 /**
  * Migrate and clean up entries at load time.
@@ -6,10 +37,18 @@ import type { Entry, ContentType } from '@/types'
  */
 export function migrateEntries(entries: Entry[], contentTypes: ContentType[]): Entry[] {
     const validTypeIds = new Set(contentTypes.map(ct => ct.id))
+    const sessionIdBackfill = computeSessionIdBackfill(entries)
 
     return entries.map(entry => {
         let patched = entry
         let dirty = false
+
+        // 0. Backfill sessionId on legacy session boundaries
+        const backfilledSessionId = sessionIdBackfill.get(patched.id)
+        if (backfilledSessionId && !patched.sessionId) {
+            patched = { ...patched, sessionId: backfilledSessionId }
+            dirty = true
+        }
 
         // 1. Legacy category=beans|sparks → contentType
         const legacyCat = patched.category as string | undefined

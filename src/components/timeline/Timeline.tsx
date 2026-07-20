@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { ENTRY_TYPES } from "@/utils/constants";
+import { sessionDurationsByStartId } from "@/utils/sessionPairing";
 import { useTheme } from "@/hooks/useTheme";
 import { useSessionContext } from "@/contexts/SessionContext";
 import { TimelineEntry } from "./TimelineEntry";
@@ -50,26 +51,12 @@ export function Timeline({ entries, onContextMenu, onEdit, categoryFilter = [], 
 
   // Memoize session duration and line state calculations
   const { sessionDurations, entryLineStates } = useMemo(() => {
-    const durations: Record<string, number> = {};
+    // sessionId-aware pairing (timestamp-order fallback for legacy entries)
+    const durations = sessionDurationsByStartId(sortedEntries);
     const lineStates: Record<string, string> = {};
-    let startId: string | null = null;
-    let startTime: number | null = null;
     let inSession = false;
 
     for (const entry of sortedEntries) {
-      if (entry.type === ENTRY_TYPES.SESSION_START) {
-        startId = entry.id;
-        startTime = entry.timestamp;
-      } else if (
-        entry.type === ENTRY_TYPES.SESSION_END &&
-        startId &&
-        startTime
-      ) {
-        durations[startId] = entry.timestamp - startTime;
-        startId = null;
-        startTime = null;
-      }
-
       let state = "default";
       if (entry.type === ENTRY_TYPES.SESSION_START) {
         inSession = true;

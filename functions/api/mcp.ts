@@ -4,21 +4,11 @@
 
 import { entryRowToObject, upsertEntriesWithLastModified } from './_db.ts';
 import type { CFContext, Env, EntryRow, Entry } from './types.ts';
+import { CATEGORIES, CATEGORY_IDS } from '../../src/utils/categories.ts';
 
 const SERVER_INFO = { name: 'chronolog', version: '1.2.0' };
 const SUPPORTED_PROTOCOL_VERSIONS = ['2025-06-18', '2025-03-26', '2024-11-05'];
 const DEFAULT_TIMEZONE = 'America/Toronto';
-
-// Mirrors CATEGORIES in src/utils/constants.ts (fixed, not user-editable)
-const CATEGORIES = [
-    { id: 'hustle', label: 'Hustle', description: 'Life admin: visa, taxes, rent, bills, errands, paperwork' },
-    { id: 'craft', label: 'Craft', description: 'Coding, drawing, creating, building projects' },
-    { id: 'hardware', label: 'Hardware', description: 'Sleep, eating, workout, physical health, mental health' },
-    { id: 'barter', label: 'Barter', description: 'Friends, social activities, relationships' },
-    { id: 'wander', label: 'Wander', description: 'Travel, movies, relaxation, exploration' },
-    { id: 'work', label: 'Work', description: 'Job tasks, meetings, work projects, office stuff' },
-];
-const CATEGORY_IDS = CATEGORIES.map(c => c.id);
 
 // --- JSON-RPC types ---
 
@@ -132,7 +122,8 @@ const WRITE_TOOLS = [
             'record, or add something to Chronolog; never infer write consent from ordinary conversation. ' +
             'Use list_categories_and_tags first when choosing a category or structured content type. ' +
             'type defaults to NOTE. Use SESSION_START to begin a timed session (sessionId is generated when omitted), ' +
-            'or SESSION_END to end one (duration is calculated from the latest open session when omitted). ' +
+            'or SESSION_END to end one (sessionId is inherited from the latest open session when omitted; ' +
+            'durations are always computed from the START/END timestamps). ' +
             'The timestamp defaults to now. linkedEntries are maintained bidirectionally.',
         inputSchema: {
             type: 'object',
@@ -166,12 +157,7 @@ const WRITE_TOOLS = [
                     type: 'string',
                     minLength: 1,
                     maxLength: 100,
-                    description: 'Optional session ID; generated automatically for SESSION_START',
-                },
-                duration: {
-                    type: 'number',
-                    minimum: 0,
-                    description: 'Optional duration in milliseconds; automatically calculated for SESSION_END when omitted',
+                    description: 'Optional session ID; generated for SESSION_START, inherited from the open session for SESSION_END',
                 },
                 tags: {
                     type: 'array',
@@ -277,6 +263,7 @@ interface SessionRow {
     type: string;
     timestamp: number;
     category: string | null;
+    session_id?: string | null;
 }
 
 interface Session {
@@ -287,28 +274,48 @@ interface Session {
 }
 
 /**
- * Pair SESSION_START/SESSION_END chronologically and compute durations from timestamps
- * (mirrors Timeline.tsx). The stored duration field is NOT used: it goes stale when the
- * user edits an entry's time afterwards. Duration is attributed to the START entry,
- * which is the one carrying the category.
+ * Pair SESSION_START/SESSION_END and compute durations from timestamps
+ * (mirrors src/utils/sessionPairing.ts). Pairing is session_id-first: an END
+ * carrying a session_id only closes the open START with that same session_id,
+ * so pairs survive timestamp edits and interleaved sessions from sync merges.
+ * A legacy END without session_id closes the most recently opened START.
+ * The stored duration field is NOT used: it goes stale when the user edits an
+ * entry's time afterwards. Duration is attributed to the START entry, which is
+ * the one carrying the category. Unclosed sessions are not returned.
  */
 export function computeSessions(rows: SessionRow[]): Session[] {
+    const boundaries = [...rows].sort((a, b) => a.timestamp - b.timestamp);
     const sessions: Session[] = [];
-    let start: SessionRow | null = null;
-    for (const row of rows) {
+    const open: SessionRow[] = [];
+
+    for (const row of boundaries) {
         if (row.type === 'SESSION_START') {
-            start = row;
-        } else if (row.type === 'SESSION_END' && start) {
-            sessions.push({
-                startId: start.id,
-                startTimestamp: start.timestamp,
-                category: start.category,
-                durationMs: row.timestamp - start.timestamp,
-            });
-            start = null;
+            open.push(row);
+            continue;
         }
+        if (row.type !== 'SESSION_END') continue;
+
+        let index = -1;
+        if (row.session_id) {
+            for (let i = open.length - 1; i >= 0; i--) {
+                if (open[i].session_id === row.session_id) { index = i; break; }
+            }
+        } else {
+            index = open.length - 1;
+        }
+        if (index === -1) continue; // unmatched END — dropped
+
+        const start = open[index];
+        open.splice(index, 1);
+        sessions.push({
+            startId: start.id,
+            startTimestamp: start.timestamp,
+            category: start.category,
+            durationMs: row.timestamp - start.timestamp,
+        });
     }
-    return sessions;
+
+    return sessions.sort((a, b) => a.startTimestamp - b.startTimestamp);
 }
 
 /**
@@ -319,7 +326,7 @@ export function computeSessions(rows: SessionRow[]): Session[] {
 async function getSessionsForRange(db: D1Database, start: number, end: number): Promise<Session[]> {
     const previous = await db
         .prepare(
-            "SELECT id, type, timestamp, category FROM entries " +
+            "SELECT id, type, timestamp, category, session_id FROM entries " +
             "WHERE type IN ('SESSION_START', 'SESSION_END') AND timestamp < ? " +
             'ORDER BY timestamp DESC LIMIT 1'
         )
@@ -328,7 +335,7 @@ async function getSessionsForRange(db: D1Database, start: number, end: number): 
 
     const within = await db
         .prepare(
-            "SELECT id, type, timestamp, category FROM entries " +
+            "SELECT id, type, timestamp, category, session_id FROM entries " +
             "WHERE type IN ('SESSION_START', 'SESSION_END') AND timestamp >= ? AND timestamp <= ? " +
             'ORDER BY timestamp ASC'
         )
@@ -337,7 +344,7 @@ async function getSessionsForRange(db: D1Database, start: number, end: number): 
 
     const next = await db
         .prepare(
-            "SELECT id, type, timestamp, category FROM entries " +
+            "SELECT id, type, timestamp, category, session_id FROM entries " +
             "WHERE type IN ('SESSION_START', 'SESSION_END') AND timestamp > ? " +
             'ORDER BY timestamp ASC LIMIT 1'
         )
@@ -357,8 +364,8 @@ async function getSessionsForRange(db: D1Database, start: number, end: number): 
 
 /**
  * Compact entry representation to keep tool output token-friendly.
- * When sessionDurations is given (get_day), computed durations are shown on START entries
- * and the stale stored field is hidden; otherwise (search) the stored duration is best effort.
+ * When sessionDurations is given (get_day), computed durations are shown on
+ * START entries; search results carry no duration (no pairing context there).
  */
 function toCompactEntry(row: EntryRow, timeZone: string, sessionDurations?: Map<string, number>): Record<string, unknown> {
     const entry: Entry = entryRowToObject(row);
@@ -373,9 +380,6 @@ function toCompactEntry(row: EntryRow, timeZone: string, sessionDurations?: Map<
     if (sessionDurations) {
         const computed = sessionDurations.get(entry.id);
         if (computed !== undefined) out.duration = formatDuration(computed);
-    } else if (entry.duration != null) {
-        out.duration = formatDuration(entry.duration);
-        out.durationMs = entry.duration;
     }
     if (entry.sessionId) out.sessionId = entry.sessionId;
     if (entry.contentType) out.contentType = entry.contentType;
@@ -477,14 +481,6 @@ export function buildEntry(
         sessionId = generatedSessionId;
     }
 
-    let duration: number | undefined;
-    if (args.duration !== undefined) {
-        if (typeof args.duration !== 'number' || !Number.isFinite(args.duration) || args.duration < 0) {
-            throw new Error('duration must be a non-negative number of milliseconds');
-        }
-        duration = args.duration;
-    }
-
     let linkedEntries: string[] | undefined;
     if (args.linkedEntries !== undefined) {
         if (!Array.isArray(args.linkedEntries) || args.linkedEntries.some(link => typeof link !== 'string')) {
@@ -504,7 +500,6 @@ export function buildEntry(
         content,
         timestamp,
         ...(sessionId ? { sessionId } : {}),
-        ...(duration !== undefined ? { duration } : {}),
         ...(category ? { category } : {}),
         ...(tags && tags.length > 0 ? { tags } : {}),
         ...(contentType ? { contentType } : {}),
@@ -535,10 +530,10 @@ async function addEntry(args: Record<string, unknown>, db: D1Database): Promise<
         }
     }
 
-    if (entry.type === 'SESSION_START' || (entry.type === 'SESSION_END' && entry.duration === undefined)) {
+    if (entry.type === 'SESSION_START' || entry.type === 'SESSION_END') {
         const latestBoundary = await db
             .prepare(
-                "SELECT id, type, timestamp, category FROM entries " +
+                "SELECT id, type, timestamp, category, session_id FROM entries " +
                 "WHERE type IN ('SESSION_START', 'SESSION_END') AND timestamp <= ? " +
                 'ORDER BY timestamp DESC LIMIT 1'
             )
@@ -549,10 +544,13 @@ async function addEntry(args: Record<string, unknown>, db: D1Database): Promise<
             throw new Error(`Session "${latestBoundary.id}" is already open at this timestamp; end it before starting another`);
         }
         if (entry.type === 'SESSION_END' && (!latestBoundary || latestBoundary.type !== 'SESSION_START')) {
-            throw new Error('No open session found at this timestamp; provide duration explicitly to create a standalone SESSION_END');
+            throw new Error('No open session found at this timestamp; create the SESSION_START first, then end it');
         }
         if (entry.type === 'SESSION_END' && latestBoundary) {
-            entry.duration = entry.timestamp - latestBoundary.timestamp;
+            // Inherit the open session's id so pairing no longer depends on timestamp order
+            if (!entry.sessionId && latestBoundary.session_id) {
+                entry.sessionId = latestBoundary.session_id;
+            }
         }
     }
 
@@ -587,7 +585,6 @@ async function addEntry(args: Record<string, unknown>, db: D1Database): Promise<
             content: entry.content,
             timestamp: entry.timestamp,
             session_id: entry.sessionId ?? null,
-            duration: entry.duration ?? null,
             category: entry.category ?? null,
             content_type: entry.contentType ?? 'note',
             field_values: entry.fieldValues ? JSON.stringify(entry.fieldValues) : null,

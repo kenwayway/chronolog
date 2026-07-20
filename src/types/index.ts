@@ -13,16 +13,9 @@ export type EntryType = 'SESSION_START' | 'NOTE' | 'SESSION_END'
 /** Session status */
 export type SessionStatus = 'IDLE' | 'STREAMING'
 
-/** Category IDs (fixed, not user-editable) - life areas for time tracking */
-export type CategoryId = 'hustle' | 'craft' | 'hardware' | 'barter' | 'wander' | 'work'
-
-/** Category definition */
-export interface Category {
-  id: CategoryId
-  label: string
-  color: string
-  description: string  // Description for AI categorization
-}
+/** Categories (fixed, not user-editable) - defined once in utils/categories.ts */
+import type { CategoryId, Category } from '@/utils/categories'
+export type { CategoryId, Category }
 
 // ============================================
 // Media Library
@@ -151,8 +144,7 @@ export interface Entry {
   type: EntryType
   content: string
   timestamp: number
-  sessionId?: string              // SESSION_START only
-  duration?: number               // SESSION_END only (ms)
+  sessionId?: string              // Session membership: SESSION_START owns it; SESSION_END pairs by it; NOTEs logged mid-session carry it
   category?: CategoryId           // Life area category
   contentType?: string            // References ContentType.id
   fieldValues?: EntryFieldValues  // Typed field values
@@ -327,6 +319,5 @@ export interface CloudData {
   entries: Entry[]
   contentTypes?: ContentType[]
   mediaItems?: MediaItem[]
-  categories?: Category[] | null
   lastModified?: number | null
 }

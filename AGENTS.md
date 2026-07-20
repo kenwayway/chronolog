@@ -92,7 +92,7 @@ interface FieldDefinition {
 ```
 
 ### Category (Fixed Constants)
-Categories are **not user-editable**. Defined in `constants.ts`:
+Categories are **not user-editable**. Defined in `src/utils/categories.ts` (single source shared with Pages Functions):
 
 | ID | Label | Color | Covers |
 |----|-------|-------|--------|
@@ -228,8 +228,10 @@ Additional panels: `ActivityPanel` (left sidebar — calendar heatmap, category 
 │   │   ├── guards.ts           # Type guard functions
 │   │   └── css-modules.d.ts    # CSS Modules type declarations
 │   └── utils/
-│       ├── constants.ts        # ENTRY_TYPES, ACTIONS, CATEGORIES, BUILTIN_CONTENT_TYPES
+│       ├── constants.ts        # ENTRY_TYPES, ACTIONS, BUILTIN_CONTENT_TYPES
+│       ├── categories.ts       # CATEGORIES + CategoryId (single source, shared with functions/)
 │       ├── formatters.ts       # Date/time formatting, generateId()
+│       ├── sessionPairing.ts   # sessionId-first START/END pairing + durations
 │       ├── contentParser.ts    # Markdown/content parsing for display
 │       ├── tagParser.ts        # Extract #tags from content text
 │       └── storageService.ts   # Typed localStorage wrapper (all keys centralized)
@@ -480,9 +482,8 @@ Response 200: { "deleted": string[], "kept": string[] }
 6. Update AI prompt in `functions/api/categorize.ts`
 
 ### Add New Category
-Categories are defined in `constants.ts`. To add:
-1. Add to `CategoryId` type union in `types/index.ts`
-2. Add to `CATEGORIES` array in `constants.ts` (with `description` for AI)
+Categories are defined once in `src/utils/categories.ts` (shared with Pages Functions; `CategoryId` is derived from the array). To add:
+1. Add an entry to `CATEGORY_DEFS` in `src/utils/categories.ts` (with `description` for AI)
 
 ### Create CSS Module for Component
 1. Create `Component.module.css` in same directory

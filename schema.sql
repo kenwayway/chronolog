@@ -6,7 +6,6 @@ CREATE TABLE IF NOT EXISTS entries (
   content TEXT NOT NULL DEFAULT '',
   timestamp INTEGER NOT NULL,
   session_id TEXT,
-  duration INTEGER,
   category TEXT,
   content_type TEXT DEFAULT 'note',
   field_values TEXT,          -- JSON string

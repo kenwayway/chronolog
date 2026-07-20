@@ -2,6 +2,7 @@ import { ENTRY_TYPES, SESSION_STATUS, ACTIONS, BUILTIN_CONTENT_TYPES } from '@/u
 import { generateId } from '@/utils/formatters'
 import { parseTags } from '@/utils/tagParser'
 import { migrateEntries } from '@/utils/migrateEntries'
+import { pairSessions } from '@/utils/sessionPairing'
 import type {
     Entry,
     SessionState,
@@ -51,6 +52,16 @@ function mergeContentTypes(incoming: ContentType[]): ContentType[] {
     ]
 }
 
+/**
+ * sessionId of the currently open session (a SESSION_START with no matching
+ * SESSION_END). When merged data leaves several sessions open, the most
+ * recently started one is the live session.
+ */
+function openSessionId(entries: Entry[]): string | undefined {
+    const open = pairSessions(entries).filter(s => s.end === null)
+    return open.length > 0 ? open[open.length - 1].start.sessionId : undefined
+}
+
 // ============================================
 // Action handlers
 // ============================================
@@ -85,13 +96,12 @@ function handleSwitch(state: SessionState, payload: SwitchPayload): SessionState
     const newEntries = [...state.entries]
 
     if (state.status === SESSION_STATUS.STREAMING) {
-        const duration = now - (state.sessionStart ?? 0)
         const endEntry: Entry = {
             id: generateId(),
             type: ENTRY_TYPES.SESSION_END,
             content: '',
             timestamp: now,
-            duration
+            sessionId: openSessionId(state.entries)
         }
         newEntries.push(endEntry)
     }
@@ -131,6 +141,7 @@ function handleNote(state: SessionState, payload: NotePayload): SessionState {
         type: ENTRY_TYPES.NOTE,
         content: cleanContent,
         timestamp: Date.now(),
+        sessionId: state.status === SESSION_STATUS.STREAMING ? openSessionId(state.entries) : undefined,
         contentType: payload.contentType,
         fieldValues: payload.fieldValues,
         category: payload.category,
@@ -147,7 +158,6 @@ function handleLogOff(state: SessionState, payload?: LogOffPayload): SessionStat
         console.warn('Cannot log off when not streaming')
         return state
     }
-    const duration = Date.now() - (state.sessionStart ?? 0)
     const originalContent = payload?.content || 'Session ended'
     const { cleanContent, tags } = parseTags(originalContent)
     const newEntry: Entry = {
@@ -155,7 +165,7 @@ function handleLogOff(state: SessionState, payload?: LogOffPayload): SessionStat
         type: ENTRY_TYPES.SESSION_END,
         content: cleanContent,
         timestamp: Date.now(),
-        duration,
+        sessionId: openSessionId(state.entries),
         tags: tags.length > 0 ? tags : undefined
     }
     return {

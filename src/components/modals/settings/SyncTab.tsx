@@ -73,7 +73,6 @@ export function SyncTab({
                 if (data.entries) {
                     onImportData({
                         entries: data.entries,
-                        categories: data.categories,
                         contentTypes: data.contentTypes,
                         mediaItems: data.mediaItems,
                     });

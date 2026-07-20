@@ -1,6 +1,7 @@
 // Shared D1 helper functions for consistent row <-> object mapping
 
 import type { EntryRow, ContentTypeRow, MediaItemRow, Entry, ContentType, MediaItem } from './types.ts';
+import { CATEGORY_IDS } from '../../src/utils/categories.ts';
 
 /**
  * Convert a D1 entry row (snake_case) to a frontend Entry object (camelCase)
@@ -15,7 +16,6 @@ export function entryRowToObject(row: EntryRow): Entry {
     };
 
     if (row.session_id) entry.sessionId = row.session_id;
-    if (row.duration != null) entry.duration = row.duration;
     if (row.category) entry.category = row.category;
     if (row.content_type && row.content_type !== 'note') entry.contentType = row.content_type;
 
@@ -45,7 +45,6 @@ interface EntryRowValues {
     content: string;
     timestamp: number;
     session_id: string | null;
-    duration: number | null;
     category: string | null;
     content_type: string;
     field_values: string | null;
@@ -66,8 +65,8 @@ export function entryObjectToRow(entry: Entry, now: number = Date.now()): EntryR
         content: entry.content || '',
         timestamp: entry.timestamp,
         session_id: entry.sessionId || null,
-        duration: entry.duration ?? null,
-        category: entry.category || null,
+        // Categories are a fixed set; drop unknown values instead of rejecting the batch
+        category: entry.category && CATEGORY_IDS.includes(entry.category) ? entry.category : null,
         content_type: entry.contentType || 'note',
         field_values: entry.fieldValues ? JSON.stringify(entry.fieldValues) : null,
         linked_entries: entry.linkedEntries ? JSON.stringify(entry.linkedEntries) : null,
@@ -79,15 +78,14 @@ export function entryObjectToRow(entry: Entry, now: number = Date.now()): EntryR
 
 const ENTRY_UPSERT_SQL = `
     INSERT INTO entries
-      (id, type, content, timestamp, session_id, duration, category, content_type,
+      (id, type, content, timestamp, session_id, category, content_type,
        field_values, linked_entries, tags, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(id) DO UPDATE SET
       type = excluded.type,
       content = excluded.content,
       timestamp = excluded.timestamp,
       session_id = excluded.session_id,
-      duration = excluded.duration,
       category = excluded.category,
       content_type = excluded.content_type,
       field_values = excluded.field_values,
@@ -100,7 +98,7 @@ function bindEntryUpsert(statement: D1PreparedStatement, entry: Entry, now?: num
     const row = entryObjectToRow(entry, now);
     return statement.bind(
         row.id, row.type, row.content, row.timestamp,
-        row.session_id, row.duration, row.category, row.content_type,
+        row.session_id, row.category, row.content_type,
         row.field_values, row.linked_entries, row.tags,
         row.created_at, row.updated_at
     );

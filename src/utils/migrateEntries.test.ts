@@ -84,4 +84,38 @@ describe('migrateEntries', () => {
     it('handles empty entries array', () => {
         expect(migrateEntries([], testContentTypes)).toEqual([])
     })
+
+    it('backfills sessionId on SESSION_END from its chronologically paired START', () => {
+        const start = makeEntry({ id: 's1', type: 'SESSION_START', timestamp: 1000, sessionId: 'session-1' })
+        const end = makeEntry({ id: 'e1', type: 'SESSION_END', timestamp: 2000 })
+        const result = migrateEntries([start, end], testContentTypes)
+        expect(result[0]).toBe(start) // untouched
+        expect(result[1].sessionId).toBe('session-1')
+    })
+
+    it('generates a sessionId for a START missing one and shares it with its END', () => {
+        const start = makeEntry({ id: 's1', type: 'SESSION_START', timestamp: 1000 })
+        const end = makeEntry({ id: 'e1', type: 'SESSION_END', timestamp: 2000 })
+        const result = migrateEntries([start, end], testContentTypes)
+        expect(result[0].sessionId).toBeTruthy()
+        expect(result[1].sessionId).toBe(result[0].sessionId)
+    })
+
+    it('backfills consecutive legacy sessions independently', () => {
+        const start1 = makeEntry({ id: 's1', type: 'SESSION_START', timestamp: 1000, sessionId: 'session-1' })
+        const end1 = makeEntry({ id: 'e1', type: 'SESSION_END', timestamp: 2000 })
+        const start2 = makeEntry({ id: 's2', type: 'SESSION_START', timestamp: 3000, sessionId: 'session-2' })
+        const end2 = makeEntry({ id: 'e2', type: 'SESSION_END', timestamp: 4000 })
+        const result = migrateEntries([start1, end1, start2, end2], testContentTypes)
+        expect(result[1].sessionId).toBe('session-1')
+        expect(result[3].sessionId).toBe('session-2')
+    })
+
+    it('does not touch an END that already has a sessionId', () => {
+        const start = makeEntry({ id: 's1', type: 'SESSION_START', timestamp: 1000, sessionId: 'session-1' })
+        const end = makeEntry({ id: 'e1', type: 'SESSION_END', timestamp: 2000, sessionId: 'session-1' })
+        const result = migrateEntries([start, end], testContentTypes)
+        expect(result[0]).toBe(start)
+        expect(result[1]).toBe(end)
+    })
 })

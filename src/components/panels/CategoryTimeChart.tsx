@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ENTRY_TYPES } from "@/utils/constants";
+import { pairSessions } from "@/utils/sessionPairing";
 import type { Category, CategoryId, Entry } from "@/types";
 
 interface CategoryTimeChartProps {
@@ -43,32 +43,20 @@ function formatHours(ms: number): string {
 
 /** Collect today's sessions as [start, end, category] intervals (includes the live session). */
 function todaySessions(entries: Entry[], dayStart: number, now: number): Array<[number, number, string]> {
-    const sorted = [...entries].sort((a, b) => a.timestamp - b.timestamp);
+    const paired = pairSessions(entries);
+    // Only the most recently started open session is "live"; older unclosed
+    // STARTs are orphans and must not accumulate time forever.
+    const openSessions = paired.filter(s => s.end === null);
+    const liveSession = openSessions.length > 0 ? openSessions[openSessions.length - 1] : null;
+
     const sessions: Array<[number, number, string]> = [];
-
-    let startTs: number | null = null;
-    let startCat: string | null = null;
-
-    const push = (endTs: number) => {
-        if (startTs === null) return;
-        const s = Math.max(startTs, dayStart);
+    for (const session of paired) {
+        if (session.end === null && session !== liveSession) continue;
+        const endTs = session.end ? session.end.timestamp : now;
+        const s = Math.max(session.start.timestamp, dayStart);
         const e = Math.min(endTs, dayStart + 24 * HOUR_MS);
-        if (e > s) sessions.push([s, e, startCat || UNCATEGORIZED]);
-    };
-
-    for (const entry of sorted) {
-        if (entry.type === ENTRY_TYPES.SESSION_START) {
-            startTs = entry.timestamp;
-            startCat = entry.category || null;
-        } else if (entry.type === ENTRY_TYPES.SESSION_END && startTs !== null) {
-            push(entry.timestamp);
-            startTs = null;
-            startCat = null;
-        }
+        if (e > s) sessions.push([s, e, session.start.category || UNCATEGORIZED]);
     }
-    // Ongoing session counts up to now
-    push(now);
-
     return sessions;
 }
 

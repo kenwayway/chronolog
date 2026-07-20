@@ -106,6 +106,31 @@ describe('NOTE', () => {
         expect(entry.tags).toEqual(['manual'])
     })
 
+    it('carries the open session\'s sessionId while streaming', () => {
+        const start = makeEntry({ type: 'SESSION_START', timestamp: 1000, sessionId: 'session-abc' })
+        const state = stateWith({
+            status: SESSION_STATUS.STREAMING,
+            sessionStart: 1000,
+            entries: [start],
+        })
+
+        const result = sessionReducer(state, {
+            type: ACTIONS.NOTE,
+            payload: { content: 'mid-session note' },
+        })
+
+        const note = result.entries[result.entries.length - 1]
+        expect(note.sessionId).toBe('session-abc')
+    })
+
+    it('has no sessionId when idle', () => {
+        const result = sessionReducer(initialState, {
+            type: ACTIONS.NOTE,
+            payload: { content: 'standalone note' },
+        })
+        expect(result.entries[0].sessionId).toBeUndefined()
+    })
+
     it('uses parsed tags when no manual tags provided', () => {
         const result = sessionReducer(initialState, {
             type: ACTIONS.NOTE,
@@ -140,7 +165,6 @@ describe('LOG_OFF', () => {
         const entry = result.entries[0]
         expect(entry.type).toBe(ENTRY_TYPES.SESSION_END)
         expect(entry.content).toBe('done')
-        expect(entry.duration).toBeTypeOf('number')
     })
 
     it('returns same state when not streaming', () => {
@@ -149,6 +173,24 @@ describe('LOG_OFF', () => {
             payload: { content: 'done' },
         })
         expect(result).toBe(initialState)
+    })
+
+    it('stamps the open session\'s sessionId on SESSION_END', () => {
+        const start = makeEntry({ type: 'SESSION_START', timestamp: 1000, sessionId: 'session-abc' })
+        const state = stateWith({
+            status: SESSION_STATUS.STREAMING,
+            sessionStart: 1000,
+            entries: [start],
+        })
+
+        const result = sessionReducer(state, {
+            type: ACTIONS.LOG_OFF,
+            payload: { content: 'done' },
+        })
+
+        const endEntry = result.entries[result.entries.length - 1]
+        expect(endEntry.type).toBe(ENTRY_TYPES.SESSION_END)
+        expect(endEntry.sessionId).toBe('session-abc')
     })
 })
 
@@ -394,11 +436,32 @@ describe('SWITCH', () => {
 
         const endEntry = result.entries[0]
         expect(endEntry.type).toBe(ENTRY_TYPES.SESSION_END)
-        expect(endEntry.duration).toBeTypeOf('number')
 
         const startEntry = result.entries[1]
         expect(startEntry.type).toBe(ENTRY_TYPES.SESSION_START)
         expect(startEntry.content).toBe('new session')
+    })
+
+    it('closes the old session with its own sessionId, distinct from the new one', () => {
+        const start = makeEntry({ type: 'SESSION_START', timestamp: 1000, sessionId: 'session-old' })
+        const streamingState = stateWith({
+            status: SESSION_STATUS.STREAMING,
+            sessionStart: 1000,
+            entries: [start],
+        })
+
+        const result = sessionReducer(streamingState, {
+            type: ACTIONS.SWITCH,
+            payload: { content: 'new session' },
+        })
+
+        const endEntry = result.entries[1]
+        const newStart = result.entries[2]
+        expect(endEntry.type).toBe(ENTRY_TYPES.SESSION_END)
+        expect(endEntry.sessionId).toBe('session-old')
+        expect(newStart.type).toBe(ENTRY_TYPES.SESSION_START)
+        expect(newStart.sessionId).toBeDefined()
+        expect(newStart.sessionId).not.toBe('session-old')
     })
 })
 

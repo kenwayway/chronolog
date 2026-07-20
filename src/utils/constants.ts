@@ -1,4 +1,7 @@
-import type { EntryType, SessionStatus, CategoryId, Category, ContentType } from '@/types'
+import type { EntryType, SessionStatus, ContentType } from '@/types'
+
+// Fixed categories live in ./categories.ts (shared with Pages Functions); re-exported for convenience
+export { CATEGORIES } from './categories'
 
 // Entry types for the timeline (system-level)
 export const ENTRY_TYPES = {
@@ -33,16 +36,6 @@ export const ACTIONS = {
   DELETE_MEDIA_ITEM: 'DELETE_MEDIA_ITEM',
 } as const
 
-
-// Fixed categories (life areas for time tracking, not user-editable)
-export const CATEGORIES: Category[] = [
-  { id: 'hustle', label: 'Hustle', color: '#7aa2f7', description: 'Life admin: visa, taxes, rent, bills, errands, paperwork' },
-  { id: 'craft', label: 'Craft', color: '#bb9af7', description: 'Coding, drawing, creating, building projects' },
-  { id: 'hardware', label: 'Hardware', color: '#4dcc59', description: 'Sleep, eating, workout, physical health, mental health' },
-  { id: 'barter', label: 'Barter', color: '#c8e068', description: 'Friends, social activities, relationships' },
-  { id: 'wander', label: 'Wander', color: '#f7768e', description: 'Travel, movies, relaxation, exploration' },
-  { id: 'work', label: 'Work', color: '#f59e0b', description: 'Job tasks, meetings, work projects, office stuff' },
-]
 
 // Built-in content types (user can't delete, but can edit fields/options)
 export const BUILTIN_CONTENT_TYPES: ContentType[] = [
