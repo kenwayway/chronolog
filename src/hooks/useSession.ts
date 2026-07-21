@@ -5,7 +5,6 @@ import { SESSION_STATUS } from '@/utils/constants'
 import { sessionReducer, initialState } from './sessionReducer'
 import { usePersistence } from './usePersistence'
 import type {
-  ContentType,
   MediaItem,
   UseSessionReturn,
   UpdateEntryPayload,
@@ -112,18 +111,6 @@ export function useSession(): UseSessionReturn {
     dispatch({ type: ACTIONS.IMPORT_DATA, payload: data })
   }, [])
 
-  const addContentType = useCallback((contentType: ContentType) => {
-    dispatch({ type: ACTIONS.ADD_CONTENT_TYPE, payload: { contentType } })
-  }, [])
-
-  const updateContentType = useCallback((id: string, updates: Partial<Omit<ContentType, 'id' | 'builtIn'>>) => {
-    dispatch({ type: ACTIONS.UPDATE_CONTENT_TYPE, payload: { id, updates } })
-  }, [])
-
-  const deleteContentType = useCallback((id: string) => {
-    dispatch({ type: ACTIONS.DELETE_CONTENT_TYPE, payload: { id } })
-  }, [])
-
   const addMediaItem = useCallback((mediaItem: MediaItem) => {
     dispatch({ type: ACTIONS.ADD_MEDIA_ITEM, payload: { mediaItem } })
   }, [])
@@ -148,16 +135,12 @@ export function useSession(): UseSessionReturn {
     setEntryCategory,
     updateEntry,
     importData,
-    addContentType,
-    updateContentType,
-    deleteContentType,
     addMediaItem,
     updateMediaItem,
     deleteMediaItem
   }), [
     logIn, switchSession, addNote, logOff, deleteEntry, editEntry,
     setEntryCategory, updateEntry, importData,
-    addContentType, updateContentType, deleteContentType,
     addMediaItem, updateMediaItem, deleteMediaItem
   ])
 

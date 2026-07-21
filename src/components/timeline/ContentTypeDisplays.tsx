@@ -1,6 +1,6 @@
 import { memo, MouseEvent, ReactNode } from 'react';
 import { Book, Film, Gamepad2, Tv, Clapperboard, Mic, Dumbbell, HeartPulse, StretchHorizontal, Shuffle, Home, Building2, Warehouse, BookOpen, ExternalLink } from 'lucide-react';
-import type { BookmarkFields, MoodFields, WorkoutFields, VaultFields } from '@/types';
+import type { BookmarkFields, MoodFields, WorkoutFields, VaultFields, MediaFields } from '@/types';
 
 interface BookmarkDisplayProps {
   fieldValues: BookmarkFields | null | undefined;
@@ -265,14 +265,8 @@ export const MoodDisplay = memo(function MoodDisplay({ fieldValues }: MoodDispla
   );
 });
 
-interface WorkoutFieldValues {
-  workoutType?: 'Strength' | 'Cardio' | 'Flexibility' | 'Mixed';
-  place?: 'Home' | 'In Building Gym' | 'Outside Gym';
-  exercises?: string;
-}
-
 interface WorkoutDisplayProps {
-  fieldValues: WorkoutFieldValues | null | undefined;
+  fieldValues: WorkoutFields | null | undefined;
 }
 
 /**
@@ -466,14 +460,6 @@ export const VaultDisplay = memo(function VaultDisplay({ fieldValues }: VaultDis
     </div>
   );
 });
-
-// Media field values interface
-interface MediaFields {
-  mediaId?: string;
-  // Legacy fields for backward compatibility
-  mediaType?: string;
-  title?: string;
-}
 
 interface MediaDisplayProps {
   fieldValues: MediaFields | null | undefined;

@@ -74,7 +74,8 @@ export interface FieldDefinition {
   default?: unknown
 }
 
-/** ContentType schema (user can create/edit these) */
+/** ContentType schema — fixed in code (BUILTIN_CONTENT_TYPES); no editing UI, no CRUD actions.
+ *  Types reach state only via LOAD_STATE / IMPORT_DATA, reconciled by mergeContentTypes. */
 export interface ContentType {
   id: string
   name: string
@@ -112,7 +113,6 @@ export interface MoodFields {
 export interface WorkoutFields {
   workoutType?: 'Strength' | 'Cardio' | 'Flexibility' | 'Mixed'
   place?: 'Home' | 'In Building Gym' | 'Outside Gym'
-  duration?: number
   exercises?: string  // Comma-separated exercise names
 }
 
@@ -122,9 +122,11 @@ export interface VaultFields {
   obsidianUrl?: string
 }
 
-/** Media field values (books, movies, games, etc.) */
+/** Media field values — mediaId references a MediaItem in the library */
 export interface MediaFields {
-  mediaType?: 'Book' | 'Movie' | 'Game' | 'TV' | 'Anime' | 'Podcast'
+  mediaId?: string
+  // Legacy fields from before the media library existed
+  mediaType?: string
   title?: string
 }
 
@@ -226,20 +228,6 @@ export interface ImportDataPayload {
   mediaItems?: MediaItem[]
 }
 
-// ContentType actions
-export interface AddContentTypePayload {
-  contentType: ContentType
-}
-
-export interface UpdateContentTypePayload {
-  id: string
-  updates: Partial<Omit<ContentType, 'id' | 'builtIn'>>
-}
-
-export interface DeleteContentTypePayload {
-  id: string
-}
-
 // Media library actions
 export interface AddMediaItemPayload {
   mediaItem: MediaItem
@@ -266,9 +254,6 @@ export type SessionAction =
   | { type: 'SET_ENTRY_CATEGORY'; payload: SetEntryCategoryPayload }
   | { type: 'LOAD_STATE'; payload: Partial<SessionState> }
   | { type: 'IMPORT_DATA'; payload: ImportDataPayload }
-  | { type: 'ADD_CONTENT_TYPE'; payload: AddContentTypePayload }
-  | { type: 'UPDATE_CONTENT_TYPE'; payload: UpdateContentTypePayload }
-  | { type: 'DELETE_CONTENT_TYPE'; payload: DeleteContentTypePayload }
   | { type: 'ADD_MEDIA_ITEM'; payload: AddMediaItemPayload }
   | { type: 'UPDATE_MEDIA_ITEM'; payload: UpdateMediaItemPayload }
   | { type: 'DELETE_MEDIA_ITEM'; payload: DeleteMediaItemPayload }
@@ -288,9 +273,6 @@ export interface SessionActions {
   setEntryCategory: (entryId: string, category: CategoryId) => void
   updateEntry: (entryId: string, updates: Omit<UpdateEntryPayload, 'entryId'>) => void
   importData: (data: ImportDataPayload) => void
-  addContentType: (contentType: ContentType) => void
-  updateContentType: (id: string, updates: Partial<Omit<ContentType, 'id' | 'builtIn'>>) => void
-  deleteContentType: (id: string) => void
   addMediaItem: (mediaItem: MediaItem) => void
   updateMediaItem: (id: string, updates: Partial<Omit<MediaItem, 'id' | 'createdAt'>>) => void
   deleteMediaItem: (id: string) => void

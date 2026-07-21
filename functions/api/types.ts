@@ -105,6 +105,7 @@ export interface ContentTypeField {
     type: string;
     options?: string[];
     required?: boolean;
+    default?: unknown;
 }
 
 export interface MediaItem {

@@ -28,16 +28,14 @@ export const ACTIONS = {
   LOAD_STATE: 'LOAD_STATE',
   SET_ENTRY_CATEGORY: 'SET_ENTRY_CATEGORY',
   IMPORT_DATA: 'IMPORT_DATA',
-  ADD_CONTENT_TYPE: 'ADD_CONTENT_TYPE',
-  UPDATE_CONTENT_TYPE: 'UPDATE_CONTENT_TYPE',
-  DELETE_CONTENT_TYPE: 'DELETE_CONTENT_TYPE',
   ADD_MEDIA_ITEM: 'ADD_MEDIA_ITEM',
   UPDATE_MEDIA_ITEM: 'UPDATE_MEDIA_ITEM',
   DELETE_MEDIA_ITEM: 'DELETE_MEDIA_ITEM',
 } as const
 
 
-// Built-in content types (user can't delete, but can edit fields/options)
+// Built-in content types — fixed in code, no editing UI. Bump `version` when
+// changing a definition so it overrides stale synced copies at load (mergeContentTypes).
 export const BUILTIN_CONTENT_TYPES: ContentType[] = [
   {
     id: 'note',

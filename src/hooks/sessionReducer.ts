@@ -17,9 +17,6 @@ import type {
     UpdateEntryPayload,
     SetEntryCategoryPayload,
     ImportDataPayload,
-    AddContentTypePayload,
-    UpdateContentTypePayload,
-    DeleteContentTypePayload,
     AddMediaItemPayload,
     UpdateMediaItemPayload,
     DeleteMediaItemPayload,
@@ -270,35 +267,6 @@ function handleImportData(state: SessionState, payload: ImportDataPayload): Sess
     }
 }
 
-function handleAddContentType(state: SessionState, payload: AddContentTypePayload): SessionState {
-    const maxOrder = Math.max(...state.contentTypes.map(ct => ct.order ?? 0), 0)
-    return {
-        ...state,
-        contentTypes: [...state.contentTypes, { ...payload.contentType, order: maxOrder + 1 }]
-    }
-}
-
-function handleUpdateContentType(state: SessionState, payload: UpdateContentTypePayload): SessionState {
-    return {
-        ...state,
-        contentTypes: state.contentTypes.map(ct =>
-            ct.id === payload.id ? { ...ct, ...payload.updates } : ct
-        )
-    }
-}
-
-function handleDeleteContentType(state: SessionState, payload: DeleteContentTypePayload): SessionState {
-    const typeToDelete = state.contentTypes.find(ct => ct.id === payload.id)
-    if (typeToDelete?.builtIn) {
-        console.warn('Cannot delete built-in content type')
-        return state
-    }
-    return {
-        ...state,
-        contentTypes: state.contentTypes.filter(ct => ct.id !== payload.id)
-    }
-}
-
 function handleAddMediaItem(state: SessionState, payload: AddMediaItemPayload): SessionState {
     return {
         ...state,
@@ -338,9 +306,6 @@ export function sessionReducer(state: SessionState, action: SessionAction): Sess
         case ACTIONS.SET_ENTRY_CATEGORY: return handleSetEntryCategory(state, action.payload)
         case ACTIONS.LOAD_STATE: return handleLoadState(state, action.payload)
         case ACTIONS.IMPORT_DATA: return handleImportData(state, action.payload)
-        case ACTIONS.ADD_CONTENT_TYPE: return handleAddContentType(state, action.payload)
-        case ACTIONS.UPDATE_CONTENT_TYPE: return handleUpdateContentType(state, action.payload)
-        case ACTIONS.DELETE_CONTENT_TYPE: return handleDeleteContentType(state, action.payload)
         case ACTIONS.ADD_MEDIA_ITEM: return handleAddMediaItem(state, action.payload)
         case ACTIONS.UPDATE_MEDIA_ITEM: return handleUpdateMediaItem(state, action.payload)
         case ACTIONS.DELETE_MEDIA_ITEM: return handleDeleteMediaItem(state, action.payload)

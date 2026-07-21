@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { sessionReducer, initialState } from './sessionReducer'
 import { ACTIONS, SESSION_STATUS, ENTRY_TYPES } from '@/utils/constants'
-import type { SessionState, Entry, ContentType, MediaItem } from '@/types'
+import type { SessionState, Entry, MediaItem } from '@/types'
 
 // Mock generateId to return predictable values
 let idCounter = 0
@@ -308,57 +308,6 @@ describe('UPDATE_ENTRY', () => {
 
         expect(result.entries[0].contentType).toBeUndefined()
         expect(result.entries[0].fieldValues).toBeUndefined()
-    })
-})
-
-// ========================================
-// Content Type CRUD
-// ========================================
-describe('Content Type CRUD', () => {
-    it('ADD_CONTENT_TYPE adds with auto-incremented order', () => {
-        const newType: ContentType = { id: 'custom-1', name: 'Custom', fields: [] }
-        const result = sessionReducer(initialState, {
-            type: ACTIONS.ADD_CONTENT_TYPE,
-            payload: { contentType: newType },
-        })
-
-        const added = result.contentTypes.find(ct => ct.id === 'custom-1')
-        expect(added).toBeDefined()
-        expect(added!.order).toBeGreaterThan(0)
-    })
-
-    it('UPDATE_CONTENT_TYPE updates fields', () => {
-        const result = sessionReducer(initialState, {
-            type: ACTIONS.UPDATE_CONTENT_TYPE,
-            payload: { id: 'note', updates: { name: 'Notiz' } },
-        })
-
-        const updated = result.contentTypes.find(ct => ct.id === 'note')
-        expect(updated!.name).toBe('Notiz')
-    })
-
-    it('DELETE_CONTENT_TYPE removes non-built-in types', () => {
-        const custom: ContentType = { id: 'custom-1', name: 'Custom', fields: [] }
-        const state = stateWith({
-            contentTypes: [...initialState.contentTypes, custom],
-        })
-
-        const result = sessionReducer(state, {
-            type: ACTIONS.DELETE_CONTENT_TYPE,
-            payload: { id: 'custom-1' },
-        })
-
-        expect(result.contentTypes.find(ct => ct.id === 'custom-1')).toBeUndefined()
-    })
-
-    it('DELETE_CONTENT_TYPE refuses to delete built-in types', () => {
-        const result = sessionReducer(initialState, {
-            type: ACTIONS.DELETE_CONTENT_TYPE,
-            payload: { id: 'note' },
-        })
-
-        // Should be unchanged
-        expect(result).toBe(initialState)
     })
 })
 
