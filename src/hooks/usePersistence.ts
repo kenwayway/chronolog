@@ -2,7 +2,7 @@ import { useEffect, useCallback, useRef } from 'react'
 import { queuePersistedSessionState } from '@/utils/indexedDbService'
 import type { SessionState } from '@/types'
 
-type PersistedState = Pick<SessionState, 'status' | 'sessionStart' | 'entries' | 'contentTypes' | 'mediaItems'>
+type PersistedState = Pick<SessionState, 'status' | 'activeSessionId' | 'sessions' | 'entries' | 'contentTypes' | 'mediaItems'>
 
 /**
  * Debounced IndexedDB persistence for session state. Entity stores are updated
@@ -13,7 +13,8 @@ type PersistedState = Pick<SessionState, 'status' | 'sessionStart' | 'entries' |
 export function usePersistence(state: SessionState, isHydrated: boolean) {
     const latestStateRef = useRef<PersistedState>({
         status: state.status,
-        sessionStart: state.sessionStart,
+        activeSessionId: state.activeSessionId,
+        sessions: state.sessions,
         entries: state.entries,
         contentTypes: state.contentTypes,
         mediaItems: state.mediaItems,
@@ -34,7 +35,8 @@ export function usePersistence(state: SessionState, isHydrated: boolean) {
     useEffect(() => {
         latestStateRef.current = {
             status: state.status,
-            sessionStart: state.sessionStart,
+            activeSessionId: state.activeSessionId,
+            sessions: state.sessions,
             entries: state.entries,
             contentTypes: state.contentTypes,
             mediaItems: state.mediaItems,
@@ -42,7 +44,7 @@ export function usePersistence(state: SessionState, isHydrated: boolean) {
         if (!isHydrated) return
         if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
         saveTimerRef.current = setTimeout(flushSave, 500)
-    }, [state.status, state.sessionStart, state.entries, state.contentTypes, state.mediaItems, isHydrated, flushSave])
+    }, [state.status, state.activeSessionId, state.sessions, state.entries, state.contentTypes, state.mediaItems, isHydrated, flushSave])
 
     // Start the async write as soon as the page is hidden or being unloaded.
     useEffect(() => {

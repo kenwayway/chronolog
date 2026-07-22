@@ -1,25 +1,26 @@
-import type { ContentType, Entry, MediaItem, SessionState, SessionStatus } from '@/types'
+import type { ContentType, Entry, MediaItem, Session, SessionState, SessionStatus } from '@/types'
 import { STORAGE_KEYS, getStorage, removeStorage } from './storageService'
 
 const DB_NAME = 'chronolog'
-const DB_VERSION = 1
+const DB_VERSION = 2
 
 const STORES = {
     METADATA: 'metadata',
     ENTRIES: 'entries',
+    SESSIONS: 'sessions',
     CONTENT_TYPES: 'contentTypes',
     MEDIA_ITEMS: 'mediaItems',
 } as const
 
 const SESSION_METADATA_KEY = 'session'
 
-type PersistedState = Pick<SessionState, 'status' | 'sessionStart' | 'entries' | 'contentTypes' | 'mediaItems'>
+type PersistedState = Pick<SessionState, 'status' | 'activeSessionId' | 'sessions' | 'entries' | 'contentTypes' | 'mediaItems'>
 type Entity = { id: string }
 
 interface SessionMetadata {
     key: typeof SESSION_METADATA_KEY
     status: SessionStatus
-    sessionStart: number | null
+    activeSessionId: string | null
 }
 
 export interface EntityChanges<T extends Entity> {
@@ -91,6 +92,10 @@ function openDatabase(): Promise<IDBDatabase> {
                 const entries = db.createObjectStore(STORES.ENTRIES, { keyPath: 'id' })
                 entries.createIndex('timestamp', 'timestamp')
             }
+            if (!db.objectStoreNames.contains(STORES.SESSIONS)) {
+                const sessions = db.createObjectStore(STORES.SESSIONS, { keyPath: 'id' })
+                sessions.createIndex('startAt', 'startAt')
+            }
             if (!db.objectStoreNames.contains(STORES.CONTENT_TYPES)) {
                 db.createObjectStore(STORES.CONTENT_TYPES, { keyPath: 'id' })
             }
@@ -124,22 +129,24 @@ async function readIndexedDbState(): Promise<Partial<SessionState> | null> {
     const db = await openDatabase()
     const transaction = db.transaction(Object.values(STORES), 'readonly')
 
-    const [metadata, entries, contentTypes, mediaItems] = await Promise.all([
+    const [metadata, entries, sessions, contentTypes, mediaItems] = await Promise.all([
         requestResult(transaction.objectStore(STORES.METADATA).get(SESSION_METADATA_KEY) as IDBRequest<SessionMetadata | undefined>),
         requestResult(transaction.objectStore(STORES.ENTRIES).index('timestamp').getAll() as IDBRequest<Entry[]>),
+        requestResult(transaction.objectStore(STORES.SESSIONS).index('startAt').getAll() as IDBRequest<Session[]>),
         requestResult(transaction.objectStore(STORES.CONTENT_TYPES).getAll() as IDBRequest<ContentType[]>),
         requestResult(transaction.objectStore(STORES.MEDIA_ITEMS).getAll() as IDBRequest<MediaItem[]>),
         transactionDone(transaction),
     ])
 
-    if (!metadata && entries.length === 0 && contentTypes.length === 0 && mediaItems.length === 0) {
+    if (!metadata && entries.length === 0 && sessions.length === 0 && contentTypes.length === 0 && mediaItems.length === 0) {
         return null
     }
 
     return {
         status: metadata?.status,
-        sessionStart: metadata?.sessionStart ?? null,
+        activeSessionId: metadata?.activeSessionId ?? null,
         entries,
+        sessions,
         contentTypes,
         mediaItems,
     }
@@ -172,22 +179,26 @@ async function persistSessionState(current: PersistedState, previous: PersistedS
     transaction.objectStore(STORES.METADATA).put({
         key: SESSION_METADATA_KEY,
         status: current.status,
-        sessionStart: current.sessionStart,
+        activeSessionId: current.activeSessionId,
     } satisfies SessionMetadata)
 
     const entriesStore = transaction.objectStore(STORES.ENTRIES)
+    const sessionsStore = transaction.objectStore(STORES.SESSIONS)
     const contentTypesStore = transaction.objectStore(STORES.CONTENT_TYPES)
     const mediaItemsStore = transaction.objectStore(STORES.MEDIA_ITEMS)
 
     if (!previous) {
         entriesStore.clear()
+        sessionsStore.clear()
         contentTypesStore.clear()
         mediaItemsStore.clear()
         current.entries.forEach(entry => entriesStore.put(entry))
+        current.sessions.forEach(session => sessionsStore.put(session))
         current.contentTypes.forEach(contentType => contentTypesStore.put(contentType))
         current.mediaItems.forEach(mediaItem => mediaItemsStore.put(mediaItem))
     } else {
         applyEntityChanges(entriesStore, previous.entries, current.entries)
+        applyEntityChanges(sessionsStore, previous.sessions, current.sessions)
         applyEntityChanges(contentTypesStore, previous.contentTypes, current.contentTypes)
         applyEntityChanges(mediaItemsStore, previous.mediaItems, current.mediaItems)
     }
@@ -203,9 +214,10 @@ function legacyState(): Partial<SessionState> | null {
 
 function completePersistedState(state: Partial<SessionState>): PersistedState {
     return {
-        status: state.status ?? (state.sessionStart ? 'STREAMING' : 'IDLE'),
-        sessionStart: state.sessionStart ?? null,
+        status: state.status ?? (state.activeSessionId ? 'STREAMING' : 'IDLE'),
+        activeSessionId: state.activeSessionId ?? null,
         entries: state.entries ?? [],
+        sessions: state.sessions ?? [],
         contentTypes: state.contentTypes ?? [],
         mediaItems: state.mediaItems ?? [],
     }

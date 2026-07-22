@@ -1,9 +1,10 @@
 import { useState, useRef, KeyboardEvent, ChangeEvent } from 'react';
 import { Download, Upload, Check, FolderOpen, Cloud, CloudOff, RefreshCw, Trash2, Sparkles } from 'lucide-react';
-import type { Entry, Category, ContentType, MediaItem, CloudSyncFull, TestAIResult } from '@/types';
+import type { Entry, Session, Category, ContentType, MediaItem, CloudSyncFull, TestAIResult } from '@/types';
 
 interface ImportData {
     entries: Entry[];
+    sessions?: Session[];
     categories?: Category[];
     contentTypes?: ContentType[];
     mediaItems?: MediaItem[];
@@ -18,6 +19,7 @@ interface CleanupResult {
 interface SyncTabProps {
     cloudSync?: CloudSyncFull;
     entries?: Entry[];
+    sessions?: Session[];
     categories?: Category[];
     contentTypes?: ContentType[];
     mediaItems?: MediaItem[];
@@ -30,6 +32,7 @@ interface SyncTabProps {
 export function SyncTab({
     cloudSync,
     entries,
+    sessions,
     categories,
     contentTypes,
     mediaItems,
@@ -46,6 +49,7 @@ export function SyncTab({
     const handleExport = () => {
         const data = {
             entries,
+            sessions,
             categories,
             contentTypes,
             mediaItems,
@@ -73,6 +77,7 @@ export function SyncTab({
                 if (data.entries) {
                     onImportData({
                         entries: data.entries,
+                        sessions: data.sessions,
                         contentTypes: data.contentTypes,
                         mediaItems: data.mediaItems,
                     });

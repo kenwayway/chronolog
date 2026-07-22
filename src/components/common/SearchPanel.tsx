@@ -39,7 +39,7 @@ function highlightText(text: string, query: string): ReactNode {
 }
 
 export function SearchPanel() {
-    const { state: { entries, contentTypes, mediaItems }, categories } = useSessionContext()
+    const { state: { contentTypes, mediaItems }, timelineEntries: entries, categories } = useSessionContext()
     const {
         searchOpen,
         setSearchOpen,

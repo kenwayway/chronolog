@@ -29,7 +29,7 @@ export function ActivityPanel({
     contentTypeFilter,
     onContentTypeFilterChange,
 }: ActivityPanelProps) {
-    const { state: { entries, contentTypes }, categories } = useSessionContext();
+    const { state: { sessions, activeSessionId, contentTypes }, timelineEntries: entries, categories } = useSessionContext();
     const { tokens } = useTheme();
 
     // Tag statistics
@@ -89,7 +89,8 @@ export function ActivityPanel({
                 <div style={{ flex: 1, overflowY: "auto", padding: 20 }}>
                     {/* Category Time Distribution */}
                     <CategoryTimeChart
-                        entries={entries}
+                        sessions={sessions}
+                        activeSessionId={activeSessionId}
                         categories={categories ?? []}
                         categoryFilter={categoryFilter}
                         onToggleCategory={toggleCategory}

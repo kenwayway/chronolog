@@ -1,7 +1,6 @@
 import { useState, useMemo } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { ENTRY_TYPES } from "@/utils/constants";
-import { sessionDurationsByStartId } from "@/utils/sessionPairing";
 import { useTheme } from "@/hooks/useTheme";
 import { useSessionContext } from "@/contexts/SessionContext";
 import { TimelineEntry } from "./TimelineEntry";
@@ -26,7 +25,7 @@ interface TimelineProps {
 }
 
 export function Timeline({ entries, onContextMenu, onEdit, categoryFilter = [], isFilterMode: isFilterModeProp, filterKey = '', onNavigateToEntry }: TimelineProps) {
-  const { state: { entries: allEntries, mediaItems }, categories } = useSessionContext();
+  const { state: { mediaItems, sessions }, timelineEntries: allEntries, categories } = useSessionContext();
   const { theme } = useTheme();
 
   // Stable key for categoryFilter to avoid re-creating strings on every render
@@ -51,27 +50,27 @@ export function Timeline({ entries, onContextMenu, onEdit, categoryFilter = [], 
 
   // Memoize session duration and line state calculations
   const { sessionDurations, entryLineStates } = useMemo(() => {
-    // sessionId-aware pairing (timestamp-order fallback for legacy entries)
-    const durations = sessionDurationsByStartId(sortedEntries);
+    const durations: Record<string, number> = {};
+    const sessionIds = new Set(sessions.map(session => session.id));
+    for (const session of sessions) {
+      if (session.endAt !== null) durations[session.startEntryId] = session.endAt - session.startAt;
+    }
     const lineStates: Record<string, string> = {};
-    let inSession = false;
 
     for (const entry of sortedEntries) {
       let state = "default";
       if (entry.type === ENTRY_TYPES.SESSION_START) {
-        inSession = true;
         state = "start";
       } else if (entry.type === ENTRY_TYPES.SESSION_END) {
-        inSession = false;
         state = "end";
-      } else if (inSession) {
+      } else if (entry.sessionId && sessionIds.has(entry.sessionId)) {
         state = "active";
       }
       lineStates[entry.id] = state;
     }
 
     return { sessionDurations: durations, entryLineStates: lineStates };
-  }, [sortedEntries]);
+  }, [sortedEntries, sessions]);
 
   return (
     <div

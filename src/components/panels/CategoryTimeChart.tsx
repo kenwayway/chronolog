@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { pairSessions } from "@/utils/sessionPairing";
-import type { Category, CategoryId, Entry } from "@/types";
+import type { Category, CategoryId, Session } from "@/types";
 
 interface CategoryTimeChartProps {
-    entries: Entry[];
+    sessions: Session[];
+    activeSessionId: string | null;
     categories: Category[];
     categoryFilter: CategoryId[];
     onToggleCategory: (catId: CategoryId) => void;
@@ -42,26 +42,21 @@ function formatHours(ms: number): string {
 }
 
 /** Collect today's sessions as [start, end, category] intervals (includes the live session). */
-function todaySessions(entries: Entry[], dayStart: number, now: number): Array<[number, number, string]> {
-    const paired = pairSessions(entries);
-    // Only the most recently started open session is "live"; older unclosed
-    // STARTs are orphans and must not accumulate time forever.
-    const openSessions = paired.filter(s => s.end === null);
-    const liveSession = openSessions.length > 0 ? openSessions[openSessions.length - 1] : null;
-
-    const sessions: Array<[number, number, string]> = [];
-    for (const session of paired) {
-        if (session.end === null && session !== liveSession) continue;
-        const endTs = session.end ? session.end.timestamp : now;
-        const s = Math.max(session.start.timestamp, dayStart);
+function todaySessions(source: Session[], activeSessionId: string | null, dayStart: number, now: number): Array<[number, number, string]> {
+    const intervals: Array<[number, number, string]> = [];
+    for (const session of source) {
+        if (session.endAt === null && session.id !== activeSessionId) continue;
+        const endTs = session.endAt ?? now;
+        const s = Math.max(session.startAt, dayStart);
         const e = Math.min(endTs, dayStart + 24 * HOUR_MS);
-        if (e > s) sessions.push([s, e, session.start.category || UNCATEGORIZED]);
+        if (e > s) intervals.push([s, e, session.category || UNCATEGORIZED]);
     }
-    return sessions;
+    return intervals;
 }
 
 export function CategoryTimeChart({
-    entries,
+    sessions,
+    activeSessionId,
     categories,
     categoryFilter,
     onToggleCategory,
@@ -86,12 +81,12 @@ export function CategoryTimeChart({
         day.setHours(0, 0, 0, 0);
         const dayStart = day.getTime();
 
-        const sessions = todaySessions(entries, dayStart, now);
+        const intervals = todaySessions(sessions, activeSessionId, dayStart, now);
 
         // Distribute session time into per-hour, per-category buckets
         const hourBuckets: Array<Map<string, number>> = Array.from({ length: 24 }, () => new Map());
         const dayTotals = new Map<string, number>();
-        for (const [s, e, cat] of sessions) {
+        for (const [s, e, cat] of intervals) {
             dayTotals.set(cat, (dayTotals.get(cat) || 0) + (e - s));
             const firstHour = Math.floor((s - dayStart) / HOUR_MS);
             const lastHour = Math.min(23, Math.floor((e - 1 - dayStart) / HOUR_MS));
@@ -139,7 +134,7 @@ export function CategoryTimeChart({
         const currentHour = Math.floor((now - dayStart) / HOUR_MS);
 
         return { cells, legend, totalMs, currentHour };
-    }, [entries, categories, now]);
+    }, [sessions, activeSessionId, categories, now]);
 
     return (
         <div style={{ marginBottom: 32 }}>

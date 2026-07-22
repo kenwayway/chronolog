@@ -2,9 +2,10 @@ import { ENTRY_TYPES, SESSION_STATUS, ACTIONS, BUILTIN_CONTENT_TYPES } from '@/u
 import { generateId } from '@/utils/formatters'
 import { parseTags } from '@/utils/tagParser'
 import { migrateEntries } from '@/utils/migrateEntries'
-import { pairSessions } from '@/utils/sessionPairing'
+import { importLegacySessions, sessionForBoundary } from '@/utils/legacySessionAdapter'
 import type {
     Entry,
+    Session,
     SessionState,
     SessionAction,
     ContentType,
@@ -25,7 +26,8 @@ import type {
 // Initial state
 export const initialState: SessionState = {
     status: SESSION_STATUS.IDLE,
-    sessionStart: null,
+    activeSessionId: null,
+    sessions: [],
     entries: [],
     contentTypes: [...BUILTIN_CONTENT_TYPES],
     mediaItems: []
@@ -49,14 +51,33 @@ function mergeContentTypes(incoming: ContentType[]): ContentType[] {
     ]
 }
 
-/**
- * sessionId of the currently open session (a SESSION_START with no matching
- * SESSION_END). When merged data leaves several sessions open, the most
- * recently started one is the live session.
- */
-function openSessionId(entries: Entry[]): string | undefined {
-    const open = pairSessions(entries).filter(s => s.end === null)
-    return open.length > 0 ? open[open.length - 1].start.sessionId : undefined
+function createSession(payload: LogInPayload | SwitchPayload, now: number): Session {
+    const { cleanContent, tags: parsedTags } = parseTags(payload.content)
+    const finalTags = payload.tags && payload.tags.length > 0
+        ? payload.tags
+        : (parsedTags.length > 0 ? parsedTags : undefined)
+
+    return {
+        id: generateId(),
+        startEntryId: generateId(),
+        content: cleanContent,
+        startAt: now,
+        endAt: null,
+        contentType: payload.contentType,
+        fieldValues: payload.fieldValues,
+        category: payload.category,
+        tags: finalTags,
+    }
+}
+
+function closeSession(session: Session, now: number, content = '', tags?: string[]): Session {
+    return {
+        ...session,
+        endAt: now,
+        endEntryId: session.endEntryId || generateId(),
+        endContent: content || undefined,
+        endTags: tags && tags.length > 0 ? tags : undefined,
+    }
 }
 
 // ============================================
@@ -64,67 +85,31 @@ function openSessionId(entries: Entry[]): string | undefined {
 // ============================================
 
 function handleLogIn(state: SessionState, payload: LogInPayload): SessionState {
-    const { cleanContent, tags: parsedTags } = parseTags(payload.content)
-    const finalTags = payload.tags && payload.tags.length > 0
-        ? payload.tags
-        : (parsedTags.length > 0 ? parsedTags : undefined)
-    const newEntry: Entry = {
-        id: generateId(),
-        type: ENTRY_TYPES.SESSION_START,
-        content: cleanContent,
-        timestamp: Date.now(),
-        sessionId: generateId(),
-        contentType: payload.contentType,
-        fieldValues: payload.fieldValues,
-        category: payload.category,
-        tags: finalTags
-    }
+    const now = Date.now()
+    const newSession = createSession(payload, now)
+    const sessions = state.activeSessionId
+        ? state.sessions.map(session => session.id === state.activeSessionId ? closeSession(session, now) : session)
+        : state.sessions
     return {
         ...state,
         status: SESSION_STATUS.STREAMING,
-        sessionStart: newEntry.timestamp,
-        entries: [...state.entries, newEntry]
+        activeSessionId: newSession.id,
+        sessions: [...sessions, newSession],
     }
 }
 
 function handleSwitch(state: SessionState, payload: SwitchPayload): SessionState {
     const now = Date.now()
-    const newSessionId = generateId()
-    const newEntries = [...state.entries]
-
-    if (state.status === SESSION_STATUS.STREAMING) {
-        const endEntry: Entry = {
-            id: generateId(),
-            type: ENTRY_TYPES.SESSION_END,
-            content: '',
-            timestamp: now,
-            sessionId: openSessionId(state.entries)
-        }
-        newEntries.push(endEntry)
-    }
-
-    const { cleanContent, tags: parsedTags } = parseTags(payload.content)
-    const finalTags = payload.tags && payload.tags.length > 0
-        ? payload.tags
-        : (parsedTags.length > 0 ? parsedTags : undefined)
-    const startEntry: Entry = {
-        id: generateId(),
-        type: ENTRY_TYPES.SESSION_START,
-        content: cleanContent,
-        timestamp: now,
-        sessionId: newSessionId,
-        contentType: payload.contentType,
-        fieldValues: payload.fieldValues,
-        category: payload.category,
-        tags: finalTags
-    }
-    newEntries.push(startEntry)
+    const newSession = createSession(payload, now)
+    const sessions = state.sessions.map(session =>
+        session.id === state.activeSessionId ? closeSession(session, now) : session
+    )
 
     return {
         ...state,
         status: SESSION_STATUS.STREAMING,
-        sessionStart: startEntry.timestamp,
-        entries: newEntries
+        activeSessionId: newSession.id,
+        sessions: [...sessions, newSession],
     }
 }
 
@@ -138,7 +123,7 @@ function handleNote(state: SessionState, payload: NotePayload): SessionState {
         type: ENTRY_TYPES.NOTE,
         content: cleanContent,
         timestamp: Date.now(),
-        sessionId: state.status === SESSION_STATUS.STREAMING ? openSessionId(state.entries) : undefined,
+        sessionId: state.activeSessionId || undefined,
         contentType: payload.contentType,
         fieldValues: payload.fieldValues,
         category: payload.category,
@@ -157,23 +142,31 @@ function handleLogOff(state: SessionState, payload?: LogOffPayload): SessionStat
     }
     const originalContent = payload?.content || 'Session ended'
     const { cleanContent, tags } = parseTags(originalContent)
-    const newEntry: Entry = {
-        id: generateId(),
-        type: ENTRY_TYPES.SESSION_END,
-        content: cleanContent,
-        timestamp: Date.now(),
-        sessionId: openSessionId(state.entries),
-        tags: tags.length > 0 ? tags : undefined
-    }
+    const now = Date.now()
     return {
         ...state,
         status: SESSION_STATUS.IDLE,
-        sessionStart: null,
-        entries: [...state.entries, newEntry]
+        activeSessionId: null,
+        sessions: state.sessions.map(session =>
+            session.id === state.activeSessionId ? closeSession(session, now, cleanContent, tags) : session
+        ),
     }
 }
 
 function handleDeleteEntry(state: SessionState, payload: DeleteEntryPayload): SessionState {
+    const boundary = sessionForBoundary(state.sessions, payload.entryId)
+    if (boundary) {
+        const deletingActive = boundary.session.id === state.activeSessionId
+        return {
+            ...state,
+            status: deletingActive ? SESSION_STATUS.IDLE : state.status,
+            activeSessionId: deletingActive ? null : state.activeSessionId,
+            sessions: state.sessions.filter(session => session.id !== boundary.session.id),
+            entries: state.entries.map(entry =>
+                entry.sessionId === boundary.session.id ? { ...entry, sessionId: undefined } : entry
+            ),
+        }
+    }
     return {
         ...state,
         entries: state.entries.filter(e => e.id !== payload.entryId)
@@ -181,6 +174,18 @@ function handleDeleteEntry(state: SessionState, payload: DeleteEntryPayload): Se
 }
 
 function handleEditEntry(state: SessionState, payload: EditEntryPayload): SessionState {
+    const boundary = sessionForBoundary(state.sessions, payload.entryId)
+    if (boundary) {
+        return {
+            ...state,
+            sessions: state.sessions.map(session => {
+                if (session.id !== boundary.session.id) return session
+                return boundary.boundary === 'start'
+                    ? { ...session, content: payload.content }
+                    : { ...session, endContent: payload.content || undefined }
+            }),
+        }
+    }
     return {
         ...state,
         entries: state.entries.map(e =>
@@ -191,6 +196,37 @@ function handleEditEntry(state: SessionState, payload: EditEntryPayload): Sessio
 
 function handleUpdateEntry(state: SessionState, payload: UpdateEntryPayload): SessionState {
     const { entryId, content, timestamp, category, contentType, fieldValues, linkedEntries, tags, type } = payload
+    const boundary = sessionForBoundary(state.sessions, entryId)
+    if (boundary) {
+        return {
+            ...state,
+            sessions: state.sessions.map(session => {
+                if (session.id !== boundary.session.id) return session
+                if (boundary.boundary === 'end') {
+                    return {
+                        ...session,
+                        endContent: content !== undefined ? (content || undefined) : session.endContent,
+                        endAt: timestamp !== undefined ? timestamp : session.endAt,
+                        endTags: tags !== undefined ? (tags.length > 0 ? tags : undefined) : session.endTags,
+                        endLinkedEntries: linkedEntries !== undefined ? linkedEntries : session.endLinkedEntries,
+                    }
+                }
+
+                const updated = { ...session }
+                if (content !== undefined) updated.content = content
+                if (timestamp !== undefined) updated.startAt = timestamp
+                if (category !== undefined) updated.category = category ?? undefined
+                if (contentType !== undefined) {
+                    updated.contentType = contentType ?? undefined
+                    if (contentType === null) updated.fieldValues = undefined
+                }
+                if (fieldValues !== undefined && contentType !== null) updated.fieldValues = fieldValues
+                if (linkedEntries !== undefined) updated.linkedEntries = linkedEntries
+                if (tags !== undefined) updated.tags = tags.length > 0 ? tags : undefined
+                return updated
+            }),
+        }
+    }
     return {
         ...state,
         entries: state.entries.map(e => {
@@ -214,6 +250,15 @@ function handleUpdateEntry(state: SessionState, payload: UpdateEntryPayload): Se
 }
 
 function handleSetEntryCategory(state: SessionState, payload: SetEntryCategoryPayload): SessionState {
+    const boundary = sessionForBoundary(state.sessions, payload.entryId)
+    if (boundary?.boundary === 'start') {
+        return {
+            ...state,
+            sessions: state.sessions.map(session =>
+                session.id === boundary.session.id ? { ...session, category: payload.category } : session
+            ),
+        }
+    }
     return {
         ...state,
         entries: state.entries.map(e =>
@@ -226,44 +271,38 @@ function handleLoadState(state: SessionState, payload: Partial<SessionState>): S
     const loadedContentTypes = payload.contentTypes || []
     const mergedContentTypes = mergeContentTypes(loadedContentTypes)
     const migratedEntries = migrateEntries(payload.entries || [], mergedContentTypes)
+    const imported = importLegacySessions(migratedEntries, payload.sessions || [])
 
     return {
         ...initialState,
         ...payload,
-        entries: migratedEntries,
+        entries: imported.entries,
+        sessions: imported.sessions,
+        activeSessionId: imported.activeSessionId,
         contentTypes: mergedContentTypes,
         mediaItems: payload.mediaItems || state.mediaItems || [],
-        status: payload.sessionStart ? SESSION_STATUS.STREAMING : SESSION_STATUS.IDLE
+        status: imported.activeSessionId ? SESSION_STATUS.STREAMING : SESSION_STATUS.IDLE
     }
 }
 
 function handleImportData(state: SessionState, payload: ImportDataPayload): SessionState {
-    const importedEntries = payload.entries || []
+    const importedEntries = payload.entries || state.entries
     const importedContentTypes = payload.contentTypes || []
-
-    let inSession = false
-    let lastSessionStart: number | null = null
-    for (const entry of importedEntries) {
-        if (entry.type === ENTRY_TYPES.SESSION_START) {
-            inSession = true
-            lastSessionStart = entry.timestamp
-        } else if (entry.type === ENTRY_TYPES.SESSION_END) {
-            inSession = false
-            lastSessionStart = null
-        }
-    }
 
     const mergedContentTypes = mergeContentTypes(importedContentTypes)
     const finalContentTypes = mergedContentTypes.length > 0 ? mergedContentTypes : state.contentTypes
     const migratedEntries = migrateEntries(importedEntries, finalContentTypes)
+    const canonicalSessions = payload.sessions ?? (payload.entries ? [] : state.sessions)
+    const imported = importLegacySessions(migratedEntries, canonicalSessions)
 
     return {
         ...state,
-        entries: migratedEntries,
+        entries: imported.entries,
+        sessions: imported.sessions,
         contentTypes: finalContentTypes,
         mediaItems: payload.mediaItems || state.mediaItems,
-        status: inSession ? SESSION_STATUS.STREAMING : SESSION_STATUS.IDLE,
-        sessionStart: lastSessionStart
+        status: imported.activeSessionId ? SESSION_STATUS.STREAMING : SESSION_STATUS.IDLE,
+        activeSessionId: imported.activeSessionId,
     }
 }
 

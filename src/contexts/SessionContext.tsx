@@ -1,8 +1,9 @@
 import { createContext, useContext } from 'react'
-import type { SessionState, SessionActions, Category } from '@/types'
+import type { SessionState, SessionActions, Category, Entry } from '@/types'
 
 export interface SessionContextValue {
     state: SessionState
+    timelineEntries: Entry[]
     actions: SessionActions
     categories: Category[]
     isStreaming: boolean

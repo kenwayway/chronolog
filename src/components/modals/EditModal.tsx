@@ -67,7 +67,7 @@ export function EditModal({ isOpen, entry, onSave, onClose }: EditModalProps) {
 }
 
 function EditModalForm({ entry, onSave, onClose }: Omit<EditModalProps, 'isOpen' | 'entry'> & { entry: Entry }) {
-  const { state: { entries: allEntries, contentTypes: ctFromContext, mediaItems }, actions: { addMediaItem: onAddMediaItem, updateMediaItem: onUpdateMediaItem } } = useSessionContext();
+  const { state: { contentTypes: ctFromContext, mediaItems }, timelineEntries: allEntries, actions: { addMediaItem: onAddMediaItem, updateMediaItem: onUpdateMediaItem } } = useSessionContext();
   const types = ctFromContext.length > 0 ? ctFromContext : BUILTIN_CONTENT_TYPES;
   const [initialState] = useState(() => getInitialEditFormState(entry));
   // Content state
@@ -289,6 +289,8 @@ function EditModalForm({ entry, onSave, onClose }: Omit<EditModalProps, 'isOpen'
               <select
                 value={entryType}
                 onChange={(e) => setEntryType(e.target.value)}
+                disabled={entry.type !== ENTRY_TYPES.NOTE}
+                title={entry.type !== ENTRY_TYPES.NOTE ? 'Session boundaries are projected from a Session interval' : undefined}
                 className={styles.input}
                 style={{ width: 'auto', minWidth: 100 }}
               >

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { sessionReducer, initialState } from './sessionReducer'
 import { ACTIONS, SESSION_STATUS, ENTRY_TYPES } from '@/utils/constants'
-import type { SessionState, Entry, MediaItem } from '@/types'
+import type { SessionState, Entry, MediaItem, Session } from '@/types'
 
 // Mock generateId to return predictable values
 let idCounter = 0
@@ -28,24 +28,36 @@ function makeEntry(overrides: Partial<Entry> = {}): Entry {
     }
 }
 
+function makeSession(overrides: Partial<Session> = {}): Session {
+    return {
+        id: `session-${++idCounter}`,
+        startEntryId: `start-${idCounter}`,
+        content: 'test session',
+        startAt: 1000,
+        endAt: null,
+        ...overrides,
+    }
+}
+
 // ========================================
 // LOG_IN
 // ========================================
 describe('LOG_IN', () => {
-    it('creates a SESSION_START entry and sets STREAMING', () => {
+    it('creates a first-class session and sets STREAMING', () => {
         const result = sessionReducer(initialState, {
             type: ACTIONS.LOG_IN,
             payload: { content: 'starting work' },
         })
 
         expect(result.status).toBe(SESSION_STATUS.STREAMING)
-        expect(result.sessionStart).toBeTypeOf('number')
-        expect(result.entries).toHaveLength(1)
+        expect(result.activeSessionId).toBeTypeOf('string')
+        expect(result.entries).toHaveLength(0)
+        expect(result.sessions).toHaveLength(1)
 
-        const entry = result.entries[0]
-        expect(entry.type).toBe(ENTRY_TYPES.SESSION_START)
-        expect(entry.content).toBe('starting work')
-        expect(entry.sessionId).toBeDefined()
+        const session = result.sessions[0]
+        expect(session.content).toBe('starting work')
+        expect(session.startEntryId).toBeDefined()
+        expect(session.endAt).toBeNull()
     })
 
     it('extracts tags from content', () => {
@@ -54,9 +66,9 @@ describe('LOG_IN', () => {
             payload: { content: 'working on #project' },
         })
 
-        const entry = result.entries[0]
-        expect(entry.content).toBe('working on')
-        expect(entry.tags).toEqual(['project'])
+        const session = result.sessions[0]
+        expect(session.content).toBe('working on')
+        expect(session.tags).toEqual(['project'])
     })
 })
 
@@ -107,11 +119,11 @@ describe('NOTE', () => {
     })
 
     it('carries the open session\'s sessionId while streaming', () => {
-        const start = makeEntry({ type: 'SESSION_START', timestamp: 1000, sessionId: 'session-abc' })
+        const session = makeSession({ id: 'session-abc' })
         const state = stateWith({
             status: SESSION_STATUS.STREAMING,
-            sessionStart: 1000,
-            entries: [start],
+            activeSessionId: 'session-abc',
+            sessions: [session],
         })
 
         const result = sessionReducer(state, {
@@ -149,22 +161,23 @@ describe('NOTE', () => {
 describe('LOG_OFF', () => {
     const streamingState = stateWith({
         status: SESSION_STATUS.STREAMING,
-        sessionStart: 1000,
+        activeSessionId: 'session-abc',
+        sessions: [makeSession({ id: 'session-abc' })],
     })
 
-    it('creates SESSION_END and sets IDLE', () => {
+    it('closes the active session and sets IDLE', () => {
         const result = sessionReducer(streamingState, {
             type: ACTIONS.LOG_OFF,
             payload: { content: 'done' },
         })
 
         expect(result.status).toBe(SESSION_STATUS.IDLE)
-        expect(result.sessionStart).toBeNull()
-        expect(result.entries).toHaveLength(1)
+        expect(result.activeSessionId).toBeNull()
+        expect(result.entries).toHaveLength(0)
 
-        const entry = result.entries[0]
-        expect(entry.type).toBe(ENTRY_TYPES.SESSION_END)
-        expect(entry.content).toBe('done')
+        const session = result.sessions[0]
+        expect(session.endAt).toBeTypeOf('number')
+        expect(session.endContent).toBe('done')
     })
 
     it('returns same state when not streaming', () => {
@@ -175,12 +188,12 @@ describe('LOG_OFF', () => {
         expect(result).toBe(initialState)
     })
 
-    it('stamps the open session\'s sessionId on SESSION_END', () => {
-        const start = makeEntry({ type: 'SESSION_START', timestamp: 1000, sessionId: 'session-abc' })
+    it('closes exactly the active session', () => {
+        const session = makeSession({ id: 'session-abc' })
         const state = stateWith({
             status: SESSION_STATUS.STREAMING,
-            sessionStart: 1000,
-            entries: [start],
+            activeSessionId: 'session-abc',
+            sessions: [session],
         })
 
         const result = sessionReducer(state, {
@@ -188,9 +201,8 @@ describe('LOG_OFF', () => {
             payload: { content: 'done' },
         })
 
-        const endEntry = result.entries[result.entries.length - 1]
-        expect(endEntry.type).toBe(ENTRY_TYPES.SESSION_END)
-        expect(endEntry.sessionId).toBe('session-abc')
+        expect(result.sessions[0].id).toBe('session-abc')
+        expect(result.sessions[0].endAt).not.toBeNull()
     })
 })
 
@@ -372,7 +384,8 @@ describe('SWITCH', () => {
     it('ends current session and starts new one', () => {
         const streamingState = stateWith({
             status: SESSION_STATUS.STREAMING,
-            sessionStart: 1000,
+            activeSessionId: 'session-old',
+            sessions: [makeSession({ id: 'session-old' })],
         })
 
         const result = sessionReducer(streamingState, {
@@ -381,22 +394,18 @@ describe('SWITCH', () => {
         })
 
         expect(result.status).toBe(SESSION_STATUS.STREAMING)
-        expect(result.entries).toHaveLength(2) // SESSION_END + SESSION_START
-
-        const endEntry = result.entries[0]
-        expect(endEntry.type).toBe(ENTRY_TYPES.SESSION_END)
-
-        const startEntry = result.entries[1]
-        expect(startEntry.type).toBe(ENTRY_TYPES.SESSION_START)
-        expect(startEntry.content).toBe('new session')
+        expect(result.entries).toHaveLength(0)
+        expect(result.sessions).toHaveLength(2)
+        expect(result.sessions[0].endAt).not.toBeNull()
+        expect(result.sessions[1].content).toBe('new session')
     })
 
     it('closes the old session with its own sessionId, distinct from the new one', () => {
-        const start = makeEntry({ type: 'SESSION_START', timestamp: 1000, sessionId: 'session-old' })
+        const oldSession = makeSession({ id: 'session-old' })
         const streamingState = stateWith({
             status: SESSION_STATUS.STREAMING,
-            sessionStart: 1000,
-            entries: [start],
+            activeSessionId: 'session-old',
+            sessions: [oldSession],
         })
 
         const result = sessionReducer(streamingState, {
@@ -404,13 +413,12 @@ describe('SWITCH', () => {
             payload: { content: 'new session' },
         })
 
-        const endEntry = result.entries[1]
-        const newStart = result.entries[2]
-        expect(endEntry.type).toBe(ENTRY_TYPES.SESSION_END)
-        expect(endEntry.sessionId).toBe('session-old')
-        expect(newStart.type).toBe(ENTRY_TYPES.SESSION_START)
-        expect(newStart.sessionId).toBeDefined()
-        expect(newStart.sessionId).not.toBe('session-old')
+        const closed = result.sessions[0]
+        const next = result.sessions[1]
+        expect(closed.id).toBe('session-old')
+        expect(closed.endAt).not.toBeNull()
+        expect(next.id).toBeDefined()
+        expect(next.id).not.toBe('session-old')
     })
 })
 
@@ -428,5 +436,62 @@ describe('SET_ENTRY_CATEGORY', () => {
         })
 
         expect(result.entries[0].category).toBe('work')
+    })
+})
+
+describe('legacy boundary migration', () => {
+    it('normalizes legacy START/END entries into a Session on load', () => {
+        const start = makeEntry({ id: 'start', type: 'SESSION_START', content: 'focus', timestamp: 1000, sessionId: 'session-1' })
+        const note = makeEntry({ id: 'note', type: 'NOTE', timestamp: 1500, sessionId: 'session-1' })
+        const end = makeEntry({ id: 'end', type: 'SESSION_END', content: 'done', timestamp: 2000, sessionId: 'session-1' })
+
+        const result = sessionReducer(initialState, {
+            type: ACTIONS.LOAD_STATE,
+            payload: { entries: [start, note, end] },
+        })
+
+        expect(result.entries.map(entry => entry.id)).toEqual(['note'])
+        expect(result.sessions).toEqual([expect.objectContaining({
+            id: 'session-1',
+            startEntryId: 'start',
+            endEntryId: 'end',
+            startAt: 1000,
+            endAt: 2000,
+        })])
+        expect(result.activeSessionId).toBeNull()
+    })
+
+    it('routes projected boundary edits to the canonical session', () => {
+        const session = makeSession({ id: 'session-1', startEntryId: 'start' })
+        const state = stateWith({ sessions: [session], activeSessionId: 'session-1', status: SESSION_STATUS.STREAMING })
+
+        const result = sessionReducer(state, {
+            type: ACTIONS.UPDATE_ENTRY,
+            payload: { entryId: 'start', content: 'renamed', category: 'craft' },
+        })
+
+        expect(result.sessions[0].content).toBe('renamed')
+        expect(result.sessions[0].category).toBe('craft')
+    })
+
+    it('deleting a projected session boundary deletes the interval and detaches its notes', () => {
+        const session = makeSession({ id: 'session-1', startEntryId: 'start' })
+        const note = makeEntry({ id: 'note', sessionId: 'session-1' })
+        const state = stateWith({
+            sessions: [session],
+            entries: [note],
+            activeSessionId: 'session-1',
+            status: SESSION_STATUS.STREAMING,
+        })
+
+        const result = sessionReducer(state, {
+            type: ACTIONS.DELETE_ENTRY,
+            payload: { entryId: 'start' },
+        })
+
+        expect(result.sessions).toEqual([])
+        expect(result.entries[0].sessionId).toBeUndefined()
+        expect(result.activeSessionId).toBeNull()
+        expect(result.status).toBe(SESSION_STATUS.IDLE)
     })
 })

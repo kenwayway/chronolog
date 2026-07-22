@@ -7,6 +7,7 @@ import { useAICategories } from "./hooks/useAICategories";
 import { useEntryHandlers } from "./hooks/useEntryHandlers";
 import { useAutoCategorize } from "./hooks/useAutoCategorize";
 import { useFollowUpLink } from "./hooks/useFollowUpLink";
+import { projectSessionsToEntries } from "./utils/legacySessionAdapter";
 import { SessionContext, useSessionContext } from "./contexts/SessionContext";
 import { CloudSyncContext } from "./contexts/CloudSyncContext";
 import { UIStateProvider } from "./components/providers/UIStateProvider";
@@ -46,10 +47,14 @@ function HydratedApp({ session }: { session: UseSessionReturn }) {
     const { state, isStreaming, actions } = session;
     const { categories } = useCategories();
     const { categorize } = useAICategories();
+    const timelineEntries = useMemo(
+        () => projectSessionsToEntries(state.entries, state.sessions),
+        [state.entries, state.sessions],
+    );
 
     // Cloud sync
     const cloudSync = useCloudSync({
-        entries: state.entries,
+        entries: timelineEntries,
         contentTypes: state.contentTypes,
         mediaItems: state.mediaItems,
         onImportData: actions.importData,
@@ -57,7 +62,7 @@ function HydratedApp({ session }: { session: UseSessionReturn }) {
 
     // Auto-categorize new entries via AI
     useAutoCategorize({
-        entries: state.entries,
+        entries: timelineEntries,
         contentTypes: state.contentTypes,
         isLoggedIn: cloudSync.isLoggedIn,
         categorize,
@@ -73,10 +78,11 @@ function HydratedApp({ session }: { session: UseSessionReturn }) {
     // Context values — memoized with stable deps to prevent unnecessary re-renders
     const sessionContextValue = useMemo(() => ({
         state,
+        timelineEntries,
         actions,
         categories,
         isStreaming,
-    }), [state, actions, categories, isStreaming]);
+    }), [state, timelineEntries, actions, categories, isStreaming]);
 
     // Fix: field-by-field deps instead of the spread object (which is always a new ref)
     const cloudSyncContextValue = useMemo(() => ({
@@ -136,13 +142,13 @@ function MainView({
     isStreaming: boolean;
     handlers: ReturnType<typeof useEntryHandlers>;
 }) {
-    const { state, actions } = useSessionContext();
+    const { state, actions, timelineEntries } = useSessionContext();
     const ui = useUIStateContext();
     const inputPanelRef = useRef<InputPanelRef>(null);
 
     // Follow-up linking
     const followUp = useFollowUpLink({
-        entries: state.entries,
+        entries: timelineEntries,
         updateEntry: actions.updateEntry,
         inputPanelRef,
     });
@@ -153,7 +159,7 @@ function MainView({
             || ui.contentTypeFilter.length > 0;
 
         if (hasFilters) {
-            let results = state.entries;
+            let results = timelineEntries;
             if (ui.categoryFilter.length > 0) {
                 results = results.filter(entry => ui.categoryFilter.includes(entry.category as CategoryId));
             }
@@ -169,12 +175,15 @@ function MainView({
         // The default timeline only needs one day. Filter first and let Timeline
         // sort that small result, avoiding an O(n log n) sort of all history.
         const target = ui.selectedDate || new Date();
-        const dayStart = new Date(target.getFullYear(), target.getMonth(), target.getDate()).getTime();
-        const dayEnd = dayStart + 86_400_000;
-        return state.entries.filter(entry =>
+        const day = new Date(target.getFullYear(), target.getMonth(), target.getDate());
+        const dayStart = day.getTime();
+        const nextDay = new Date(day);
+        nextDay.setDate(nextDay.getDate() + 1);
+        const dayEnd = nextDay.getTime();
+        return timelineEntries.filter(entry =>
             entry.timestamp >= dayStart && entry.timestamp < dayEnd
         );
-    }, [state.entries, ui.categoryFilter, ui.tagFilter, ui.contentTypeFilter, ui.selectedDate]);
+    }, [timelineEntries, ui.categoryFilter, ui.tagFilter, ui.contentTypeFilter, ui.selectedDate]);
 
     return (
         <div className="min-h-screen flex flex-col font-mono" style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}>

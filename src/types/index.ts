@@ -146,12 +146,34 @@ export interface Entry {
   type: EntryType
   content: string
   timestamp: number
-  sessionId?: string              // Session membership: SESSION_START owns it; SESSION_END pairs by it; NOTEs logged mid-session carry it
+  sessionId?: string              // Session membership for NOTE entries; legacy boundaries use it during migration
   category?: CategoryId           // Life area category
   contentType?: string            // References ContentType.id
   fieldValues?: EntryFieldValues  // Typed field values
   linkedEntries?: string[]        // Bidirectional linked entry IDs
   tags?: string[]                 // Free-form tags (without # prefix)
+}
+
+/**
+ * A timed interval. Sessions are first-class domain entities; SESSION_START /
+ * SESSION_END entries only exist at the legacy sync boundary and in timeline
+ * projections for backwards-compatible rendering.
+ */
+export interface Session {
+  id: string
+  startEntryId: string
+  endEntryId?: string
+  content: string
+  startAt: number
+  endAt: number | null
+  endContent?: string
+  category?: CategoryId
+  contentType?: string
+  fieldValues?: EntryFieldValues
+  tags?: string[]
+  endTags?: string[]
+  linkedEntries?: string[]
+  endLinkedEntries?: string[]
 }
 
 // ============================================
@@ -161,7 +183,8 @@ export interface Entry {
 /** Session state */
 export interface SessionState {
   status: SessionStatus
-  sessionStart: number | null
+  activeSessionId: string | null
+  sessions: Session[]
   entries: Entry[]
   contentTypes: ContentType[]     // User's content types (includes built-in)
   mediaItems: MediaItem[]         // User's media library
@@ -224,6 +247,7 @@ export interface SetEntryCategoryPayload {
 
 export interface ImportDataPayload {
   entries?: Entry[]
+  sessions?: Session[]
   contentTypes?: ContentType[]
   mediaItems?: MediaItem[]
 }
@@ -299,6 +323,7 @@ export interface CloudSyncState {
 
 export interface CloudData {
   entries: Entry[]
+  sessions?: Session[]
   contentTypes?: ContentType[]
   mediaItems?: MediaItem[]
   lastModified?: number | null

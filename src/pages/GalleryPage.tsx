@@ -17,7 +17,7 @@ import styles from './GalleryPage.module.css';
 export function GalleryPage() {
     const navigate = useNavigate();
     const ui = useUIStateContext();
-    const { state: { entries } } = useSessionContext();
+    const { timelineEntries: entries } = useSessionContext();
     const [selected, setSelected] = useState<EntryImage | null>(null);
     const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
