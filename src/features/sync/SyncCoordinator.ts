@@ -129,7 +129,10 @@ export class SyncCoordinator {
     this.observedData = dependencies.initialData
     this.importData = dependencies.importData
     this.apiBase = dependencies.apiBase ?? (() => '')
-    this.fetchFn = dependencies.fetch ?? fetch
+    // Native browser fetch requires the global receiver in some engines.
+    // Wrapping it prevents `this.fetchFn(...)` from rebinding `this` to the
+    // coordinator and throwing "Illegal invocation".
+    this.fetchFn = dependencies.fetch ?? ((input, init) => globalThis.fetch(input, init))
     this.storage = dependencies.storage ?? localStorage
     this.outbox = dependencies.outbox ?? defaultOutbox()
     this.now = dependencies.now ?? Date.now

@@ -68,6 +68,30 @@ function remoteData(overrides: Partial<RevisionSyncData> = {}): RevisionSyncData
 const seededStorage = () => memoryStorage({ chronolog_outbox_v2_seeded: '1' })
 
 describe('SyncCoordinator', () => {
+  it('calls the native global fetch without rebinding its receiver', async () => {
+    const originalFetch = globalThis.fetch
+    let called = false
+    globalThis.fetch = function (this: unknown) {
+      if (this !== globalThis) throw new TypeError('Illegal invocation')
+      called = true
+      return Promise.resolve(Response.json(remoteData()))
+    } as typeof fetch
+
+    try {
+      const coordinator = new SyncCoordinator({
+        initialData: snapshot(),
+        importData: vi.fn(),
+        storage: seededStorage(),
+        outbox: memoryOutbox(),
+      })
+      await coordinator.pull('token')
+      expect(called).toBe(true)
+      expect(coordinator.getState().error).toBeNull()
+    } finally {
+      globalThis.fetch = originalFetch
+    }
+  })
+
   it('queues independent note and session mutations', async () => {
     const outbox = memoryOutbox()
     const coordinator = new SyncCoordinator({
