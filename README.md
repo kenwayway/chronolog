@@ -19,6 +19,7 @@ A local-first personal timeline, session tracker, journal, and media log. Chrono
 - **Mood** — Track feelings, energy level (1–5), and triggers
 - **Workout** — Log exercises with type (Strength/Cardio/Flexibility/Mixed) and place (Home/In Building Gym/Outside Gym)
 - **Media** — Track books, movies, games, TV, anime, podcasts via Media Library
+- **Notion Task** — Link timed sessions to a Notion task and sync recomputed tracked minutes back to its database row
 - **Custom Types** — Create your own content types with custom fields
 - **Attachments** — Add images and locations to an entry; pasted images are compressed and uploaded when sync is enabled
 
@@ -124,6 +125,9 @@ GitHub Actions runs all four checks for pull requests and pushes to `main`.
 
 ### Deployment
 ```bash
+# Existing databases: apply pending D1 migrations first
+npx wrangler d1 migrations apply chronolog --remote
+
 # Deploy to Cloudflare Pages
 npm run build
 npx wrangler pages deploy dist --project-name chronolog
@@ -153,6 +157,7 @@ functions/             # Cloudflare Pages Functions (TypeScript)
 ├── api/
 │   ├── _auth.ts       # Shared auth helpers
 │   ├── _db.ts         # D1 helpers & row converters
+│   ├── _revisionSync.ts # Atomic revision commits and tombstones
 │   ├── types.ts       # Shared type definitions
 │   ├── auth.ts        # Authentication
 │   ├── data.ts        # Data CRUD (incremental sync)
@@ -179,8 +184,15 @@ Cloud sync is optional. Configure these bindings and variables in the Cloudflare
 | `AI_MODEL` | Optional categorization model name |
 | `PUBLIC_API_TOKEN` | Token for the read-only public entries endpoint and read-only MCP access |
 | `MCP_WRITE_TOKEN` | Separate MCP token granting read access plus `add_entry` write access |
+| `NOTION_API_TOKEN` | Notion internal integration secret used only by Pages Functions |
+| `NOTION_TRACKED_MINUTES_PROPERTY` | Optional Notion number property name or ID; defaults to `Tracked Minutes` |
 
-Apply [schema.sql](schema.sql) to the D1 database before first deployment.
+Apply [schema.sql](schema.sql) before a fresh deployment. Existing databases
+must apply the ordered SQL files in `migrations/` before deploying new code.
+
+For Notion task syncing, add a number property named `Tracked Minutes` (or set
+`NOTION_TRACKED_MINUTES_PROPERTY` to its name/property ID), then share the task
+database with the internal integration represented by `NOTION_API_TOKEN`.
 
 ## 📝 License
 

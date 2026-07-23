@@ -3,6 +3,7 @@ import { Image, MapPin, Plus, ChevronDown } from "lucide-react";
 import { EntryMetadataInput } from "../input/EntryMetadataInput";
 import { BUILTIN_CONTENT_TYPES, ENTRY_TYPES } from "@/utils/constants";
 import { useSessionContext } from "@/contexts/SessionContext";
+import { prepareContentTypeSubmission } from "@/features/contentTypes";
 import styles from "./EditModal.module.css";
 import type { Entry, CategoryId, UpdateEntryPayload, EntryType } from "@/types";
 
@@ -145,6 +146,21 @@ function EditModalForm({ entry, onSave, onClose }: Omit<EditModalProps, 'isOpen'
   const handleSave = () => {
     const newTimestamp = new Date(timestamp).getTime();
     const newContent = buildContent();
+    let normalizedFieldValues = fieldValues;
+
+    if (contentType) {
+      const prepared = prepareContentTypeSubmission(
+        contentType,
+        fieldValues,
+        entryType as EntryType,
+        entry.type,
+      );
+      if (!prepared.ok) {
+        alert(prepared.error);
+        return;
+      }
+      normalizedFieldValues = prepared.fieldValues;
+    }
 
     // Check if tags changed (compare arrays properly)
     const originalTags = entry.tags || [];
@@ -155,7 +171,7 @@ function EditModalForm({ entry, onSave, onClose }: Omit<EditModalProps, 'isOpen'
       timestamp: newTimestamp !== entry.timestamp ? newTimestamp : undefined,
       category: category !== (entry.category ?? null) ? category : undefined,
       contentType: contentType !== (entry.contentType ?? null) ? contentType : undefined,
-      fieldValues: JSON.stringify(fieldValues) !== JSON.stringify(entry.fieldValues) ? fieldValues : undefined,
+      fieldValues: JSON.stringify(normalizedFieldValues) !== JSON.stringify(entry.fieldValues) ? normalizedFieldValues : undefined,
       linkedEntries: JSON.stringify(linkedEntries) !== JSON.stringify(entry.linkedEntries || []) ? linkedEntries : undefined,
       tags: tagsChanged ? tags : undefined,
       type: entryType !== entry.type ? (entryType as EntryType) : undefined,

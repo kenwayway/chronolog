@@ -1,6 +1,92 @@
-import { memo, MouseEvent, ReactNode } from 'react';
-import { Book, Film, Gamepad2, Tv, Clapperboard, Mic, Dumbbell, HeartPulse, StretchHorizontal, Shuffle, Home, Building2, Warehouse, BookOpen, ExternalLink } from 'lucide-react';
-import type { BookmarkFields, MoodFields, WorkoutFields, VaultFields, MediaFields } from '@/types';
+import { memo, MouseEvent, ReactNode, useEffect, useState } from 'react';
+import { Book, Film, Gamepad2, Tv, Clapperboard, Mic, Dumbbell, HeartPulse, StretchHorizontal, Shuffle, Home, Building2, Warehouse, BookOpen, ExternalLink, SquareCheckBig } from 'lucide-react';
+import type { BookmarkFields, MoodFields, WorkoutFields, VaultFields, MediaFields, NotionTaskFields } from '@/types';
+import { notionPageUrl } from '@/utils/notionPageId';
+import { useCloudSyncContext } from '@/contexts/CloudSyncContext';
+import { getApiBase } from '@/hooks/useCloudAuth';
+
+const TASK_NAME_TTL_MS = 5 * 60_000;
+const taskNameCache = new Map<string, { name: string; fetchedAt: number }>();
+const taskNameRequests = new Map<string, Promise<string | null>>();
+
+function loadTaskName(pageId: string, token: string): Promise<string | null> {
+  const cached = taskNameCache.get(pageId);
+  if (cached && Date.now() - cached.fetchedAt < TASK_NAME_TTL_MS) return Promise.resolve(cached.name);
+
+  const existing = taskNameRequests.get(pageId);
+  if (existing) return existing;
+
+  const request = fetch(`${getApiBase()}/api/notion/task?id=${encodeURIComponent(pageId)}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+    .then(async response => {
+      if (!response.ok) return null;
+      const data = await response.json() as { name?: string };
+      const name = data.name?.trim() || null;
+      if (name) taskNameCache.set(pageId, { name, fetchedAt: Date.now() });
+      return name;
+    })
+    .catch(() => null)
+    .finally(() => taskNameRequests.delete(pageId));
+
+  taskNameRequests.set(pageId, request);
+  return request;
+}
+
+interface NotionTaskDisplayProps {
+  fieldValues: NotionTaskFields | null | undefined;
+}
+
+export const NotionTaskDisplay = memo(function NotionTaskDisplay({ fieldValues }: NotionTaskDisplayProps) {
+  const pageId = fieldValues?.notionPageId;
+  const href = pageId ? notionPageUrl(pageId) : null;
+  const { token } = useCloudSyncContext();
+  const cached = pageId ? taskNameCache.get(pageId) : undefined;
+  const [resolvedTask, setResolvedTask] = useState<{ pageId: string; name: string } | null>(
+    pageId && cached ? { pageId, name: cached.name } : null,
+  );
+  const taskName = resolvedTask && resolvedTask.pageId === pageId ? resolvedTask.name : cached?.name || null;
+
+  useEffect(() => {
+    let active = true;
+    if (!pageId || !token) return () => { active = false; };
+    void loadTaskName(pageId, token).then(name => {
+      if (active && name) setResolvedTask({ pageId, name });
+    });
+    return () => { active = false; };
+  }, [pageId, token]);
+
+  if (!pageId || !href) return null;
+
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={(event: MouseEvent) => event.stopPropagation()}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 6,
+        marginTop: 4,
+        padding: '2px 0',
+        color: 'var(--text-secondary)',
+        fontFamily: 'var(--font-mono)',
+        fontSize: 11,
+        textDecoration: 'none',
+      }}
+    >
+      <SquareCheckBig size={13} style={{ color: 'var(--accent)', flexShrink: 0 }} />
+      <span style={{ color: 'var(--text-dim)', fontSize: 9, fontWeight: 700, letterSpacing: '0.08em' }}>
+        TASK
+      </span>
+      <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>
+        {taskName || (token ? 'Loading task…' : 'Task')}
+      </span>
+      <ExternalLink size={11} style={{ color: 'var(--text-dim)', flexShrink: 0 }} />
+    </a>
+  );
+});
 
 interface BookmarkDisplayProps {
   fieldValues: BookmarkFields | null | undefined;

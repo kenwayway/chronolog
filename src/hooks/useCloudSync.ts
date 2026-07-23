@@ -47,52 +47,73 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
   // Toast notifications
   const { addToast } = useToast()
   const prevHadErrorRef = useRef(false)
+  const prevNotionFailedRef = useRef(0)
 
   // Core sync engine
   const engine = useSyncEngine({ entries, contentTypes, mediaItems, onImportData })
+  const {
+    syncState,
+    fetchRemoteData,
+    saveToCloud,
+    isImporting,
+    resetSyncState,
+    clearSyncTimestamp,
+  } = engine
 
   // Keep isSyncing ref in sync
-  useEffect(() => { isSyncingRef.current = engine.syncState.isSyncing }, [engine.syncState.isSyncing])
+  useEffect(() => { isSyncingRef.current = syncState.isSyncing }, [syncState.isSyncing])
 
   // --- Toast on sync error / recovery ---
   useEffect(() => {
-    if (engine.syncState.error && !prevHadErrorRef.current) {
-      addToast(`同步失败: ${engine.syncState.error}`, 'error')
+    if (syncState.error && !prevHadErrorRef.current) {
+      addToast(`同步失败: ${syncState.error}`, 'error')
     }
-    if (!engine.syncState.error && prevHadErrorRef.current) {
+    if (!syncState.error && prevHadErrorRef.current) {
       addToast('同步已恢复', 'success')
     }
-    prevHadErrorRef.current = !!engine.syncState.error
-  }, [engine.syncState.error, addToast])
+    prevHadErrorRef.current = !!syncState.error
+  }, [syncState.error, addToast])
+
+  useEffect(() => {
+    const failed = syncState.notionSync.failed
+    if (failed > 0 && prevNotionFailedRef.current === 0) {
+      addToast(`Notion 同步待重试: ${syncState.notionSync.lastError || `${failed} 个任务待处理`}`, 'info', 7000)
+    } else if (failed === 0 && prevNotionFailedRef.current > 0) {
+      addToast('Notion 工时同步已恢复', 'success')
+    }
+    prevNotionFailedRef.current = failed
+  }, [syncState.notionSync.failed, syncState.notionSync.lastError, addToast])
 
   // --- Auth ---
   const handleLoginSuccess = useCallback((token: string) => {
-    engine.clearSyncTimestamp()
-    engine.fetchRemoteData(token, true)
-  }, [engine])
+    // Preserve the pull revision across normal app restarts. Logout explicitly
+    // clears it, while a restored token continues incrementally.
+    fetchRemoteData(token)
+  }, [fetchRemoteData])
 
   const auth = useCloudAuth(handleLoginSuccess)
+  const { isLoggedIn, token, tokenRef, login, logout: logoutAuth } = auth
 
   // Fetch on mount for unauthenticated case
   useEffect(() => {
-    if (!auth.isLoggedIn) {
+    if (!isLoggedIn) {
       const savedAuth = localStorage.getItem('chronolog_cloud_auth')
       if (!savedAuth) {
-        engine.fetchRemoteData(null, true)
+        fetchRemoteData(null, true)
       }
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // --- Image operations ---
-  const { uploadImage, cleanupImages } = useImageUpload(auth.tokenRef)
+  const { uploadImage, cleanupImages } = useImageUpload(tokenRef)
 
   // --- AI health check (backend AI_API_KEY validity) ---
-  const { testAI } = useAIHealthCheck(auth.tokenRef)
+  const { testAI } = useAIHealthCheck(tokenRef)
 
   // --- Visibility-aware periodic polling ---
   // Pauses when the tab is hidden, resumes immediately when visible
   useEffect(() => {
-    if (!auth.isLoggedIn || !auth.tokenRef.current) {
+    if (!isLoggedIn || !tokenRef.current) {
       if (pollIntervalRef.current) {
         clearInterval(pollIntervalRef.current)
         pollIntervalRef.current = null
@@ -103,8 +124,8 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
     const startPolling = () => {
       if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
       pollIntervalRef.current = setInterval(() => {
-        if (!isSyncingRef.current && auth.tokenRef.current) {
-          engine.fetchRemoteData(auth.tokenRef.current)
+        if (!isSyncingRef.current && tokenRef.current) {
+          fetchRemoteData(tokenRef.current)
         }
       }, POLL_INTERVAL_MS)
     }
@@ -121,8 +142,8 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
         stopPolling()
       } else {
         // Fetch immediately on return, then resume interval
-        if (!isSyncingRef.current && auth.tokenRef.current) {
-          engine.fetchRemoteData(auth.tokenRef.current)
+        if (!isSyncingRef.current && tokenRef.current) {
+          fetchRemoteData(tokenRef.current)
         }
         startPolling()
       }
@@ -139,68 +160,63 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
       stopPolling()
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
-  }, [auth.isLoggedIn, engine, auth.tokenRef])
+  }, [isLoggedIn, tokenRef, fetchRemoteData])
 
   // --- Debounced auto-sync on data changes ---
   useEffect(() => {
-    if (!auth.isLoggedIn) return
-    if (engine.isImporting()) return
+    if (!isLoggedIn) return
+    if (isImporting()) return
 
     if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current)
-    syncTimeoutRef.current = setTimeout(() => engine.saveToCloud(auth.tokenRef.current), SYNC_DEBOUNCE_MS)
+    syncTimeoutRef.current = setTimeout(() => saveToCloud(tokenRef.current), SYNC_DEBOUNCE_MS)
 
     return () => {
       if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current)
     }
-  }, [entries, contentTypes, mediaItems, auth.isLoggedIn, engine, auth.tokenRef])
+  }, [entries, contentTypes, mediaItems, isLoggedIn, tokenRef, isImporting, saveToCloud])
 
   // --- Flush on page unload ---
-  // Uses navigator.sendBeacon for reliability during unload (fire-and-forget).
-  // Falls back to keepalive fetch if sendBeacon is unavailable.
-  // Note: both have ~64KB payload limit — if exceeded, we skip to avoid silent failure
-  // and rely on the next session's sync to catch up.
+  // This network flush is best-effort; correctness comes from the durable
+  // IndexedDB outbox, which is replayed on the next launch.
   useEffect(() => {
-    if (!auth.isLoggedIn) return
+    if (!isLoggedIn) return
     const handleBeforeUnload = () => {
       if (syncTimeoutRef.current) {
         clearTimeout(syncTimeoutRef.current)
         syncTimeoutRef.current = null
       }
-      // Build the payload synchronously for sendBeacon
-      const token = auth.tokenRef.current
+      const token = tokenRef.current
       if (!token) return
 
-      // Let the engine handle it — saveToCloud is async but we also
-      // try sendBeacon as a synchronous fire-and-forget backup
-      engine.saveToCloud(token)
+      void saveToCloud(token)
     }
     window.addEventListener('beforeunload', handleBeforeUnload)
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
-  }, [auth.isLoggedIn, engine, auth.tokenRef])
+  }, [isLoggedIn, tokenRef, saveToCloud])
 
   // --- Manual sync (bidirectional) ---
-  const sync = async () => {
-    if (!auth.tokenRef.current) return
-    await engine.saveToCloud(auth.tokenRef.current)
-    await engine.fetchRemoteData(auth.tokenRef.current)
-  }
+  const sync = useCallback(async () => {
+    if (!tokenRef.current) return
+    await saveToCloud(tokenRef.current)
+    await fetchRemoteData(tokenRef.current)
+  }, [fetchRemoteData, saveToCloud, tokenRef])
 
   // --- Logout with cleanup ---
   const logout = useCallback(() => {
-    auth.logout()
-    engine.clearSyncTimestamp()
-    engine.resetSyncState()
-  }, [auth, engine])
+    logoutAuth()
+    clearSyncTimestamp()
+    resetSyncState()
+  }, [logoutAuth, clearSyncTimestamp, resetSyncState])
 
   return {
-    ...engine.syncState,
-    isLoggedIn: auth.isLoggedIn,
-    login: auth.login,
+    ...syncState,
+    isLoggedIn,
+    login,
     logout,
     sync,
     uploadImage,
     cleanupImages,
     testAI,
-    token: auth.tokenRef.current,
+    token,
   }
 }

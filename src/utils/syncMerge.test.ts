@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { mergeEntries, mergeMediaItems, mergeMediaItemsFull } from './syncMerge'
+import { mergeEntries, mergeMediaItems, mergeMediaItemsFull, mergeRevisionEntities } from './syncMerge'
 
 interface TestItem {
     id: string
@@ -111,5 +111,41 @@ describe('mergeMediaItemsFull', () => {
         const result = mergeMediaItemsFull(local, remote)
         expect(result).toHaveLength(1)
         expect(result[0].value).toBe('v1')
+    })
+})
+
+describe('mergeRevisionEntities', () => {
+    it('treats a full response as authoritative for clean entities', () => {
+        const result = mergeRevisionEntities(
+            [item('local-only', 'old'), item('shared', 'old')],
+            [item('shared', 'remote'), item('remote-only', 'new')],
+            [],
+            new Set(),
+            true,
+        )
+        expect(result.map(value => value.id)).toEqual(['shared', 'remote-only'])
+        expect(result[0].value).toBe('remote')
+    })
+
+    it('protects dirty upserts and deletes from a remote response', () => {
+        const result = mergeRevisionEntities(
+            [item('dirty-upsert', 'local')],
+            [item('dirty-upsert', 'remote'), item('dirty-delete', 'remote')],
+            ['dirty-upsert'],
+            new Set(['dirty-upsert', 'dirty-delete']),
+            false,
+        )
+        expect(result).toEqual([item('dirty-upsert', 'local')])
+    })
+
+    it('applies incremental tombstones for clean entities', () => {
+        const result = mergeRevisionEntities(
+            [item('keep', 'local'), item('delete', 'old')],
+            [],
+            ['delete'],
+            new Set(),
+            false,
+        )
+        expect(result).toEqual([item('keep', 'local')])
     })
 })

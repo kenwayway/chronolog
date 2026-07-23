@@ -10,6 +10,39 @@ interface Identifiable {
 }
 
 /**
+ * Apply a revision response without overwriting entities that still have a
+ * durable local mutation. A full response is authoritative for clean IDs;
+ * incremental responses only touch IDs explicitly returned by the server.
+ */
+export function mergeRevisionEntities<T extends Identifiable>(
+    local: T[],
+    remote: T[],
+    deletedIds: string[],
+    dirtyIds: ReadonlySet<string>,
+    full: boolean,
+): T[] {
+    const result = new Map<string, T>()
+
+    if (full) {
+        local.forEach(item => {
+            if (dirtyIds.has(item.id)) result.set(item.id, item)
+        })
+    } else {
+        local.forEach(item => result.set(item.id, item))
+    }
+
+    deletedIds.forEach(id => {
+        if (!dirtyIds.has(id)) result.delete(id)
+    })
+
+    remote.forEach(item => {
+        if (!dirtyIds.has(item.id)) result.set(item.id, item)
+    })
+
+    return [...result.values()]
+}
+
+/**
  * 3-way merge for entries during incremental sync.
  *
  * Strategy:

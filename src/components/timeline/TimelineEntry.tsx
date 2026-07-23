@@ -5,11 +5,10 @@ import { darkenColor } from "@/utils/contentParser";
 import { useTheme } from "@/hooks/useTheme";
 import { ContentRenderer } from "./ContentRenderer";
 import { LinkedEntryPreview } from "./LinkedEntryPreview";
-import { BookmarkDisplay, MoodDisplay, WorkoutDisplay, VaultDisplay, MediaDisplay } from "./ContentTypeDisplays";
 import { ImageLightbox } from "../common/ImageLightbox";
 import styles from "./TimelineEntry.module.css";
 import type { Entry, Category, MediaItem } from "@/types";
-import { getBookmarkFields, getMoodFields, getWorkoutFields, getVaultFields, getMediaFields } from "@/types/guards";
+import { getContentTypeTimelineSymbol, renderContentTypeDisplay } from "@/features/contentTypes";
 
 interface Position {
   x: number;
@@ -100,6 +99,7 @@ export const TimelineEntry = memo(function TimelineEntry({
 
   const isSessionStart = entry.type === ENTRY_TYPES.SESSION_START;
   const isSessionEnd = entry.type === ENTRY_TYPES.SESSION_END;
+  const contentTypeDisplay = renderContentTypeDisplay(entry, mediaItems);
 
   // Linked entries
   const linkedEntryData = useMemo(() => {
@@ -125,13 +125,9 @@ export const TimelineEntry = memo(function TimelineEntry({
 
   const getEntrySymbol = (): ReactNode => {
     const styles = { fontSize: 14 };
-
-    if (entry.contentType === 'beans') {
-      return <span style={{ ...styles, color: 'var(--accent)' }}>{symbols.beans}</span>;
-    }
-
-    if (entry.contentType === 'sparks') {
-      return <span style={{ ...styles, color: 'var(--accent)' }}>{symbols.sparks}</span>;
+    const contentTypeSymbol = getContentTypeTimelineSymbol(entry.contentType);
+    if (contentTypeSymbol) {
+      return <span style={{ ...styles, color: 'var(--accent)' }}>{symbols[contentTypeSymbol]}</span>;
     }
 
     switch (entry.type) {
@@ -297,30 +293,10 @@ export const TimelineEntry = memo(function TimelineEntry({
 
           </div>
 
-          {/* Content type displays */}
-          {entry.contentType === 'bookmark' && (
+          {/* Built-in display behavior is registered with the content type. */}
+          {contentTypeDisplay && (
             <div style={{ marginTop: 6 }}>
-              <BookmarkDisplay fieldValues={getBookmarkFields(entry)} />
-            </div>
-          )}
-          {entry.contentType === 'mood' && (
-            <div style={{ marginTop: 6 }}>
-              <MoodDisplay fieldValues={getMoodFields(entry)} />
-            </div>
-          )}
-          {entry.contentType === 'workout' && (
-            <div style={{ marginTop: 6 }}>
-              <WorkoutDisplay fieldValues={getWorkoutFields(entry)} />
-            </div>
-          )}
-          {entry.contentType === 'vault' && (
-            <div style={{ marginTop: 6 }}>
-              <VaultDisplay fieldValues={getVaultFields(entry)} />
-            </div>
-          )}
-          {entry.contentType === 'media' && (
-            <div style={{ marginTop: 6 }}>
-              <MediaDisplay fieldValues={getMediaFields(entry)} mediaItems={mediaItems} />
+              {contentTypeDisplay}
             </div>
           )}
 

@@ -128,8 +128,9 @@ export function DynamicFieldForm({ contentType, fieldValues, onChange, mediaItem
                                 type="text"
                                 value={value as string}
                                 onChange={(e: ChangeEvent<HTMLInputElement>) => handleFieldChange(field.id, e.target.value)}
+                                placeholder={field.id === 'notionPageId' ? 'Notion URL or page ID' : undefined}
                                 style={{
-                                    width: 120,
+                                    width: field.id === 'notionPageId' ? 260 : 120,
                                     padding: "4px 8px",
                                     fontSize: 12,
                                     fontFamily: "var(--font-mono)",

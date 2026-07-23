@@ -3,6 +3,7 @@ import { DynamicFieldForm } from './DynamicFieldForm';
 import { TagInput } from './TagInput';
 import { LinkedEntryPicker } from './LinkedEntryPicker';
 import { CATEGORIES, BUILTIN_CONTENT_TYPES } from '@/utils/constants';
+import { getContentTypeDefaultValues } from '@/features/contentTypes';
 import type { CategoryId, ContentType, Entry, MediaItem } from '@/types';
 
 interface EntryMetadataInputProps {
@@ -130,17 +131,7 @@ export function EntryMetadataInput({
                 setContentType(val || null);
                 // Reset fieldValues when changing type
                 if (setFieldValues) {
-                  if (val === 'bookmark') {
-                    setFieldValues({ type: 'Article', status: 'Inbox' });
-                  } else if (val === 'mood') {
-                    setFieldValues({ feeling: 'Calm', energy: 3 });
-                  } else if (val === 'workout') {
-                    setFieldValues({ workoutType: 'Strength', exercises: '[]' });
-                  } else if (val === 'media') {
-                    setFieldValues({ mediaType: 'Movie' });
-                  } else {
-                    setFieldValues({});
-                  }
+                  setFieldValues(getContentTypeDefaultValues(val));
                 }
               }}
               placeholder={showAutoOption ? "Auto" : "Note"}

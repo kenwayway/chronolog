@@ -1,8 +1,8 @@
-import type { ContentType, Entry, MediaItem, Session, SessionState, SessionStatus } from '@/types'
+import type { ContentType, Entry, MediaItem, Session, SessionState, SessionStatus, SyncMutation } from '@/types'
 import { STORAGE_KEYS, getStorage, removeStorage } from './storageService'
 
 const DB_NAME = 'chronolog'
-const DB_VERSION = 2
+const DB_VERSION = 3
 
 const STORES = {
     METADATA: 'metadata',
@@ -10,6 +10,7 @@ const STORES = {
     SESSIONS: 'sessions',
     CONTENT_TYPES: 'contentTypes',
     MEDIA_ITEMS: 'mediaItems',
+    SYNC_OUTBOX: 'syncOutbox',
 } as const
 
 const SESSION_METADATA_KEY = 'session'
@@ -101,6 +102,11 @@ function openDatabase(): Promise<IDBDatabase> {
             }
             if (!db.objectStoreNames.contains(STORES.MEDIA_ITEMS)) {
                 db.createObjectStore(STORES.MEDIA_ITEMS, { keyPath: 'id' })
+            }
+            if (!db.objectStoreNames.contains(STORES.SYNC_OUTBOX)) {
+                const outbox = db.createObjectStore(STORES.SYNC_OUTBOX, { keyPath: 'key' })
+                outbox.createIndex('mutationId', 'mutationId', { unique: true })
+                outbox.createIndex('createdAt', 'createdAt')
             }
         }
 
@@ -268,4 +274,52 @@ export function queuePersistedSessionState(current: PersistedState): Promise<voi
         console.error('Failed to save session state to IndexedDB:', error)
     })
     return operation
+}
+
+// Sync mutations use their own serialized queue. Repeated edits to one entity
+// share a key, so the newest unsent value replaces the older one atomically.
+let outboxWriteQueue: Promise<void> = Promise.resolve()
+
+function enqueueOutboxWrite(write: () => Promise<void>): Promise<void> {
+    const operation = outboxWriteQueue.then(write)
+    outboxWriteQueue = operation.catch(() => undefined)
+    return operation
+}
+
+export function queueSyncMutations(mutations: SyncMutation[]): Promise<void> {
+    if (mutations.length === 0) return outboxWriteQueue
+    return enqueueOutboxWrite(async () => {
+        const db = await openDatabase()
+        const transaction = db.transaction(STORES.SYNC_OUTBOX, 'readwrite')
+        const store = transaction.objectStore(STORES.SYNC_OUTBOX)
+        mutations.forEach(mutation => store.put(mutation))
+        await transactionDone(transaction)
+    })
+}
+
+export async function loadSyncOutbox(): Promise<SyncMutation[]> {
+    await outboxWriteQueue
+    const db = await openDatabase()
+    const transaction = db.transaction(STORES.SYNC_OUTBOX, 'readonly')
+    const mutations = await requestResult(
+        transaction.objectStore(STORES.SYNC_OUTBOX).index('createdAt').getAll() as IDBRequest<SyncMutation[]>,
+    )
+    await transactionDone(transaction)
+    return mutations
+}
+
+/** Keep a newer edit when an older in-flight mutation is acknowledged. */
+export function acknowledgeSyncMutations(mutationIds: string[]): Promise<void> {
+    if (mutationIds.length === 0) return outboxWriteQueue
+    const acknowledged = new Set(mutationIds)
+    return enqueueOutboxWrite(async () => {
+        const db = await openDatabase()
+        const transaction = db.transaction(STORES.SYNC_OUTBOX, 'readwrite')
+        const store = transaction.objectStore(STORES.SYNC_OUTBOX)
+        const current = await requestResult(store.getAll() as IDBRequest<SyncMutation[]>)
+        current.forEach(mutation => {
+            if (acknowledged.has(mutation.mutationId)) store.delete(mutation.key)
+        })
+        await transactionDone(transaction)
+    })
 }

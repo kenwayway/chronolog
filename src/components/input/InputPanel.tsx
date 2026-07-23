@@ -8,7 +8,8 @@ import { EntryMetadataInput } from "./EntryMetadataInput";
 import styles from "./InputPanel.module.css";
 import { useCloudSyncContext } from "@/contexts/CloudSyncContext";
 import { useSessionContext } from "@/contexts/SessionContext";
-import type { Entry, SessionStatus, CategoryId } from "@/types";
+import { prepareContentTypeSubmission } from "@/features/contentTypes";
+import type { Entry, EntryType, SessionStatus, CategoryId } from "@/types";
 
 interface NoteOptions {
     contentType?: string;
@@ -199,12 +200,23 @@ export const InputPanel = forwardRef<InputPanelRef, InputPanelProps>(function In
         if (!input.trim() && action !== "logOff") return;
         const content = buildEntryContent();
 
+        let normalizedFieldValues = fieldValues
+        if (contentType && action !== 'logOff') {
+            const entryType: EntryType = action === 'note' ? 'NOTE' : 'SESSION_START'
+            const prepared = prepareContentTypeSubmission(contentType, fieldValues, entryType)
+            if (!prepared.ok) {
+                alert(prepared.error)
+                return
+            }
+            normalizedFieldValues = prepared.fieldValues
+        }
+
         // Build metadata options for all entry-creating actions
         const options: NoteOptions = {};
         if (contentType) {
             options.contentType = contentType;
-            if (Object.keys(fieldValues).length > 0) {
-                options.fieldValues = fieldValues;
+            if (Object.keys(normalizedFieldValues).length > 0) {
+                options.fieldValues = normalizedFieldValues;
             }
         }
         if (category) options.category = category;

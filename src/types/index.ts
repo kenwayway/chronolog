@@ -92,7 +92,7 @@ export interface ContentType {
 // ============================================
 
 /** Built-in content type IDs (type-safe literal union) */
-export type BuiltInContentTypeId = 'note' | 'bookmark' | 'mood' | 'workout' | 'vault' | 'beans' | 'sparks' | 'media'
+export type BuiltInContentTypeId = 'note' | 'bookmark' | 'mood' | 'workout' | 'vault' | 'beans' | 'sparks' | 'media' | 'notion-task'
 
 /** Bookmark field values */
 export interface BookmarkFields {
@@ -130,8 +130,13 @@ export interface MediaFields {
   title?: string
 }
 
+/** Notion task field values — page IDs are stored as canonical UUIDs */
+export interface NotionTaskFields {
+  notionPageId?: string
+}
+
 /** Union of all known field value types */
-export type KnownFieldValues = BookmarkFields | MoodFields | WorkoutFields | VaultFields | MediaFields
+export type KnownFieldValues = BookmarkFields | MoodFields | WorkoutFields | VaultFields | MediaFields | NotionTaskFields
 
 /** Field values - known types or unknown for custom content types */
 export type EntryFieldValues = KnownFieldValues | Record<string, unknown>
@@ -327,4 +332,39 @@ export interface CloudData {
   contentTypes?: ContentType[]
   mediaItems?: MediaItem[]
   lastModified?: number | null
+}
+
+export type SyncEntityType = 'entry' | 'contentType' | 'mediaItem'
+export type SyncMutationOperation = 'upsert' | 'delete'
+export type SyncEntity = Entry | ContentType | MediaItem
+
+/** A durable local mutation. `key` coalesces repeated edits to one entity. */
+export interface SyncMutation {
+  key: string
+  mutationId: string
+  entityType: SyncEntityType
+  entityId: string
+  operation: SyncMutationOperation
+  value?: SyncEntity
+  createdAt: number
+}
+
+export interface RevisionSyncData {
+  entries: Entry[]
+  contentTypes: ContentType[]
+  mediaItems: MediaItem[]
+  deleted: {
+    entries: string[]
+    contentTypes: string[]
+    mediaItems: string[]
+  }
+  revision: number
+  incremental: boolean
+  notionSync?: NotionSyncStatus
+}
+
+export interface NotionSyncStatus {
+  pending: number
+  failed: number
+  lastError?: string
 }

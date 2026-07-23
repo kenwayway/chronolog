@@ -1,4 +1,4 @@
-import type { Entry, BookmarkFields, MoodFields, WorkoutFields, VaultFields, MediaFields } from './index'
+import type { Entry, BookmarkFields, MoodFields, WorkoutFields, VaultFields, MediaFields, NotionTaskFields } from './index'
 
 // ============================================
 // Typed Entry interfaces (narrowed)
@@ -34,6 +34,12 @@ export interface MediaEntry extends Entry {
     fieldValues: MediaFields
 }
 
+/** Entry with Notion task content type */
+export interface NotionTaskEntry extends Entry {
+    contentType: 'notion-task'
+    fieldValues: NotionTaskFields
+}
+
 // ============================================
 // Type Guards
 // ============================================
@@ -63,6 +69,11 @@ export function isMediaEntry(entry: Entry): entry is MediaEntry {
     return entry.contentType === 'media' && entry.fieldValues !== undefined
 }
 
+/** Check if entry is linked to a Notion task */
+export function isNotionTaskEntry(entry: Entry): entry is NotionTaskEntry {
+    return entry.contentType === 'notion-task' && entry.fieldValues !== undefined
+}
+
 // ============================================
 // Field Value Helpers
 // ============================================
@@ -90,4 +101,9 @@ export function getVaultFields(entry: Entry): VaultFields | undefined {
 /** Safely get media fields */
 export function getMediaFields(entry: Entry): MediaFields | undefined {
     return isMediaEntry(entry) ? entry.fieldValues : undefined
+}
+
+/** Safely get Notion task fields */
+export function getNotionTaskFields(entry: Entry): NotionTaskFields | undefined {
+    return isNotionTaskEntry(entry) ? entry.fieldValues : undefined
 }

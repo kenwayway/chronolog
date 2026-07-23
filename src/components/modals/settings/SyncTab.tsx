@@ -168,6 +168,12 @@ export function SyncTab({
                         {cloudSync.error && (
                             <p className="settings-error">错误: {cloudSync.error}</p>
                         )}
+                        {cloudSync.notionSync && cloudSync.notionSync.pending > 0 && (
+                            <p className={cloudSync.notionSync.failed > 0 ? "settings-error" : "settings-hint"}>
+                                Notion: {cloudSync.notionSync.pending} 个任务待同步
+                                {cloudSync.notionSync.lastError ? ` — ${cloudSync.notionSync.lastError}` : ''}
+                            </p>
+                        )}
                     </div>
                 ) : (
                     <div className="space-y-2">

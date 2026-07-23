@@ -27,6 +27,7 @@ export interface TestAIResult {
 export interface CloudSyncFull extends CloudSyncStatus {
     lastSynced?: number | null;
     error?: string | null;
+    notionSync?: { pending: number; failed: number; lastError?: string };
     login: (password: string) => Promise<{ success: boolean; error?: string }>;
     logout: () => void;
     sync: () => void;

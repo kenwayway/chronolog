@@ -19,6 +19,8 @@ export interface Env {
     AI_API_KEY?: string;
     AI_BASE_URL?: string;
     AI_MODEL?: string;
+    NOTION_API_TOKEN?: string;
+    NOTION_TRACKED_MINUTES_PROPERTY?: string;
 }
 
 /** Shorthand for Cloudflare Pages function context */
@@ -45,6 +47,7 @@ export interface EntryRow {
     tags: string | null;
     created_at: number;
     updated_at: number;
+    revision: number;
 }
 
 export interface ContentTypeRow {
@@ -55,6 +58,7 @@ export interface ContentTypeRow {
     fields: string | null;
     built_in: number;
     sort_order: number;
+    revision: number;
 }
 
 export interface MediaItemRow {
@@ -70,6 +74,7 @@ export interface MediaItemRow {
     date_finished: string | null;
     notes: string | null;
     metadata: string | null;   // JSON string
+    revision: number;
 }
 
 // --- Frontend object types (camelCase) ---

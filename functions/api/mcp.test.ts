@@ -118,6 +118,26 @@ describe('buildEntry', () => {
             timestamp: 456,
         });
     });
+
+    it('normalizes Notion task IDs and only permits them on session starts', () => {
+        const entry = buildEntry({
+            type: 'SESSION_START',
+            contentType: 'notion-task',
+            fieldValues: { notionPageId: '1234567890abcdef1234567890abcdef' },
+        }, 123, 'start-id', 'session-id');
+
+        expect(entry.fieldValues).toEqual({ notionPageId: '12345678-90ab-cdef-1234-567890abcdef' });
+        expect(() => buildEntry({
+            content: 'Not a session',
+            contentType: 'notion-task',
+            fieldValues: { notionPageId: '1234567890abcdef1234567890abcdef' },
+        })).toThrow('only be used with SESSION_START');
+        expect(() => buildEntry({
+            type: 'SESSION_START',
+            contentType: 'notion-task',
+            fieldValues: { notionPageId: 'invalid' },
+        })).toThrow('valid fieldValues.notionPageId');
+    });
 });
 
 describe('MCP write permissions', () => {
@@ -238,6 +258,21 @@ describe('MCP write permissions', () => {
                                 }
                                 return null;
                             },
+                            async all() {
+                                if (sql.includes("type = 'SESSION_START' AND session_id IN")) {
+                                    return {
+                                        results: [{
+                                            id: 'start',
+                                            type: 'SESSION_START',
+                                            timestamp: 1_000,
+                                            session_id: 'open-session',
+                                            content_type: 'note',
+                                            field_values: null,
+                                        }],
+                                    };
+                                }
+                                return { results: [] };
+                            },
                         };
                     },
                 };
@@ -312,10 +347,11 @@ describe('MCP write permissions', () => {
         }, db);
         const body = await response.json() as { result: { content: Array<{ text: string }> } };
         const data = JSON.parse(body.result.content[0].text) as { success: boolean };
-        const statements = batches[0] as Array<{ values: unknown[] }>;
+        const statements = (batches[0] as Array<{ sql: string; values: unknown[] }>)
+            .filter(statement => statement.sql.includes('INSERT INTO entries'));
 
         expect(data.success).toBe(true);
-        expect(statements).toHaveLength(3); // new entry, linked entry, sync metadata
+        expect(statements).toHaveLength(2); // new entry + linked entry revision upserts
         expect(JSON.parse(statements[0].values[8] as string)).toEqual(['older-entry']);
         expect(JSON.parse(statements[1].values[8] as string)).toEqual(['new-entry']);
     });

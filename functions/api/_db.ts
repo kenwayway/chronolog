@@ -76,34 +76,6 @@ export function entryObjectToRow(entry: Entry, now: number = Date.now()): EntryR
     };
 }
 
-const ENTRY_UPSERT_SQL = `
-    INSERT INTO entries
-      (id, type, content, timestamp, session_id, category, content_type,
-       field_values, linked_entries, tags, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(id) DO UPDATE SET
-      type = excluded.type,
-      content = excluded.content,
-      timestamp = excluded.timestamp,
-      session_id = excluded.session_id,
-      category = excluded.category,
-      content_type = excluded.content_type,
-      field_values = excluded.field_values,
-      linked_entries = excluded.linked_entries,
-      tags = excluded.tags,
-      updated_at = excluded.updated_at
-`;
-
-function bindEntryUpsert(statement: D1PreparedStatement, entry: Entry, now?: number): D1PreparedStatement {
-    const row = entryObjectToRow(entry, now);
-    return statement.bind(
-        row.id, row.type, row.content, row.timestamp,
-        row.session_id, row.category, row.content_type,
-        row.field_values, row.linked_entries, row.tags,
-        row.created_at, row.updated_at
-    );
-}
-
 /**
  * Convert a D1 content_type row to a frontend ContentType object
  */
@@ -212,102 +184,9 @@ export function mediaItemObjectToRow(item: MediaItem): MediaItemRowValues {
 }
 
 /**
- * Upsert entries into D1 in batches
- */
-export async function upsertEntries(db: D1Database, entries: Entry[]): Promise<number> {
-    if (!entries || entries.length === 0) return 0;
-
-    const statement = db.prepare(ENTRY_UPSERT_SQL);
-    const batches: D1PreparedStatement[] = [];
-    for (const entry of entries) {
-        batches.push(bindEntryUpsert(statement, entry));
-    }
-
-    // D1 batch limit is 100 statements
-    let total = 0;
-    for (let i = 0; i < batches.length; i += 100) {
-        const chunk = batches.slice(i, i + 100);
-        const results = await db.batch(chunk);
-        total += results.reduce((sum, r) => sum + (r.meta?.changes || 0), 0);
-    }
-
-    return total;
-}
-
-/** Atomically write entries and advance the incremental-sync cursor. */
-export async function upsertEntriesWithLastModified(
-    db: D1Database,
-    entries: Entry[],
-    lastModified: number = Date.now(),
-): Promise<number> {
-    if (entries.length > 99) throw new Error('Cannot atomically upsert more than 99 entries');
-    const statement = db.prepare(ENTRY_UPSERT_SQL);
-    const entryStatements = entries.map(entry => bindEntryUpsert(statement, entry, lastModified));
-    const metadataStatement = db.prepare(
-        "INSERT OR REPLACE INTO sync_meta (key, value) VALUES ('last_modified', ?)"
-    ).bind(String(lastModified));
-    await db.batch([...entryStatements, metadataStatement]);
-    return lastModified;
-}
-
-/**
- * Upsert content types into D1
- */
-export async function upsertContentTypes(db: D1Database, contentTypes: ContentType[]): Promise<number> {
-    if (!contentTypes || contentTypes.length === 0) return 0;
-
-    const stmt = db.prepare(`
-    INSERT OR REPLACE INTO content_types
-      (id, name, icon, color, fields, built_in, sort_order)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-  `);
-
-    const batches = contentTypes.map(ct => {
-        const row = contentTypeObjectToRow(ct);
-        return stmt.bind(row.id, row.name, row.icon, row.color, row.fields, row.built_in, row.sort_order);
-    });
-
-    const results = await db.batch(batches);
-    return results.reduce((sum, r) => sum + (r.meta?.changes || 0), 0);
-}
-
-/**
- * Upsert media items into D1
- */
-export async function upsertMediaItems(db: D1Database, mediaItems: MediaItem[]): Promise<number> {
-    if (!mediaItems || mediaItems.length === 0) return 0;
-
-    const stmt = db.prepare(`
-    INSERT OR REPLACE INTO media_items
-      (id, title, media_type, notion_url, cover_url, spotify_url, created_at, rating, status, date_finished, notes, metadata)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `);
-
-    const batches = mediaItems.map(item => {
-        const row = mediaItemObjectToRow(item);
-        return stmt.bind(
-            row.id, row.title, row.media_type, row.notion_url, row.cover_url, row.spotify_url, row.created_at,
-            row.rating, row.status, row.date_finished, row.notes, row.metadata
-        );
-    });
-
-    const results = await db.batch(batches);
-    return results.reduce((sum, r) => sum + (r.meta?.changes || 0), 0);
-}
-
-/**
  * Get the last_modified timestamp from sync_meta
  */
 export async function getLastModified(db: D1Database): Promise<number | null> {
     const row = await db.prepare("SELECT value FROM sync_meta WHERE key = 'last_modified'").first<{ value: string }>();
     return row ? parseInt(row.value, 10) : null;
-}
-
-/**
- * Set the last_modified timestamp in sync_meta
- */
-export async function setLastModified(db: D1Database, timestamp: number): Promise<void> {
-    await db.prepare(
-        "INSERT OR REPLACE INTO sync_meta (key, value) VALUES ('last_modified', ?)"
-    ).bind(String(timestamp)).run();
 }

@@ -2,9 +2,12 @@
 // Auth: PUBLIC_API_TOKEN grants read access; MCP_WRITE_TOKEN grants read + write access
 // Tools: search_entries, get_day, get_stats, list_categories_and_tags, add_entry (write token only)
 
-import { entryRowToObject, upsertEntriesWithLastModified } from './_db.ts';
+import { entryRowToObject } from './_db.ts';
+import { MAX_MUTATIONS_PER_REQUEST, type RevisionMutation } from './_revisionSync.ts';
+import { applyMutationsWithNotionSync, type NotionSyncStatus } from './_notionSync.ts';
 import type { CFContext, Env, EntryRow, Entry } from './types.ts';
 import { CATEGORIES, CATEGORY_IDS } from '../../src/utils/categories.ts';
+import { normalizeNotionPageId } from '../../src/utils/notionPageId.ts';
 
 const SERVER_INFO = { name: 'chronolog', version: '1.2.0' };
 const SUPPORTED_PROTOCOL_VERSIONS = ['2025-06-18', '2025-03-26', '2024-11-05'];
@@ -471,6 +474,17 @@ export function buildEntry(
         fieldValues = args.fieldValues as Record<string, unknown>;
     }
 
+    if (contentType === 'notion-task') {
+        if (type !== 'SESSION_START') {
+            throw new Error('notion-task can only be used with SESSION_START');
+        }
+        const notionPageId = normalizeNotionPageId(fieldValues?.notionPageId);
+        if (!notionPageId) {
+            throw new Error('notion-task requires a valid fieldValues.notionPageId URL or page ID');
+        }
+        fieldValues = { ...fieldValues, notionPageId };
+    }
+
     let sessionId: string | undefined;
     if (args.sessionId !== undefined) {
         if (typeof args.sessionId !== 'string' || args.sessionId.trim() === '' || args.sessionId.length > 100) {
@@ -510,7 +524,8 @@ export function buildEntry(
 
 // --- Tool implementations ---
 
-async function addEntry(args: Record<string, unknown>, db: D1Database): Promise<unknown> {
+async function addEntry(args: Record<string, unknown>, env: Env): Promise<unknown> {
+    const db = env.CHRONOLOG_DB;
     const timeZone = resolveTimezone(args.timezone);
     const entry = buildEntry(args);
 
@@ -575,7 +590,22 @@ async function addEntry(args: Record<string, unknown>, db: D1Database): Promise<
         }));
     }
 
-    const lastModified = await upsertEntriesWithLastModified(db, entriesToWrite);
+    const mutations: RevisionMutation[] = entriesToWrite.map(value => ({
+        mutationId: `mcp-${crypto.randomUUID()}`,
+        entityType: 'entry',
+        entityId: value.id,
+        operation: 'upsert',
+        value,
+    }));
+    let revision = 0;
+    let lastModified = Date.now();
+    let notionSync: NotionSyncStatus = { pending: 0, failed: 0 };
+    for (let index = 0; index < mutations.length; index += MAX_MUTATIONS_PER_REQUEST) {
+        const result = await applyMutationsWithNotionSync(env, mutations.slice(index, index + MAX_MUTATIONS_PER_REQUEST));
+        revision = result.revision;
+        lastModified = result.lastModified;
+        if (result.notionSync) notionSync = result.notionSync;
+    }
 
     return {
         success: true,
@@ -592,8 +622,10 @@ async function addEntry(args: Record<string, unknown>, db: D1Database): Promise<
             tags: entry.tags ? JSON.stringify(entry.tags) : null,
             created_at: lastModified,
             updated_at: lastModified,
+            revision,
         }, timeZone),
         lastModified,
+        notionSync,
     };
 }
 
@@ -775,9 +807,10 @@ async function listCategoriesAndTags(db: D1Database): Promise<unknown> {
 
 async function callTool(
     params: Record<string, unknown> | undefined,
-    db: D1Database,
+    env: Env,
     canWrite: boolean,
 ): Promise<unknown> {
+    const db = env.CHRONOLOG_DB;
     const name = params?.name;
     const args = (params?.arguments ?? {}) as Record<string, unknown>;
 
@@ -786,7 +819,7 @@ async function callTool(
         switch (name) {
             case 'add_entry':
                 if (!canWrite) throw new Error('add_entry requires MCP_WRITE_TOKEN');
-                data = await addEntry(args, db);
+                data = await addEntry(args, env);
                 break;
             case 'search_entries':
                 data = await searchEntries(args, db);
@@ -843,7 +876,7 @@ async function handleMessage(message: unknown, env: Env, canWrite: boolean): Pro
             result = { tools: toolsForAccess(canWrite) };
             break;
         case 'tools/call':
-            result = await callTool(params, env.CHRONOLOG_DB, canWrite);
+            result = await callTool(params, env, canWrite);
             break;
         default:
             return id === undefined ? null : rpcError(id ?? null, -32601, `Method not found: ${method}`);

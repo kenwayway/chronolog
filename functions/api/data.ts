@@ -6,13 +6,60 @@ import {
     entryRowToObject,
     contentTypeRowToObject,
     mediaItemRowToObject,
-    upsertEntries,
-    upsertContentTypes,
-    upsertMediaItems,
     getLastModified,
-    setLastModified,
 } from './_db.ts';
+import {
+    currentRevision,
+    MAX_MUTATIONS_PER_REQUEST,
+    validateRevisionMutations,
+    type RevisionMutation,
+} from './_revisionSync.ts';
+import { applyMutationsWithNotionSync, flushNotionSyncJobs, type NotionSyncStatus } from './_notionSync.ts';
 import type { CFContext, Entry, ContentType, MediaItem, EntryRow, ContentTypeRow, MediaItemRow } from './types.ts';
+
+interface TombstoneRow {
+    entity_type: 'entry' | 'contentType' | 'mediaItem';
+    entity_id: string;
+}
+
+async function getRevisionData(db: D1Database, sinceRevision: number, notionSync: NotionSyncStatus): Promise<Response> {
+    const cutoff = await currentRevision(db);
+    const incremental = sinceRevision > 0;
+    const revisionWhere = incremental ? 'revision > ? AND revision <= ?' : 'revision <= ?';
+    const bindings = incremental ? [sinceRevision, cutoff] : [cutoff];
+
+    const [entryResult, contentTypeResult, mediaItemResult, tombstoneResult] = await Promise.all([
+        db.prepare(`SELECT * FROM entries WHERE ${revisionWhere} ORDER BY timestamp ASC`)
+            .bind(...bindings).all<EntryRow>(),
+        db.prepare(`SELECT * FROM content_types WHERE ${revisionWhere} ORDER BY sort_order ASC`)
+            .bind(...bindings).all<ContentTypeRow>(),
+        db.prepare(`SELECT * FROM media_items WHERE ${revisionWhere} ORDER BY created_at DESC`)
+            .bind(...bindings).all<MediaItemRow>(),
+        db.prepare(`SELECT entity_type, entity_id FROM sync_tombstones WHERE ${revisionWhere}`)
+            .bind(...bindings).all<TombstoneRow>(),
+    ]);
+
+    const deleted = {
+        entries: [] as string[],
+        contentTypes: [] as string[],
+        mediaItems: [] as string[],
+    };
+    tombstoneResult.results.forEach(row => {
+        if (row.entity_type === 'entry') deleted.entries.push(row.entity_id);
+        if (row.entity_type === 'contentType') deleted.contentTypes.push(row.entity_id);
+        if (row.entity_type === 'mediaItem') deleted.mediaItems.push(row.entity_id);
+    });
+
+    return Response.json({
+        entries: entryResult.results.map(entryRowToObject),
+        contentTypes: contentTypeResult.results.map(contentTypeRowToObject),
+        mediaItems: mediaItemResult.results.map(mediaItemRowToObject),
+        deleted,
+        revision: cutoff,
+        incremental,
+        notionSync,
+    }, { headers: corsHeaders });
+}
 
 // GET /api/data - supports full and incremental fetch
 // GET /api/data           → all data (initial load)
@@ -29,7 +76,17 @@ export async function onRequestGet(context: CFContext): Promise<Response> {
     try {
         const url = new URL(request.url);
         const since = url.searchParams.get('since');
+        const revision = url.searchParams.get('revision');
         const db = env.CHRONOLOG_DB;
+        const notionSync = await flushNotionSyncJobs(env);
+
+        if (revision !== null) {
+            const sinceRevision = Number(revision);
+            if (!Number.isSafeInteger(sinceRevision) || sinceRevision < 0) {
+                return Response.json({ error: 'Invalid revision' }, { status: 400, headers: corsHeaders });
+            }
+            return getRevisionData(db, sinceRevision, notionSync);
+        }
 
         let entries: Entry[];
         if (since) {
@@ -73,6 +130,7 @@ export async function onRequestGet(context: CFContext): Promise<Response> {
             lastModified,
             deletedIds,
             incremental: !!since,
+            notionSync,
         }, { headers: corsHeaders });
     } catch (error) {
         console.error('Data fetch error:', error);
@@ -92,6 +150,31 @@ interface PutData {
     deletedIds?: string[];
     deletedContentTypeIds?: string[];
     deletedMediaItemIds?: string[];
+    mutations?: unknown;
+}
+
+function legacyMutations(data: PutData): RevisionMutation[] {
+    const mutation = (
+        entityType: RevisionMutation['entityType'],
+        entityId: string,
+        operation: RevisionMutation['operation'],
+        value?: Entry | ContentType | MediaItem,
+    ): RevisionMutation => ({
+        mutationId: `legacy-${crypto.randomUUID()}`,
+        entityType,
+        entityId,
+        operation,
+        value,
+    });
+
+    return [
+        ...(data.entries || []).map(value => mutation('entry', value.id, 'upsert', value)),
+        ...(data.contentTypes || []).map(value => mutation('contentType', value.id, 'upsert', value)),
+        ...(data.mediaItems || []).map(value => mutation('mediaItem', value.id, 'upsert', value)),
+        ...(data.deletedIds || []).map(id => mutation('entry', id, 'delete')),
+        ...(data.deletedContentTypeIds || []).map(id => mutation('contentType', id, 'delete')),
+        ...(data.deletedMediaItemIds || []).map(id => mutation('mediaItem', id, 'delete')),
+    ];
 }
 
 // PUT /api/data - Upsert entries, contentTypes, mediaItems into D1
@@ -109,49 +192,33 @@ export async function onRequestPut(context: CFContext): Promise<Response> {
             return Response.json({ error: 'Invalid data format' }, { status: 400, headers: corsHeaders });
         }
 
-        // Upsert all data
-        await upsertEntries(db, data.entries || []);
-        await upsertContentTypes(db, data.contentTypes || []);
-        await upsertMediaItems(db, data.mediaItems || []);
-
-        // Handle deleted entries
-        if (data.deletedIds && data.deletedIds.length > 0) {
-            const delStmt = db.prepare('DELETE FROM entries WHERE id = ?');
-            const trackStmt = db.prepare(
-                'INSERT OR REPLACE INTO deleted_entries (entry_id, deleted_at) VALUES (?, ?)'
-            );
-            const now = Date.now();
-            const delBatches = data.deletedIds.flatMap(id => [
-                delStmt.bind(id),
-                trackStmt.bind(id, now),
-            ]);
-            for (let i = 0; i < delBatches.length; i += 100) {
-                await db.batch(delBatches.slice(i, i + 100));
+        if (data.mutations !== undefined) {
+            let mutations: RevisionMutation[];
+            try {
+                mutations = validateRevisionMutations(data.mutations);
+            } catch (error) {
+                const message = error instanceof Error ? error.message : 'Invalid mutations';
+                return Response.json({ error: message }, { status: 400, headers: corsHeaders });
             }
+            const result = await applyMutationsWithNotionSync(env, mutations);
+            return Response.json({ success: true, ...result }, { headers: corsHeaders });
         }
 
-        // Handle deleted content types
-        if (data.deletedContentTypeIds && data.deletedContentTypeIds.length > 0) {
-            const stmt = db.prepare('DELETE FROM content_types WHERE id = ? AND built_in = 0');
-            const batches = data.deletedContentTypeIds.map(id => stmt.bind(id));
-            await db.batch(batches);
+        // Compatibility path for clients still sending the timestamp-era payload.
+        const mutations = legacyMutations(data);
+        let revision = await currentRevision(db);
+        let lastModified = Date.now();
+        let notionSync: NotionSyncStatus = { pending: 0, failed: 0 };
+        for (let index = 0; index < mutations.length; index += MAX_MUTATIONS_PER_REQUEST) {
+            const result = await applyMutationsWithNotionSync(env, mutations.slice(index, index + MAX_MUTATIONS_PER_REQUEST));
+            revision = result.revision;
+            lastModified = result.lastModified;
+            if (result.notionSync) notionSync = result.notionSync;
         }
 
-        // Handle deleted media items
-        if (data.deletedMediaItemIds && data.deletedMediaItemIds.length > 0) {
-            const stmt = db.prepare('DELETE FROM media_items WHERE id = ?');
-            const batches = data.deletedMediaItemIds.map(id => stmt.bind(id));
-            await db.batch(batches);
-        }
+        if (mutations.length === 0) notionSync = await flushNotionSyncJobs(env);
 
-        // Update last modified timestamp
-        const now = Date.now();
-        await setLastModified(db, now);
-
-        return Response.json({
-            success: true,
-            lastModified: now,
-        }, { headers: corsHeaders });
+        return Response.json({ success: true, lastModified, revision, notionSync }, { headers: corsHeaders });
     } catch (error) {
         console.error('Data save error:', error instanceof Error ? `${error.message}\n${error.stack}` : error);
         const errMsg = error instanceof Error ? error.message : 'Failed to save data';

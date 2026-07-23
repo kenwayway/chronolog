@@ -1,11 +1,12 @@
 import { createContext, useContext } from 'react'
-import type { TestAIResult } from '@/types'
+import type { NotionSyncStatus, TestAIResult } from '@/types'
 
 export interface CloudSyncContextValue {
     isLoggedIn: boolean
     isSyncing: boolean
     lastSynced: number | null
     error: string | null
+    notionSync: NotionSyncStatus
     login: (password: string) => Promise<{ success: boolean; error?: string }>
     logout: () => void
     sync: () => Promise<void>
