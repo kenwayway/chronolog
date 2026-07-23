@@ -29,7 +29,7 @@ export function ActivityPanel({
     contentTypeFilter,
     onContentTypeFilterChange,
 }: ActivityPanelProps) {
-    const { state: { sessions, activeSessionId, contentTypes }, timelineEntries: entries, categories } = useSessionContext();
+    const { state: { sessions, activeSessionId, contentTypes }, timelineItems: entries, categories } = useSessionContext();
     const { tokens } = useTheme();
 
     // Tag statistics

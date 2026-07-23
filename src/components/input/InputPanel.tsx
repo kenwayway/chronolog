@@ -9,7 +9,7 @@ import styles from "./InputPanel.module.css";
 import { useCloudSyncContext } from "@/contexts/CloudSyncContext";
 import { useSessionContext } from "@/contexts/SessionContext";
 import { prepareContentTypeSubmission } from "@/features/contentTypes";
-import type { Entry, EntryType, SessionStatus, CategoryId } from "@/types";
+import type { TimelineItem, SessionStatus, CategoryId } from "@/types";
 
 interface NoteOptions {
     contentType?: string;
@@ -24,7 +24,7 @@ interface InputPanelProps {
     onSwitch: (content: string, options?: NoteOptions) => void;
     onNote: (content: string, options?: NoteOptions) => void;
     onLogOff: (content: string) => void;
-    followUpEntry: Entry | null;
+    followUpEntry: TimelineItem | null;
     onClearFollowUp?: () => void;
 }
 
@@ -202,8 +202,8 @@ export const InputPanel = forwardRef<InputPanelRef, InputPanelProps>(function In
 
         let normalizedFieldValues = fieldValues
         if (contentType && action !== 'logOff') {
-            const entryType: EntryType = action === 'note' ? 'NOTE' : 'SESSION_START'
-            const prepared = prepareContentTypeSubmission(contentType, fieldValues, entryType)
+            const target = action === 'note' ? 'note' : 'session'
+            const prepared = prepareContentTypeSubmission(contentType, fieldValues, target)
             if (!prepared.ok) {
                 alert(prepared.error)
                 return

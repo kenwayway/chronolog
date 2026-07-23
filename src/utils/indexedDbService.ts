@@ -1,12 +1,18 @@
-import type { ContentType, Entry, MediaItem, Session, SessionState, SessionStatus, SyncMutation } from '@/types'
+import type { ContentType, MediaItem, Note, Session, SessionState, SessionStatus, SyncMutation } from '@/types'
+import {
+    migrateBoundaryRecords,
+    type BoundaryRecord,
+    type BoundarySessionRecord,
+} from '@/migrations/fromEntryBoundaries'
 import { STORAGE_KEYS, getStorage, removeStorage } from './storageService'
 
 const DB_NAME = 'chronolog'
-const DB_VERSION = 3
+const DB_VERSION = 4
+const LEGACY_ENTRIES_STORE = 'entries'
 
 const STORES = {
     METADATA: 'metadata',
-    ENTRIES: 'entries',
+    NOTES: 'notes',
     SESSIONS: 'sessions',
     CONTENT_TYPES: 'contentTypes',
     MEDIA_ITEMS: 'mediaItems',
@@ -15,7 +21,7 @@ const STORES = {
 
 const SESSION_METADATA_KEY = 'session'
 
-type PersistedState = Pick<SessionState, 'status' | 'activeSessionId' | 'sessions' | 'entries' | 'contentTypes' | 'mediaItems'>
+type PersistedState = Pick<SessionState, 'status' | 'activeSessionId' | 'sessions' | 'notes' | 'contentTypes' | 'mediaItems'>
 type Entity = { id: string }
 
 interface SessionMetadata {
@@ -84,14 +90,14 @@ function openDatabase(): Promise<IDBDatabase> {
 
         const request = indexedDB.open(DB_NAME, DB_VERSION)
 
-        request.onupgradeneeded = () => {
+        request.onupgradeneeded = event => {
             const db = request.result
             if (!db.objectStoreNames.contains(STORES.METADATA)) {
                 db.createObjectStore(STORES.METADATA, { keyPath: 'key' })
             }
-            if (!db.objectStoreNames.contains(STORES.ENTRIES)) {
-                const entries = db.createObjectStore(STORES.ENTRIES, { keyPath: 'id' })
-                entries.createIndex('timestamp', 'timestamp')
+            if (!db.objectStoreNames.contains(STORES.NOTES)) {
+                const notes = db.createObjectStore(STORES.NOTES, { keyPath: 'id' })
+                notes.createIndex('timestamp', 'timestamp')
             }
             if (!db.objectStoreNames.contains(STORES.SESSIONS)) {
                 const sessions = db.createObjectStore(STORES.SESSIONS, { keyPath: 'id' })
@@ -107,6 +113,52 @@ function openDatabase(): Promise<IDBDatabase> {
                 const outbox = db.createObjectStore(STORES.SYNC_OUTBOX, { keyPath: 'key' })
                 outbox.createIndex('mutationId', 'mutationId', { unique: true })
                 outbox.createIndex('createdAt', 'createdAt')
+            }
+
+            // Version 4 is the one-way migration from boundary entries to the
+            // Note/Session domain. The old store is removed after conversion.
+            if (event.oldVersion < 4) {
+                const transaction = request.transaction
+                if (!transaction) return
+                // Entry-shaped mutations cannot be replayed against the v2
+                // protocol. Canonical Note/Session state is re-seeded after
+                // hydration under the new outbox marker.
+                transaction.objectStore(STORES.SYNC_OUTBOX).clear()
+                const legacyStore = db.objectStoreNames.contains(LEGACY_ENTRIES_STORE)
+                    ? transaction.objectStore(LEGACY_ENTRIES_STORE)
+                    : null
+                const sessionsStore = transaction.objectStore(STORES.SESSIONS)
+                const notesStore = transaction.objectStore(STORES.NOTES)
+                let legacyEntries: BoundaryRecord[] = []
+                let legacySessions: BoundarySessionRecord[] = []
+                let pendingReads = legacyStore ? 2 : 1
+
+                const migrate = () => {
+                    pendingReads -= 1
+                    if (pendingReads > 0) return
+
+                    const converted = migrateBoundaryRecords(legacyEntries, legacySessions)
+                    sessionsStore.clear()
+                    converted.sessions.forEach(session => sessionsStore.put(session))
+                    notesStore.clear()
+                    converted.notes.forEach(note => notesStore.put(note))
+                    if (legacyStore && db.objectStoreNames.contains(LEGACY_ENTRIES_STORE)) {
+                        db.deleteObjectStore(LEGACY_ENTRIES_STORE)
+                    }
+                }
+
+                const sessionsRequest = sessionsStore.getAll()
+                sessionsRequest.onsuccess = () => {
+                    legacySessions = sessionsRequest.result as BoundarySessionRecord[]
+                    migrate()
+                }
+                if (legacyStore) {
+                    const entriesRequest = legacyStore.getAll()
+                    entriesRequest.onsuccess = () => {
+                        legacyEntries = entriesRequest.result as BoundaryRecord[]
+                        migrate()
+                    }
+                }
             }
         }
 
@@ -135,23 +187,23 @@ async function readIndexedDbState(): Promise<Partial<SessionState> | null> {
     const db = await openDatabase()
     const transaction = db.transaction(Object.values(STORES), 'readonly')
 
-    const [metadata, entries, sessions, contentTypes, mediaItems] = await Promise.all([
+    const [metadata, notes, sessions, contentTypes, mediaItems] = await Promise.all([
         requestResult(transaction.objectStore(STORES.METADATA).get(SESSION_METADATA_KEY) as IDBRequest<SessionMetadata | undefined>),
-        requestResult(transaction.objectStore(STORES.ENTRIES).index('timestamp').getAll() as IDBRequest<Entry[]>),
+        requestResult(transaction.objectStore(STORES.NOTES).index('timestamp').getAll() as IDBRequest<Note[]>),
         requestResult(transaction.objectStore(STORES.SESSIONS).index('startAt').getAll() as IDBRequest<Session[]>),
         requestResult(transaction.objectStore(STORES.CONTENT_TYPES).getAll() as IDBRequest<ContentType[]>),
         requestResult(transaction.objectStore(STORES.MEDIA_ITEMS).getAll() as IDBRequest<MediaItem[]>),
         transactionDone(transaction),
     ])
 
-    if (!metadata && entries.length === 0 && sessions.length === 0 && contentTypes.length === 0 && mediaItems.length === 0) {
+    if (!metadata && notes.length === 0 && sessions.length === 0 && contentTypes.length === 0 && mediaItems.length === 0) {
         return null
     }
 
     return {
         status: metadata?.status,
         activeSessionId: metadata?.activeSessionId ?? null,
-        entries,
+        notes,
         sessions,
         contentTypes,
         mediaItems,
@@ -188,22 +240,22 @@ async function persistSessionState(current: PersistedState, previous: PersistedS
         activeSessionId: current.activeSessionId,
     } satisfies SessionMetadata)
 
-    const entriesStore = transaction.objectStore(STORES.ENTRIES)
+    const notesStore = transaction.objectStore(STORES.NOTES)
     const sessionsStore = transaction.objectStore(STORES.SESSIONS)
     const contentTypesStore = transaction.objectStore(STORES.CONTENT_TYPES)
     const mediaItemsStore = transaction.objectStore(STORES.MEDIA_ITEMS)
 
     if (!previous) {
-        entriesStore.clear()
+        notesStore.clear()
         sessionsStore.clear()
         contentTypesStore.clear()
         mediaItemsStore.clear()
-        current.entries.forEach(entry => entriesStore.put(entry))
+        current.notes.forEach(note => notesStore.put(note))
         current.sessions.forEach(session => sessionsStore.put(session))
         current.contentTypes.forEach(contentType => contentTypesStore.put(contentType))
         current.mediaItems.forEach(mediaItem => mediaItemsStore.put(mediaItem))
     } else {
-        applyEntityChanges(entriesStore, previous.entries, current.entries)
+        applyEntityChanges(notesStore, previous.notes, current.notes)
         applyEntityChanges(sessionsStore, previous.sessions, current.sessions)
         applyEntityChanges(contentTypesStore, previous.contentTypes, current.contentTypes)
         applyEntityChanges(mediaItemsStore, previous.mediaItems, current.mediaItems)
@@ -214,15 +266,31 @@ async function persistSessionState(current: PersistedState, previous: PersistedS
 
 const persistenceQueue = createPersistenceQueue<PersistedState>(persistSessionState)
 
+interface LegacyLocalState extends Omit<Partial<SessionState>, 'sessions'> {
+    entries?: BoundaryRecord[]
+    sessions?: BoundarySessionRecord[]
+}
+
+function migrateLegacyLocalState(value: LegacyLocalState | null): Partial<SessionState> | null {
+    if (!value) return null
+    const converted = migrateBoundaryRecords(value.entries ?? [], value.sessions ?? [])
+    const { entries: _entries, ...rest } = value
+    return {
+        ...rest,
+        notes: value.notes ?? converted.notes,
+        sessions: converted.sessions,
+    }
+}
+
 function legacyState(): Partial<SessionState> | null {
-    return getStorage<Partial<SessionState>>(STORAGE_KEYS.STATE)
+    return migrateLegacyLocalState(getStorage<LegacyLocalState>(STORAGE_KEYS.STATE))
 }
 
 function completePersistedState(state: Partial<SessionState>): PersistedState {
     return {
         status: state.status ?? (state.activeSessionId ? 'STREAMING' : 'IDLE'),
         activeSessionId: state.activeSessionId ?? null,
-        entries: state.entries ?? [],
+        notes: state.notes ?? [],
         sessions: state.sessions ?? [],
         contentTypes: state.contentTypes ?? [],
         mediaItems: state.mediaItems ?? [],

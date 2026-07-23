@@ -1,19 +1,21 @@
 import {
     contentTypeObjectToRow,
-    entryObjectToRow,
     mediaItemObjectToRow,
+    noteObjectToRow,
+    sessionObjectToRow,
 } from './_db.ts';
-import type { ContentType, Entry, MediaItem } from './types.ts';
+import type { ContentType, MediaItem, Note, Session } from './types.ts';
 
-export type SyncEntityType = 'entry' | 'contentType' | 'mediaItem';
+export type SyncEntityType = 'note' | 'session' | 'contentType' | 'mediaItem';
 export type SyncOperation = 'upsert' | 'delete';
+export type SyncEntity = Note | Session | ContentType | MediaItem;
 
 export interface RevisionMutation {
     mutationId: string;
     entityType: SyncEntityType;
     entityId: string;
     operation: SyncOperation;
-    value?: Entry | ContentType | MediaItem;
+    value?: SyncEntity;
 }
 
 export const MAX_MUTATIONS_PER_REQUEST = 20;
@@ -31,37 +33,72 @@ function clearOlderTombstone(db: D1Database, mutation: RevisionMutation) {
     ).bind(mutation.entityType, mutation.entityId, mutation.mutationId);
 }
 
-function upsertEntryStatement(db: D1Database, mutation: RevisionMutation, now: number) {
-    const row = entryObjectToRow(mutation.value as Entry, now);
+function upsertNoteStatement(db: D1Database, mutation: RevisionMutation, now: number) {
+    const row = noteObjectToRow(mutation.value as Note, now);
     return db.prepare(`
-        INSERT INTO entries
-          (id, type, content, timestamp, session_id, category, content_type,
-           field_values, linked_entries, tags, created_at, updated_at, revision)
-        SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, sync_commit.revision
+        INSERT INTO notes
+          (id, content, timestamp, session_id, category, content_type,
+           field_values, linked_items, tags, created_at, updated_at, revision)
+        SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, sync_commit.revision
         FROM sync_commits AS sync_commit
         WHERE sync_commit.mutation_id = ?
           AND NOT EXISTS (
             SELECT 1 FROM sync_tombstones AS tombstone
-            WHERE tombstone.entity_type = 'entry' AND tombstone.entity_id = ?
+            WHERE tombstone.entity_type = 'note' AND tombstone.entity_id = ?
               AND tombstone.revision > sync_commit.revision
           )
         ON CONFLICT(id) DO UPDATE SET
-          type = excluded.type,
           content = excluded.content,
           timestamp = excluded.timestamp,
           session_id = excluded.session_id,
           category = excluded.category,
           content_type = excluded.content_type,
           field_values = excluded.field_values,
-          linked_entries = excluded.linked_entries,
+          linked_items = excluded.linked_items,
           tags = excluded.tags,
           updated_at = excluded.updated_at,
           revision = excluded.revision
-        WHERE excluded.revision >= entries.revision
+        WHERE excluded.revision >= notes.revision
     `).bind(
-        row.id, row.type, row.content, row.timestamp, row.session_id,
-        row.category, row.content_type, row.field_values, row.linked_entries,
-        row.tags, row.created_at, row.updated_at, mutation.mutationId, row.id,
+        row.id, row.content, row.timestamp, row.session_id, row.category,
+        row.content_type, row.field_values, row.linked_items, row.tags,
+        row.created_at, row.updated_at, mutation.mutationId, row.id,
+    );
+}
+
+function upsertSessionStatement(db: D1Database, mutation: RevisionMutation, now: number) {
+    const row = sessionObjectToRow(mutation.value as Session, now);
+    return db.prepare(`
+        INSERT INTO sessions
+          (id, content, start_at, end_at, end_content, category, content_type,
+           field_values, linked_items, tags, end_tags, created_at, updated_at, revision)
+        SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, sync_commit.revision
+        FROM sync_commits AS sync_commit
+        WHERE sync_commit.mutation_id = ?
+          AND NOT EXISTS (
+            SELECT 1 FROM sync_tombstones AS tombstone
+            WHERE tombstone.entity_type = 'session' AND tombstone.entity_id = ?
+              AND tombstone.revision > sync_commit.revision
+          )
+        ON CONFLICT(id) DO UPDATE SET
+          content = excluded.content,
+          start_at = excluded.start_at,
+          end_at = excluded.end_at,
+          end_content = excluded.end_content,
+          category = excluded.category,
+          content_type = excluded.content_type,
+          field_values = excluded.field_values,
+          linked_items = excluded.linked_items,
+          tags = excluded.tags,
+          end_tags = excluded.end_tags,
+          updated_at = excluded.updated_at,
+          revision = excluded.revision
+        WHERE excluded.revision >= sessions.revision
+    `).bind(
+        row.id, row.content, row.start_at, row.end_at, row.end_content,
+        row.category, row.content_type, row.field_values, row.linked_items,
+        row.tags, row.end_tags, row.created_at, row.updated_at,
+        mutation.mutationId, row.id,
     );
 }
 
@@ -79,13 +116,9 @@ function upsertContentTypeStatement(db: D1Database, mutation: RevisionMutation) 
               AND tombstone.revision > sync_commit.revision
           )
         ON CONFLICT(id) DO UPDATE SET
-          name = excluded.name,
-          icon = excluded.icon,
-          color = excluded.color,
-          fields = excluded.fields,
-          built_in = excluded.built_in,
-          sort_order = excluded.sort_order,
-          revision = excluded.revision
+          name = excluded.name, icon = excluded.icon, color = excluded.color,
+          fields = excluded.fields, built_in = excluded.built_in,
+          sort_order = excluded.sort_order, revision = excluded.revision
         WHERE excluded.revision >= content_types.revision
     `).bind(
         row.id, row.name, row.icon, row.color, row.fields, row.built_in,
@@ -108,18 +141,12 @@ function upsertMediaItemStatement(db: D1Database, mutation: RevisionMutation) {
               AND tombstone.revision > sync_commit.revision
           )
         ON CONFLICT(id) DO UPDATE SET
-          title = excluded.title,
-          media_type = excluded.media_type,
-          notion_url = excluded.notion_url,
-          cover_url = excluded.cover_url,
-          spotify_url = excluded.spotify_url,
-          created_at = excluded.created_at,
-          rating = excluded.rating,
-          status = excluded.status,
-          date_finished = excluded.date_finished,
-          notes = excluded.notes,
-          metadata = excluded.metadata,
-          revision = excluded.revision
+          title = excluded.title, media_type = excluded.media_type,
+          notion_url = excluded.notion_url, cover_url = excluded.cover_url,
+          spotify_url = excluded.spotify_url, created_at = excluded.created_at,
+          rating = excluded.rating, status = excluded.status,
+          date_finished = excluded.date_finished, notes = excluded.notes,
+          metadata = excluded.metadata, revision = excluded.revision
         WHERE excluded.revision >= media_items.revision
     `).bind(
         row.id, row.title, row.media_type, row.notion_url, row.cover_url,
@@ -129,9 +156,11 @@ function upsertMediaItemStatement(db: D1Database, mutation: RevisionMutation) {
 }
 
 function deleteStatements(db: D1Database, mutation: RevisionMutation): D1PreparedStatement[] {
-    const table = mutation.entityType === 'entry'
-        ? 'entries'
-        : mutation.entityType === 'contentType' ? 'content_types' : 'media_items';
+    const table = mutation.entityType === 'note'
+        ? 'notes'
+        : mutation.entityType === 'session'
+            ? 'sessions'
+            : mutation.entityType === 'contentType' ? 'content_types' : 'media_items';
     return [
         db.prepare(
             `DELETE FROM ${table} WHERE id = ? AND revision <= ` +
@@ -144,16 +173,13 @@ function deleteStatements(db: D1Database, mutation: RevisionMutation): D1Prepare
             WHERE excluded.revision >= sync_tombstones.revision
         `).bind(mutation.entityType, mutation.entityId, mutation.mutationId),
     ];
-
 }
 
 function mutationStatements(db: D1Database, mutation: RevisionMutation, now: number): D1PreparedStatement[] {
     const statements = [commitStatement(db, mutation, now)];
-    if (mutation.operation === 'delete') {
-        return [...statements, ...deleteStatements(db, mutation)];
-    }
-
-    if (mutation.entityType === 'entry') statements.push(upsertEntryStatement(db, mutation, now));
+    if (mutation.operation === 'delete') return [...statements, ...deleteStatements(db, mutation)];
+    if (mutation.entityType === 'note') statements.push(upsertNoteStatement(db, mutation, now));
+    if (mutation.entityType === 'session') statements.push(upsertSessionStatement(db, mutation, now));
     if (mutation.entityType === 'contentType') statements.push(upsertContentTypeStatement(db, mutation));
     if (mutation.entityType === 'mediaItem') statements.push(upsertMediaItemStatement(db, mutation));
     statements.push(clearOlderTombstone(db, mutation));
@@ -166,7 +192,7 @@ export function validateRevisionMutations(input: unknown): RevisionMutation[] {
         throw new Error(`at most ${MAX_MUTATIONS_PER_REQUEST} mutations are allowed per request`);
     }
 
-    const validTypes = new Set<SyncEntityType>(['entry', 'contentType', 'mediaItem']);
+    const validTypes = new Set<SyncEntityType>(['note', 'session', 'contentType', 'mediaItem']);
     return input.map((candidate, index) => {
         if (!candidate || typeof candidate !== 'object') throw new Error(`mutation ${index} must be an object`);
         const mutation = candidate as Partial<RevisionMutation>;
@@ -184,6 +210,43 @@ export function validateRevisionMutations(input: unknown): RevisionMutation[] {
             if (!mutation.value || typeof mutation.value !== 'object' || (mutation.value as { id?: unknown }).id !== mutation.entityId) {
                 throw new Error(`mutation ${index} upsert value must match entityId`);
             }
+            const value = mutation.value as unknown as Record<string, unknown>;
+            if (
+                mutation.entityType === 'note'
+                && (
+                    typeof value.content !== 'string'
+                    || typeof value.timestamp !== 'number'
+                    || !Number.isFinite(value.timestamp)
+                )
+            ) {
+                throw new Error(`mutation ${index} has an invalid note value`);
+            }
+            if (
+                mutation.entityType === 'session'
+                && (
+                    typeof value.content !== 'string'
+                    || typeof value.startAt !== 'number'
+                    || !Number.isFinite(value.startAt)
+                    || (
+                        value.endAt !== null
+                        && (typeof value.endAt !== 'number' || !Number.isFinite(value.endAt))
+                    )
+                )
+            ) {
+                throw new Error(`mutation ${index} has an invalid session value`);
+            }
+            if (
+                mutation.entityType === 'contentType'
+                && (typeof value.name !== 'string' || !Array.isArray(value.fields))
+            ) {
+                throw new Error(`mutation ${index} has an invalid contentType value`);
+            }
+            if (
+                mutation.entityType === 'mediaItem'
+                && (typeof value.title !== 'string' || typeof value.mediaType !== 'string')
+            ) {
+                throw new Error(`mutation ${index} has an invalid mediaItem value`);
+            }
         }
         return mutation as RevisionMutation;
     });
@@ -191,7 +254,6 @@ export function validateRevisionMutations(input: unknown): RevisionMutation[] {
 
 export async function currentRevision(db: D1Database): Promise<number> {
     const row = await db.prepare('SELECT COALESCE(MAX(revision), 0) AS revision FROM sync_commits')
-        .bind()
         .first<{ revision: number }>();
     return Number(row?.revision ?? 0);
 }

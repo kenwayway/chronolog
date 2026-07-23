@@ -1,16 +1,16 @@
 import { useState, useRef, useEffect, KeyboardEvent, MouseEvent } from "react";
 import { Image, MapPin, Plus, ChevronDown } from "lucide-react";
 import { EntryMetadataInput } from "../input/EntryMetadataInput";
-import { BUILTIN_CONTENT_TYPES, ENTRY_TYPES } from "@/utils/constants";
+import { BUILTIN_CONTENT_TYPES } from "@/utils/constants";
 import { useSessionContext } from "@/contexts/SessionContext";
 import { prepareContentTypeSubmission } from "@/features/contentTypes";
 import styles from "./EditModal.module.css";
-import type { Entry, CategoryId, UpdateEntryPayload, EntryType } from "@/types";
+import type { TimelineItem, TimelineItemUpdate, CategoryId } from "@/types";
 
 interface EditModalProps {
   isOpen: boolean;
-  entry: Entry | null;
-  onSave: (entryId: string, updates: Omit<UpdateEntryPayload, 'entryId'>) => void;
+  entry: TimelineItem | null;
+  onSave: (item: TimelineItem, updates: TimelineItemUpdate) => void;
   onClose: () => void;
 }
 
@@ -22,12 +22,11 @@ interface EditFormState {
   category: CategoryId | null;
   contentType: string | null;
   fieldValues: Record<string, unknown>;
-  linkedEntries: string[];
+  linkedItems: string[];
   tags: string[];
-  entryType: string;
 }
 
-function getInitialEditFormState(entry: Entry): EditFormState {
+function getInitialEditFormState(entry: TimelineItem): EditFormState {
   let imageUrl = "";
   let location = "";
   const content = (entry.content || "").split("\n").filter((line) => {
@@ -55,9 +54,8 @@ function getInitialEditFormState(entry: Entry): EditFormState {
     category: entry.category || null,
     contentType: entry.contentType || null,
     fieldValues: (entry.fieldValues || {}) as Record<string, unknown>,
-    linkedEntries: entry.linkedEntries || [],
+    linkedItems: entry.linkedItems || [],
     tags: entry.tags || [],
-    entryType: entry.type || ENTRY_TYPES.NOTE,
   };
 }
 
@@ -67,20 +65,19 @@ export function EditModal({ isOpen, entry, onSave, onClose }: EditModalProps) {
   return <EditModalForm key={entry.id} entry={entry} onSave={onSave} onClose={onClose} />;
 }
 
-function EditModalForm({ entry, onSave, onClose }: Omit<EditModalProps, 'isOpen' | 'entry'> & { entry: Entry }) {
-  const { state: { contentTypes: ctFromContext, mediaItems }, timelineEntries: allEntries, actions: { addMediaItem: onAddMediaItem, updateMediaItem: onUpdateMediaItem } } = useSessionContext();
+function EditModalForm({ entry, onSave, onClose }: Omit<EditModalProps, 'isOpen' | 'entry'> & { entry: TimelineItem }) {
+  const { state: { contentTypes: ctFromContext, mediaItems }, timelineItems: allItems, actions: { addMediaItem: onAddMediaItem, updateMediaItem: onUpdateMediaItem } } = useSessionContext();
   const types = ctFromContext.length > 0 ? ctFromContext : BUILTIN_CONTENT_TYPES;
   const [initialState] = useState(() => getInitialEditFormState(entry));
   // Content state
   const [content, setContent] = useState(initialState.content);
   const [timestamp, setTimestamp] = useState(initialState.timestamp);
-  const [entryType, setEntryType] = useState<string>(initialState.entryType);
 
   // Metadata state (passed to EntryMetadataInput)
   const [category, setCategory] = useState<CategoryId | null>(initialState.category);
   const [contentType, setContentType] = useState<string | null>(initialState.contentType);
   const [fieldValues, setFieldValues] = useState<Record<string, unknown>>(initialState.fieldValues);
-  const [linkedEntries, setLinkedEntries] = useState<string[]>(initialState.linkedEntries);
+  const [linkedItems, setLinkedItems] = useState<string[]>(initialState.linkedItems);
   const [tags, setTags] = useState<string[]>(initialState.tags);
 
   // Attachments state
@@ -148,12 +145,11 @@ function EditModalForm({ entry, onSave, onClose }: Omit<EditModalProps, 'isOpen'
     const newContent = buildContent();
     let normalizedFieldValues = fieldValues;
 
-    if (contentType) {
+    if (contentType && entry.kind !== 'session-end') {
       const prepared = prepareContentTypeSubmission(
         contentType,
         fieldValues,
-        entryType as EntryType,
-        entry.type,
+        entry.kind === 'note' ? 'note' : 'session',
       );
       if (!prepared.ok) {
         alert(prepared.error);
@@ -166,15 +162,14 @@ function EditModalForm({ entry, onSave, onClose }: Omit<EditModalProps, 'isOpen'
     const originalTags = entry.tags || [];
     const tagsChanged = JSON.stringify(tags) !== JSON.stringify(originalTags);
 
-    onSave(entry.id, {
+    onSave(entry, {
       content: newContent !== entry.content ? newContent : undefined,
       timestamp: newTimestamp !== entry.timestamp ? newTimestamp : undefined,
       category: category !== (entry.category ?? null) ? category : undefined,
       contentType: contentType !== (entry.contentType ?? null) ? contentType : undefined,
       fieldValues: JSON.stringify(normalizedFieldValues) !== JSON.stringify(entry.fieldValues) ? normalizedFieldValues : undefined,
-      linkedEntries: JSON.stringify(linkedEntries) !== JSON.stringify(entry.linkedEntries || []) ? linkedEntries : undefined,
+      linkedItems: JSON.stringify(linkedItems) !== JSON.stringify(entry.linkedItems || []) ? linkedItems : undefined,
       tags: tagsChanged ? tags : undefined,
-      type: entryType !== entry.type ? (entryType as EntryType) : undefined,
     });
     onClose();
   };
@@ -267,10 +262,10 @@ function EditModalForm({ entry, onSave, onClose }: Omit<EditModalProps, 'isOpen'
           setFieldValues={setFieldValues}
           tags={tags}
           setTags={setTags}
-          linkedEntries={linkedEntries}
-          setLinkedEntries={setLinkedEntries}
-          allEntries={allEntries}
-          currentEntryId={entry.id}
+          linkedItems={linkedItems}
+          setLinkedItems={setLinkedItems}
+          allItems={allItems}
+          currentEntryId={entry.entityId}
           currentEntryTimestamp={entry.timestamp}
           contentTypes={types}
           isExpanded={showMetadata}
@@ -283,7 +278,7 @@ function EditModalForm({ entry, onSave, onClose }: Omit<EditModalProps, 'isOpen'
 
         {/* Footer */}
         <div className={styles.footer}>
-          {/* Row 1: Time & Entry Type */}
+          {/* Row 1: Time */}
           <div className={styles.footerRow}>
             {/* Time */}
             <div className="flex items-center gap-2">
@@ -297,23 +292,6 @@ function EditModalForm({ entry, onSave, onClose }: Omit<EditModalProps, 'isOpen'
                   style={{ width: 'auto', minWidth: 150 }}
                 />
               </div>
-            </div>
-
-            {/* Entry Type */}
-            <div className="flex items-center gap-2">
-              <span className={styles.label}>ENTRY</span>
-              <select
-                value={entryType}
-                onChange={(e) => setEntryType(e.target.value)}
-                disabled={entry.type !== ENTRY_TYPES.NOTE}
-                title={entry.type !== ENTRY_TYPES.NOTE ? 'Session boundaries are projected from a Session interval' : undefined}
-                className={styles.input}
-                style={{ width: 'auto', minWidth: 100 }}
-              >
-                <option value={ENTRY_TYPES.NOTE}>Note</option>
-                <option value={ENTRY_TYPES.SESSION_START}>Session Start</option>
-                <option value={ENTRY_TYPES.SESSION_END}>Session End</option>
-              </select>
             </div>
           </div>
 

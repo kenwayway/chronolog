@@ -1,5 +1,4 @@
 import { useState, memo, useMemo, ReactNode, MouseEvent, TouchEvent } from "react";
-import { ENTRY_TYPES } from "@/utils/constants";
 import { formatTime, formatDuration, formatDate } from "@/utils/formatters";
 import { darkenColor } from "@/utils/contentParser";
 import { useTheme } from "@/hooks/useTheme";
@@ -7,7 +6,7 @@ import { ContentRenderer } from "./ContentRenderer";
 import { LinkedEntryPreview } from "./LinkedEntryPreview";
 import { ImageLightbox } from "../common/ImageLightbox";
 import styles from "./TimelineEntry.module.css";
-import type { Entry, Category, MediaItem } from "@/types";
+import type { TimelineItem, Category, MediaItem } from "@/types";
 import { getContentTypeTimelineSymbol, renderContentTypeDisplay } from "@/features/contentTypes";
 
 interface Position {
@@ -19,18 +18,18 @@ type LineState = 'start' | 'end' | 'active' | 'default';
 
 
 interface TimelineEntryProps {
-  entry: Entry;
-  allEntries: Entry[];
+  entry: TimelineItem;
+  allEntries: TimelineItem[];
   isFirst: boolean;
   isLast: boolean;
   sessionDuration?: number;
   categories: Category[];
-  onContextMenu?: (entry: Entry, position: Position) => void;
-  onEdit?: (entry: Entry) => void;
+  onContextMenu?: (entry: TimelineItem, position: Position) => void;
+  onEdit?: (entry: TimelineItem) => void;
   lineState: LineState | string;
   isLightMode: boolean;
   showDate?: boolean;
-  onNavigateToEntry?: (entry: Entry) => void;
+  onNavigateToEntry?: (entry: TimelineItem) => void;
   mediaItems?: MediaItem[];
 }
 
@@ -97,21 +96,21 @@ export const TimelineEntry = memo(function TimelineEntry({
     [category, isLightMode]
   );
 
-  const isSessionStart = entry.type === ENTRY_TYPES.SESSION_START;
-  const isSessionEnd = entry.type === ENTRY_TYPES.SESSION_END;
+  const isSessionStart = entry.kind === 'session-start';
+  const isSessionEnd = entry.kind === 'session-end';
   const contentTypeDisplay = renderContentTypeDisplay(entry, mediaItems);
 
   // Linked entries
   const linkedEntryData = useMemo(() => {
-    const outgoingLinks = entry.linkedEntries || [];
+    const outgoingLinks = entry.linkedItems || [];
     const incomingLinks = allEntries
-      ?.filter(e => e.id !== entry.id && e.linkedEntries?.includes(entry.id))
-      .map(e => e.id) || [];
+      ?.filter(e => e.entityId !== entry.entityId && e.linkedItems?.includes(entry.entityId))
+      .map(e => e.entityId) || [];
     const allLinkedIds = [...new Set([...outgoingLinks, ...incomingLinks])];
     return allLinkedIds
-      .map(id => allEntries?.find(e => e.id === id))
-      .filter((e): e is Entry => Boolean(e));
-  }, [entry.id, entry.linkedEntries, allEntries]);
+      .map(id => allEntries?.find(e => e.entityId === id && e.kind !== 'session-end'))
+      .filter((e): e is TimelineItem => Boolean(e));
+  }, [entry.entityId, entry.linkedItems, allEntries]);
 
   const beforeLinks = useMemo(
     () => linkedEntryData.filter(e => e.timestamp < entry.timestamp),
@@ -130,12 +129,12 @@ export const TimelineEntry = memo(function TimelineEntry({
       return <span style={{ ...styles, color: 'var(--accent)' }}>{symbols[contentTypeSymbol]}</span>;
     }
 
-    switch (entry.type) {
-      case ENTRY_TYPES.SESSION_START:
+    switch (entry.kind) {
+      case 'session-start':
         return <span style={{ ...styles, color: "var(--success)", fontWeight: 700, fontSize: 14 }}>{symbols.sessionStart}</span>;
-      case ENTRY_TYPES.SESSION_END:
+      case 'session-end':
         return <span style={{ ...styles, color: "var(--text-muted)" }}>{symbols.sessionEnd}</span>;
-      case ENTRY_TYPES.NOTE:
+      case 'note':
       default:
         return <span style={{ ...styles, color: "var(--text-dim)" }}>{symbols.note}</span>;
     }

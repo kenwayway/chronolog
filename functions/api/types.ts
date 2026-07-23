@@ -34,17 +34,33 @@ export interface AuthResult {
 
 // --- D1 Row types (snake_case, matches schema.sql) ---
 
-export interface EntryRow {
+export interface NoteRow {
     id: string;
-    type: string;
     content: string;
     timestamp: number;
     session_id: string | null;
     category: string | null;
     content_type: string;
     field_values: string | null;
-    linked_entries: string | null;
+    linked_items: string | null;
     tags: string | null;
+    created_at: number;
+    updated_at: number;
+    revision: number;
+}
+
+export interface SessionRow {
+    id: string;
+    content: string;
+    start_at: number;
+    end_at: number | null;
+    end_content: string | null;
+    category: string | null;
+    content_type: string;
+    field_values: string | null;
+    linked_items: string | null;
+    tags: string | null;
+    end_tags: string | null;
     created_at: number;
     updated_at: number;
     revision: number;
@@ -79,19 +95,30 @@ export interface MediaItemRow {
 
 // --- Frontend object types (camelCase) ---
 
-export interface Entry {
+export interface Note {
     id: string;
-    type: string;
     content: string;
     timestamp: number;
     sessionId?: string;
     category?: string;
     contentType?: string;
     fieldValues?: Record<string, unknown>;
-    linkedEntries?: string[];
+    linkedItems?: string[];
     tags?: string[];
-    createdAt?: number;
-    updatedAt?: number;
+}
+
+export interface Session {
+    id: string;
+    content: string;
+    startAt: number;
+    endAt: number | null;
+    endContent?: string;
+    category?: string;
+    contentType?: string;
+    fieldValues?: Record<string, unknown>;
+    linkedItems?: string[];
+    tags?: string[];
+    endTags?: string[];
 }
 
 export interface ContentType {

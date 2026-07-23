@@ -1,7 +1,6 @@
 import { useEffect, useRef } from "react";
-import { ENTRY_TYPES } from "@/utils/constants";
 import styles from "./ContextMenu.module.css";
-import type { Entry } from "@/types";
+import type { TimelineItem } from "@/types";
 
 interface Position {
     x: number;
@@ -11,12 +10,12 @@ interface Position {
 interface ContextMenuProps {
     isOpen: boolean;
     position: Position;
-    entry: Entry | null;
+    entry: TimelineItem | null;
     onClose: () => void;
-    onEdit: (entry: Entry) => void;
-    onDelete: (entry: Entry) => void;
-    onCopy: (entry: Entry) => void;
-    onLink?: (entry: Entry) => void;
+    onEdit: (entry: TimelineItem) => void;
+    onDelete: (entry: TimelineItem) => void;
+    onCopy: (entry: TimelineItem) => void;
+    onLink?: (entry: TimelineItem) => void;
 }
 
 export function ContextMenu({
@@ -101,4 +100,3 @@ export function ContextMenu({
         </div>
     );
 }
-

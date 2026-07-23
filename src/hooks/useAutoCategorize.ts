@@ -1,14 +1,15 @@
 import { useEffect, useRef } from 'react'
-import type { Entry, ContentType, SessionActions, UpdateEntryPayload } from '@/types'
+import type { TimelineItem, ContentType, SessionActions, TimelineItemUpdate } from '@/types'
 import type { CategorizeResult } from './useAICategories'
 import { STORAGE_KEYS, getStorage, type CloudAuthData } from '@/utils/storageService'
 
 interface UseAutoCategorizeProps {
-    entries: Entry[]
+    items: TimelineItem[]
     contentTypes: ContentType[]
     isLoggedIn: boolean
     categorize: (content: string, token: string, contentTypes?: ContentType[]) => Promise<CategorizeResult>
-    updateEntry: SessionActions['updateEntry']
+    updateNote: SessionActions['updateNote']
+    updateSession: SessionActions['updateSession']
 }
 
 /**
@@ -16,31 +17,31 @@ interface UseAutoCategorizeProps {
  * Extracted from App.jsx to reduce complexity
  */
 export function useAutoCategorize({
-    entries,
+    items,
     contentTypes,
     isLoggedIn,
     categorize,
-    updateEntry,
+    updateNote,
+    updateSession,
 }: UseAutoCategorizeProps): void {
-    const lastEntryCountRef = useRef(entries.length)
+    const seenEntityIds = useRef(new Set(items.map(item => item.entityId)))
 
     useEffect(() => {
-        const currentCount = entries.length
+        const candidates = items.filter(item =>
+            item.kind !== 'session-end' && !seenEntityIds.current.has(item.entityId),
+        )
+        items.forEach(item => seenEntityIds.current.add(item.entityId))
 
-        // Only process when entries are added and user is logged in
-        if (currentCount > lastEntryCountRef.current && isLoggedIn) {
-            const newEntry = entries[entries.length - 1]
-
-            // Only suggest for notes without existing category or contentType
-            // Skip SESSION_END entries - they shouldn't have category data
-            if (newEntry && newEntry.content && newEntry.type !== 'SESSION_END' && !newEntry.category && !newEntry.contentType) {
+        if (isLoggedIn) {
+            candidates.forEach(item => {
+            if (item.content && !item.category && !item.contentType) {
                 // Get token from storage
                 const auth = getStorage<CloudAuthData>(STORAGE_KEYS.CLOUD_AUTH)
                 const token = auth?.token || null
 
                 if (token) {
-                    categorize(newEntry.content, token, contentTypes).then(result => {
-                        const updates: Omit<UpdateEntryPayload, 'entryId'> = {}
+                    categorize(item.content, token, contentTypes).then(result => {
+                        const updates: TimelineItemUpdate = {}
 
                         if (result.category) {
                             updates.category = result.category
@@ -53,13 +54,13 @@ export function useAutoCategorize({
                         }
 
                         if (Object.keys(updates).length > 0) {
-                            updateEntry(newEntry.id, updates)
+                            if (item.kind === 'note') updateNote(item.entityId, updates)
+                            else updateSession(item.entityId, updates)
                         }
                     })
                 }
             }
+            })
         }
-
-        lastEntryCountRef.current = currentCount
-    }, [entries, contentTypes, isLoggedIn, categorize, updateEntry])
+    }, [items, contentTypes, isLoggedIn, categorize, updateNote, updateSession])
 }

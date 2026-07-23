@@ -1,27 +1,47 @@
 -- ChronoLog D1 Schema
--- Entries table (core data)
-CREATE TABLE IF NOT EXISTS entries (
+CREATE TABLE IF NOT EXISTS notes (
   id TEXT PRIMARY KEY,
-  type TEXT NOT NULL CHECK(type IN ('SESSION_START', 'NOTE', 'SESSION_END')),
   content TEXT NOT NULL DEFAULT '',
   timestamp INTEGER NOT NULL,
   session_id TEXT,
   category TEXT,
   content_type TEXT DEFAULT 'note',
   field_values TEXT,          -- JSON string
-  linked_entries TEXT,        -- JSON array string
+  linked_items TEXT,          -- JSON array of Note/Session IDs
   tags TEXT,                  -- JSON array string
   created_at INTEGER NOT NULL DEFAULT (unixepoch() * 1000),
   updated_at INTEGER NOT NULL DEFAULT (unixepoch() * 1000),
   revision INTEGER NOT NULL DEFAULT 0
 );
 
-CREATE INDEX IF NOT EXISTS idx_entries_timestamp ON entries(timestamp);
-CREATE INDEX IF NOT EXISTS idx_entries_type ON entries(type);
-CREATE INDEX IF NOT EXISTS idx_entries_category ON entries(category);
-CREATE INDEX IF NOT EXISTS idx_entries_content_type ON entries(content_type);
-CREATE INDEX IF NOT EXISTS idx_entries_updated_at ON entries(updated_at);
-CREATE INDEX IF NOT EXISTS idx_entries_revision ON entries(revision);
+CREATE INDEX IF NOT EXISTS idx_notes_timestamp ON notes(timestamp);
+CREATE INDEX IF NOT EXISTS idx_notes_session_id ON notes(session_id);
+CREATE INDEX IF NOT EXISTS idx_notes_category ON notes(category);
+CREATE INDEX IF NOT EXISTS idx_notes_content_type ON notes(content_type);
+CREATE INDEX IF NOT EXISTS idx_notes_revision ON notes(revision);
+
+CREATE TABLE IF NOT EXISTS sessions (
+  id TEXT PRIMARY KEY,
+  content TEXT NOT NULL DEFAULT '',
+  start_at INTEGER NOT NULL,
+  end_at INTEGER,
+  end_content TEXT,
+  category TEXT,
+  content_type TEXT DEFAULT 'note',
+  field_values TEXT,
+  linked_items TEXT,          -- JSON array of Note/Session IDs
+  tags TEXT,
+  end_tags TEXT,
+  created_at INTEGER NOT NULL DEFAULT (unixepoch() * 1000),
+  updated_at INTEGER NOT NULL DEFAULT (unixepoch() * 1000),
+  revision INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE INDEX IF NOT EXISTS idx_sessions_start_at ON sessions(start_at);
+CREATE INDEX IF NOT EXISTS idx_sessions_end_at ON sessions(end_at);
+CREATE INDEX IF NOT EXISTS idx_sessions_category ON sessions(category);
+CREATE INDEX IF NOT EXISTS idx_sessions_content_type ON sessions(content_type);
+CREATE INDEX IF NOT EXISTS idx_sessions_revision ON sessions(revision);
 
 -- Content types table
 CREATE TABLE IF NOT EXISTS content_types (
@@ -52,16 +72,6 @@ CREATE TABLE IF NOT EXISTS media_items (
   revision INTEGER NOT NULL DEFAULT 0
 );
 
--- Retired timestamp-sync deletion log. Kept empty temporarily so timestamp-era
--- GET clients fail soft during the revision-sync rollout; new deletes use
--- sync_tombstones exclusively.
-CREATE TABLE IF NOT EXISTS deleted_entries (
-  entry_id TEXT PRIMARY KEY,
-  deleted_at INTEGER NOT NULL
-);
-
-CREATE INDEX IF NOT EXISTS idx_deleted_entries_deleted_at ON deleted_entries(deleted_at);
-
 -- Sync metadata (version tracking)
 CREATE TABLE IF NOT EXISTS sync_meta (
   key TEXT PRIMARY KEY,
@@ -80,7 +90,7 @@ INSERT OR IGNORE INTO sync_commits (mutation_id, committed_at)
 VALUES ('schema-baseline-v2', unixepoch() * 1000);
 
 CREATE TABLE IF NOT EXISTS sync_tombstones (
-  entity_type TEXT NOT NULL CHECK(entity_type IN ('entry', 'contentType', 'mediaItem')),
+  entity_type TEXT NOT NULL CHECK(entity_type IN ('note', 'session', 'contentType', 'mediaItem')),
   entity_id TEXT NOT NULL,
   revision INTEGER NOT NULL,
   PRIMARY KEY (entity_type, entity_id)

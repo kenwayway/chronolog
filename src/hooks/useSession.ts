@@ -7,7 +7,8 @@ import { usePersistence } from './usePersistence'
 import type {
   MediaItem,
   UseSessionReturn,
-  UpdateEntryPayload,
+  UpdateNotePayload,
+  UpdateSessionPayload,
   ImportDataPayload,
   CategoryId
 } from '@/types'
@@ -78,20 +79,20 @@ export function useSession(): UseSessionReturn {
     dispatch({ type: ACTIONS.LOG_OFF, payload: { content } })
   }, [])
 
-  const deleteEntry = useCallback((entryId: string) => {
-    dispatch({ type: ACTIONS.DELETE_ENTRY, payload: { entryId } })
+  const deleteNote = useCallback((noteId: string) => {
+    dispatch({ type: ACTIONS.DELETE_NOTE, payload: { noteId } })
   }, [])
 
-  const editEntry = useCallback((entryId: string, content: string) => {
-    dispatch({ type: ACTIONS.EDIT_ENTRY, payload: { entryId, content } })
+  const deleteSession = useCallback((sessionId: string) => {
+    dispatch({ type: ACTIONS.DELETE_SESSION, payload: { sessionId } })
   }, [])
 
-  const setEntryCategory = useCallback((entryId: string, category: CategoryId) => {
-    dispatch({ type: ACTIONS.SET_ENTRY_CATEGORY, payload: { entryId, category } })
+  const updateNote = useCallback((noteId: string, updates: Omit<UpdateNotePayload, 'noteId'>) => {
+    dispatch({ type: ACTIONS.UPDATE_NOTE, payload: { noteId, ...updates } })
   }, [])
 
-  const updateEntry = useCallback((entryId: string, updates: Omit<UpdateEntryPayload, 'entryId'>) => {
-    dispatch({ type: ACTIONS.UPDATE_ENTRY, payload: { entryId, ...updates } })
+  const updateSession = useCallback((sessionId: string, updates: Omit<UpdateSessionPayload, 'sessionId'>) => {
+    dispatch({ type: ACTIONS.UPDATE_SESSION, payload: { sessionId, ...updates } })
   }, [])
 
   const switchSession = useCallback((content: string, options?: { contentType?: string; fieldValues?: Record<string, unknown>; category?: CategoryId; tags?: string[] }) => {
@@ -130,17 +131,17 @@ export function useSession(): UseSessionReturn {
     switchSession,
     addNote,
     logOff,
-    deleteEntry,
-    editEntry,
-    setEntryCategory,
-    updateEntry,
+    deleteNote,
+    deleteSession,
+    updateNote,
+    updateSession,
     importData,
     addMediaItem,
     updateMediaItem,
     deleteMediaItem
   }), [
-    logIn, switchSession, addNote, logOff, deleteEntry, editEntry,
-    setEntryCategory, updateEntry, importData,
+    logIn, switchSession, addNote, logOff, deleteNote, deleteSession,
+    updateNote, updateSession, importData,
     addMediaItem, updateMediaItem, deleteMediaItem
   ])
 

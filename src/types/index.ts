@@ -7,9 +7,6 @@ export type { CloudSyncStatus, CloudSyncWithUpload, CloudSyncFull, TestAIResult 
 // Core Data Types
 // ============================================
 
-/** Entry type discriminator (system-level, controls session flow) */
-export type EntryType = 'SESSION_START' | 'NOTE' | 'SESSION_END'
-
 /** Session status */
 export type SessionStatus = 'IDLE' | 'STREAMING'
 
@@ -142,32 +139,25 @@ export type KnownFieldValues = BookmarkFields | MoodFields | WorkoutFields | Vau
 export type EntryFieldValues = KnownFieldValues | Record<string, unknown>
 
 // ============================================
-// Entry
+// Notes, Sessions, and Timeline View Models
 // ============================================
 
-/** Timeline entry */
-export interface Entry {
+/** A free-standing note, optionally created during a session. */
+export interface Note {
   id: string
-  type: EntryType
   content: string
   timestamp: number
-  sessionId?: string              // Session membership for NOTE entries; legacy boundaries use it during migration
-  category?: CategoryId           // Life area category
-  contentType?: string            // References ContentType.id
-  fieldValues?: EntryFieldValues  // Typed field values
-  linkedEntries?: string[]        // Bidirectional linked entry IDs
-  tags?: string[]                 // Free-form tags (without # prefix)
+  sessionId?: string
+  category?: CategoryId
+  contentType?: string
+  fieldValues?: EntryFieldValues
+  linkedItems?: string[]
+  tags?: string[]
 }
 
-/**
- * A timed interval. Sessions are first-class domain entities; SESSION_START /
- * SESSION_END entries only exist at the legacy sync boundary and in timeline
- * projections for backwards-compatible rendering.
- */
+/** A timed interval. Session boundaries are derived timeline views, not entities. */
 export interface Session {
   id: string
-  startEntryId: string
-  endEntryId?: string
   content: string
   startAt: number
   endAt: number | null
@@ -177,8 +167,34 @@ export interface Session {
   fieldValues?: EntryFieldValues
   tags?: string[]
   endTags?: string[]
-  linkedEntries?: string[]
-  endLinkedEntries?: string[]
+  linkedItems?: string[]
+}
+
+export type TimelineItemKind = 'note' | 'session-start' | 'session-end'
+
+/** Flattened read model used only by timeline/search/gallery UI. */
+export interface TimelineItem {
+  id: string
+  entityId: string
+  kind: TimelineItemKind
+  content: string
+  timestamp: number
+  sessionId?: string
+  category?: CategoryId
+  contentType?: string
+  fieldValues?: EntryFieldValues
+  linkedItems?: string[]
+  tags?: string[]
+}
+
+export interface TimelineItemUpdate {
+  content?: string
+  timestamp?: number
+  category?: CategoryId | null
+  contentType?: string | null
+  fieldValues?: Record<string, unknown>
+  linkedItems?: string[]
+  tags?: string[]
 }
 
 // ============================================
@@ -190,7 +206,7 @@ export interface SessionState {
   status: SessionStatus
   activeSessionId: string | null
   sessions: Session[]
-  entries: Entry[]
+  notes: Note[]
   contentTypes: ContentType[]     // User's content types (includes built-in)
   mediaItems: MediaItem[]         // User's media library
 }
@@ -224,34 +240,42 @@ export interface LogOffPayload {
   content?: string
 }
 
-export interface DeleteEntryPayload {
-  entryId: string
+export interface DeleteNotePayload {
+  noteId: string
 }
 
-export interface EditEntryPayload {
-  entryId: string
-  content: string
+export interface DeleteSessionPayload {
+  sessionId: string
 }
 
-export interface UpdateEntryPayload {
-  entryId: string
+export interface UpdateNotePayload {
+  noteId: string
   content?: string
   timestamp?: number
   category?: CategoryId | null   // null = clear (undefined = leave unchanged)
   contentType?: string | null    // null = clear (undefined = leave unchanged)
   fieldValues?: Record<string, unknown>
-  linkedEntries?: string[]
+  linkedItems?: string[]
   tags?: string[]
-  type?: EntryType
+  sessionId?: string | null
 }
 
-export interface SetEntryCategoryPayload {
-  entryId: string
-  category: CategoryId
+export interface UpdateSessionPayload {
+  sessionId: string
+  content?: string
+  startAt?: number
+  endAt?: number | null
+  endContent?: string | null
+  category?: CategoryId | null
+  contentType?: string | null
+  fieldValues?: Record<string, unknown>
+  linkedItems?: string[]
+  tags?: string[]
+  endTags?: string[]
 }
 
 export interface ImportDataPayload {
-  entries?: Entry[]
+  notes?: Note[]
   sessions?: Session[]
   contentTypes?: ContentType[]
   mediaItems?: MediaItem[]
@@ -277,10 +301,10 @@ export type SessionAction =
   | { type: 'SWITCH'; payload: SwitchPayload }
   | { type: 'NOTE'; payload: NotePayload }
   | { type: 'LOG_OFF'; payload?: LogOffPayload }
-  | { type: 'DELETE_ENTRY'; payload: DeleteEntryPayload }
-  | { type: 'EDIT_ENTRY'; payload: EditEntryPayload }
-  | { type: 'UPDATE_ENTRY'; payload: UpdateEntryPayload }
-  | { type: 'SET_ENTRY_CATEGORY'; payload: SetEntryCategoryPayload }
+  | { type: 'DELETE_NOTE'; payload: DeleteNotePayload }
+  | { type: 'DELETE_SESSION'; payload: DeleteSessionPayload }
+  | { type: 'UPDATE_NOTE'; payload: UpdateNotePayload }
+  | { type: 'UPDATE_SESSION'; payload: UpdateSessionPayload }
   | { type: 'LOAD_STATE'; payload: Partial<SessionState> }
   | { type: 'IMPORT_DATA'; payload: ImportDataPayload }
   | { type: 'ADD_MEDIA_ITEM'; payload: AddMediaItemPayload }
@@ -297,10 +321,10 @@ export interface SessionActions {
   switchSession: (content: string, options?: { contentType?: string; fieldValues?: Record<string, unknown>; category?: CategoryId; tags?: string[] }) => void
   addNote: (content: string, options?: { contentType?: string; fieldValues?: Record<string, unknown>; category?: CategoryId; tags?: string[] }) => void
   logOff: (content?: string) => void
-  deleteEntry: (entryId: string) => void
-  editEntry: (entryId: string, content: string) => void
-  setEntryCategory: (entryId: string, category: CategoryId) => void
-  updateEntry: (entryId: string, updates: Omit<UpdateEntryPayload, 'entryId'>) => void
+  deleteNote: (noteId: string) => void
+  deleteSession: (sessionId: string) => void
+  updateNote: (noteId: string, updates: Omit<UpdateNotePayload, 'noteId'>) => void
+  updateSession: (sessionId: string, updates: Omit<UpdateSessionPayload, 'sessionId'>) => void
   importData: (data: ImportDataPayload) => void
   addMediaItem: (mediaItem: MediaItem) => void
   updateMediaItem: (id: string, updates: Partial<Omit<MediaItem, 'id' | 'createdAt'>>) => void
@@ -327,16 +351,16 @@ export interface CloudSyncState {
 }
 
 export interface CloudData {
-  entries: Entry[]
+  notes: Note[]
   sessions?: Session[]
   contentTypes?: ContentType[]
   mediaItems?: MediaItem[]
   lastModified?: number | null
 }
 
-export type SyncEntityType = 'entry' | 'contentType' | 'mediaItem'
+export type SyncEntityType = 'note' | 'session' | 'contentType' | 'mediaItem'
 export type SyncMutationOperation = 'upsert' | 'delete'
-export type SyncEntity = Entry | ContentType | MediaItem
+export type SyncEntity = Note | Session | ContentType | MediaItem
 
 /** A durable local mutation. `key` coalesces repeated edits to one entity. */
 export interface SyncMutation {
@@ -350,11 +374,13 @@ export interface SyncMutation {
 }
 
 export interface RevisionSyncData {
-  entries: Entry[]
+  notes: Note[]
+  sessions: Session[]
   contentTypes: ContentType[]
   mediaItems: MediaItem[]
   deleted: {
-    entries: string[]
+    notes: string[]
+    sessions: string[]
     contentTypes: string[]
     mediaItems: string[]
   }

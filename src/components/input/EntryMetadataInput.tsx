@@ -4,7 +4,7 @@ import { TagInput } from './TagInput';
 import { LinkedEntryPicker } from './LinkedEntryPicker';
 import { CATEGORIES, BUILTIN_CONTENT_TYPES } from '@/utils/constants';
 import { getContentTypeDefaultValues } from '@/features/contentTypes';
-import type { CategoryId, ContentType, Entry, MediaItem } from '@/types';
+import type { CategoryId, ContentType, TimelineItem, MediaItem } from '@/types';
 
 interface EntryMetadataInputProps {
   // Category
@@ -20,9 +20,9 @@ interface EntryMetadataInputProps {
   tags: string[];
   setTags: (tags: string[]) => void;
   // Linked Entries (optional - only for EditModal)
-  linkedEntries?: string[];
-  setLinkedEntries?: (entries: string[]) => void;
-  allEntries?: Entry[];
+  linkedItems?: string[];
+  setLinkedItems?: (items: string[]) => void;
+  allItems?: TimelineItem[];
   currentEntryId?: string;
   currentEntryTimestamp?: number;
   // Content types list (optional - use BUILTIN if not provided)
@@ -51,9 +51,9 @@ export function EntryMetadataInput({
   setFieldValues,
   tags,
   setTags,
-  linkedEntries = [],
-  setLinkedEntries,
-  allEntries = [],
+  linkedItems = [],
+  setLinkedItems,
+  allItems = [],
   currentEntryId,
   currentEntryTimestamp = 0,
   contentTypes,
@@ -159,11 +159,11 @@ export function EntryMetadataInput({
         )}
 
         {/* Row 3: Linked Entries (optional) */}
-        {showLinkedEntries && setLinkedEntries && (
+        {showLinkedEntries && setLinkedItems && (
           <LinkedEntryPicker
-            linkedEntries={linkedEntries}
-            setLinkedEntries={setLinkedEntries}
-            allEntries={allEntries}
+            linkedItems={linkedItems}
+            setLinkedItems={setLinkedItems}
+            allItems={allItems}
             currentEntryId={currentEntryId}
             currentEntryTimestamp={currentEntryTimestamp}
           />

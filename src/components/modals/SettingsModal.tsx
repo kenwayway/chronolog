@@ -30,7 +30,7 @@ export function SettingsModal({
     isOpen,
     onClose,
 }: SettingsModalProps) {
-    const { state: { entries, sessions, contentTypes, mediaItems }, categories, actions: { importData: onImportData } } = useSessionContext();
+    const { state: { notes, sessions, contentTypes, mediaItems }, categories, actions: { importData: onImportData } } = useSessionContext();
     const cloudSync = useCloudSyncContext();
     const [activeTab, setActiveTab] = useState("appearance");
 
@@ -81,7 +81,7 @@ export function SettingsModal({
                         {activeTab === "sync" && (
                             <SyncTab
                                 cloudSync={cloudSync}
-                                entries={entries}
+                                notes={notes}
                                 sessions={sessions}
                                 categories={categories}
                                 contentTypes={contentTypes}

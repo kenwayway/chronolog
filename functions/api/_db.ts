@@ -1,172 +1,154 @@
-// Shared D1 helper functions for consistent row <-> object mapping
-
-import type { EntryRow, ContentTypeRow, MediaItemRow, Entry, ContentType, MediaItem } from './types.ts';
+import type {
+    ContentType,
+    ContentTypeRow,
+    MediaItem,
+    MediaItemRow,
+    Note,
+    NoteRow,
+    Session,
+    SessionRow,
+} from './types.ts';
 import { CATEGORY_IDS } from '../../src/utils/categories.ts';
 
-/**
- * Convert a D1 entry row (snake_case) to a frontend Entry object (camelCase)
- * Parses JSON string fields back into objects/arrays
- */
-export function entryRowToObject(row: EntryRow): Entry {
-    const entry: Entry = {
+function parseObject(value: string | null): Record<string, unknown> | undefined {
+    if (!value) return undefined;
+    try {
+        const parsed = JSON.parse(value);
+        return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : undefined;
+    } catch {
+        return undefined;
+    }
+}
+
+function parseArray(value: string | null): string[] | undefined {
+    if (!value) return undefined;
+    try {
+        const parsed = JSON.parse(value);
+        return Array.isArray(parsed) && parsed.length > 0
+            ? parsed.filter(item => typeof item === 'string')
+            : undefined;
+    } catch {
+        return undefined;
+    }
+}
+
+function validCategory(category?: string): string | null {
+    return category && CATEGORY_IDS.includes(category) ? category : null;
+}
+
+export function noteRowToObject(row: NoteRow): Note {
+    return {
         id: row.id,
-        type: row.type,
         content: row.content,
         timestamp: row.timestamp,
+        ...(row.session_id ? { sessionId: row.session_id } : {}),
+        ...(row.category ? { category: row.category } : {}),
+        ...(row.content_type && row.content_type !== 'note' ? { contentType: row.content_type } : {}),
+        ...(parseObject(row.field_values) ? { fieldValues: parseObject(row.field_values) } : {}),
+        ...(parseArray(row.linked_items) ? { linkedItems: parseArray(row.linked_items) } : {}),
+        ...(parseArray(row.tags) ? { tags: parseArray(row.tags) } : {}),
     };
-
-    if (row.session_id) entry.sessionId = row.session_id;
-    if (row.category) entry.category = row.category;
-    if (row.content_type && row.content_type !== 'note') entry.contentType = row.content_type;
-
-    // Parse JSON fields
-    if (row.field_values) {
-        try { entry.fieldValues = JSON.parse(row.field_values); } catch { /* ignore */ }
-    }
-    if (row.linked_entries) {
-        try {
-            const parsed = JSON.parse(row.linked_entries);
-            if (Array.isArray(parsed) && parsed.length > 0) entry.linkedEntries = parsed;
-        } catch { /* ignore */ }
-    }
-    if (row.tags) {
-        try {
-            const parsed = JSON.parse(row.tags);
-            if (Array.isArray(parsed) && parsed.length > 0) entry.tags = parsed;
-        } catch { /* ignore */ }
-    }
-
-    return entry;
 }
 
-interface EntryRowValues {
-    id: string;
-    type: string;
-    content: string;
-    timestamp: number;
-    session_id: string | null;
-    category: string | null;
-    content_type: string;
-    field_values: string | null;
-    linked_entries: string | null;
-    tags: string | null;
-    created_at: number;
-    updated_at: number;
-}
-
-/**
- * Convert a frontend Entry object (camelCase) to D1 row values (snake_case)
- * Stringifies JSON fields
- */
-export function entryObjectToRow(entry: Entry, now: number = Date.now()): EntryRowValues {
+export function sessionRowToObject(row: SessionRow): Session {
     return {
-        id: entry.id,
-        type: entry.type,
-        content: entry.content || '',
-        timestamp: entry.timestamp,
-        session_id: entry.sessionId || null,
-        // Categories are a fixed set; drop unknown values instead of rejecting the batch
-        category: entry.category && CATEGORY_IDS.includes(entry.category) ? entry.category : null,
-        content_type: entry.contentType || 'note',
-        field_values: entry.fieldValues ? JSON.stringify(entry.fieldValues) : null,
-        linked_entries: entry.linkedEntries ? JSON.stringify(entry.linkedEntries) : null,
-        tags: entry.tags ? JSON.stringify(entry.tags) : null,
+        id: row.id,
+        content: row.content,
+        startAt: row.start_at,
+        endAt: row.end_at,
+        ...(row.end_content ? { endContent: row.end_content } : {}),
+        ...(row.category ? { category: row.category } : {}),
+        ...(row.content_type && row.content_type !== 'note' ? { contentType: row.content_type } : {}),
+        ...(parseObject(row.field_values) ? { fieldValues: parseObject(row.field_values) } : {}),
+        ...(parseArray(row.linked_items) ? { linkedItems: parseArray(row.linked_items) } : {}),
+        ...(parseArray(row.tags) ? { tags: parseArray(row.tags) } : {}),
+        ...(parseArray(row.end_tags) ? { endTags: parseArray(row.end_tags) } : {}),
+    };
+}
+
+export function noteObjectToRow(note: Note, now = Date.now()) {
+    return {
+        id: note.id,
+        content: note.content || '',
+        timestamp: note.timestamp,
+        session_id: note.sessionId || null,
+        category: validCategory(note.category),
+        content_type: note.contentType || 'note',
+        field_values: note.fieldValues ? JSON.stringify(note.fieldValues) : null,
+        linked_items: note.linkedItems ? JSON.stringify(note.linkedItems) : null,
+        tags: note.tags ? JSON.stringify(note.tags) : null,
         created_at: now,
         updated_at: now,
     };
 }
 
-/**
- * Convert a D1 content_type row to a frontend ContentType object
- */
+export function sessionObjectToRow(session: Session, now = Date.now()) {
+    return {
+        id: session.id,
+        content: session.content || '',
+        start_at: session.startAt,
+        end_at: session.endAt,
+        end_content: session.endContent || null,
+        category: validCategory(session.category),
+        content_type: session.contentType || 'note',
+        field_values: session.fieldValues ? JSON.stringify(session.fieldValues) : null,
+        linked_items: session.linkedItems ? JSON.stringify(session.linkedItems) : null,
+        tags: session.tags ? JSON.stringify(session.tags) : null,
+        end_tags: session.endTags ? JSON.stringify(session.endTags) : null,
+        created_at: now,
+        updated_at: now,
+    };
+}
+
 export function contentTypeRowToObject(row: ContentTypeRow): ContentType {
-    const ct: ContentType = {
+    const contentType: ContentType = {
         id: row.id,
         name: row.name,
         fields: [],
         order: row.sort_order || 0,
     };
-
-    if (row.icon) ct.icon = row.icon;
-    if (row.color) ct.color = row.color;
-    if (row.built_in) ct.builtIn = true;
-
+    if (row.icon) contentType.icon = row.icon;
+    if (row.color) contentType.color = row.color;
+    if (row.built_in) contentType.builtIn = true;
     if (row.fields) {
-        try { ct.fields = JSON.parse(row.fields); } catch { ct.fields = []; }
+        try { contentType.fields = JSON.parse(row.fields); } catch { contentType.fields = []; }
     }
-
-    return ct;
+    return contentType;
 }
 
-interface ContentTypeRowValues {
-    id: string;
-    name: string;
-    icon: string | null;
-    color: string | null;
-    fields: string;
-    built_in: number;
-    sort_order: number;
-}
-
-/**
- * Convert a frontend ContentType object to D1 row values
- */
-export function contentTypeObjectToRow(ct: ContentType): ContentTypeRowValues {
+export function contentTypeObjectToRow(contentType: ContentType) {
     return {
-        id: ct.id,
-        name: ct.name,
-        icon: ct.icon || null,
-        color: ct.color || null,
-        fields: JSON.stringify(ct.fields || []),
-        built_in: ct.builtIn ? 1 : 0,
-        sort_order: ct.order ?? 0,
+        id: contentType.id,
+        name: contentType.name,
+        icon: contentType.icon || null,
+        color: contentType.color || null,
+        fields: JSON.stringify(contentType.fields || []),
+        built_in: contentType.builtIn ? 1 : 0,
+        sort_order: contentType.order ?? 0,
     };
 }
 
-/**
- * Convert a D1 media_item row to a frontend MediaItem object
- */
 export function mediaItemRowToObject(row: MediaItemRow): MediaItem {
     const item: MediaItem = {
         id: row.id,
         title: row.title,
         mediaType: row.media_type,
-        notionUrl: row.notion_url || undefined,
-        coverUrl: row.cover_url || undefined,
-        spotifyUrl: row.spotify_url || undefined,
         createdAt: row.created_at,
     };
-
+    if (row.notion_url) item.notionUrl = row.notion_url;
+    if (row.cover_url) item.coverUrl = row.cover_url;
+    if (row.spotify_url) item.spotifyUrl = row.spotify_url;
     if (row.rating != null) item.rating = row.rating;
     if (row.status) item.status = row.status;
     if (row.date_finished) item.dateFinished = row.date_finished;
     if (row.notes) item.notes = row.notes;
     if (row.metadata) {
-        try { item.metadata = JSON.parse(row.metadata); } catch { /* ignore */ }
+        try { item.metadata = JSON.parse(row.metadata); } catch { /* ignore malformed metadata */ }
     }
-
     return item;
 }
 
-interface MediaItemRowValues {
-    id: string;
-    title: string;
-    media_type: string;
-    notion_url: string | null;
-    cover_url: string | null;
-    spotify_url: string | null;
-    created_at: number;
-    rating: number | null;
-    status: string | null;
-    date_finished: string | null;
-    notes: string | null;
-    metadata: string | null;
-}
-
-/**
- * Convert a frontend MediaItem object to D1 row values
- */
-export function mediaItemObjectToRow(item: MediaItem): MediaItemRowValues {
+export function mediaItemObjectToRow(item: MediaItem) {
     return {
         id: item.id,
         title: item.title,
@@ -181,12 +163,4 @@ export function mediaItemObjectToRow(item: MediaItem): MediaItemRowValues {
         notes: item.notes || null,
         metadata: item.metadata ? JSON.stringify(item.metadata) : null,
     };
-}
-
-/**
- * Get the last_modified timestamp from sync_meta
- */
-export async function getLastModified(db: D1Database): Promise<number | null> {
-    const row = await db.prepare("SELECT value FROM sync_meta WHERE key = 'last_modified'").first<{ value: string }>();
-    return row ? parseInt(row.value, 10) : null;
 }

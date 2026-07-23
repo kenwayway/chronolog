@@ -21,10 +21,14 @@ export async function onRequestPost(context: CFContext): Promise<Response> {
     try {
         const db = env.CHRONOLOG_DB;
 
-        // Query entries that contain image references directly from D1
-        const result = await db.prepare(
-            "SELECT content FROM entries WHERE content LIKE '%/api/image/%'"
-        ).all<{ content: string }>();
+        const [notes, sessionStarts, sessionEnds] = await Promise.all([
+            db.prepare("SELECT content FROM notes WHERE content LIKE '%/api/image/%'")
+                .all<{ content: string }>(),
+            db.prepare("SELECT content FROM sessions WHERE content LIKE '%/api/image/%'")
+                .all<{ content: string }>(),
+            db.prepare("SELECT end_content AS content FROM sessions WHERE end_content LIKE '%/api/image/%'")
+                .all<{ content: string }>(),
+        ]);
 
         // Extract all image filenames from entries
         const usedImages = new Set<string>();
@@ -38,7 +42,7 @@ export async function onRequestPost(context: CFContext): Promise<Response> {
             }
         };
 
-        for (const row of result.results) {
+        for (const row of [...notes.results, ...sessionStarts.results, ...sessionEnds.results]) {
             if (row.content) extractImages(row.content);
         }
 

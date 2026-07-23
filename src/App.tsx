@@ -7,7 +7,7 @@ import { useAICategories } from "./hooks/useAICategories";
 import { useEntryHandlers } from "./hooks/useEntryHandlers";
 import { useAutoCategorize } from "./hooks/useAutoCategorize";
 import { useFollowUpLink } from "./hooks/useFollowUpLink";
-import { projectSessionsToEntries } from "./utils/legacySessionAdapter";
+import { projectTimelineItems } from "./domain/timeline";
 import { SessionContext, useSessionContext } from "./contexts/SessionContext";
 import { CloudSyncContext } from "./contexts/CloudSyncContext";
 import { UIStateProvider } from "./components/providers/UIStateProvider";
@@ -24,7 +24,7 @@ import {
     ActivityPanel,
     SearchPanel,
 } from "./components";
-import type { CategoryId, Entry, UseSessionReturn } from "./types";
+import type { CategoryId, UseSessionReturn } from "./types";
 import type { InputPanelRef } from "./components/input/InputPanel";
 import { LibraryPage } from "./pages/LibraryPage";
 import { GalleryPage } from "./pages/GalleryPage";
@@ -47,14 +47,15 @@ function HydratedApp({ session }: { session: UseSessionReturn }) {
     const { state, isStreaming, actions } = session;
     const { categories } = useCategories();
     const { categorize } = useAICategories();
-    const timelineEntries = useMemo(
-        () => projectSessionsToEntries(state.entries, state.sessions),
-        [state.entries, state.sessions],
+    const timelineItems = useMemo(
+        () => projectTimelineItems(state.notes, state.sessions),
+        [state.notes, state.sessions],
     );
 
     // Cloud sync
     const cloudSync = useCloudSync({
-        entries: timelineEntries,
+        notes: state.notes,
+        sessions: state.sessions,
         contentTypes: state.contentTypes,
         mediaItems: state.mediaItems,
         onImportData: actions.importData,
@@ -62,11 +63,12 @@ function HydratedApp({ session }: { session: UseSessionReturn }) {
 
     // Auto-categorize new entries via AI
     useAutoCategorize({
-        entries: timelineEntries,
+        items: timelineItems,
         contentTypes: state.contentTypes,
         isLoggedIn: cloudSync.isLoggedIn,
         categorize,
-        updateEntry: actions.updateEntry,
+        updateNote: actions.updateNote,
+        updateSession: actions.updateSession,
     });
 
     // Entry handlers (extracted to reduce App.tsx complexity)
@@ -78,11 +80,11 @@ function HydratedApp({ session }: { session: UseSessionReturn }) {
     // Context values — memoized with stable deps to prevent unnecessary re-renders
     const sessionContextValue = useMemo(() => ({
         state,
-        timelineEntries,
+        timelineItems,
         actions,
         categories,
         isStreaming,
-    }), [state, timelineEntries, actions, categories, isStreaming]);
+    }), [state, timelineItems, actions, categories, isStreaming]);
 
     // Fix: field-by-field deps instead of the spread object (which is always a new ref)
     const cloudSyncContextValue = useMemo(() => ({
@@ -144,14 +146,15 @@ function MainView({
     isStreaming: boolean;
     handlers: ReturnType<typeof useEntryHandlers>;
 }) {
-    const { state, actions, timelineEntries } = useSessionContext();
+    const { state, actions, timelineItems } = useSessionContext();
     const ui = useUIStateContext();
     const inputPanelRef = useRef<InputPanelRef>(null);
 
     // Follow-up linking
     const followUp = useFollowUpLink({
-        entries: timelineEntries,
-        updateEntry: actions.updateEntry,
+        items: timelineItems,
+        updateNote: actions.updateNote,
+        updateSession: actions.updateSession,
         inputPanelRef,
     });
 
@@ -161,7 +164,7 @@ function MainView({
             || ui.contentTypeFilter.length > 0;
 
         if (hasFilters) {
-            let results = timelineEntries;
+            let results = timelineItems;
             if (ui.categoryFilter.length > 0) {
                 results = results.filter(entry => ui.categoryFilter.includes(entry.category as CategoryId));
             }
@@ -182,10 +185,10 @@ function MainView({
         const nextDay = new Date(day);
         nextDay.setDate(nextDay.getDate() + 1);
         const dayEnd = nextDay.getTime();
-        return timelineEntries.filter(entry =>
+        return timelineItems.filter(entry =>
             entry.timestamp >= dayStart && entry.timestamp < dayEnd
         );
-    }, [timelineEntries, ui.categoryFilter, ui.tagFilter, ui.contentTypeFilter, ui.selectedDate]);
+    }, [timelineItems, ui.categoryFilter, ui.tagFilter, ui.contentTypeFilter, ui.selectedDate]);
 
     return (
         <div className="min-h-screen flex flex-col font-mono" style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}>

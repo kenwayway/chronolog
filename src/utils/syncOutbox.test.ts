@@ -4,20 +4,20 @@ import { buildSyncMutations, dirtyIdsByType, mutationKey } from './syncOutbox'
 describe('sync outbox', () => {
     it('coalesces repeated entity edits under a stable key', () => {
         const previous = [{ id: 'a', value: 1 }]
-        const mutations = buildSyncMutations(previous, [{ id: 'a', value: 2 }], 'entry')
+        const mutations = buildSyncMutations(previous, [{ id: 'a', value: 2 }], 'note')
         expect(mutations).toHaveLength(1)
         expect(mutations[0]).toMatchObject({
-            key: mutationKey('entry', 'a'),
+            key: mutationKey('note', 'a'),
             entityId: 'a',
             operation: 'upsert',
             value: { id: 'a', value: 2 },
         })
     })
 
-    it('does not emit mutations for structurally equal projected entries', () => {
+    it('does not emit mutations for structurally equal notes', () => {
         const previous = [{ id: 'a', nested: { value: 1 } }]
         const current = [{ id: 'a', nested: { value: 1 } }]
-        expect(buildSyncMutations(previous, current, 'entry')).toEqual([])
+        expect(buildSyncMutations(previous, current, 'note')).toEqual([])
     })
 
     it('emits deletes and groups dirty IDs by entity type', () => {

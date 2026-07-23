@@ -1,5 +1,5 @@
 import { useCallback } from 'react'
-import type { Entry, SessionActions, UpdateEntryPayload, CategoryId } from '@/types'
+import type { TimelineItem, SessionActions, TimelineItemUpdate, CategoryId } from '@/types'
 
 interface UseEntryHandlersProps {
     actions: SessionActions
@@ -12,10 +12,10 @@ interface EntryHandlers {
     handleSwitch: (content: string, options?: { contentType?: string; fieldValues?: Record<string, unknown>; category?: CategoryId; tags?: string[] }) => void
     handleNote: (content: string, options?: { contentType?: string; fieldValues?: Record<string, unknown>; category?: CategoryId; tags?: string[] }) => void
     handleLogOff: (content: string) => void
-    handleEditEntry: (entry: Entry, openModal: (entry: Entry) => void) => void
-    handleSaveEdit: (entryId: string, updates: Omit<UpdateEntryPayload, 'entryId'>) => void
-    handleDeleteEntry: (entry: Entry) => void
-    handleCopyEntry: (entry: Entry) => void
+    handleEditEntry: (item: TimelineItem, openModal: (item: TimelineItem) => void) => void
+    handleSaveEdit: (item: TimelineItem, updates: TimelineItemUpdate) => void
+    handleDeleteEntry: (item: TimelineItem) => void
+    handleCopyEntry: (item: TimelineItem) => void
 }
 
 /**
@@ -52,28 +52,45 @@ export function useEntryHandlers({
         actions.logOff(content)
     }, [actions])
 
-    const handleEditEntry = useCallback((entry: Entry, openModal: (entry: Entry) => void) => {
-        openModal(entry)
+    const handleEditEntry = useCallback((item: TimelineItem, openModal: (item: TimelineItem) => void) => {
+        openModal(item)
     }, [])
 
-    const handleSaveEdit = useCallback((entryId: string, updates: Omit<UpdateEntryPayload, 'entryId'>) => {
+    const handleSaveEdit = useCallback((item: TimelineItem, updates: TimelineItemUpdate) => {
         const cleanUpdates = Object.fromEntries(
             Object.entries(updates).filter(([, v]) => v !== undefined)
-        ) as Omit<UpdateEntryPayload, 'entryId'>
-        if (Object.keys(cleanUpdates).length > 0) {
-            actions.updateEntry(entryId, cleanUpdates)
+        ) as TimelineItemUpdate
+        if (Object.keys(cleanUpdates).length === 0) return
+
+        if (item.kind === 'note') {
+            actions.updateNote(item.entityId, cleanUpdates)
+        } else if (item.kind === 'session-start') {
+            const { timestamp, ...rest } = cleanUpdates
+            actions.updateSession(item.entityId, {
+                ...rest,
+                startAt: timestamp,
+            })
+        } else {
+            actions.updateSession(item.entityId, {
+                endContent: cleanUpdates.content,
+                endAt: cleanUpdates.timestamp,
+                endTags: cleanUpdates.tags,
+                linkedItems: cleanUpdates.linkedItems,
+            })
         }
     }, [actions])
 
-    const handleDeleteEntry = useCallback((entry: Entry) => {
+    const handleDeleteEntry = useCallback((item: TimelineItem) => {
         if (!requireLogin()) return
-        if (confirm('Delete this entry?')) {
-            actions.deleteEntry(entry.id)
+        const label = item.kind === 'note' ? 'note' : 'session'
+        if (confirm(`Delete this ${label}?`)) {
+            if (item.kind === 'note') actions.deleteNote(item.entityId)
+            else actions.deleteSession(item.entityId)
         }
     }, [actions, requireLogin])
 
-    const handleCopyEntry = useCallback((entry: Entry) => {
-        navigator.clipboard.writeText(entry.content || '')
+    const handleCopyEntry = useCallback((item: TimelineItem) => {
+        navigator.clipboard.writeText(item.content || '')
     }, [])
 
     return {

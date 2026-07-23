@@ -10,7 +10,8 @@ function fakeDb() {
     const batched: Array<{ sql: string; values: unknown[] }> = [];
     const db = {
         prepare(sql: string) {
-            return {
+            const prepared = {
+                async first() { return { revision: 9 }; },
                 bind(...values: unknown[]) {
                     return {
                         sql,
@@ -19,6 +20,7 @@ function fakeDb() {
                     };
                 },
             };
+            return prepared;
         },
         async batch(statements: Array<{ sql: string; values: unknown[] }>) {
             batched.push(...statements);
@@ -33,10 +35,10 @@ describe('revision sync validation', () => {
         const result = validateRevisionMutations([
             {
                 mutationId: 'm1',
-                entityType: 'entry',
+                entityType: 'note',
                 entityId: 'e1',
                 operation: 'upsert',
-                value: { id: 'e1', type: 'NOTE', content: 'hello', timestamp: 1 },
+                value: { id: 'e1', content: 'hello', timestamp: 1 },
             },
             { mutationId: 'm2', entityType: 'mediaItem', entityId: 'media-1', operation: 'delete' },
         ]);
@@ -46,7 +48,7 @@ describe('revision sync validation', () => {
     it('rejects a mismatched upsert value', () => {
         expect(() => validateRevisionMutations([{
             mutationId: 'm1',
-            entityType: 'entry',
+            entityType: 'note',
             entityId: 'expected',
             operation: 'upsert',
             value: { id: 'different' },
@@ -56,7 +58,7 @@ describe('revision sync validation', () => {
     it('caps request size so the atomic D1 batch stays below 100 statements', () => {
         const mutations = Array.from({ length: MAX_MUTATIONS_PER_REQUEST + 1 }, (_, index) => ({
             mutationId: `m${index}`,
-            entityType: 'entry',
+            entityType: 'note',
             entityId: `e${index}`,
             operation: 'delete',
         }));
@@ -69,11 +71,11 @@ describe('applyRevisionMutations', () => {
         const { db, batched } = fakeDb();
         const mutations: RevisionMutation[] = [
             {
-                mutationId: 'upsert-entry',
-                entityType: 'entry',
+                mutationId: 'upsert-note',
+                entityType: 'note',
                 entityId: 'e1',
                 operation: 'upsert',
-                value: { id: 'e1', type: 'NOTE', content: 'hello', timestamp: 1 },
+                value: { id: 'e1', content: 'hello', timestamp: 1 },
             },
             {
                 mutationId: 'delete-media',
@@ -84,7 +86,7 @@ describe('applyRevisionMutations', () => {
         ];
 
         const result = await applyRevisionMutations(db, mutations);
-        expect(result).toMatchObject({ revision: 9, appliedMutationIds: ['upsert-entry', 'delete-media'] });
+        expect(result).toMatchObject({ revision: 9, appliedMutationIds: ['upsert-note', 'delete-media'] });
         expect(result.lastModified).toEqual(expect.any(Number));
         expect(batched).toHaveLength(7);
         expect(batched[0].sql).toContain('INSERT OR IGNORE INTO sync_commits');

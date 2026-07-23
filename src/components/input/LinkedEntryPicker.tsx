@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { X, Link2, Search } from 'lucide-react';
-import type { Entry } from '@/types';
+import type { TimelineItem } from '@/types';
 
 interface LinkedEntryPickerProps {
-    linkedEntries: string[];
-    setLinkedEntries: (entries: string[]) => void;
-    allEntries: Entry[];
+    linkedItems: string[];
+    setLinkedItems: (items: string[]) => void;
+    allItems: TimelineItem[];
     currentEntryId?: string;
     currentEntryTimestamp: number;
 }
@@ -20,9 +20,9 @@ function getEntryPreview(content: string | undefined) {
  * Linked entries section with search and add/remove
  */
 export function LinkedEntryPicker({
-    linkedEntries,
-    setLinkedEntries,
-    allEntries,
+    linkedItems,
+    setLinkedItems,
+    allItems,
     currentEntryId,
     currentEntryTimestamp,
 }: LinkedEntryPickerProps) {
@@ -30,20 +30,20 @@ export function LinkedEntryPicker({
     const [linkSearch, setLinkSearch] = useState('');
 
     const handleAddLinkedEntry = (entryId: string) => {
-        if (!linkedEntries.includes(entryId)) {
-            setLinkedEntries([...linkedEntries, entryId]);
+        if (!linkedItems.includes(entryId)) {
+            setLinkedItems([...linkedItems, entryId]);
             setLinkSearch('');
             setShowLinkSearch(false);
         }
     };
 
     const handleRemoveLinkedEntry = (entryId: string) => {
-        setLinkedEntries(linkedEntries.filter(id => id !== entryId));
+        setLinkedItems(linkedItems.filter(id => id !== entryId));
     };
 
     // Filter searchable entries
-    const searchableEntries = allEntries
-        .filter(e => e.id !== currentEntryId && !linkedEntries.includes(e.id))
+    const searchableEntries = allItems
+        .filter(e => e.kind !== 'session-end' && e.entityId !== currentEntryId && !linkedItems.includes(e.entityId))
         .filter(e => linkSearch.trim() === "" || e.content?.toLowerCase().includes(linkSearch.toLowerCase()))
         .slice(0, 8);
 
@@ -61,10 +61,10 @@ export function LinkedEntryPicker({
             </div>
 
             {/* Current linked entries */}
-            {linkedEntries.length > 0 && (
+            {linkedItems.length > 0 && (
                 <div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: showLinkSearch ? 8 : 0 }}>
-                    {linkedEntries.map(linkId => {
-                        const linkedEntry = allEntries.find(e => e.id === linkId);
+                    {linkedItems.map(linkId => {
+                        const linkedEntry = allItems.find(e => e.entityId === linkId && e.kind !== 'session-end');
                         if (!linkedEntry) return null;
                         const isOlder = linkedEntry.timestamp < currentEntryTimestamp;
                         return (
@@ -130,7 +130,7 @@ export function LinkedEntryPicker({
                             {searchableEntries.map(e => (
                                 <button
                                     key={e.id}
-                                    onClick={() => handleAddLinkedEntry(e.id)}
+                                    onClick={() => handleAddLinkedEntry(e.entityId)}
                                     style={{
                                         display: "flex",
                                         alignItems: "center",

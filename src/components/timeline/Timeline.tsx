@@ -1,10 +1,9 @@
 import { useState, useMemo } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { ENTRY_TYPES } from "@/utils/constants";
 import { useTheme } from "@/hooks/useTheme";
 import { useSessionContext } from "@/contexts/SessionContext";
 import { TimelineEntry } from "./TimelineEntry";
-import type { Entry, SessionStatus, CategoryId } from "@/types";
+import type { TimelineItem, SessionStatus, CategoryId } from "@/types";
 
 const ENTRIES_PER_PAGE = 20;
 
@@ -14,18 +13,18 @@ interface Position {
 }
 
 interface TimelineProps {
-  entries: Entry[];
+  entries: TimelineItem[];
   status: SessionStatus;
-  onContextMenu: (entry: Entry, position: Position) => void;
-  onEdit?: (entry: Entry) => void;
+  onContextMenu: (entry: TimelineItem, position: Position) => void;
+  onEdit?: (entry: TimelineItem) => void;
   categoryFilter?: CategoryId[];
   isFilterMode?: boolean;
   filterKey?: string;
-  onNavigateToEntry?: (entry: Entry) => void;
+  onNavigateToEntry?: (entry: TimelineItem) => void;
 }
 
 export function Timeline({ entries, onContextMenu, onEdit, categoryFilter = [], isFilterMode: isFilterModeProp, filterKey = '', onNavigateToEntry }: TimelineProps) {
-  const { state: { mediaItems, sessions }, timelineEntries: allEntries, categories } = useSessionContext();
+  const { state: { mediaItems, sessions }, timelineItems: allEntries, categories } = useSessionContext();
   const { theme } = useTheme();
 
   // Stable key for categoryFilter to avoid re-creating strings on every render
@@ -53,15 +52,15 @@ export function Timeline({ entries, onContextMenu, onEdit, categoryFilter = [], 
     const durations: Record<string, number> = {};
     const sessionIds = new Set(sessions.map(session => session.id));
     for (const session of sessions) {
-      if (session.endAt !== null) durations[session.startEntryId] = session.endAt - session.startAt;
+      if (session.endAt !== null) durations[`session:${session.id}:start`] = session.endAt - session.startAt;
     }
     const lineStates: Record<string, string> = {};
 
     for (const entry of sortedEntries) {
       let state = "default";
-      if (entry.type === ENTRY_TYPES.SESSION_START) {
+      if (entry.kind === 'session-start') {
         state = "start";
-      } else if (entry.type === ENTRY_TYPES.SESSION_END) {
+      } else if (entry.kind === 'session-end') {
         state = "end";
       } else if (entry.sessionId && sessionIds.has(entry.sessionId)) {
         state = "active";

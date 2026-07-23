@@ -11,7 +11,7 @@
  * Public API is identical to the pre-refactor version.
  */
 import { useEffect, useCallback, useRef } from 'react'
-import type { Entry, ContentType, MediaItem, ImportDataPayload, TestAIResult } from '@/types'
+import type { Note, Session, ContentType, MediaItem, ImportDataPayload, TestAIResult } from '@/types'
 import { useCloudAuth, type LoginResult } from './useCloudAuth'
 import { useImageUpload, type CleanupResult } from './useImageUpload'
 import { useAIHealthCheck } from './useAIHealthCheck'
@@ -22,7 +22,8 @@ const SYNC_DEBOUNCE_MS = 500
 const POLL_INTERVAL_MS = 30_000
 
 interface UseCloudSyncProps {
-  entries: Entry[]
+  notes: Note[]
+  sessions: Session[]
   contentTypes: ContentType[]
   mediaItems: MediaItem[]
   onImportData: (data: ImportDataPayload) => void
@@ -39,7 +40,7 @@ interface UseCloudSyncReturn extends SyncState {
   token: string | null
 }
 
-export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }: UseCloudSyncProps): UseCloudSyncReturn {
+export function useCloudSync({ notes, sessions, contentTypes, mediaItems, onImportData }: UseCloudSyncProps): UseCloudSyncReturn {
   const syncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const isSyncingRef = useRef(false)
@@ -50,7 +51,7 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
   const prevNotionFailedRef = useRef(0)
 
   // Core sync engine
-  const engine = useSyncEngine({ entries, contentTypes, mediaItems, onImportData })
+  const engine = useSyncEngine({ notes, sessions, contentTypes, mediaItems, onImportData })
   const {
     syncState,
     fetchRemoteData,
@@ -173,7 +174,7 @@ export function useCloudSync({ entries, contentTypes, mediaItems, onImportData }
     return () => {
       if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current)
     }
-  }, [entries, contentTypes, mediaItems, isLoggedIn, tokenRef, isImporting, saveToCloud])
+  }, [notes, sessions, contentTypes, mediaItems, isLoggedIn, tokenRef, isImporting, saveToCloud])
 
   // --- Flush on page unload ---
   // This network flush is best-effort; correctness comes from the durable

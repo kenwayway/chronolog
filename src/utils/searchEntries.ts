@@ -1,4 +1,4 @@
-import type { Category, ContentType, Entry, MediaItem } from '@/types'
+import type { Category, ContentType, TimelineItem, MediaItem } from '@/types'
 
 export interface EntrySearchContext {
     categories?: Category[]
@@ -37,8 +37,8 @@ function collectSearchValues(
 }
 
 /** Build the text searched for a single entry, including structured metadata. */
-export function getEntrySearchText(entry: Entry, context: EntrySearchContext = {}): string {
-    const values: string[] = [entry.content, entry.type, entry.category ?? '', entry.contentType ?? '']
+export function getEntrySearchText(entry: TimelineItem, context: EntrySearchContext = {}): string {
+    const values: string[] = [entry.content, entry.kind, entry.category ?? '', entry.contentType ?? '']
     values.push(...(entry.tags ?? []))
     collectSearchValues(entry.fieldValues, values, new Set())
 
@@ -64,10 +64,10 @@ export function getEntrySearchText(entry: Entry, context: EntrySearchContext = {
  * An empty query deliberately returns no results so the UI can show an idle state.
  */
 export function searchEntries(
-    entries: Entry[],
+    entries: TimelineItem[],
     query: string,
     context: EntrySearchContext = {},
-): Entry[] {
+): TimelineItem[] {
     const tokens = normalize(query).trim().split(/\s+/).filter(Boolean)
     if (tokens.length === 0) return []
 

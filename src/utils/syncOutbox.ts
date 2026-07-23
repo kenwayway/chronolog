@@ -57,7 +57,8 @@ export function buildSyncMutations<T extends Identifiable>(
 
 export function dirtyIdsByType(mutations: SyncMutation[]): Record<SyncEntityType, Set<string>> {
     const result: Record<SyncEntityType, Set<string>> = {
-        entry: new Set(),
+        note: new Set(),
+        session: new Set(),
         contentType: new Set(),
         mediaItem: new Set(),
     }

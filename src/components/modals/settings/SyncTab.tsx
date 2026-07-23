@@ -1,9 +1,9 @@
 import { useState, useRef, KeyboardEvent, ChangeEvent } from 'react';
 import { Download, Upload, Check, FolderOpen, Cloud, CloudOff, RefreshCw, Trash2, Sparkles } from 'lucide-react';
-import type { Entry, Session, Category, ContentType, MediaItem, CloudSyncFull, TestAIResult } from '@/types';
+import type { Note, Session, Category, ContentType, MediaItem, CloudSyncFull, TestAIResult } from '@/types';
 
 interface ImportData {
-    entries: Entry[];
+    notes: Note[];
     sessions?: Session[];
     categories?: Category[];
     contentTypes?: ContentType[];
@@ -18,7 +18,7 @@ interface CleanupResult {
 
 interface SyncTabProps {
     cloudSync?: CloudSyncFull;
-    entries?: Entry[];
+    notes?: Note[];
     sessions?: Session[];
     categories?: Category[];
     contentTypes?: ContentType[];
@@ -31,7 +31,7 @@ interface SyncTabProps {
  */
 export function SyncTab({
     cloudSync,
-    entries,
+    notes,
     sessions,
     categories,
     contentTypes,
@@ -48,7 +48,7 @@ export function SyncTab({
 
     const handleExport = () => {
         const data = {
-            entries,
+            notes,
             sessions,
             categories,
             contentTypes,
@@ -74,9 +74,9 @@ export function SyncTab({
         reader.onload = (event) => {
             try {
                 const data = JSON.parse(event.target?.result as string);
-                if (data.entries) {
+                if (data.notes && data.sessions) {
                     onImportData({
-                        entries: data.entries,
+                        notes: data.notes,
                         sessions: data.sessions,
                         contentTypes: data.contentTypes,
                         mediaItems: data.mediaItems,
@@ -239,7 +239,7 @@ export function SyncTab({
                     />
                 </div>
                 <p className="settings-hint" style={{ marginTop: 8 }}>
-                    {entries?.length || 0} 条记录
+                    {(notes?.length || 0) + (sessions?.length || 0)} 条记录
                 </p>
             </div>
 

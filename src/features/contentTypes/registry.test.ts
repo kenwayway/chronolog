@@ -45,7 +45,7 @@ describe('content type registry', () => {
     expect(prepareContentTypeSubmission(
       'notion-task',
       { notionPageId: `https://www.notion.so/Task-${NOTION_PAGE_ID.replace(/-/g, '')}` },
-      'SESSION_START',
+      'session',
     )).toEqual({
       ok: true,
       fieldValues: { notionPageId: NOTION_PAGE_ID },
@@ -54,28 +54,19 @@ describe('content type registry', () => {
     expect(prepareContentTypeSubmission(
       'notion-task',
       { notionPageId: NOTION_PAGE_ID },
-      'NOTE',
+      'note',
     )).toEqual({
       ok: false,
       error: 'Task can only be attached to a session start.',
     })
 
-    expect(prepareContentTypeSubmission(
-      'notion-task',
-      { notionPageId: NOTION_PAGE_ID },
-      'SESSION_START',
-      'NOTE',
-    )).toEqual({
-      ok: false,
-      error: 'Task can only be attached to a session start.',
-    })
   })
 
   it('rejects malformed required Notion values and preserves custom types', () => {
     expect(prepareContentTypeSubmission(
       'notion-task',
       { notionPageId: 'not-a-page' },
-      'SESSION_START',
+      'session',
     )).toEqual({
       ok: false,
       error: 'Enter a valid Notion task URL or page ID.',
@@ -84,7 +75,7 @@ describe('content type registry', () => {
     expect(prepareContentTypeSubmission(
       'custom',
       { anything: 42 },
-      'NOTE',
+      'note',
     )).toEqual({
       ok: true,
       fieldValues: { anything: 42 },

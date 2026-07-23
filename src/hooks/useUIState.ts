@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import type { Entry, CategoryId } from '@/types'
+import type { TimelineItem, CategoryId } from '@/types'
 
 interface Position {
     x: number
@@ -9,12 +9,12 @@ interface Position {
 interface ContextMenuState {
     isOpen: boolean
     position: Position
-    entry: Entry | null
+    entry: TimelineItem | null
 }
 
 interface EditModalState {
     isOpen: boolean
-    entry: Entry | null
+    entry: TimelineItem | null
 }
 
 export interface UIState {
@@ -30,12 +30,12 @@ export interface UIState {
 
     // Context menu
     contextMenu: ContextMenuState
-    handleContextMenu: (entry: Entry, position: Position) => void
+    handleContextMenu: (entry: TimelineItem, position: Position) => void
     closeContextMenu: () => void
 
     // Edit modal
     editModal: EditModalState
-    openEditModal: (entry: Entry) => void
+    openEditModal: (entry: TimelineItem) => void
     closeEditModal: () => void
 
     // Navigation
@@ -47,7 +47,7 @@ export interface UIState {
     setTagFilter: (filter: string[]) => void
     contentTypeFilter: string[]
     setContentTypeFilter: (filter: string[]) => void
-    navigateToEntry: (entry: Entry) => void
+    navigateToEntry: (entry: TimelineItem) => void
 }
 
 export function useUIState(): UIState {
@@ -68,7 +68,7 @@ export function useUIState(): UIState {
         entry: null,
     })
 
-    const handleContextMenu = useCallback((entry: Entry, position: Position) => {
+    const handleContextMenu = useCallback((entry: TimelineItem, position: Position) => {
         setContextMenu({ isOpen: true, position, entry })
     }, [])
 
@@ -79,7 +79,7 @@ export function useUIState(): UIState {
     // Edit modal
     const [editModal, setEditModal] = useState<EditModalState>({ isOpen: false, entry: null })
 
-    const openEditModal = useCallback((entry: Entry) => {
+    const openEditModal = useCallback((entry: TimelineItem) => {
         setEditModal({ isOpen: true, entry })
     }, [])
 
@@ -88,7 +88,7 @@ export function useUIState(): UIState {
     }, [])
 
     // Navigate to an entry
-    const navigateToEntry = useCallback((targetEntry: Entry) => {
+    const navigateToEntry = useCallback((targetEntry: TimelineItem) => {
         if (!targetEntry) return
         setShowLanding(false)
         const targetDate = new Date(targetEntry.timestamp)

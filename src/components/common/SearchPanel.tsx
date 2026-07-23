@@ -4,7 +4,7 @@ import { CornerDownLeft, Search, X } from 'lucide-react'
 import { useSessionContext } from '@/contexts/SessionContext'
 import { useUIStateContext } from '@/hooks/useUIStateContext'
 import { searchEntries } from '@/utils/searchEntries'
-import type { Entry } from '@/types'
+import type { TimelineItem } from '@/types'
 import styles from './SearchPanel.module.css'
 
 const RESULT_LIMIT = 100
@@ -16,7 +16,7 @@ const dateFormatter = new Intl.DateTimeFormat(undefined, {
     minute: '2-digit',
 })
 
-function getPreview(entry: Entry): string {
+function getPreview(entry: TimelineItem): string {
     const values = Object.values(entry.fieldValues ?? {})
         .filter(value => ['string', 'number', 'boolean'].includes(typeof value))
         .map(String)
@@ -39,7 +39,7 @@ function highlightText(text: string, query: string): ReactNode {
 }
 
 export function SearchPanel() {
-    const { state: { contentTypes, mediaItems }, timelineEntries: entries, categories } = useSessionContext()
+    const { state: { contentTypes, mediaItems }, timelineItems: entries, categories } = useSessionContext()
     const {
         searchOpen,
         setSearchOpen,
@@ -67,7 +67,7 @@ export function SearchPanel() {
         setActiveIndex(0)
     }, [setSearchOpen])
 
-    const openEntry = (entry: Entry) => {
+    const openEntry = (entry: TimelineItem) => {
         setCategoryFilter([])
         setTagFilter([])
         setContentTypeFilter([])

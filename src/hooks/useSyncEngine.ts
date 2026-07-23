@@ -6,14 +6,15 @@
  * methods/state.
  */
 import { useCallback, useEffect, useState } from 'react'
-import type { ContentType, Entry, ImportDataPayload, MediaItem } from '@/types'
+import type { ContentType, ImportDataPayload, MediaItem, Note, Session } from '@/types'
 import { SyncCoordinator, type SyncState } from '@/features/sync'
 import { getApiBase } from './useCloudAuth'
 
 export type { SyncState } from '@/features/sync'
 
 export interface UseSyncEngineProps {
-    entries: Entry[]
+    notes: Note[]
+    sessions: Session[]
     contentTypes: ContentType[]
     mediaItems: MediaItem[]
     onImportData: (data: ImportDataPayload) => void
@@ -29,14 +30,15 @@ export interface UseSyncEngineReturn {
 }
 
 export function useSyncEngine({
-    entries,
+    notes,
+    sessions,
     contentTypes,
     mediaItems,
     onImportData,
 }: UseSyncEngineProps): UseSyncEngineReturn {
     const [coordinator] = useState(
         () => new SyncCoordinator({
-            initialData: { entries, contentTypes, mediaItems },
+            initialData: { notes, sessions, contentTypes, mediaItems },
             importData: onImportData,
             apiBase: getApiBase,
         }),
@@ -53,8 +55,8 @@ export function useSyncEngine({
     }, [coordinator, onImportData])
 
     useEffect(() => {
-        void coordinator.observeData({ entries, contentTypes, mediaItems })
-    }, [coordinator, entries, contentTypes, mediaItems])
+        void coordinator.observeData({ notes, sessions, contentTypes, mediaItems })
+    }, [coordinator, notes, sessions, contentTypes, mediaItems])
 
     const fetchRemoteData = useCallback(
         (token: string | null, forceFullFetch = false) => coordinator.pull(token, forceFullFetch),

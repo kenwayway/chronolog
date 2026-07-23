@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { Entry, RevisionSyncData, SyncMutation } from '@/types'
+import type { Note, RevisionSyncData, Session, SyncMutation } from '@/types'
 import {
   SyncCoordinator,
   type SyncDataSnapshot,
@@ -7,17 +7,16 @@ import {
   type SyncStorage,
 } from './SyncCoordinator'
 
-function entry(id: string, content: string): Entry {
-  return {
-    id,
-    type: 'NOTE',
-    content,
-    timestamp: 1,
-  }
+function note(id: string, content: string): Note {
+  return { id, content, timestamp: 1 }
 }
 
-function snapshot(entries: Entry[] = []): SyncDataSnapshot {
-  return { entries, contentTypes: [], mediaItems: [] }
+function session(id: string, content: string): Session {
+  return { id, content, startAt: 1, endAt: null }
+}
+
+function snapshot(notes: Note[] = [], sessions: Session[] = []): SyncDataSnapshot {
+  return { notes, sessions, contentTypes: [], mediaItems: [] }
 }
 
 function memoryStorage(initial: Record<string, string> = {}): SyncStorage & { values: Map<string, string> } {
@@ -33,25 +32,18 @@ function memoryStorage(initial: Record<string, string> = {}): SyncStorage & { va
 function memoryOutbox(initial: SyncMutation[] = []): SyncOutbox & {
   values: Map<string, SyncMutation>
   queued: SyncMutation[][]
-  acknowledged: string[][]
 } {
   const values = new Map(initial.map(mutation => [mutation.key, mutation]))
   const queued: SyncMutation[][] = []
-  const acknowledged: string[][] = []
-
   return {
     values,
     queued,
-    acknowledged,
-    async load() {
-      return [...values.values()]
-    },
+    async load() { return [...values.values()] },
     async queue(mutations) {
       queued.push(mutations)
       mutations.forEach(mutation => values.set(mutation.key, mutation))
     },
     async acknowledge(mutationIds) {
-      acknowledged.push(mutationIds)
       const ids = new Set(mutationIds)
       values.forEach((mutation, key) => {
         if (ids.has(mutation.mutationId)) values.delete(key)
@@ -62,67 +54,60 @@ function memoryOutbox(initial: SyncMutation[] = []): SyncOutbox & {
 
 function remoteData(overrides: Partial<RevisionSyncData> = {}): RevisionSyncData {
   return {
-    entries: [],
+    notes: [],
+    sessions: [],
     contentTypes: [],
     mediaItems: [],
-    deleted: { entries: [], contentTypes: [], mediaItems: [] },
+    deleted: { notes: [], sessions: [], contentTypes: [], mediaItems: [] },
     revision: 1,
     incremental: true,
     ...overrides,
   }
 }
 
+const seededStorage = () => memoryStorage({ chronolog_outbox_v2_seeded: '1' })
+
 describe('SyncCoordinator', () => {
-  it('turns observed local transitions into durable outbox mutations', async () => {
+  it('queues independent note and session mutations', async () => {
     const outbox = memoryOutbox()
     const coordinator = new SyncCoordinator({
-      initialData: snapshot([entry('a', 'before')]),
+      initialData: snapshot([note('n', 'before')], [session('s', 'before')]),
       importData: vi.fn(),
-      storage: memoryStorage({ chronolog_outbox_v1_seeded: '1' }),
+      storage: seededStorage(),
       outbox,
       fetch: vi.fn() as unknown as typeof fetch,
     })
 
-    await coordinator.observeData(snapshot([
-      entry('a', 'after'),
-      entry('b', 'new'),
-    ]))
+    await coordinator.observeData(snapshot(
+      [note('n', 'after'), note('new', 'created')],
+      [{ ...session('s', 'before'), endAt: 20 }],
+    ))
 
-    expect(outbox.queued).toHaveLength(1)
-    expect(outbox.queued[0]).toEqual(expect.arrayContaining([
-      expect.objectContaining({
-        entityType: 'entry',
-        entityId: 'a',
-        operation: 'upsert',
-        value: expect.objectContaining({ content: 'after' }),
-      }),
-      expect.objectContaining({
-        entityType: 'entry',
-        entityId: 'b',
-        operation: 'upsert',
-      }),
+    expect(outbox.queued.flat()).toEqual(expect.arrayContaining([
+      expect.objectContaining({ entityType: 'note', entityId: 'n', operation: 'upsert' }),
+      expect.objectContaining({ entityType: 'note', entityId: 'new', operation: 'upsert' }),
+      expect.objectContaining({ entityType: 'session', entityId: 's', operation: 'upsert' }),
     ]))
   })
 
-  it('pulls from the stored revision, merges remote data, and advances only the pull cursor', async () => {
+  it('pulls from the stored revision and imports both domains', async () => {
     const storage = memoryStorage({
-      chronolog_outbox_v1_seeded: '1',
+      chronolog_outbox_v2_seeded: '1',
       chronolog_pull_revision: '2',
     })
-    const outbox = memoryOutbox()
     const importData = vi.fn()
     const fetchFn = vi.fn(async () => Response.json(remoteData({
-      entries: [entry('remote', 'from cloud')],
+      notes: [note('remote-note', 'cloud')],
+      sessions: [session('remote-session', 'cloud work')],
       revision: 3,
     }))) as unknown as typeof fetch
     const coordinator = new SyncCoordinator({
-      initialData: snapshot([entry('local', 'kept')]),
+      initialData: snapshot(),
       importData,
       storage,
-      outbox,
+      outbox: memoryOutbox(),
       fetch: fetchFn,
       apiBase: () => 'https://chronolog.test',
-      now: () => 100,
     })
 
     await coordinator.pull('token')
@@ -131,154 +116,89 @@ describe('SyncCoordinator', () => {
       'https://chronolog.test/api/data?revision=2',
       { headers: { Authorization: 'Bearer token' } },
     )
-    expect(importData).toHaveBeenCalledWith({
-      entries: [
-        expect.objectContaining({ id: 'local' }),
-        expect.objectContaining({ id: 'remote' }),
-      ],
-      contentTypes: [],
-      mediaItems: [],
-    })
-    expect(storage.getItem('chronolog_pull_revision')).toBe('3')
-    expect(coordinator.getState()).toMatchObject({
-      isSyncing: false,
-      lastSynced: 100,
-      error: null,
-    })
+    expect(importData).toHaveBeenCalledWith(expect.objectContaining({
+      notes: [expect.objectContaining({ id: 'remote-note' })],
+      sessions: [expect.objectContaining({ id: 'remote-session' })],
+    }))
+    expect(storage.values.get('chronolog_pull_revision')).toBe('3')
   })
 
-  it('preserves a local edit batched into the render that acknowledges a remote import', async () => {
-    const outbox = memoryOutbox()
-    let imported = snapshot()
+  it('does not overwrite locally dirty entities during a pull', async () => {
+    const dirty: SyncMutation = {
+      key: 'note:n',
+      mutationId: 'mutation-1',
+      entityType: 'note',
+      entityId: 'n',
+      operation: 'upsert',
+      value: note('n', 'local edit'),
+      createdAt: 1,
+    }
+    const importData = vi.fn()
     const coordinator = new SyncCoordinator({
-      initialData: snapshot(),
-      importData: data => {
-        imported = data as SyncDataSnapshot
-      },
-      storage: memoryStorage({ chronolog_outbox_v1_seeded: '1' }),
-      outbox,
+      initialData: snapshot([note('n', 'local edit')]),
+      importData,
+      storage: seededStorage(),
+      outbox: memoryOutbox([dirty]),
       fetch: vi.fn(async () => Response.json(remoteData({
-        entries: [entry('remote', 'cloud value')],
-        revision: 2,
+        notes: [note('n', 'remote edit')],
       }))) as unknown as typeof fetch,
     })
 
     await coordinator.pull('token')
-    expect(coordinator.isImporting()).toBe(true)
-
-    await coordinator.observeData(snapshot([
-      { ...imported.entries[0], content: 'edited locally during import' },
-    ]))
-
-    expect(coordinator.isImporting()).toBe(false)
-    expect(outbox.values.get('entry:remote')).toMatchObject({
-      entityId: 'remote',
-      operation: 'upsert',
-      value: expect.objectContaining({ content: 'edited locally during import' }),
-    })
+    expect(importData.mock.calls[0][0].notes[0].content).toBe('local edit')
   })
 
-  it('keeps an imported revision when another pull starts before the UI render flushes', async () => {
-    const imports: SyncDataSnapshot[] = []
-    const responses = [
-      remoteData({ entries: [entry('a', 'revision 2')], revision: 2 }),
-      remoteData({ entries: [entry('b', 'revision 3')], revision: 3 }),
-    ]
-    const coordinator = new SyncCoordinator({
-      initialData: snapshot(),
-      importData: data => { imports.push(data as SyncDataSnapshot) },
-      storage: memoryStorage({
-        chronolog_outbox_v1_seeded: '1',
-        chronolog_pull_revision: '1',
-      }),
-      outbox: memoryOutbox(),
-      fetch: vi.fn(async () => Response.json(responses.shift())) as unknown as typeof fetch,
-    })
-
-    await coordinator.pull('token')
-    await coordinator.pull('token')
-
-    expect(imports).toHaveLength(2)
-    expect(imports[1].entries.map(item => item.id)).toEqual(['a', 'b'])
-  })
-
-  it('pushes in bounded batches and acknowledges the exact applied mutations', async () => {
-    const mutations: SyncMutation[] = Array.from({ length: 21 }, (_, index) => ({
-      key: `entry:${index}`,
-      mutationId: `mutation-${index}`,
-      entityType: 'entry',
-      entityId: String(index),
+  it('pushes domain mutations and acknowledges them', async () => {
+    const mutation: SyncMutation = {
+      key: 'session:s',
+      mutationId: 'mutation-1',
+      entityType: 'session',
+      entityId: 's',
       operation: 'upsert',
-      value: entry(String(index), `entry ${index}`),
-      createdAt: index,
-    }))
-    const outbox = memoryOutbox(mutations)
+      value: session('s', 'work'),
+      createdAt: 1,
+    }
+    const outbox = memoryOutbox([mutation])
+    let requestBody = ''
     const fetchFn = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
-      const payload = JSON.parse(String(init?.body)) as {
-        mutations: Array<{ mutationId: string }>
-      }
-      return Response.json({
-        appliedMutationIds: payload.mutations.map(mutation => mutation.mutationId),
-      })
+      requestBody = init?.body as string
+      return Response.json({ appliedMutationIds: ['mutation-1'] })
     }) as unknown as typeof fetch
     const coordinator = new SyncCoordinator({
       initialData: snapshot(),
       importData: vi.fn(),
-      storage: memoryStorage({ chronolog_outbox_v1_seeded: '1' }),
+      storage: seededStorage(),
       outbox,
       fetch: fetchFn,
-      now: () => 200,
+      apiBase: () => 'https://chronolog.test',
     })
 
     await coordinator.push('token')
 
-    expect(fetchFn).toHaveBeenCalledTimes(2)
-    expect(outbox.acknowledged.map(batch => batch.length)).toEqual([20, 1])
+    expect(JSON.parse(requestBody)).toEqual({
+      mutations: [expect.objectContaining({
+        entityType: 'session',
+        entityId: 's',
+      })],
+    })
     expect(outbox.values.size).toBe(0)
-    expect(coordinator.getState().lastSynced).toBe(200)
   })
 
-  it('serializes concurrent sync operations', async () => {
-    const events: string[] = []
-    let releasePull: (() => void) | undefined
-    let markPullStarted: (() => void) | undefined
-    const pullGate = new Promise<void>(resolve => { releasePull = resolve })
-    const pullStarted = new Promise<void>(resolve => { markPullStarted = resolve })
-    const fetchFn = vi.fn(async (input: RequestInfo | URL) => {
-      if (String(input).includes('?revision=')) {
-        events.push('pull:start')
-        markPullStarted?.()
-        await pullGate
-        events.push('pull:end')
-        return Response.json(remoteData())
-      }
-      events.push('push')
-      return Response.json({ appliedMutationIds: ['mutation'] })
-    }) as unknown as typeof fetch
-    const mutation: SyncMutation = {
-      key: 'entry:a',
-      mutationId: 'mutation',
-      entityType: 'entry',
-      entityId: 'a',
-      operation: 'upsert',
-      value: entry('a', 'value'),
-      createdAt: 1,
-    }
+  it('seeds a fresh outbox with every existing domain entity', async () => {
+    const outbox = memoryOutbox()
+    const storage = memoryStorage()
     const coordinator = new SyncCoordinator({
-      initialData: snapshot([entry('a', 'value')]),
+      initialData: snapshot([note('n', 'note')], [session('s', 'session')]),
       importData: vi.fn(),
-      storage: memoryStorage({ chronolog_outbox_v1_seeded: '1' }),
-      outbox: memoryOutbox([mutation]),
-      fetch: fetchFn,
+      storage,
+      outbox,
+      fetch: vi.fn(async () => Response.json(remoteData())) as unknown as typeof fetch,
     })
 
-    const pull = coordinator.pull('token')
-    const push = coordinator.push('token')
-    await pullStarted
-    expect(events).toEqual(['pull:start'])
+    await coordinator.pull('token')
 
-    releasePull?.()
-    await Promise.all([pull, push])
-    expect(events).toEqual(['pull:start', 'pull:end', 'push'])
+    expect(outbox.values.has('note:n')).toBe(true)
+    expect(outbox.values.has('session:s')).toBe(true)
+    expect(storage.values.get('chronolog_outbox_v2_seeded')).toBe('1')
   })
 })

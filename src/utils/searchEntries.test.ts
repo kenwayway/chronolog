@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import type { Category, ContentType, Entry, MediaItem } from '@/types'
+import type { Category, ContentType, TimelineItem, MediaItem } from '@/types'
 import { searchEntries } from './searchEntries'
 
-const entries: Entry[] = [
+const entries: TimelineItem[] = [
     {
         id: 'older',
-        type: 'NOTE',
+        entityId: 'older',
+        kind: 'note',
         content: 'Read React compiler notes',
         timestamp: 100,
         category: 'craft',
@@ -15,7 +16,8 @@ const entries: Entry[] = [
     },
     {
         id: 'newer',
-        type: 'NOTE',
+        entityId: 'newer',
+        kind: 'note',
         content: 'Evening reading session',
         timestamp: 200,
         category: 'wander',

@@ -2,12 +2,12 @@ import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { X, Search, Link2 } from "lucide-react";
 import { formatTime, formatDate } from "@/utils/formatters";
-import type { Entry } from "@/types";
+import type { TimelineItem } from "@/types";
 
 interface LinkSelectorProps {
     isOpen: boolean;
-    sourceEntry: Entry | null;
-    entries: Entry[];
+    sourceEntry: TimelineItem | null;
+    entries: TimelineItem[];
     onLink: (sourceId: string, linkedIds: string[]) => void;
     onClose: () => void;
 }
@@ -33,15 +33,15 @@ export function LinkSelector({
 }
 
 interface LinkSelectorDialogProps {
-    sourceEntry: Entry;
-    entries: Entry[];
+    sourceEntry: TimelineItem;
+    entries: TimelineItem[];
     onLink: (sourceId: string, linkedIds: string[]) => void;
     onClose: () => void;
 }
 
 function LinkSelectorDialog({ sourceEntry, entries, onLink, onClose }: LinkSelectorDialogProps) {
     const [search, setSearch] = useState("");
-    const [selectedIds, setSelectedIds] = useState<string[]>(() => sourceEntry.linkedEntries || []);
+    const [selectedIds, setSelectedIds] = useState<string[]>(() => sourceEntry.linkedItems || []);
     const inputRef = useRef<HTMLInputElement>(null);
 
     // Focus the newly mounted dialog without synchronously resetting state in an effect.
@@ -52,7 +52,7 @@ function LinkSelectorDialog({ sourceEntry, entries, onLink, onClose }: LinkSelec
 
     // Filter entries (exclude self, match search)
     const filteredEntries = entries
-        .filter((e) => e.id !== sourceEntry.id)
+        .filter((e) => e.entityId !== sourceEntry.entityId && e.kind !== 'session-end')
         .filter((e) => {
             if (!search.trim()) return true;
             return e.content?.toLowerCase().includes(search.toLowerCase());
@@ -69,7 +69,7 @@ function LinkSelectorDialog({ sourceEntry, entries, onLink, onClose }: LinkSelec
     };
 
     const handleSave = () => {
-        onLink(sourceEntry.id, selectedIds);
+        onLink(sourceEntry.entityId, selectedIds);
         onClose();
     };
 
@@ -200,13 +200,13 @@ function LinkSelectorDialog({ sourceEntry, entries, onLink, onClose }: LinkSelec
                         </div>
                     ) : (
                         filteredEntries.map((entry) => {
-                            const isLinked = selectedIds.includes(entry.id);
+                            const isLinked = selectedIds.includes(entry.entityId);
                             const isOlder = entry.timestamp < sourceEntry.timestamp;
 
                             return (
                                 <button
                                     key={entry.id}
-                                    onClick={() => toggleLink(entry.id)}
+                                    onClick={() => toggleLink(entry.entityId)}
                                     style={{
                                         display: "flex",
                                         alignItems: "flex-start",

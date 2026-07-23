@@ -8,20 +8,20 @@ A local-first personal timeline, session tracker, journal, and media log. Chrono
 - **Timeline View** — Track daily activities with timestamps
 - **Session Tracking** — Log in/out to track work sessions with duration
 - **Notes** — Add quick notes throughout the day
-- **Life Categories** — Organize entries with the built-in Hustle, Craft, Hardware, Barter, Wander, and Work areas
-- **Tags** — Add #hashtags to entries for easy filtering
-- **Calendar & Filters** — Browse entries by date, category, tag, and content type
-- **Linked Entries** — Create bidirectional connections between related entries
+- **Life Categories** — Organize notes and sessions with the built-in Hustle, Craft, Hardware, Barter, Wander, and Work areas
+- **Tags** — Add #hashtags for easy filtering
+- **Calendar & Filters** — Browse notes and sessions by date, category, tag, and content type
+- **Linked Items** — Create bidirectional connections between notes and sessions
 
 ### Content Types
-- **Note** — Default text entry
+- **Note** — Default text record
 - **Bookmark** — Save links with title, type, and status; YouTube thumbnails auto-detected
 - **Mood** — Track feelings, energy level (1–5), and triggers
 - **Workout** — Log exercises with type (Strength/Cardio/Flexibility/Mixed) and place (Home/In Building Gym/Outside Gym)
 - **Media** — Track books, movies, games, TV, anime, podcasts via Media Library
 - **Notion Task** — Link timed sessions to a Notion task and sync recomputed tracked minutes back to its database row
 - **Custom Types** — Create your own content types with custom fields
-- **Attachments** — Add images and locations to an entry; pasted images are compressed and uploaded when sync is enabled
+- **Attachments** — Add images and locations; pasted images are compressed and uploaded when sync is enabled
 
 ### Cloud Sync
 - **D1 Database** — Structured storage with incremental sync
@@ -29,10 +29,10 @@ A local-first personal timeline, session tracker, journal, and media log. Chrono
 - **Image Upload** — Upload images or paste from clipboard (Ctrl+V)
 - **Gallery** — Browse every attached image in a lazy-loaded photo wall
 - **Bidirectional Sync** — Manual sync pushes AND pulls
-- **Public API** — Token-authenticated read access to entries
+- **Public API** — Token-authenticated read access to first-class notes and sessions
 
 ### AI Features
-- **Auto-Categorization** — AI detects category, content type, and field values from entry text
+- **Auto-Categorization** — AI detects category, content type, and field values from captured text
 - **Content Type Detection** — Automatically identifies bookmarks, moods, workouts, etc.
 
 ### User Experience
@@ -43,7 +43,7 @@ A local-first personal timeline, session tracker, journal, and media log. Chrono
 - **Context Menu** — Right-click (or long-press on mobile) for quick actions
 - **Focus Mode** — Distraction-free writing experience
 - **Mobile Metadata Input** — Tag/type/category available on mobile expanded panel
-- **Data Export/Import** — Full JSON export including entries, categories, content types, and media items
+- **Data Export/Import** — Full JSON export including notes, sessions, categories, content types, and media items
 - **Quality Checks** — Type checking, ESLint, unit tests, and production builds run in CI
 
 ## 🛠 Tech Stack
@@ -62,13 +62,13 @@ A local-first personal timeline, session tracker, journal, and media log. Chrono
 | Technology | Usage |
 |------------|-------|
 | **Cloudflare Pages Functions** | Serverless API (TypeScript) |
-| **Cloudflare D1** | SQLite database for entries, content types, media |
+| **Cloudflare D1** | SQLite database for notes, sessions, content types, and media |
 | **Cloudflare KV** | Auth tokens |
 | **Cloudflare R2** | Image storage |
 
 ### Architecture
 
-The client is local-first: the session reducer updates in-memory state, persistence writes a debounced snapshot to `localStorage`, and the sync engine sends only changed records when cloud sync is configured.
+The client is local-first: notes and sessions are the only persisted timeline entities. A view-only `TimelineItem` projection renders session start/end markers. IndexedDB persistence is debounced, and `SyncCoordinator` sends durable revision mutations for changed notes, sessions, content types, and media items.
 ```
 ┌─────────────────┐     ┌──────────────────┐
 │   React App     │────▶│ Cloudflare Pages │
@@ -141,16 +141,18 @@ src/
 │   ├── common/          #   Calendar, dropdowns, links, toasts
 │   ├── input/           #   Quick capture, metadata, focus mode
 │   ├── library/         #   Media library and item forms
-│   ├── modals/          #   Settings and entry editor
+│   ├── modals/          #   Settings and timeline item editor
 │   ├── panels/          #   Activity/filter sidebar
 │   ├── providers/       #   Theme, toast, and UI state providers
-│   └── timeline/        #   Timeline, entry displays, content renderer
+│   └── timeline/        #   Timeline item views and content renderer
+├── domain/              # Note/Session → TimelineItem projection
+├── features/            # Content type registry and SyncCoordinator
 ├── contexts/            # React contexts and context value types
 ├── hooks/               # Session, persistence, sync, UI, and AI hooks
 ├── pages/               # Library and image gallery routes
 ├── themes/              # Theme definitions
-├── types/               # Shared TypeScript models and guards
-├── utils/               # Parsers, formatters, migrations, storage, sync helpers
+├── types/               # Shared TypeScript domain models
+├── utils/               # Parsers, formatters, storage, and sync helpers
 └── App.tsx              # Route and provider composition
 
 functions/             # Cloudflare Pages Functions (TypeScript)
@@ -164,7 +166,7 @@ functions/             # Cloudflare Pages Functions (TypeScript)
 │   ├── categorize.ts  # AI categorization
 │   ├── upload.ts      # Image upload to R2
 │   ├── cleanup.ts     # Unreferenced image cleanup
-│   ├── entries/       # Public read-only API
+│   ├── public.ts      # Public read-only notes/sessions API
 │   └── image/[id].ts  # Image serving from R2
 └── _middleware.ts     # Auth & CORS middleware
 ```
@@ -182,13 +184,17 @@ Cloud sync is optional. Configure these bindings and variables in the Cloudflare
 | `AI_API_KEY` | API key used by server-side categorization |
 | `AI_BASE_URL` | Optional OpenAI-compatible API base URL |
 | `AI_MODEL` | Optional categorization model name |
-| `PUBLIC_API_TOKEN` | Token for the read-only public entries endpoint and read-only MCP access |
-| `MCP_WRITE_TOKEN` | Separate MCP token granting read access plus `add_entry` write access |
+| `PUBLIC_API_TOKEN` | Token for `GET /api/public` and read-only MCP access |
+| `MCP_WRITE_TOKEN` | MCP token granting read access plus `add_note`, `start_session`, and `end_session` |
 | `NOTION_API_TOKEN` | Notion internal integration secret used only by Pages Functions |
 | `NOTION_TRACKED_MINUTES_PROPERTY` | Optional Notion number property name or ID; defaults to `Tracked Minutes` |
 
 Apply [schema.sql](schema.sql) before a fresh deployment. Existing databases
 must apply the ordered SQL files in `migrations/` before deploying new code.
+Migration `0006_note_session_domain.sql` is intentionally breaking: it folds
+historical session boundary rows into `sessions`, moves notes into `notes`, and
+drops the old boundary table. Deploy the migrated database and new application
+code together.
 
 For Notion task syncing, add a number property named `Tracked Minutes` (or set
 `NOTION_TRACKED_MINUTES_PROPERTY` to its name/property ID), then share the task

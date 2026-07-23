@@ -2,14 +2,13 @@ import type { ReactNode } from 'react'
 import type {
   BookmarkFields,
   ContentType,
-  Entry,
-  EntryType,
   MediaFields,
   MediaItem,
   MoodFields,
   NotionTaskFields,
   VaultFields,
   WorkoutFields,
+  TimelineItem,
 } from '@/types'
 import type { ThemeConfig } from '@/themes'
 import { normalizeNotionPageId } from '@/utils/notionPageId'
@@ -30,7 +29,7 @@ type FieldValues = Record<string, unknown>
 type TimelineSymbolKey = keyof ThemeConfig['symbols']
 
 interface DisplayContext {
-  entry: Entry
+  item: TimelineItem
   mediaItems: MediaItem[]
 }
 
@@ -48,7 +47,7 @@ type NormalizationResult = NormalizationSuccess | NormalizationFailure
 
 export interface ContentTypePlugin {
   definition: ContentType
-  supportedEntryTypes?: readonly EntryType[]
+  supportedTargets?: readonly ('note' | 'session')[]
   timelineSymbol?: TimelineSymbolKey
   normalize?: (fieldValues: FieldValues) => NormalizationResult
   render?: (context: DisplayContext) => ReactNode
@@ -62,26 +61,26 @@ const contentTypePlugins = [
   },
   {
     definition: BUILTIN_CONTENT_TYPE_DEFINITIONS.bookmark,
-    render: ({ entry }: DisplayContext) => (
-      <BookmarkDisplay fieldValues={entry.fieldValues as BookmarkFields | undefined} />
+    render: ({ item }: DisplayContext) => (
+      <BookmarkDisplay fieldValues={item.fieldValues as BookmarkFields | undefined} />
     ),
   },
   {
     definition: BUILTIN_CONTENT_TYPE_DEFINITIONS.mood,
-    render: ({ entry }: DisplayContext) => (
-      <MoodDisplay fieldValues={entry.fieldValues as MoodFields | undefined} />
+    render: ({ item }: DisplayContext) => (
+      <MoodDisplay fieldValues={item.fieldValues as MoodFields | undefined} />
     ),
   },
   {
     definition: BUILTIN_CONTENT_TYPE_DEFINITIONS.workout,
-    render: ({ entry }: DisplayContext) => (
-      <WorkoutDisplay fieldValues={entry.fieldValues as WorkoutFields | undefined} />
+    render: ({ item }: DisplayContext) => (
+      <WorkoutDisplay fieldValues={item.fieldValues as WorkoutFields | undefined} />
     ),
   },
   {
     definition: BUILTIN_CONTENT_TYPE_DEFINITIONS.vault,
-    render: ({ entry }: DisplayContext) => (
-      <VaultDisplay fieldValues={entry.fieldValues as VaultFields | undefined} />
+    render: ({ item }: DisplayContext) => (
+      <VaultDisplay fieldValues={item.fieldValues as VaultFields | undefined} />
     ),
   },
   {
@@ -94,16 +93,16 @@ const contentTypePlugins = [
   },
   {
     definition: BUILTIN_CONTENT_TYPE_DEFINITIONS.media,
-    render: ({ entry, mediaItems }: DisplayContext) => (
+    render: ({ item, mediaItems }: DisplayContext) => (
       <MediaDisplay
-        fieldValues={entry.fieldValues as MediaFields | undefined}
+        fieldValues={item.fieldValues as MediaFields | undefined}
         mediaItems={mediaItems}
       />
     ),
   },
   {
     definition: BUILTIN_CONTENT_TYPE_DEFINITIONS['notion-task'],
-    supportedEntryTypes: ['SESSION_START'],
+    supportedTargets: ['session'],
     normalize: (fieldValues: FieldValues): NormalizationResult => {
       const notionPageId = normalizeNotionPageId(fieldValues.notionPageId)
       if (!notionPageId) {
@@ -111,8 +110,8 @@ const contentTypePlugins = [
       }
       return { ok: true, fieldValues: { ...fieldValues, notionPageId } }
     },
-    render: ({ entry }: DisplayContext) => (
-      <NotionTaskDisplay fieldValues={entry.fieldValues as NotionTaskFields | undefined} />
+    render: ({ item }: DisplayContext) => (
+      <NotionTaskDisplay fieldValues={item.fieldValues as NotionTaskFields | undefined} />
     ),
   },
 ] satisfies readonly ContentTypePlugin[]
@@ -142,25 +141,21 @@ export function getContentTypeTimelineSymbol(contentTypeId: string | null | unde
   return getContentTypePlugin(contentTypeId)?.timelineSymbol
 }
 
-export function renderContentTypeDisplay(entry: Entry, mediaItems: MediaItem[]): ReactNode {
-  return getContentTypePlugin(entry.contentType)?.render?.({ entry, mediaItems }) ?? null
+export function renderContentTypeDisplay(item: TimelineItem, mediaItems: MediaItem[]): ReactNode {
+  return getContentTypePlugin(item.contentType)?.render?.({ item, mediaItems }) ?? null
 }
 
 export function prepareContentTypeSubmission(
   contentTypeId: string | null | undefined,
   fieldValues: FieldValues,
-  entryType: EntryType,
-  originalEntryType?: EntryType,
+  target: 'note' | 'session',
 ): ContentTypeSubmissionResult {
   const plugin = getContentTypePlugin(contentTypeId)
   if (!plugin) return { ok: true, fieldValues }
 
   if (
-    plugin.supportedEntryTypes
-    && (
-      !plugin.supportedEntryTypes.includes(entryType)
-      || (originalEntryType !== undefined && !plugin.supportedEntryTypes.includes(originalEntryType))
-    )
+    plugin.supportedTargets
+    && !plugin.supportedTargets.includes(target)
   ) {
     return {
       ok: false,

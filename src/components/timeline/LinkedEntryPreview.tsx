@@ -1,11 +1,11 @@
 import { memo, MouseEvent } from 'react';
 import { getPreview } from '@/utils/contentParser';
-import type { Entry } from '@/types';
+import type { TimelineItem } from '@/types';
 
 interface LinkedEntryPreviewProps {
-    linkedEntry: Entry;
+    linkedEntry: TimelineItem;
     direction: 'before' | 'after';
-    onNavigateToEntry?: (entry: Entry) => void;
+    onNavigateToEntry?: (entry: TimelineItem) => void;
 }
 
 /**

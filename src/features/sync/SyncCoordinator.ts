@@ -1,10 +1,11 @@
 import type {
   ContentType,
-  Entry,
   ImportDataPayload,
   MediaItem,
+  Note,
   NotionSyncStatus,
   RevisionSyncData,
+  Session,
   SyncMutation,
 } from '@/types'
 import {
@@ -17,11 +18,12 @@ import { buildSyncMutations, dirtyIdsByType } from '@/utils/syncOutbox'
 
 const PULL_REVISION_KEY = 'chronolog_pull_revision'
 const LEGACY_SYNC_KEY = 'chronolog_last_sync_at'
-const OUTBOX_MIGRATION_KEY = 'chronolog_outbox_v1_seeded'
+const OUTBOX_MIGRATION_KEY = 'chronolog_outbox_v2_seeded'
 const MAX_MUTATIONS_PER_PUSH = 20
 
 export interface SyncDataSnapshot {
-  entries: Entry[]
+  notes: Note[]
+  sessions: Session[]
   contentTypes: ContentType[]
   mediaItems: MediaItem[]
 }
@@ -81,7 +83,8 @@ function customContentTypes(contentTypes: ContentType[]): ContentType[] {
 
 function mutationsBetween(previous: SyncDataSnapshot, current: SyncDataSnapshot): SyncMutation[] {
   return [
-    ...buildSyncMutations(previous.entries, current.entries, 'entry'),
+    ...buildSyncMutations(previous.notes, current.notes, 'note'),
+    ...buildSyncMutations(previous.sessions, current.sessions, 'session'),
     ...buildSyncMutations(
       customContentTypes(previous.contentTypes),
       customContentTypes(current.contentTypes),
@@ -204,11 +207,18 @@ export class SyncCoordinator {
         const full = !remote.incremental
 
         const merged: SyncDataSnapshot = {
-          entries: mergeRevisionEntities(
-            this.currentData.entries,
-            remote.entries ?? [],
-            remote.deleted?.entries ?? [],
-            dirty.entry,
+          notes: mergeRevisionEntities(
+            this.currentData.notes,
+            remote.notes ?? [],
+            remote.deleted?.notes ?? [],
+            dirty.note,
+            full,
+          ),
+          sessions: mergeRevisionEntities(
+            this.currentData.sessions,
+            remote.sessions ?? [],
+            remote.deleted?.sessions ?? [],
+            dirty.session,
             full,
           ),
           contentTypes: mergeRevisionEntities(
@@ -228,10 +238,12 @@ export class SyncCoordinator {
         }
 
         const hasChanges = full
-          || (remote.entries?.length ?? 0) > 0
+          || (remote.notes?.length ?? 0) > 0
+          || (remote.sessions?.length ?? 0) > 0
           || (remote.contentTypes?.length ?? 0) > 0
           || (remote.mediaItems?.length ?? 0) > 0
-          || (remote.deleted?.entries.length ?? 0) > 0
+          || (remote.deleted?.notes.length ?? 0) > 0
+          || (remote.deleted?.sessions.length ?? 0) > 0
           || (remote.deleted?.contentTypes.length ?? 0) > 0
           || (remote.deleted?.mediaItems.length ?? 0) > 0
 
@@ -356,7 +368,8 @@ export class SyncCoordinator {
       const existing = await this.outbox.load()
       if (existing.length === 0) {
         await this.outbox.queue([
-          ...buildSyncMutations([], this.currentData.entries, 'entry'),
+          ...buildSyncMutations([], this.currentData.notes, 'note'),
+          ...buildSyncMutations([], this.currentData.sessions, 'session'),
           ...buildSyncMutations([], customContentTypes(this.currentData.contentTypes), 'contentType'),
           ...buildSyncMutations([], this.currentData.mediaItems, 'mediaItem'),
         ])
