@@ -186,6 +186,7 @@ Cloud sync is optional. Configure these bindings and variables in the Cloudflare
 | `AI_MODEL` | Optional categorization model name |
 | `PUBLIC_API_TOKEN` | Token for `GET /api/public` and read-only MCP access |
 | `MCP_WRITE_TOKEN` | MCP token granting read access plus `add_note`, `start_session`, and `end_session` |
+| `DASHBOARD_MCP_TOKEN` | Alternate MCP write token for dashboard integrations (same scope as `MCP_WRITE_TOKEN`) |
 | `NOTION_API_TOKEN` | Notion internal integration secret used only by Pages Functions |
 | `NOTION_TRACKED_MINUTES_PROPERTY` | Optional Notion number property name or ID; defaults to `Tracked Minutes` |
 

@@ -211,6 +211,15 @@ MCP write tools (write token only):
 - `start_session`
 - `end_session`
 
+MCP auth: write scope requires the token in the `Authorization: Bearer`
+header; a write token sent via `?token=` query string degrades to read-only
+(query strings land in access logs). Token comparisons are constant-time.
+
+MCP search is backed by external-content FTS5 tables (`notes_fts`,
+`sessions_fts`, migration `0007_fts_search.sql`) using the trigram tokenizer
+so CJK substrings match. Keywords shorter than 3 characters fall back to a
+LIKE scan. Tag filters are exact matches (SQL LIKE is only a prefilter).
+
 ## Main project structure
 
 ```text

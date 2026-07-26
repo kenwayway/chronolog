@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildNote, buildSession, onRequestPost } from './mcp.ts';
+import { buildKeywordSearch, buildNote, buildSession, filterByTags, onRequestPost } from './mcp.ts';
 import type { Env } from './types.ts';
 
 describe('MCP domain builders', () => {
@@ -41,15 +41,18 @@ describe('MCP domain builders', () => {
     });
 });
 
-function context(token: string) {
+function context(token: string, { viaQuery = false } = {}) {
     const env = {
         PUBLIC_API_TOKEN: 'read-token',
         MCP_WRITE_TOKEN: 'write-token',
     } as Env;
-    const request = new Request('https://chronolog.test/api/mcp', {
+    const url = viaQuery
+        ? `https://chronolog.test/api/mcp?token=${token}`
+        : 'https://chronolog.test/api/mcp';
+    const request = new Request(url, {
         method: 'POST',
         headers: {
-            Authorization: `Bearer ${token}`,
+            ...(viaQuery ? {} : { Authorization: `Bearer ${token}` }),
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -83,5 +86,56 @@ describe('MCP tool surface', () => {
             'end_session',
         ]));
         expect(body.result.tools.map(tool => tool.name)).not.toContain('add_entry');
+    });
+
+    it('degrades a write token in the query string to read-only', async () => {
+        const response = await onRequestPost(context('write-token', { viaQuery: true }));
+        const body = await response.json<{ result: { tools: Array<{ name: string }> } }>();
+        const names = body.result.tools.map(tool => tool.name);
+        expect(names).toContain('search_notes');
+        expect(names).not.toContain('add_note');
+    });
+
+    it('rejects an unknown token', async () => {
+        const response = await onRequestPost(context('wrong-token'));
+        expect(response.status).toBe(401);
+    });
+});
+
+describe('keyword search planning', () => {
+    it('routes long keywords to FTS and short ones to LIKE', () => {
+        expect(buildKeywordSearch(['workout', '工作日志', 'ab', '手'])).toEqual({
+            match: '"workout" OR "工作日志"',
+            likes: ['ab', '手'],
+        });
+    });
+
+    it('escapes double quotes so FTS operators stay literal', () => {
+        expect(buildKeywordSearch(['say "hi" AND bye']).match).toBe('"say ""hi"" AND bye"');
+    });
+
+    it('returns no match expression when all keywords are short', () => {
+        expect(buildKeywordSearch(['ab', '手'])).toEqual({ match: null, likes: ['ab', '手'] });
+    });
+});
+
+describe('filterByTags', () => {
+    const items = [
+        { id: 'a', tags: ['log', 'work'] },
+        { id: 'b', tags: ['backlog'] },
+        { id: 'c' },
+    ];
+
+    it('matches tags exactly, not as substrings', () => {
+        expect(filterByTags(items, ['log']).map(item => item.id)).toEqual(['a']);
+    });
+
+    it('requires every tag', () => {
+        expect(filterByTags(items, ['log', 'work']).map(item => item.id)).toEqual(['a']);
+        expect(filterByTags(items, ['log', 'missing'])).toEqual([]);
+    });
+
+    it('passes everything through without tag filters', () => {
+        expect(filterByTags(items, undefined)).toHaveLength(3);
     });
 });

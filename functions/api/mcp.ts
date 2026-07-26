@@ -293,46 +293,96 @@ function compactSession(session: Session, timezone: string) {
     };
 }
 
-async function searchNotes(args: Record<string, unknown>, db: D1Database) {
-    const keywords = args.keywords;
-    if (!Array.isArray(keywords) || keywords.length === 0 || keywords.some(item => typeof item !== 'string')) {
+function cleanKeywords(value: unknown): string[] {
+    if (!Array.isArray(value) || value.some(item => typeof item !== 'string')) {
         throw new Error('keywords must be a non-empty string array');
     }
-    const timezone = resolveTimezone(args.timezone);
-    const conditions = [`(${keywords.map(() => "(content LIKE ? OR tags LIKE ? OR field_values LIKE ?)").join(' OR ')})`];
-    const bindings: unknown[] = keywords.flatMap(keyword => {
-        const pattern = `%${keyword}%`;
-        return [pattern, pattern, pattern];
+    const keywords = value.map(keyword => keyword.trim()).filter(Boolean);
+    if (keywords.length === 0) throw new Error('keywords must be a non-empty string array');
+    return keywords;
+}
+
+/**
+ * Split keywords between the FTS index and a LIKE fallback.
+ *
+ * The FTS tables use the trigram tokenizer (substring semantics, works for
+ * CJK), which cannot match terms shorter than 3 characters — those keep the
+ * old LIKE scan. Keywords are OR-combined as quoted phrases, so FTS query
+ * operators in user input stay literal.
+ */
+export function buildKeywordSearch(keywords: string[]): { match: string | null; likes: string[] } {
+    const indexed = keywords.filter(keyword => [...keyword].length >= 3);
+    const likes = keywords.filter(keyword => [...keyword].length < 3);
+    const match = indexed.length
+        ? indexed.map(keyword => `"${keyword.replaceAll('"', '""')}"`).join(' OR ')
+        : null;
+    return { match, likes };
+}
+
+function escapeLike(value: string): string {
+    return value.replace(/[\\%_]/g, character => `\\${character}`);
+}
+
+/** Exact tag matching; the SQL LIKE is only a coarse prefilter. */
+export function filterByTags<T extends { tags?: string[] }>(items: T[], tags: string[] | undefined): T[] {
+    if (!tags || tags.length === 0) return items;
+    return items.filter(item => tags.every(tag => item.tags?.includes(tag)));
+}
+
+function keywordConditions(
+    args: Record<string, unknown>,
+    ftsTable: string,
+    likeColumns: string[],
+    conditions: string[],
+    bindings: unknown[],
+): void {
+    const { match, likes } = buildKeywordSearch(cleanKeywords(args.keywords));
+    const parts: string[] = [];
+    if (match) {
+        parts.push(`rowid IN (SELECT rowid FROM ${ftsTable} WHERE ${ftsTable} MATCH ?)`);
+        bindings.push(match);
+    }
+    likes.forEach(keyword => {
+        parts.push(`(${likeColumns.map(column => `${column} LIKE ?`).join(' OR ')})`);
+        likeColumns.forEach(() => bindings.push(`%${keyword}%`));
     });
+    conditions.push(`(${parts.join(' OR ')})`);
+}
+
+async function searchNotes(args: Record<string, unknown>, db: D1Database) {
+    const timezone = resolveTimezone(args.timezone);
+    const conditions: string[] = [];
+    const bindings: unknown[] = [];
+    keywordConditions(args, 'notes_fts', ['content', 'tags', 'field_values'], conditions, bindings);
     addRangeFilters(args, timezone, conditions, bindings, 'timestamp');
     if (typeof args.category === 'string') {
         conditions.push('category = ?');
         bindings.push(args.category);
     }
-    if (Array.isArray(args.tags)) {
-        args.tags.forEach(tag => {
-            conditions.push('tags LIKE ?');
-            bindings.push(`%"${String(tag).replace(/^#/, '')}"%`);
-        });
-    }
+    const tagFilters = cleanTags(args.tags);
+    tagFilters?.forEach(tag => {
+        conditions.push("tags LIKE ? ESCAPE '\\'");
+        bindings.push(`%${escapeLike(tag)}%`);
+    });
     const limit = Math.min(Math.max(Number(args.limit || 50), 1), 200);
     const result = await db.prepare(
         `SELECT * FROM notes WHERE ${conditions.join(' AND ')} ORDER BY timestamp DESC LIMIT ?`
     ).bind(...bindings, limit).all<NoteRow>();
-    return { notes: result.results.map(row => compactNote(noteRowToObject(row), timezone)) };
+    const notes = filterByTags(result.results.map(noteRowToObject), tagFilters);
+    return { notes: notes.map(note => compactNote(note, timezone)) };
 }
 
 async function searchSessions(args: Record<string, unknown>, db: D1Database) {
-    const keywords = args.keywords;
-    if (!Array.isArray(keywords) || keywords.length === 0 || keywords.some(item => typeof item !== 'string')) {
-        throw new Error('keywords must be a non-empty string array');
-    }
     const timezone = resolveTimezone(args.timezone);
-    const conditions = [`(${keywords.map(() => "(content LIKE ? OR end_content LIKE ? OR tags LIKE ? OR end_tags LIKE ? OR field_values LIKE ?)").join(' OR ')})`];
-    const bindings: unknown[] = keywords.flatMap(keyword => {
-        const pattern = `%${keyword}%`;
-        return [pattern, pattern, pattern, pattern, pattern];
-    });
+    const conditions: string[] = [];
+    const bindings: unknown[] = [];
+    keywordConditions(
+        args,
+        'sessions_fts',
+        ['content', 'end_content', 'tags', 'end_tags', 'field_values'],
+        conditions,
+        bindings,
+    );
     addRangeFilters(args, timezone, conditions, bindings, 'start_at');
     if (typeof args.category === 'string') {
         conditions.push('category = ?');
@@ -598,18 +648,40 @@ async function handleMessage(message: unknown, env: Env, canWrite: boolean): Pro
     return id === undefined ? null : rpcError(id ?? null, -32601, `Method not found: ${method}`);
 }
 
+/** Constant-time token comparison; length is the only observable difference. */
+function tokenMatches(provided: string, expected: string | undefined): boolean {
+    if (!expected) return false;
+    const encoder = new TextEncoder();
+    const left = encoder.encode(provided);
+    const right = encoder.encode(expected);
+    if (left.byteLength !== right.byteLength) return false;
+    // timingSafeEqual is a Workers-specific extension; fall back to a manual
+    // constant-time loop elsewhere (vitest runs these handlers under Node).
+    const subtle = crypto.subtle as SubtleCrypto & {
+        timingSafeEqual?: (a: ArrayBufferView, b: ArrayBufferView) => boolean
+    };
+    if (typeof subtle.timingSafeEqual === 'function') return subtle.timingSafeEqual(left, right);
+    let difference = 0;
+    for (let index = 0; index < left.length; index++) difference |= left[index] ^ right[index];
+    return difference === 0;
+}
+
 export async function onRequestPost(context: CFContext): Promise<Response> {
     const { request, env } = context;
     if (!env.PUBLIC_API_TOKEN && !env.MCP_WRITE_TOKEN && !env.DASHBOARD_MCP_TOKEN) {
         return Response.json({ error: 'MCP server not configured' }, { status: 503 });
     }
     const auth = request.headers.get('Authorization');
-    const token = auth?.startsWith('Bearer ') ? auth.slice(7) : new URL(request.url).searchParams.get('token');
-    const canWrite = Boolean(token) && (
-        (Boolean(env.MCP_WRITE_TOKEN) && token === env.MCP_WRITE_TOKEN)
-        || (Boolean(env.DASHBOARD_MCP_TOKEN) && token === env.DASHBOARD_MCP_TOKEN)
-    );
-    const canRead = canWrite || (Boolean(env.PUBLIC_API_TOKEN) && token === env.PUBLIC_API_TOKEN);
+    const headerToken = auth?.startsWith('Bearer ') ? auth.slice(7) : null;
+    // Query-string tokens land in access logs and browser history; they are
+    // accepted for read access only. Write scope requires the header.
+    const token = headerToken ?? new URL(request.url).searchParams.get('token');
+    const isWriteToken = (candidate: string) =>
+        tokenMatches(candidate, env.MCP_WRITE_TOKEN) || tokenMatches(candidate, env.DASHBOARD_MCP_TOKEN);
+    const canWrite = headerToken !== null && isWriteToken(headerToken);
+    // A write token sent via query string degrades to read-only.
+    const canRead = canWrite || (Boolean(token)
+        && (tokenMatches(token as string, env.PUBLIC_API_TOKEN) || isWriteToken(token as string)));
     if (!canRead) return Response.json({ error: 'Invalid or missing token' }, { status: 401 });
 
     let body: unknown;
