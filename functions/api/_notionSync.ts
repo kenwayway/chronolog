@@ -232,7 +232,19 @@ export async function flushNotionSyncJobs(
     return getNotionSyncStatus(env.CHRONOLOG_DB);
 }
 
-export async function applyMutationsWithNotionSync(env: Env, mutations: RevisionMutation[]) {
+/**
+ * Apply mutations and synchronize affected Notion pages.
+ *
+ * With `waitUntil`, the Notion flush (third-party HTTP, up to tens of
+ * seconds) runs after the response is sent; the returned status then counts
+ * the just-enqueued jobs as pending until a later pull reports completion.
+ * Without it, the flush stays inline and the returned status is final.
+ */
+export async function applyMutationsWithNotionSync(
+    env: Env,
+    mutations: RevisionMutation[],
+    waitUntil?: (promise: Promise<unknown>) => void,
+) {
     const affected = await affectedNotionPageIds(env.CHRONOLOG_DB, mutations);
     if (affected.size === 0) {
         const result = await applyRevisionMutations(env.CHRONOLOG_DB, mutations);
@@ -240,5 +252,11 @@ export async function applyMutationsWithNotionSync(env: Env, mutations: Revision
     }
     await enqueueNotionSyncJobs(env.CHRONOLOG_DB, affected);
     const result = await applyRevisionMutations(env.CHRONOLOG_DB, mutations);
+    if (waitUntil) {
+        waitUntil(flushNotionSyncJobs(env).catch(error => {
+            console.error('Deferred Notion flush failed:', error);
+        }));
+        return { ...result, notionSync: await getNotionSyncStatus(env.CHRONOLOG_DB) };
+    }
     return { ...result, notionSync: await flushNotionSyncJobs(env) };
 }

@@ -55,3 +55,36 @@ export function timelineItemForEntity(items: TimelineItem[], entityId: string): 
     item.entityId === entityId && (item.kind === 'note' || item.kind === 'session-start')
   )
 }
+
+export interface TimelineLinkIndex {
+  /** Canonical (non-session-end) timeline item per entity ID. */
+  byEntityId: Map<string, TimelineItem>
+  /** Entity IDs whose linkedItems point at the keyed entity. */
+  incoming: Map<string, string[]>
+}
+
+/**
+ * Precompute link lookups once per projection so each rendered timeline row
+ * resolves its links in O(own links) instead of scanning all history.
+ */
+export function buildTimelineLinkIndex(items: TimelineItem[]): TimelineLinkIndex {
+  const byEntityId = new Map<string, TimelineItem>()
+  const incomingSets = new Map<string, Set<string>>()
+
+  for (const item of items) {
+    if (item.kind !== 'session-end' && !byEntityId.has(item.entityId)) {
+      byEntityId.set(item.entityId, item)
+    }
+    if (!item.linkedItems) continue
+    for (const target of item.linkedItems) {
+      if (target === item.entityId) continue
+      let sources = incomingSets.get(target)
+      if (!sources) incomingSets.set(target, sources = new Set())
+      sources.add(item.entityId)
+    }
+  }
+
+  const incoming = new Map<string, string[]>()
+  incomingSets.forEach((sources, target) => incoming.set(target, [...sources]))
+  return { byEntityId, incoming }
+}

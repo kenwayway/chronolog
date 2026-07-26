@@ -115,6 +115,24 @@ describe('sessionReducer domain model', () => {
         expect(result.status).toBe('IDLE')
     })
 
+    it('deleting a session keeps untouched notes referentially identical', () => {
+        const untouched = note({ id: 'unrelated' })
+        const attached = note({ id: 'attached', sessionId: 'session-1' })
+        const result = sessionReducer(stateWith({
+            sessions: [session()],
+            notes: [untouched, attached],
+        }), {
+            type: ACTIONS.DELETE_SESSION,
+            payload: { sessionId: 'session-1' },
+        })
+
+        // Persistence and sync diff by reference; cloning untouched notes
+        // would rewrite the whole store on every session delete.
+        expect(result.notes[0]).toBe(untouched)
+        expect(result.notes[1]).not.toBe(attached)
+        expect(result.notes[1].sessionId).toBeUndefined()
+    })
+
     it('loads the newest open session as active', () => {
         const result = sessionReducer(initialState, {
             type: ACTIONS.LOAD_STATE,

@@ -4,6 +4,7 @@ import type {
   MediaItem,
   Note,
   NotionSyncStatus,
+  RejectedSyncMutation,
   RevisionSyncData,
   Session,
   SyncMutation,
@@ -20,6 +21,8 @@ const PULL_REVISION_KEY = 'chronolog_pull_revision'
 const LEGACY_SYNC_KEY = 'chronolog_last_sync_at'
 const OUTBOX_MIGRATION_KEY = 'chronolog_outbox_v2_seeded'
 const MAX_MUTATIONS_PER_PUSH = 20
+// Runaway guard only: 100 pages × 800 rows is far beyond any real dataset.
+const MAX_PULL_PAGES = 100
 
 export interface SyncDataSnapshot {
   notes: Note[]
@@ -194,16 +197,7 @@ export class SyncCoordinator {
         await this.waitForObservations()
 
         const revision = this.readPullRevision(forceFullFetch)
-        const headers: Record<string, string> = {}
-        if (token) headers.Authorization = `Bearer ${token}`
-
-        const response = await this.fetchFn(
-          `${this.apiBase()}/api/data?revision=${revision}`,
-          { headers },
-        )
-        if (!response.ok) throw new Error(`Failed to fetch data: ${response.status}`)
-
-        const remote = await response.json() as RevisionSyncData
+        const remote = await this.fetchAllRevisionPages(token, revision)
         await this.waitForObservations()
         const pending = await this.outbox.load()
         const dirty = dirtyIdsByType(pending)
@@ -289,6 +283,7 @@ export class SyncCoordinator {
 
         this.patchState({ isSyncing: true, error: null })
         let notionSync: NotionSyncStatus | undefined
+        const rejected: RejectedSyncMutation[] = []
 
         for (let index = 0; index < pending.length; index += MAX_MUTATIONS_PER_PUSH) {
           const batch = pending.slice(index, index + MAX_MUTATIONS_PER_PUSH)
@@ -308,18 +303,28 @@ export class SyncCoordinator {
 
           const result = await response.json() as {
             appliedMutationIds?: string[]
+            rejectedMutations?: RejectedSyncMutation[]
             notionSync?: NotionSyncStatus
           }
           notionSync = result.notionSync ?? notionSync
-          await this.outbox.acknowledge(
-            result.appliedMutationIds ?? batch.map(item => item.mutationId),
-          )
+          rejected.push(...(result.rejectedMutations ?? []))
+          // The server acknowledges rejected mutations too: retrying them can
+          // never succeed, so dropping them is the only way to keep the
+          // outbox flowing.
+          await this.outbox.acknowledge([...new Set([
+            ...(result.appliedMutationIds ?? batch.map(item => item.mutationId)),
+            ...(result.rejectedMutations ?? []).map(item => item.mutationId),
+          ])])
         }
 
+        this.applyServerRejections(rejected)
         this.patchState({
           isSyncing: false,
           lastSynced: this.now(),
           notionSync: notionSync ?? this.state.notionSync,
+          error: rejected.length > 0
+            ? `Server rejected ${rejected.length} change(s); see console for details`
+            : null,
         })
       } catch (error) {
         this.patchState({
@@ -328,6 +333,51 @@ export class SyncCoordinator {
         })
       }
     })
+  }
+
+  /**
+   * Honor server verdicts on mutations it refused.
+   *
+   * `deleted` means a tombstone exists: the entity was deleted on another
+   * device and must disappear locally too, otherwise it lingers forever as an
+   * unsyncable ghost. `invalid` keeps the local value (it is only unsyncable),
+   * so it is just logged.
+   */
+  private applyServerRejections(rejected: RejectedSyncMutation[]): void {
+    if (rejected.length === 0) return
+    rejected.forEach(mutation => {
+      console.error(
+        `Cloud sync rejected ${mutation.entityType} ${mutation.entityId}`
+        + ` (${mutation.reason}): ${mutation.detail ?? 'no detail'}`,
+      )
+    })
+
+    const deletedIds = (entityType: RejectedSyncMutation['entityType']) => new Set(
+      rejected
+        .filter(mutation => mutation.reason === 'deleted' && mutation.entityType === entityType)
+        .map(mutation => mutation.entityId),
+    )
+    const strip = <T extends { id: string }>(items: T[], ids: Set<string>): T[] => {
+      if (ids.size === 0) return items
+      const next = items.filter(item => !ids.has(item.id))
+      return next.length === items.length ? items : next
+    }
+
+    const merged: SyncDataSnapshot = {
+      notes: strip(this.currentData.notes, deletedIds('note')),
+      sessions: strip(this.currentData.sessions, deletedIds('session')),
+      contentTypes: strip(this.currentData.contentTypes, deletedIds('contentType')),
+      mediaItems: strip(this.currentData.mediaItems, deletedIds('mediaItem')),
+    }
+    const changed = merged.notes !== this.currentData.notes
+      || merged.sessions !== this.currentData.sessions
+      || merged.contentTypes !== this.currentData.contentTypes
+      || merged.mediaItems !== this.currentData.mediaItems
+    if (!changed) return
+
+    this.pendingImportData = merged
+    this.currentData = merged
+    this.importData(merged)
   }
 
   resetState(): void {
@@ -354,6 +404,67 @@ export class SyncCoordinator {
 
   private emit(): void {
     this.listeners.forEach(listener => listener(this.state))
+  }
+
+  /**
+   * Fetch one pull as a sequence of bounded pages and combine them.
+   *
+   * The combined result is merged exactly once by the caller: merging a
+   * partial full response would delete local entities that simply live in a
+   * later page. `incremental` comes from the first page (later pages of a
+   * full sync are windowed and would misreport it) and the cursor from the
+   * last.
+   */
+  private async fetchAllRevisionPages(token: string | null, sinceRevision: number): Promise<RevisionSyncData> {
+    const headers: Record<string, string> = {}
+    if (token) headers.Authorization = `Bearer ${token}`
+
+    const fetchPage = async (revision: number): Promise<RevisionSyncData> => {
+      const response = await this.fetchFn(
+        `${this.apiBase()}/api/data?revision=${revision}&paged=1`,
+        { headers },
+      )
+      if (!response.ok) throw new Error(`Failed to fetch data: ${response.status}`)
+      return await response.json() as RevisionSyncData
+    }
+
+    const first = await fetchPage(sinceRevision)
+    let page = first
+    const combined: RevisionSyncData = {
+      ...first,
+      notes: [...(first.notes ?? [])],
+      sessions: [...(first.sessions ?? [])],
+      contentTypes: [...(first.contentTypes ?? [])],
+      mediaItems: [...(first.mediaItems ?? [])],
+      deleted: {
+        notes: [...(first.deleted?.notes ?? [])],
+        sessions: [...(first.deleted?.sessions ?? [])],
+        contentTypes: [...(first.deleted?.contentTypes ?? [])],
+        mediaItems: [...(first.deleted?.mediaItems ?? [])],
+      },
+    }
+
+    let pages = 1
+    while (page.hasMore && pages < MAX_PULL_PAGES) {
+      page = await fetchPage(page.revision)
+      combined.notes.push(...(page.notes ?? []))
+      combined.sessions.push(...(page.sessions ?? []))
+      combined.contentTypes.push(...(page.contentTypes ?? []))
+      combined.mediaItems.push(...(page.mediaItems ?? []))
+      combined.deleted.notes.push(...(page.deleted?.notes ?? []))
+      combined.deleted.sessions.push(...(page.deleted?.sessions ?? []))
+      combined.deleted.contentTypes.push(...(page.deleted?.contentTypes ?? []))
+      combined.deleted.mediaItems.push(...(page.deleted?.mediaItems ?? []))
+      pages++
+    }
+    if (page.hasMore && !first.incremental) {
+      throw new Error('Full sync exceeded the page limit; aborting to avoid a partial merge')
+    }
+
+    combined.revision = page.revision
+    combined.hasMore = false
+    combined.notionSync = page.notionSync ?? first.notionSync
+    return combined
   }
 
   private readPullRevision(forceFullFetch: boolean): number {

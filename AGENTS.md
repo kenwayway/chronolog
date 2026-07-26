@@ -134,12 +134,41 @@ responses advance the revision cursor.
 API:
 
 ```http
-GET /api/data?revision=<number>
+GET /api/data?revision=<number>&paged=1
 PUT /api/data
 Body: { "mutations": SyncMutation[] }
+Response: { appliedMutationIds, rejectedMutations, revision, ... }
 ```
 
 There is no timestamp-sync or alternate payload compatibility route.
+
+Pull semantics (GET):
+
+- With `paged=1` responses stay under ~800 rows; `hasMore: true` means
+  request again from the returned `revision`. The client combines all pages
+  and merges once — a partial full sync must never be merged.
+- Full responses (`incremental: false`) carry no tombstone list: they are
+  authoritative by absence, and stale dirty entities are rejected on push by
+  their tombstones.
+- Notion flushing and sync GC run via `waitUntil` after the response; a pull
+  never waits on the Notion API.
+- `sync_commits` rows older than 90 days are garbage-collected (except the
+  newest, which anchors the revision counter). Tombstones are kept forever —
+  they are what makes deletion win over stale upserts.
+
+Rejection semantics (PUT):
+
+- A bad mutation never fails the batch. The server applies the valid
+  mutations and reports the bad ones in `rejectedMutations` with reason
+  `invalid` or `deleted`.
+- Rejected mutation IDs are included in `appliedMutationIds` so every client
+  drops them from its outbox instead of retrying forever.
+- Tombstones win: once an entity is deleted, no upsert may recreate it
+  (enforced inside the upsert SQL, so it is race-free). On a `deleted`
+  rejection the client removes its local copy. Re-importing a backup cannot
+  resurrect deleted entities.
+- Concurrent edits from two devices resolve last-write-wins by arrival
+  order; there is no per-entity conflict detection.
 
 ## D1 schema and migration
 

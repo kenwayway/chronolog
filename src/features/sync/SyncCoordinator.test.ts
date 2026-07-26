@@ -137,7 +137,7 @@ describe('SyncCoordinator', () => {
     await coordinator.pull('token')
 
     expect(fetchFn).toHaveBeenCalledWith(
-      'https://chronolog.test/api/data?revision=2',
+      'https://chronolog.test/api/data?revision=2&paged=1',
       { headers: { Authorization: 'Bearer token' } },
     )
     expect(importData).toHaveBeenCalledWith(expect.objectContaining({
@@ -206,6 +206,90 @@ describe('SyncCoordinator', () => {
       })],
     })
     expect(outbox.values.size).toBe(0)
+  })
+
+  it('combines a paged pull into one merge and stores the final cursor', async () => {
+    const storage = seededStorage()
+    const importData = vi.fn()
+    const pages = [
+      remoteData({ notes: [note('n1', 'page one')], revision: 10, incremental: false, hasMore: true }),
+      remoteData({ notes: [note('n2', 'page two')], revision: 20, incremental: true, hasMore: false }),
+    ]
+    const requested: string[] = []
+    const fetchFn = vi.fn(async (input: RequestInfo | URL) => {
+      requested.push(String(input))
+      return Response.json(pages.shift())
+    }) as unknown as typeof fetch
+    const coordinator = new SyncCoordinator({
+      initialData: snapshot(),
+      importData,
+      storage,
+      outbox: memoryOutbox(),
+      fetch: fetchFn,
+    })
+
+    await coordinator.pull('token')
+
+    expect(requested).toEqual([
+      '/api/data?revision=0&paged=1',
+      '/api/data?revision=10&paged=1',
+    ])
+    // One merge containing both pages, treated as a full (authoritative) sync.
+    expect(importData).toHaveBeenCalledTimes(1)
+    expect(importData.mock.calls[0][0].notes.map((n: Note) => n.id)).toEqual(['n1', 'n2'])
+    expect(storage.values.get('chronolog_pull_revision')).toBe('20')
+    expect(coordinator.getState().error).toBeNull()
+  })
+
+  it('drops rejected mutations and deletes tombstoned entities locally', async () => {
+    const staleUpsert: SyncMutation = {
+      key: 'note:ghost',
+      mutationId: 'mutation-ghost',
+      entityType: 'note',
+      entityId: 'ghost',
+      operation: 'upsert',
+      value: note('ghost', 'resurrected?'),
+      createdAt: 1,
+    }
+    const invalidUpsert: SyncMutation = {
+      key: 'session:broken',
+      mutationId: 'mutation-broken',
+      entityType: 'session',
+      entityId: 'broken',
+      operation: 'upsert',
+      value: session('broken', 'bad payload'),
+      createdAt: 1,
+    }
+    const outbox = memoryOutbox([staleUpsert, invalidUpsert])
+    const importData = vi.fn()
+    const fetchFn = vi.fn(async () => Response.json({
+      appliedMutationIds: ['mutation-ghost', 'mutation-broken'],
+      rejectedMutations: [
+        { mutationId: 'mutation-ghost', entityType: 'note', entityId: 'ghost', reason: 'deleted' },
+        { mutationId: 'mutation-broken', entityType: 'session', entityId: 'broken', reason: 'invalid' },
+      ],
+    })) as unknown as typeof fetch
+    const coordinator = new SyncCoordinator({
+      initialData: snapshot(
+        [note('ghost', 'resurrected?'), note('kept', 'stays')],
+        [session('broken', 'bad payload')],
+      ),
+      importData,
+      storage: seededStorage(),
+      outbox,
+      fetch: fetchFn,
+    })
+
+    await coordinator.push('token')
+
+    // Both rejected mutations leave the outbox: retrying them can never succeed.
+    expect(outbox.values.size).toBe(0)
+    // The tombstoned note disappears locally; the invalid session stays.
+    expect(importData).toHaveBeenCalledWith(expect.objectContaining({
+      notes: [expect.objectContaining({ id: 'kept' })],
+      sessions: [expect.objectContaining({ id: 'broken' })],
+    }))
+    expect(coordinator.getState().error).toContain('rejected 2')
   })
 
   it('seeds a fresh outbox with every existing domain entity', async () => {

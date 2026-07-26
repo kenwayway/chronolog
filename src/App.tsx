@@ -1,4 +1,4 @@
-import { useRef, useMemo } from "react";
+import { lazy, Suspense, useRef, useMemo } from "react";
 import { Routes, Route } from "react-router-dom";
 import { useSession } from "./hooks/useSession";
 import { useCategories } from "./hooks/useCategories";
@@ -7,7 +7,7 @@ import { useAICategories } from "./hooks/useAICategories";
 import { useEntryHandlers } from "./hooks/useEntryHandlers";
 import { useAutoCategorize } from "./hooks/useAutoCategorize";
 import { useFollowUpLink } from "./hooks/useFollowUpLink";
-import { projectTimelineItems } from "./domain/timeline";
+import { buildTimelineLinkIndex, projectTimelineItems } from "./domain/timeline";
 import { SessionContext, useSessionContext } from "./contexts/SessionContext";
 import { CloudSyncContext } from "./contexts/CloudSyncContext";
 import { UIStateProvider } from "./components/providers/UIStateProvider";
@@ -19,15 +19,18 @@ import {
     Timeline,
     InputPanel,
     ContextMenu,
-    SettingsModal,
     EditModal,
     ActivityPanel,
     SearchPanel,
 } from "./components";
 import type { CategoryId, UseSessionReturn } from "./types";
 import type { InputPanelRef } from "./components/input/InputPanel";
-import { LibraryPage } from "./pages/LibraryPage";
-import { GalleryPage } from "./pages/GalleryPage";
+
+// Route- and modal-level code splitting: keep the timeline's first paint
+// small; these chunks load on navigation or when settings first opens.
+const LibraryPage = lazy(() => import("./pages/LibraryPage").then(m => ({ default: m.LibraryPage })));
+const GalleryPage = lazy(() => import("./pages/GalleryPage").then(m => ({ default: m.GalleryPage })));
+const SettingsModal = lazy(() => import("./components/modals/SettingsModal").then(m => ({ default: m.SettingsModal })));
 
 function App() {
     const session = useSession();
@@ -51,6 +54,7 @@ function HydratedApp({ session }: { session: UseSessionReturn }) {
         () => projectTimelineItems(state.notes, state.sessions),
         [state.notes, state.sessions],
     );
+    const linkIndex = useMemo(() => buildTimelineLinkIndex(timelineItems), [timelineItems]);
 
     // Cloud sync
     const cloudSync = useCloudSync({
@@ -81,10 +85,11 @@ function HydratedApp({ session }: { session: UseSessionReturn }) {
     const sessionContextValue = useMemo(() => ({
         state,
         timelineItems,
+        linkIndex,
         actions,
         categories,
         isStreaming,
-    }), [state, timelineItems, actions, categories, isStreaming]);
+    }), [state, timelineItems, linkIndex, actions, categories, isStreaming]);
 
     // Fix: field-by-field deps instead of the spread object (which is always a new ref)
     const cloudSyncContextValue = useMemo(() => ({
@@ -119,16 +124,22 @@ function HydratedApp({ session }: { session: UseSessionReturn }) {
         <SessionContext.Provider value={sessionContextValue}>
             <CloudSyncContext.Provider value={cloudSyncContextValue}>
                 <UIStateProvider>
-                    <Routes>
-                        <Route path="/library" element={<LibraryPage />} />
-                        <Route path="/gallery" element={<GalleryPage />} />
-                        <Route path="/" element={
-                            <MainView
-                                isStreaming={isStreaming}
-                                handlers={handlers}
-                            />
-                        } />
-                    </Routes>
+                    <Suspense fallback={
+                        <div className="min-h-screen flex items-center justify-center font-mono" style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-muted)' }}>
+                            LOADING MODULE...
+                        </div>
+                    }>
+                        <Routes>
+                            <Route path="/library" element={<LibraryPage />} />
+                            <Route path="/gallery" element={<GalleryPage />} />
+                            <Route path="/" element={
+                                <MainView
+                                    isStreaming={isStreaming}
+                                    handlers={handlers}
+                                />
+                            } />
+                        </Routes>
+                    </Suspense>
                 </UIStateProvider>
             </CloudSyncContext.Provider>
         </SessionContext.Provider>
@@ -257,10 +268,15 @@ function MainView({
                 onClose={ui.closeEditModal}
             />
 
-            <SettingsModal
-                isOpen={ui.settingsOpen}
-                onClose={() => ui.setSettingsOpen(false)}
-            />
+            {/* Mounted only when open so its chunk loads on first use. */}
+            {ui.settingsOpen && (
+                <Suspense fallback={null}>
+                    <SettingsModal
+                        isOpen={ui.settingsOpen}
+                        onClose={() => ui.setSettingsOpen(false)}
+                    />
+                </Suspense>
+            )}
         </div>
     );
 }

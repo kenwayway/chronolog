@@ -9,6 +9,7 @@ import styles from "./InputPanel.module.css";
 import { useCloudSyncContext } from "@/contexts/CloudSyncContext";
 import { useSessionContext } from "@/contexts/SessionContext";
 import { prepareContentTypeSubmission } from "@/features/contentTypes";
+import { appendAttachmentLines, resolveCurrentLocation } from "@/utils/attachments";
 import type { TimelineItem, SessionStatus, CategoryId } from "@/types";
 
 interface NoteOptions {
@@ -138,30 +139,8 @@ export const InputPanel = forwardRef<InputPanelRef, InputPanelProps>(function In
     }, [input, isFocused]);
 
     const getCurrentLocation = async () => {
-        if (!navigator.geolocation) {
-            setLocation("Location not supported");
-            return;
-        }
         setIsGettingLocation(true);
-        try {
-            const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-                navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000 });
-            });
-            const { latitude, longitude } = position.coords;
-            try {
-                const response = await fetch(
-                    `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
-                );
-                const data = await response.json();
-                const address = data.display_name?.split(",").slice(0, 3).join(",") ||
-                    `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
-                setLocation(address);
-            } catch {
-                setLocation(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
-            }
-        } catch {
-            setLocation("Unable to get location");
-        }
+        setLocation(await resolveCurrentLocation());
         setIsGettingLocation(false);
     };
 
@@ -189,12 +168,7 @@ export const InputPanel = forwardRef<InputPanelRef, InputPanelProps>(function In
         }
     };
 
-    const buildEntryContent = () => {
-        let content = input.trim();
-        if (location) content += `\n📍 ${location}`;
-        if (imageUrl) content += `\n🖼️ ${imageUrl}`;
-        return content;
-    };
+    const buildEntryContent = () => appendAttachmentLines(input, { location, imageUrl });
 
     const handleSubmit = (action: "note" | "logOff" | "switch" | "logIn") => {
         if (!input.trim() && action !== "logOff") return;

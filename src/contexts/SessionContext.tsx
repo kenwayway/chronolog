@@ -1,9 +1,11 @@
 import { createContext, useContext } from 'react'
 import type { SessionState, SessionActions, Category, TimelineItem } from '@/types'
+import type { TimelineLinkIndex } from '@/domain/timeline'
 
 export interface SessionContextValue {
     state: SessionState
     timelineItems: TimelineItem[]
+    linkIndex: TimelineLinkIndex
     actions: SessionActions
     categories: Category[]
     isStreaming: boolean

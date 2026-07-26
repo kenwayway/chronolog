@@ -6,10 +6,17 @@ import {
     sessionRowToObject,
 } from './_db.ts';
 import {
+    collectSyncGarbage,
     currentRevision,
+    pageEndRevision,
     validateRevisionMutations,
 } from './_revisionSync.ts';
-import { applyMutationsWithNotionSync, flushNotionSyncJobs, type NotionSyncStatus } from './_notionSync.ts';
+import {
+    applyMutationsWithNotionSync,
+    flushNotionSyncJobs,
+    getNotionSyncStatus,
+    type NotionSyncStatus,
+} from './_notionSync.ts';
 import type {
     CFContext,
     ContentTypeRow,
@@ -23,15 +30,32 @@ interface TombstoneRow {
     entity_id: string;
 }
 
+const EMPTY_TOMBSTONES = { results: [] as TombstoneRow[] };
+
 async function getRevisionData(
     db: D1Database,
     sinceRevision: number,
     notionSync: NotionSyncStatus,
+    paged: boolean,
 ): Promise<Response> {
     const cutoff = await currentRevision(db);
     const incremental = sinceRevision > 0;
-    const revisionWhere = incremental ? 'revision > ? AND revision <= ?' : 'revision <= ?';
-    const bindings = incremental ? [sinceRevision, cutoff] : [cutoff];
+
+    // A paged pull closes the response at the revision that keeps it under
+    // PULL_PAGE_SIZE rows; the client keeps requesting from the returned
+    // revision until hasMore is false.
+    let upper = cutoff;
+    let hasMore = false;
+    if (paged) {
+        const pageEnd = await pageEndRevision(db, sinceRevision);
+        if (pageEnd !== null && pageEnd < cutoff) {
+            upper = pageEnd;
+            hasMore = true;
+        }
+    }
+
+    const revisionWhere = incremental ? 'revision > ?1 AND revision <= ?2' : 'revision <= ?1';
+    const bindings = incremental ? [sinceRevision, upper] : [upper];
 
     const [notes, sessions, contentTypes, mediaItems, tombstones] = await Promise.all([
         db.prepare(`SELECT * FROM notes WHERE ${revisionWhere} ORDER BY timestamp ASC`)
@@ -42,8 +66,14 @@ async function getRevisionData(
             .bind(...bindings).all<ContentTypeRow>(),
         db.prepare(`SELECT * FROM media_items WHERE ${revisionWhere} ORDER BY created_at DESC`)
             .bind(...bindings).all<MediaItemRow>(),
-        db.prepare(`SELECT entity_type, entity_id FROM sync_tombstones WHERE ${revisionWhere}`)
-            .bind(...bindings).all<TombstoneRow>(),
+        // A full response is authoritative by absence: entities missing from
+        // it disappear on merge (and any dirty stragglers are rejected on
+        // push by their tombstones). Skipping the ever-growing tombstone list
+        // here keeps full pulls bounded by live data, not deletion history.
+        incremental
+            ? db.prepare(`SELECT entity_type, entity_id FROM sync_tombstones WHERE ${revisionWhere}`)
+                .bind(...bindings).all<TombstoneRow>()
+            : Promise.resolve(EMPTY_TOMBSTONES),
     ]);
 
     const deleted = {
@@ -65,8 +95,9 @@ async function getRevisionData(
         contentTypes: contentTypes.results.map(contentTypeRowToObject),
         mediaItems: mediaItems.results.map(mediaItemRowToObject),
         deleted,
-        revision: cutoff,
+        revision: upper,
         incremental,
+        hasMore,
         notionSync,
     }, { headers: corsHeaders });
 }
@@ -77,12 +108,20 @@ export async function onRequestGet(context: CFContext): Promise<Response> {
     if (!auth.valid) return unauthorizedResponse(auth.error);
 
     try {
-        const revision = Number(new URL(request.url).searchParams.get('revision') ?? 0);
+        const url = new URL(request.url);
+        const revision = Number(url.searchParams.get('revision') ?? 0);
         if (!Number.isSafeInteger(revision) || revision < 0) {
             return Response.json({ error: 'Invalid revision' }, { status: 400, headers: corsHeaders });
         }
-        const notionSync = await flushNotionSyncJobs(env);
-        return getRevisionData(env.CHRONOLOG_DB, revision, notionSync);
+        // Third-party Notion writes and bookkeeping GC run after the
+        // response; a pull must never wait on the Notion API.
+        context.waitUntil(
+            flushNotionSyncJobs(env)
+                .then(() => collectSyncGarbage(env.CHRONOLOG_DB))
+                .catch(error => console.error('Deferred pull maintenance failed:', error)),
+        );
+        const notionSync = await getNotionSyncStatus(env.CHRONOLOG_DB);
+        return getRevisionData(env.CHRONOLOG_DB, revision, notionSync, url.searchParams.get('paged') === '1');
     } catch (error) {
         console.error('Data fetch error:', error);
         return Response.json({ error: 'Failed to fetch data' }, { status: 500, headers: corsHeaders });
@@ -103,16 +142,33 @@ export async function onRequestPut(context: CFContext): Promise<Response> {
             );
         }
 
-        let mutations;
+        let validated;
         try {
-            mutations = validateRevisionMutations(data.mutations);
+            validated = validateRevisionMutations(data.mutations);
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Invalid mutations';
             return Response.json({ error: message }, { status: 400, headers: corsHeaders });
         }
 
-        const result = await applyMutationsWithNotionSync(context.env, mutations);
-        return Response.json({ success: true, ...result }, { headers: corsHeaders });
+        const result = await applyMutationsWithNotionSync(
+            context.env,
+            validated.accepted,
+            promise => context.waitUntil(promise),
+        );
+        const rejectedMutations = [...validated.rejected, ...result.rejectedMutations];
+        return Response.json({
+            success: true,
+            ...result,
+            rejectedMutations,
+            // Rejected mutations are still acknowledged so clients drop them
+            // from their outbox instead of retrying a batch that can never
+            // succeed. Clients that understand rejectedMutations handle the
+            // rejected IDs specially before acknowledging.
+            appliedMutationIds: [
+                ...result.appliedMutationIds,
+                ...rejectedMutations.map(mutation => mutation.mutationId),
+            ],
+        }, { headers: corsHeaders });
     } catch (error) {
         console.error('Data save error:', error);
         return Response.json(

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import type { TimelineItem, CategoryId } from '@/types'
 
 interface Position {
@@ -110,7 +110,9 @@ export function useUIState(): UIState {
         setTimeout(tryScroll, 100)
     }, [])
 
-    return {
+    // A stable value object: consumers only re-render when a piece of UI
+    // state actually changes, not on every provider render.
+    return useMemo(() => ({
         leftSidebarOpen, setLeftSidebarOpen,
         settingsOpen, setSettingsOpen,
         searchOpen, setSearchOpen,
@@ -122,5 +124,11 @@ export function useUIState(): UIState {
         tagFilter, setTagFilter,
         contentTypeFilter, setContentTypeFilter,
         navigateToEntry,
-    }
+    }), [
+        leftSidebarOpen, settingsOpen, searchOpen, showLanding,
+        contextMenu, handleContextMenu, closeContextMenu,
+        editModal, openEditModal, closeEditModal,
+        selectedDate, categoryFilter, tagFilter, contentTypeFilter,
+        navigateToEntry,
+    ])
 }

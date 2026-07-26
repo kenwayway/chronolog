@@ -3,8 +3,11 @@ import { getApiBase } from './useCloudAuth'
 import { compressImage, generateThumbnail } from '@/utils/imageCompressor'
 
 export interface CleanupResult {
-    deleted: string[]
-    kept: string[]
+    deletedCount: number
+    totalImages: number
+    usedImages: number
+    skippedRecent: number
+    deletedImages: string[]
 }
 
 /**

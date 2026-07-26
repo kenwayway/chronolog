@@ -24,7 +24,7 @@ interface TimelineProps {
 }
 
 export function Timeline({ entries, onContextMenu, onEdit, categoryFilter = [], isFilterMode: isFilterModeProp, filterKey = '', onNavigateToEntry }: TimelineProps) {
-  const { state: { mediaItems, sessions }, timelineItems: allEntries, categories } = useSessionContext();
+  const { state: { mediaItems, sessions }, linkIndex, categories } = useSessionContext();
   const { theme } = useTheme();
 
   // Stable key for categoryFilter to avoid re-creating strings on every render
@@ -164,7 +164,7 @@ export function Timeline({ entries, onContextMenu, onEdit, categoryFilter = [], 
         <TimelineEntry
           key={entry.id}
           entry={entry}
-          allEntries={allEntries}
+          linkIndex={linkIndex}
           isFirst={index === 0}
           isLast={index === sortedEntries.length - 1}
           sessionDuration={sessionDurations[entry.id]}

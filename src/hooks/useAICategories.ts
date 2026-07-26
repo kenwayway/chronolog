@@ -10,7 +10,12 @@ export interface CategorizeResult {
 }
 
 interface UseAICategoriesReturn {
-    categorize: (content: string, cloudSyncToken: string | null, contentTypes?: ContentType[]) => Promise<CategorizeResult>
+    categorize: (
+        content: string,
+        cloudSyncToken: string | null,
+        contentTypes?: ContentType[],
+        signal?: AbortSignal,
+    ) => Promise<CategorizeResult>
 }
 
 // Hook for AI-powered auto-categorization and content type detection via backend API
@@ -19,7 +24,8 @@ export function useAICategories(): UseAICategoriesReturn {
     const categorize = useCallback(async (
         content: string,
         cloudSyncToken: string | null,
-        contentTypes?: ContentType[]
+        contentTypes?: ContentType[],
+        signal?: AbortSignal,
     ): Promise<CategorizeResult> => {
         const emptyResult: CategorizeResult = { category: null, contentType: null, fieldValues: null }
 
@@ -30,6 +36,7 @@ export function useAICategories(): UseAICategoriesReturn {
         try {
             const response = await fetch('/api/categorize', {
                 method: 'POST',
+                signal,
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${cloudSyncToken}`,

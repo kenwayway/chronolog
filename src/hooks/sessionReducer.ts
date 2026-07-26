@@ -153,6 +153,9 @@ function handleDeleteSession(state: SessionState, sessionId: string): SessionSta
                 : session
             ),
         notes: state.notes.map(note => {
+            const referencesSession = note.sessionId === sessionId
+                || note.linkedItems?.includes(sessionId)
+            if (!referencesSession) return note
             const next = { ...note }
             if (next.sessionId === sessionId) next.sessionId = undefined
             if (next.linkedItems?.includes(sessionId)) {

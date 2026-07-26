@@ -32,24 +32,25 @@ export function ActivityPanel({
     const { state: { sessions, activeSessionId, contentTypes }, timelineItems: entries, categories } = useSessionContext();
     const { tokens } = useTheme();
 
-    // Tag statistics
-    const tagStats = useMemo(() => extractAllTags(entries), [entries]);
+    // Tag statistics. The panel stays mounted for its slide animation, so
+    // skip the full-history scans entirely while it is closed.
+    const tagStats = useMemo(() => isOpen ? extractAllTags(entries) : [], [entries, isOpen]);
     const TAG_PREVIEW_COUNT = 20;
 
     // Content type statistics
     const contentTypeStats = useMemo(() => {
+        if (!isOpen || !contentTypes) return [];
         const counts: Record<string, number> = {};
         entries.forEach(e => {
             if (e.contentType && e.contentType !== 'note') {
                 counts[e.contentType] = (counts[e.contentType] || 0) + 1;
             }
         });
-        if (!contentTypes) return [];
         return contentTypes
             .filter(ct => ct.id !== 'note' && (counts[ct.id] || 0) > 0)
             .sort((a, b) => (a.order ?? 999) - (b.order ?? 999))
             .map(ct => ({ ...ct, count: counts[ct.id] }));
-    }, [entries, contentTypes]);
+    }, [entries, contentTypes, isOpen]);
     const toggleCategory = (catId: CategoryId) => {
         if (tagFilter.length > 0) onTagFilterChange([]);
         if (contentTypeFilter.length > 0) onContentTypeFilterChange([]);

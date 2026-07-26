@@ -31,6 +31,6 @@ export interface CloudSyncFull extends CloudSyncStatus {
     login: (password: string) => Promise<{ success: boolean; error?: string }>;
     logout: () => void;
     sync: () => void;
-    cleanupImages: () => Promise<{ deleted: string[]; kept: string[] }>;
+    cleanupImages: () => Promise<{ deletedCount: number; totalImages: number; skippedRecent: number }>;
     testAI: () => Promise<TestAIResult>;
 }

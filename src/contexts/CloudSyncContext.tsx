@@ -11,7 +11,7 @@ export interface CloudSyncContextValue {
     logout: () => void
     sync: () => Promise<void>
     uploadImage: (file: File) => Promise<string>
-    cleanupImages: () => Promise<{ deleted: string[]; kept: string[] }>
+    cleanupImages: () => Promise<{ deletedCount: number; totalImages: number; skippedRecent: number }>
     testAI: () => Promise<TestAIResult>
     token: string | null
 }

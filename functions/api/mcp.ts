@@ -478,6 +478,12 @@ async function ensureUniqueId(db: D1Database, id: string) {
     if (await existingEntity(db, id)) throw new Error(`ID "${id}" already exists`);
 }
 
+function ensureNothingRejected(result: { rejectedMutations: { detail?: string }[] }) {
+    if (result.rejectedMutations.length > 0) {
+        throw new Error(`Write rejected: ${result.rejectedMutations[0].detail ?? 'entity was deleted'}`);
+    }
+}
+
 async function addNote(args: Record<string, unknown>, env: Env) {
     const note = buildNote(args);
     await ensureUniqueId(env.CHRONOLOG_DB, note.id);
@@ -489,6 +495,7 @@ async function addNote(args: Record<string, unknown>, env: Env) {
         env,
         await linkMutations(env.CHRONOLOG_DB, 'note', note),
     );
+    ensureNothingRejected(result);
     return { note, revision: result.revision };
 }
 
@@ -503,6 +510,7 @@ async function startSession(args: Record<string, unknown>, env: Env) {
         env,
         await linkMutations(env.CHRONOLOG_DB, 'session', session),
     );
+    ensureNothingRejected(result);
     return { session, revision: result.revision };
 }
 
@@ -533,6 +541,7 @@ async function endSession(args: Record<string, unknown>, env: Env) {
         operation: 'upsert',
         value: updated,
     }]);
+    ensureNothingRejected(result);
     return {
         session: compactSession(updated, resolveTimezone(args.timezone)),
         revision: result.revision,

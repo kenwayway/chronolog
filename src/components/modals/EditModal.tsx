@@ -4,6 +4,7 @@ import { EntryMetadataInput } from "../input/EntryMetadataInput";
 import { BUILTIN_CONTENT_TYPES } from "@/utils/constants";
 import { useSessionContext } from "@/contexts/SessionContext";
 import { prepareContentTypeSubmission } from "@/features/contentTypes";
+import { appendAttachmentLines, resolveCurrentLocation } from "@/utils/attachments";
 import styles from "./EditModal.module.css";
 import type { TimelineItem, TimelineItemUpdate, CategoryId } from "@/types";
 
@@ -99,46 +100,12 @@ function EditModalForm({ entry, onSave, onClose }: Omit<EditModalProps, 'isOpen'
   }, []);
 
   const getCurrentLocation = async () => {
-    if (!navigator.geolocation) {
-      setLocation("Location not supported");
-      return;
-    }
     setIsGettingLocation(true);
-    try {
-      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          timeout: 10000,
-        });
-      });
-      const { latitude, longitude } = position.coords;
-      try {
-        const response = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`,
-        );
-        const data = await response.json();
-        const address =
-          data.display_name?.split(",").slice(0, 3).join(",") ||
-          `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
-        setLocation(address);
-      } catch {
-        setLocation(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
-      }
-    } catch {
-      setLocation("Unable to get location");
-    }
+    setLocation(await resolveCurrentLocation());
     setIsGettingLocation(false);
   };
 
-  const buildContent = () => {
-    let finalContent = content.trim();
-    if (location) {
-      finalContent += `\n📍 ${location}`;
-    }
-    if (imageUrl) {
-      finalContent += `\n🖼️ ${imageUrl}`;
-    }
-    return finalContent;
-  };
+  const buildContent = () => appendAttachmentLines(content, { location, imageUrl });
 
   const handleSave = () => {
     const newTimestamp = new Date(timestamp).getTime();

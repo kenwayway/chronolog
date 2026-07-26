@@ -373,6 +373,15 @@ export interface SyncMutation {
   createdAt: number
 }
 
+/** A mutation the server refused to apply. The client must stop retrying it. */
+export interface RejectedSyncMutation {
+  mutationId: string
+  entityType: SyncEntityType
+  entityId: string
+  reason: 'invalid' | 'deleted'
+  detail?: string
+}
+
 export interface RevisionSyncData {
   notes: Note[]
   sessions: Session[]
@@ -386,6 +395,8 @@ export interface RevisionSyncData {
   }
   revision: number
   incremental: boolean
+  /** True when more pages remain; request again from `revision`. */
+  hasMore?: boolean
   notionSync?: NotionSyncStatus
 }
 

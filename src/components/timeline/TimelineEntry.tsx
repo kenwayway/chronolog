@@ -7,6 +7,7 @@ import { LinkedEntryPreview } from "./LinkedEntryPreview";
 import { ImageLightbox } from "../common/ImageLightbox";
 import styles from "./TimelineEntry.module.css";
 import type { TimelineItem, Category, MediaItem } from "@/types";
+import type { TimelineLinkIndex } from "@/domain/timeline";
 import { getContentTypeTimelineSymbol, renderContentTypeDisplay } from "@/features/contentTypes";
 
 interface Position {
@@ -19,7 +20,7 @@ type LineState = 'start' | 'end' | 'active' | 'default';
 
 interface TimelineEntryProps {
   entry: TimelineItem;
-  allEntries: TimelineItem[];
+  linkIndex: TimelineLinkIndex;
   isFirst: boolean;
   isLast: boolean;
   sessionDuration?: number;
@@ -39,7 +40,7 @@ interface TimelineEntryProps {
  */
 export const TimelineEntry = memo(function TimelineEntry({
   entry,
-  allEntries,
+  linkIndex,
   isFirst,
   isLast,
   sessionDuration,
@@ -103,14 +104,12 @@ export const TimelineEntry = memo(function TimelineEntry({
   // Linked entries
   const linkedEntryData = useMemo(() => {
     const outgoingLinks = entry.linkedItems || [];
-    const incomingLinks = allEntries
-      ?.filter(e => e.entityId !== entry.entityId && e.linkedItems?.includes(entry.entityId))
-      .map(e => e.entityId) || [];
+    const incomingLinks = linkIndex.incoming.get(entry.entityId) ?? [];
     const allLinkedIds = [...new Set([...outgoingLinks, ...incomingLinks])];
     return allLinkedIds
-      .map(id => allEntries?.find(e => e.entityId === id && e.kind !== 'session-end'))
+      .map(id => linkIndex.byEntityId.get(id))
       .filter((e): e is TimelineItem => Boolean(e));
-  }, [entry.entityId, entry.linkedItems, allEntries]);
+  }, [entry.entityId, entry.linkedItems, linkIndex]);
 
   const beforeLinks = useMemo(
     () => linkedEntryData.filter(e => e.timestamp < entry.timestamp),
