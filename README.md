@@ -207,6 +207,63 @@ For Notion task syncing, add a number property named `Tracked Minutes` (or set
 `NOTION_TRACKED_MINUTES_PROPERTY` to its name/property ID), then share the task
 database with the internal integration represented by `NOTION_API_TOKEN`.
 
+## Claude web MCP
+
+`mcp-worker/` is a dedicated OAuth-protected Worker for Claude web and Claude
+Desktop remote connectors. It reuses the same MCP request implementation as
+`/api/mcp`, binds the existing D1 database, and stores OAuth clients, grants,
+and tokens in a separate KV namespace.
+
+Authentication is a two-layer flow: Google verifies the user's identity, then
+Chronolog issues its own short-lived MCP access token and refresh token.
+Only exact entries in `ALLOWED_GOOGLE_EMAILS` or `ALLOWED_GOOGLE_SUBJECTS` are
+accepted. Dynamic client registration is restricted to Claude's web callback
+URLs.
+
+Deploy once to obtain the Worker URL:
+
+```bash
+npm run mcp:deploy
+```
+
+In Google Cloud, create an OAuth 2.0 **Web application** client. Its authorized
+redirect URI is:
+
+```text
+https://<chronolog-mcp-worker-host>/oauth/google/callback
+```
+
+Configure the Worker secrets without committing their values:
+
+```bash
+npx wrangler secret put GOOGLE_CLIENT_ID --config wrangler.mcp.toml
+npx wrangler secret put GOOGLE_CLIENT_SECRET --config wrangler.mcp.toml
+npx wrangler secret put ALLOWED_GOOGLE_EMAILS --config wrangler.mcp.toml
+```
+
+`ALLOWED_GOOGLE_EMAILS` accepts a comma-separated list. For a stronger stable
+identifier, set `ALLOWED_GOOGLE_SUBJECTS` to one or more comma-separated Google
+OpenID `sub` values. If the public hostname differs from the request hostname,
+also set `GOOGLE_REDIRECT_URI` to the exact Google callback URL.
+
+After setting secrets, redeploy and add this custom connector in Claude:
+
+```text
+https://<chronolog-mcp-worker-host>/mcp
+```
+
+Useful commands:
+
+```bash
+npm run mcp:dev
+npm run mcp:check
+npm run mcp:deploy
+```
+
+The original Pages endpoint remains available for static-token clients:
+`PUBLIC_API_TOKEN` gives read-only access, while a write token must be sent in
+the `Authorization: Bearer` header.
+
 ## 📝 License
 
 MIT

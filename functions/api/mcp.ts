@@ -784,6 +784,16 @@ export async function onRequestPost(context: CFContext): Promise<Response> {
         && (tokenMatches(token as string, env.PUBLIC_API_TOKEN) || isWriteToken(token as string)));
     if (!canRead) return Response.json({ error: 'Invalid or missing token' }, { status: 401 });
 
+    return handleMcpRequest(request, env, canWrite);
+}
+
+/**
+ * Process an authenticated MCP request.
+ *
+ * Authentication is deliberately kept outside this function so the Pages
+ * endpoint can use static tokens while the dedicated MCP Worker uses OAuth.
+ */
+export async function handleMcpRequest(request: Request, env: Env, canWrite: boolean): Promise<Response> {
     let body: unknown;
     try {
         body = await request.json();

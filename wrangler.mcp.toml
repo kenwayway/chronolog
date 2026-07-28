@@ -1,0 +1,13 @@
+name = "chronolog-mcp"
+main = "mcp-worker/index.ts"
+compatibility_date = "2026-07-28"
+workers_dev = true
+
+[[kv_namespaces]]
+binding = "OAUTH_KV"
+id = "b464cce9c5b0434fa7a1a484ef5dcab4"
+
+[[d1_databases]]
+binding = "CHRONOLOG_DB"
+database_name = "chronolog"
+database_id = "c6d90d0f-81a7-422f-84af-8e520fec3204"

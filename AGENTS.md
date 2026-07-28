@@ -229,6 +229,13 @@ MCP auth: write scope requires the token in the `Authorization: Bearer`
 header; a write token sent via `?token=` query string degrades to read-only
 (query strings land in access logs). Token comparisons are constant-time.
 
+Claude web uses the dedicated Worker in `mcp-worker/`, configured by
+`wrangler.mcp.toml`. It wraps the shared MCP request handler with
+`@cloudflare/workers-oauth-provider`, uses Google OpenID for an allowlisted
+identity check, and issues Chronolog OAuth access/refresh tokens. Its OAuth KV
+is separate from the app auth KV. Dynamic registration accepts only Claude web
+callback URLs.
+
 MCP search is backed by external-content FTS5 tables (`notes_fts`,
 `sessions_fts`, migration `0007_fts_search.sql`) using the trigram tokenizer
 so CJK substrings match. Keywords shorter than 3 characters fall back to a
@@ -254,6 +261,9 @@ functions/
   api/data.ts
   api/public.ts
   api/mcp.ts
+mcp-worker/
+  auth.ts
+  index.ts
 migrations/
 schema.sql
 ```
@@ -271,4 +281,5 @@ schema.sql
 npx wrangler d1 migrations apply chronolog --remote
 npm run build
 npx wrangler pages deploy dist --project-name chronolog
+npm run mcp:deploy
 ```

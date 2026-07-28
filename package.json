@@ -7,12 +7,16 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit && tsc --noEmit -p functions",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p functions && tsc --noEmit -p mcp-worker",
+    "mcp:dev": "npx --yes wrangler@latest dev --config wrangler.mcp.toml",
+    "mcp:check": "npx --yes wrangler@latest deploy --dry-run --config wrangler.mcp.toml",
+    "mcp:deploy": "npx --yes wrangler@latest deploy --config wrangler.mcp.toml",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@cloudflare/workers-oauth-provider": "^0.8.2",
     "lucide-react": "^0.556.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
