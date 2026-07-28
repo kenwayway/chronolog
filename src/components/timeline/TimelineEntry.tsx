@@ -1,4 +1,5 @@
 import { useState, memo, useMemo, ReactNode, MouseEvent, TouchEvent } from "react";
+import { ChevronRight, MessageSquareQuote, Play, Square } from "lucide-react";
 import { formatTime, formatDuration, formatDate } from "@/utils/formatters";
 import { darkenColor } from "@/utils/contentParser";
 import { useTheme } from "@/hooks/useTheme";
@@ -32,6 +33,12 @@ interface TimelineEntryProps {
   showDate?: boolean;
   onNavigateToEntry?: (entry: TimelineItem) => void;
   mediaItems?: MediaItem[];
+  annotationMode?: boolean;
+  annotationEndContent?: string;
+  annotationGroupCount?: number;
+  annotationGroupExpanded?: boolean;
+  annotationGroupEntryIds?: string[];
+  onToggleAnnotationGroup?: () => void;
 }
 
 /**
@@ -52,6 +59,12 @@ export const TimelineEntry = memo(function TimelineEntry({
   showDate = false,
   onNavigateToEntry,
   mediaItems = [],
+  annotationMode = false,
+  annotationEndContent,
+  annotationGroupCount,
+  annotationGroupExpanded = false,
+  annotationGroupEntryIds,
+  onToggleAnnotationGroup,
 }: TimelineEntryProps) {
   const { symbols } = useTheme();
   const [pressTimer, setPressTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
@@ -100,6 +113,10 @@ export const TimelineEntry = memo(function TimelineEntry({
   const isSessionStart = entry.kind === 'session-start';
   const isSessionEnd = entry.kind === 'session-end';
   const isZaddy = entry.origin === 'zaddy';
+  const isAnnotation = isZaddy && annotationMode;
+  const isCollapsedAnnotationGroup = isAnnotation
+    && annotationGroupCount !== undefined
+    && !annotationGroupExpanded;
   const contentTypeDisplay = renderContentTypeDisplay(entry, mediaItems);
 
   // Linked entries
@@ -123,34 +140,68 @@ export const TimelineEntry = memo(function TimelineEntry({
   );
 
   const getEntrySymbol = (): ReactNode => {
-    const styles = { fontSize: 14 };
+    const symbolStyles = { fontSize: 14 };
+    if (isAnnotation) {
+      return (
+        <MessageSquareQuote
+          size={10}
+          strokeWidth={1.75}
+          className={`${styles.timelineIcon} ${styles.annotationIcon}`}
+          aria-hidden="true"
+        />
+      );
+    }
     if (isZaddy) {
-      return <span style={{ ...styles, color: "var(--accent)", fontWeight: 700 }}>Z</span>;
+      return (
+        <MessageSquareQuote
+          size={12}
+          strokeWidth={2}
+          className={`${styles.timelineIcon} ${styles.zaddyIcon}`}
+          aria-hidden="true"
+        />
+      );
     }
     const contentTypeSymbol = getContentTypeTimelineSymbol(entry.contentType);
     if (contentTypeSymbol) {
-      return <span style={{ ...styles, color: 'var(--accent)' }}>{symbols[contentTypeSymbol]}</span>;
+      return <span style={{ ...symbolStyles, color: 'var(--accent)' }}>{symbols[contentTypeSymbol]}</span>;
     }
 
     switch (entry.kind) {
       case 'session-start':
-        return <span style={{ ...styles, color: "var(--success)", fontWeight: 700, fontSize: 14 }}>{symbols.sessionStart}</span>;
+        return (
+          <Play
+            size={12}
+            strokeWidth={2}
+            fill="currentColor"
+            className={`${styles.timelineIcon} ${styles.sessionStartIcon}`}
+            aria-hidden="true"
+          />
+        );
       case 'session-end':
-        return <span style={{ ...styles, color: "var(--text-muted)" }}>{symbols.sessionEnd}</span>;
+        return (
+          <Square
+            size={9}
+            strokeWidth={2}
+            fill="currentColor"
+            className={`${styles.timelineIcon} ${styles.sessionEndIcon}`}
+            aria-hidden="true"
+          />
+        );
       case 'note':
       default:
-        return <span style={{ ...styles, color: "var(--text-dim)" }}>{symbols.note}</span>;
+        return <span style={{ ...symbolStyles, color: "var(--text-dim)" }}>{symbols.note}</span>;
     }
   };
 
-  const getLineColor = (position: "top" | "bottom"): string => {
+  const isSessionLine = (position: "top" | "bottom"): boolean => {
     if (position === "top") {
-      return lineState === "start" || lineState === "default" ? "var(--border-light)" : "var(--accent)";
+      return lineState === "active" || lineState === "end";
     }
-    return lineState === "end" || lineState === "default" ? "var(--border-light)" : "var(--accent)";
+    return lineState === "start" || lineState === "active";
   };
 
   const getContentColor = (): string => {
+    if (isAnnotation) return "var(--text-muted)";
     if (isSessionStart) return "var(--text-primary)";
     if (isSessionEnd) return "var(--text-muted)";
     return "var(--text-secondary)";
@@ -159,8 +210,11 @@ export const TimelineEntry = memo(function TimelineEntry({
   return (
     <>
       <div
-        className={styles.entry}
+        className={`${styles.entry} ${isAnnotation ? styles.annotationEntry : ""} ${
+          isCollapsedAnnotationGroup ? styles.collapsedAnnotationEntry : ""
+        }`}
         data-entry-id={entry.id}
+        data-zaddy-entry-ids={annotationGroupEntryIds?.join(" ")}
         style={{
           display: "flex",
           alignItems: "flex-start",
@@ -197,16 +251,25 @@ export const TimelineEntry = memo(function TimelineEntry({
           )}
           {formatTime(entry.timestamp)}
           {/* Duration under timestamp for session start */}
-          {isSessionStart && sessionDuration && (
+          {isSessionStart && sessionDuration && !isCollapsedAnnotationGroup && (
             <div
               style={{
                 marginTop: 4,
                 fontSize: 9,
-                color: "var(--accent)",
+                color: isAnnotation ? "var(--text-dim)" : "var(--accent)",
                 fontWeight: 500,
               }}
             >
               {isZaddy ? `CHAT ${formatDuration(sessionDuration)}` : formatDuration(sessionDuration)}
+            </div>
+          )}
+          {category && !isAnnotation && (
+            <div
+              className={styles.desktopCategoryLabel}
+              style={{ color: categoryTextColor || undefined }}
+              title={`Category: ${category.label}`}
+            >
+              {category.label}
             </div>
           )}
         </div>
@@ -229,14 +292,18 @@ export const TimelineEntry = memo(function TimelineEntry({
         >
           {!isFirst && (
             <div
-              className={styles.lineTop}
-              style={{ backgroundColor: getLineColor("top") }}
+              className={`${styles.timelineLine} ${styles.lineTop} ${
+                isSessionLine("top") ? styles.sessionLine : styles.historyLine
+              }`}
+              aria-hidden="true"
             />
           )}
           {!isLast && (
             <div
-              className={styles.lineBottom}
-              style={{ backgroundColor: getLineColor("bottom") }}
+              className={`${styles.timelineLine} ${styles.lineBottom} ${
+                isSessionLine("bottom") ? styles.sessionLine : styles.historyLine
+              }`}
+              aria-hidden="true"
             />
           )}
           <div className={styles.symbolWrapper}>
@@ -247,7 +314,7 @@ export const TimelineEntry = memo(function TimelineEntry({
         {/* Content */}
         <div className={styles.contentCol} style={{ flex: 1, minWidth: 0 }}>
           {/* Linked entries before (older) */}
-          {beforeLinks.length > 0 && (
+          {!isAnnotation && beforeLinks.length > 0 && (
             <div className="linked-entries-before" style={{ marginBottom: 8 }}>
               {beforeLinks.map(linked => (
                 <LinkedEntryPreview
@@ -271,58 +338,86 @@ export const TimelineEntry = memo(function TimelineEntry({
               display: "none",
             }}
           >
-            {formatTime(entry.timestamp)}
-          </div>
-
-          {/* Main content row */}
-          <div className="flex flex-wrap items-baseline" style={{ gap: "4px 12px", marginBottom: 6 }}>
-            {isZaddy && (
-              <span className={styles.originBadge}>ZADDY</span>
-            )}
-            {entry.content && (
+            <span>{formatTime(entry.timestamp)}</span>
+            {category && !isAnnotation && (
               <span
-                className={styles.contentText}
-                style={{
-                  fontSize: 15,
-                  lineHeight: 1.6,
-                  overflowWrap: "break-word",
-                  fontFamily: "var(--font-primary)",
-                  whiteSpace: "pre-wrap",
-                  color: getContentColor(),
-                  fontStyle: isSessionEnd ? "italic" : "normal",
-                }}
+                className={styles.mobileCategoryLabel}
+                style={{ color: categoryTextColor || undefined }}
+                title={`Category: ${category.label}`}
               >
-                <ContentRenderer content={entry.content} onImageClick={setLightboxImage} />
+                {category.label}
               </span>
             )}
-
           </div>
 
+          {isAnnotation && annotationGroupCount !== undefined && (
+            <button
+              type="button"
+              className={styles.annotationToggle}
+              aria-expanded={annotationGroupExpanded}
+              onClick={(event) => {
+                event.stopPropagation();
+                onToggleAnnotationGroup?.();
+              }}
+              onDoubleClick={(event) => event.stopPropagation()}
+            >
+              <span className={styles.annotationRule} aria-hidden="true" />
+              <span className={styles.annotationLabel}>ZADDY</span>
+              <span className={styles.annotationCount}>
+                {annotationGroupCount} {annotationGroupCount === 1 ? "ANNOTATION" : "ANNOTATIONS"}
+              </span>
+              <ChevronRight
+                size={13}
+                className={`${styles.annotationChevron} ${
+                  annotationGroupExpanded ? styles.annotationChevronExpanded : ""
+                }`}
+                aria-hidden="true"
+              />
+            </button>
+          )}
+
+          {/* Main content row */}
+          {!isCollapsedAnnotationGroup && (
+            <div className="flex flex-wrap items-baseline" style={{ gap: "4px 12px", marginBottom: 6 }}>
+              {isZaddy && !isAnnotation && (
+                <span className={styles.originBadge}>ZADDY</span>
+              )}
+              {entry.content && (
+                <span
+                  className={`${styles.contentText} ${isAnnotation ? styles.annotationContent : ""}`}
+                  style={{
+                    fontSize: isAnnotation ? 13 : 15,
+                    lineHeight: 1.6,
+                    overflowWrap: "break-word",
+                    fontFamily: "var(--font-primary)",
+                    whiteSpace: "pre-wrap",
+                    color: getContentColor(),
+                    fontStyle: isSessionEnd ? "italic" : "normal",
+                  }}
+                >
+                  <ContentRenderer content={entry.content} onImageClick={setLightboxImage} />
+                </span>
+              )}
+            </div>
+          )}
+
+          {isAnnotation && !isCollapsedAnnotationGroup && annotationEndContent && (
+            <div className={styles.annotationEnd}>
+              <span aria-hidden="true">↳</span>
+              <ContentRenderer content={annotationEndContent} />
+            </div>
+          )}
+
           {/* Built-in display behavior is registered with the content type. */}
-          {contentTypeDisplay && (
+          {contentTypeDisplay && !isAnnotation && (
             <div style={{ marginTop: 6 }}>
               {contentTypeDisplay}
             </div>
           )}
 
-          {/* Metadata Footer (Tags & Category) */}
-          {(category || (entry.tags && entry.tags.length > 0)) && (
+          {/* Metadata Footer (tags only; category lives with the timestamp). */}
+          {!isAnnotation && entry.tags && entry.tags.length > 0 && (
             <div className={styles.metadataFooter}>
-              {/* Category - Left aligned */}
-              {category && (
-                <span
-                  className={styles.categoryLabel}
-                  style={{
-                    color: categoryTextColor || undefined,
-                    backgroundColor: `${category.color}15`,
-                    border: `1px solid ${category.color}30`,
-                  }}
-                >
-                  {category.label}
-                </span>
-              )}
-
-              {/* Tags - Left aligned next to category */}
               <div className={styles.tagsList}>
                 {entry.tags?.map(tag => (
                   <span key={tag}>#{tag}</span>
@@ -332,7 +427,7 @@ export const TimelineEntry = memo(function TimelineEntry({
           )}
 
           {/* Linked entries after (newer) */}
-          {afterLinks.length > 0 && (
+          {!isAnnotation && afterLinks.length > 0 && (
             <div className="linked-entries-after" style={{ marginTop: 8 }}>
               {afterLinks.map(linked => (
                 <LinkedEntryPreview

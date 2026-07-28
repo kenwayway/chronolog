@@ -3,8 +3,9 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 import { useSessionContext } from "@/contexts/SessionContext";
 import { TimelineEntry } from "./TimelineEntry";
-import { ZaddyAnnotations } from "./ZaddyAnnotations";
 import { buildZaddyAnnotationGroups } from "./annotationGroups";
+import { getTimelineLineState } from "./timelineLineState";
+import type { ZaddyAnnotation } from "./annotationGroups";
 import type { TimelineItem, SessionStatus, CategoryId, TimelineOriginFilter } from "@/types";
 
 const ENTRIES_PER_PAGE = 20;
@@ -12,6 +13,11 @@ const ENTRIES_PER_PAGE = 20;
 interface Position {
   x: number;
   y: number;
+}
+
+interface AnnotationCluster {
+  key: string;
+  annotations: ZaddyAnnotation[];
 }
 
 interface TimelineProps {
@@ -43,6 +49,7 @@ export function Timeline({
   const categoryFilterKey = categoryFilter.join(',');
   const paginationKey = `${isFilterModeProp ?? 'auto'}:${categoryFilterKey}:${filterKey}`;
   const [pagination, setPagination] = useState({ key: paginationKey, page: 0 });
+  const [expandedAnnotationClusters, setExpandedAnnotationClusters] = useState<Set<string>>(() => new Set());
   const currentPage = pagination.key === paginationKey ? pagination.page : 0;
 
   const isFilterMode = isFilterModeProp ?? categoryFilter.length > 0;
@@ -59,49 +66,123 @@ export function Timeline({
       : [],
     [entries, showZaddyAsAnnotations],
   );
+  const annotationGroups = useMemo(
+    () => buildZaddyAnnotationGroups(zaddyEntries, isFilterMode),
+    [zaddyEntries, isFilterMode],
+  );
   const annotationCount = useMemo(
-    () => buildZaddyAnnotationGroups(zaddyEntries).reduce(
+    () => annotationGroups.reduce(
       (count, group) => count + group.annotations.length,
       0,
     ),
-    [zaddyEntries],
+    [annotationGroups],
   );
-  const totalPages = isFilterMode ? Math.ceil(primaryEntries.length / ENTRIES_PER_PAGE) : 1;
+  const annotationClusters = useMemo<AnnotationCluster[]>(() => {
+    const orderedPrimary = [...primaryEntries].sort((left, right) => left.timestamp - right.timestamp);
+    const clusters = new Map<string, AnnotationCluster>();
+
+    for (const group of annotationGroups) {
+      for (const annotation of group.annotations) {
+        const nextEntryIndex = orderedPrimary.findIndex(
+          entry => entry.timestamp > annotation.entry.timestamp,
+        );
+        const insertionIndex = nextEntryIndex === -1 ? orderedPrimary.length : nextEntryIndex;
+        const key = `${group.dateKey}:${insertionIndex}`;
+        let cluster = clusters.get(key);
+        if (!cluster) {
+          cluster = { key, annotations: [] };
+          clusters.set(key, cluster);
+        }
+        cluster.annotations.push(annotation);
+      }
+    }
+
+    return [...clusters.values()]
+      .map(cluster => ({
+        ...cluster,
+        annotations: cluster.annotations.sort(
+          (left, right) => left.entry.timestamp - right.entry.timestamp,
+        ),
+      }))
+      .sort(
+        (left, right) =>
+          left.annotations[0].entry.timestamp - right.annotations[0].entry.timestamp,
+      );
+  }, [annotationGroups, primaryEntries]);
+  const visibleAnnotations = useMemo(
+    () => annotationClusters.flatMap(cluster =>
+      expandedAnnotationClusters.has(cluster.key)
+        ? cluster.annotations.map(annotation => annotation.entry)
+        : [cluster.annotations[0].entry]
+    ),
+    [annotationClusters, expandedAnnotationClusters],
+  );
+  const annotationControls = useMemo(() => {
+    const controls = new Map<string, AnnotationCluster>();
+    for (const cluster of annotationClusters) {
+      controls.set(cluster.annotations[0].entry.id, cluster);
+    }
+    return controls;
+  }, [annotationClusters]);
+  const annotationEndContent = useMemo(() => {
+    const content = new Map<string, string>();
+    for (const group of annotationGroups) {
+      for (const annotation of group.annotations) {
+        if (annotation.entry.kind === 'session-start' && annotation.endEntry?.content) {
+          content.set(annotation.entry.id, annotation.endEntry.content);
+        }
+      }
+    }
+    return content;
+  }, [annotationGroups]);
+  const visibleTimelineEntries = useMemo(
+    () => [...primaryEntries, ...visibleAnnotations],
+    [primaryEntries, visibleAnnotations],
+  );
+  const totalPages = isFilterMode ? Math.ceil(visibleTimelineEntries.length / ENTRIES_PER_PAGE) : 1;
 
   // Memoize sorted entries to avoid re-sorting on every render
   const sortedEntries = useMemo(() => {
-    const display = isFilterMode
-      ? primaryEntries.slice(currentPage * ENTRIES_PER_PAGE, (currentPage + 1) * ENTRIES_PER_PAGE)
-      : primaryEntries;
-
+    const ordered = [...visibleTimelineEntries].sort((left, right) =>
+      isFilterMode
+        ? right.timestamp - left.timestamp
+        : left.timestamp - right.timestamp
+    );
     return isFilterMode
-      ? display // Already sorted in App.tsx
-      : [...display].sort((a, b) => a.timestamp - b.timestamp);
-  }, [primaryEntries, isFilterMode, currentPage]);
+      ? ordered.slice(currentPage * ENTRIES_PER_PAGE, (currentPage + 1) * ENTRIES_PER_PAGE)
+      : ordered;
+  }, [visibleTimelineEntries, isFilterMode, currentPage]);
 
   // Memoize session duration and line state calculations
   const { sessionDurations, entryLineStates } = useMemo(() => {
     const durations: Record<string, number> = {};
-    const sessionIds = new Set(sessions.map(session => session.id));
     for (const session of sessions) {
       if (session.endAt !== null) durations[`session:${session.id}:start`] = session.endAt - session.startAt;
     }
     const lineStates: Record<string, string> = {};
 
     for (const entry of sortedEntries) {
-      let state = "default";
-      if (entry.kind === 'session-start') {
-        state = "start";
-      } else if (entry.kind === 'session-end') {
-        state = "end";
-      } else if (entry.sessionId && sessionIds.has(entry.sessionId)) {
-        state = "active";
-      }
-      lineStates[entry.id] = state;
+      lineStates[entry.id] = getTimelineLineState(
+        entry,
+        sessions,
+        showZaddyAsAnnotations,
+      );
     }
 
     return { sessionDurations: durations, entryLineStates: lineStates };
-  }, [sortedEntries, sessions]);
+  }, [sortedEntries, sessions, showZaddyAsAnnotations]);
+
+  const toggleAnnotationCluster = (clusterKey: string) => {
+    setExpandedAnnotationClusters(current => {
+      const next = new Set(current);
+      if (next.has(clusterKey)) {
+        next.delete(clusterKey);
+      } else {
+        next.add(clusterKey);
+      }
+      return next;
+    });
+  };
 
   return (
     <div
@@ -195,31 +276,44 @@ export function Timeline({
       )}
 
       {sortedEntries.map((entry, index) => (
-        <TimelineEntry
-          key={entry.id}
-          entry={entry}
-          linkIndex={linkIndex}
-          isFirst={index === 0}
-          isLast={index === sortedEntries.length - 1}
-          sessionDuration={sessionDurations[entry.id]}
-          categories={categories}
-          onContextMenu={onContextMenu}
-          onEdit={onEdit}
-          lineState={entryLineStates[entry.id]}
-          isLightMode={theme.mode === "light"}
-          showDate={isFilterMode}
-          onNavigateToEntry={onNavigateToEntry}
-          mediaItems={mediaItems}
-        />
-      ))}
+        (() => {
+          const annotationControl = annotationControls.get(entry.id);
+          const isExpanded = annotationControl
+            ? expandedAnnotationClusters.has(annotationControl.key)
+            : false;
 
-      <ZaddyAnnotations
-        entries={zaddyEntries}
-        showDates={isFilterMode}
-        newestFirst={isFilterMode}
-        onContextMenu={onContextMenu}
-        onEdit={onEdit}
-      />
+          return (
+            <TimelineEntry
+              key={entry.id}
+              entry={entry}
+              linkIndex={linkIndex}
+              isFirst={index === 0}
+              isLast={index === sortedEntries.length - 1}
+              sessionDuration={sessionDurations[entry.id]}
+              categories={categories}
+              onContextMenu={onContextMenu}
+              onEdit={onEdit}
+              lineState={entryLineStates[entry.id]}
+              isLightMode={theme.mode === "light"}
+              showDate={isFilterMode}
+              onNavigateToEntry={onNavigateToEntry}
+              mediaItems={mediaItems}
+              annotationMode={showZaddyAsAnnotations && entry.origin === 'zaddy'}
+              annotationEndContent={annotationEndContent.get(entry.id)}
+              annotationGroupCount={annotationControl?.annotations.length}
+              annotationGroupExpanded={isExpanded}
+              annotationGroupEntryIds={annotationControl?.annotations.map(
+                annotation => annotation.entry.id,
+              )}
+              onToggleAnnotationGroup={
+                annotationControl
+                  ? () => toggleAnnotationCluster(annotationControl.key)
+                  : undefined
+              }
+            />
+          );
+        })()
+      ))}
     </div>
   );
 }

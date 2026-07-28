@@ -1,14 +1,35 @@
 /* TimelineEntry Component Styles */
 
 .entry {
+  position: relative;
   padding: 12px;
   margin: 0 -12px;
   border-radius: var(--radius-none);
   transition: background-color 150ms ease;
 }
 
+.entry::after {
+  content: "";
+  position: absolute;
+  left: 114px;
+  bottom: 0;
+  width: 32px;
+  height: 1px;
+  background-color: var(--border-light);
+  opacity: 0.68;
+  pointer-events: none;
+}
+
 .entry:hover {
   background-color: var(--bg-secondary);
+}
+
+.annotationEntry::after {
+  opacity: 0.42;
+}
+
+.collapsedAnnotationEntry::after {
+  display: none;
 }
 
 /* Timeline Images */
@@ -69,23 +90,67 @@
   background-color: var(--bg-primary);
 }
 
-/* Timeline connecting lines */
-.lineTop {
+.timelineIcon {
+  display: block;
+  flex: 0 0 auto;
+}
+
+.annotationIcon {
+  color: var(--text-dim);
+  opacity: 0.72;
+}
+
+.zaddyIcon {
+  color: var(--accent);
+}
+
+.sessionStartIcon {
+  color: var(--success);
+}
+
+.sessionEndIcon {
+  color: var(--text-muted);
+}
+
+/* Timeline connecting lines:
+ * history is a quiet dotted guide; tracked session spans are solid and wider.
+ */
+.timelineLine {
   position: absolute;
-  top: -12px;
   left: 50%;
   transform: translateX(-50%);
+  pointer-events: none;
+  transition: width 150ms ease, opacity 150ms ease, background-color 150ms ease;
+}
+
+.historyLine {
   width: 1px;
+  opacity: 0.72;
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--border-light) 0,
+    var(--border-light) 2px,
+    transparent 2px,
+    transparent 5px
+  );
+}
+
+.sessionLine {
+  width: 2px;
+  opacity: 0.82;
+  background-color: var(--accent);
+  border-radius: 1px;
+  box-shadow: 0 0 8px var(--accent-glow);
+}
+
+.lineTop {
+  top: -12px;
   height: 24px;
 }
 
 .lineBottom {
-  position: absolute;
   top: 12px;
   bottom: -12px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 1px;
 }
 
 /* Metadata footer (tags + category) */
@@ -98,14 +163,16 @@
   min-height: 20px;
 }
 
-.categoryLabel {
-  font-size: 10px;
-  padding: 2px 8px;
+.desktopCategoryLabel {
+  margin-top: 5px;
+  overflow: hidden;
+  font-size: 8px;
   font-weight: 600;
   text-transform: uppercase;
-  user-select: none;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
   white-space: nowrap;
+  text-overflow: ellipsis;
+  opacity: 0.62;
 }
 
 .tagsList {
@@ -130,6 +197,75 @@
   white-space: pre-wrap;
 }
 
+.annotationContent {
+  color: var(--text-muted);
+  font-size: 13px !important;
+  line-height: 1.55 !important;
+}
+
+.annotationToggle {
+  width: 100%;
+  min-height: 28px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+  padding: 0;
+  color: var(--text-dim);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  text-align: left;
+}
+
+.annotationToggle:hover {
+  color: var(--text-muted);
+}
+
+.annotationToggle:focus-visible {
+  outline: 1px solid var(--text-muted);
+  outline-offset: 3px;
+}
+
+.annotationRule {
+  flex: 1;
+  height: 1px;
+  border-top: 1px dashed var(--border-light);
+}
+
+.annotationLabel {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+}
+
+.annotationCount {
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  opacity: 0.72;
+}
+
+.annotationChevron {
+  flex-shrink: 0;
+  transition: transform 150ms ease;
+}
+
+.annotationChevronExpanded {
+  transform: rotate(90deg);
+}
+
+.annotationEnd {
+  display: flex;
+  gap: 6px;
+  margin-top: 3px;
+  color: var(--text-dim);
+  font-family: var(--font-primary);
+  font-size: 12px;
+  line-height: 1.5;
+  font-style: italic;
+}
+
 .originBadge {
   display: inline-flex;
   align-items: center;
@@ -145,11 +281,29 @@
 }
 
 .mobileTime {
+  align-items: center;
+  gap: 6px;
   font-size: 10px;
   color: var(--text-dim);
   font-family: var(--font-mono);
   margin-bottom: 4px;
   display: none;
+}
+
+.mobileCategoryLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  opacity: 0.64;
+}
+
+.mobileCategoryLabel::before {
+  content: "·";
+  color: var(--text-dim);
 }
 
 /* Responsive */
@@ -160,6 +314,11 @@
     gap: 8px !important;
     margin: 0 !important;
     border-bottom: none !important;
+  }
+
+  .entry::after {
+    left: 32px;
+    width: 28px;
   }
 
   .timeCol {
@@ -174,7 +333,24 @@
     font-size: 16px !important;
   }
 
+  .annotationEntry .contentText {
+    font-size: 14px !important;
+  }
+
+  .annotationToggle {
+    min-height: 32px;
+  }
+
+  .annotationLabel,
+  .annotationCount {
+    font-size: 10px;
+  }
+
+  .annotationEnd {
+    font-size: 13px;
+  }
+
   .mobileTime {
-    display: block !important;
+    display: flex !important;
   }
 }

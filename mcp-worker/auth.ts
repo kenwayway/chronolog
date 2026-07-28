@@ -63,21 +63,22 @@ export function buildGoogleAuthorizationUrl(
     return url.toString();
 }
 
-export function validateClaudeRegistration(
+export function validateClientRegistration(
     clientMetadata: Record<string, unknown>,
 ): ClientRegistrationCallbackResult | undefined {
     const redirectUris = clientMetadata.redirect_uris;
     if (!Array.isArray(redirectUris) || redirectUris.length === 0) {
-        return { description: 'At least one Claude callback URL is required.' };
+        return { description: 'At least one approved callback URL is required.' };
     }
     const allowed = new Set([
         'https://claude.ai/api/mcp/auth_callback',
         'https://claude.com/api/mcp/auth_callback',
+        'https://zaddy.sopoi.com/oauth/chronolog/callback',
     ]);
     const valid = redirectUris.every(uri => typeof uri === 'string' && allowed.has(uri));
     return valid
         ? undefined
-        : { description: 'This private MCP server only accepts Claude web callback URLs.' };
+        : { description: 'This private MCP server only accepts approved callback URLs.' };
 }
 
 export function oauthErrorRedirect(request: AuthRequest, error: string, description: string): Response {

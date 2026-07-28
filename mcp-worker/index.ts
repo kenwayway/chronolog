@@ -13,7 +13,7 @@ import {
     oauthErrorRedirect,
     type GoogleUser,
     type StoredGoogleAuthorization,
-    validateClaudeRegistration,
+    validateClientRegistration,
 } from './auth.ts';
 
 interface McpWorkerEnv extends ChronologEnv {
@@ -239,7 +239,7 @@ function createOAuthProvider(origin: string): OAuthProvider<McpWorkerEnv> {
             bearer_methods_supported: ['header'],
             resource_name: 'Chronolog',
         },
-        clientRegistrationCallback: ({ clientMetadata }) => validateClaudeRegistration(clientMetadata),
+        clientRegistrationCallback: ({ clientMetadata }) => validateClientRegistration(clientMetadata),
         onError: error => {
             console.warn('OAuth provider error', error.status, error.code, error.description);
         },

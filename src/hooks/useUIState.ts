@@ -103,6 +103,14 @@ export function useUIState(): UIState {
         const tryScroll = () => {
             const el = document.querySelector(`[data-entry-id="${targetEntry.id}"]`) as HTMLElement | null
             if (el) {
+                const collapsedAnnotation = el.querySelector<HTMLButtonElement>(
+                    'button[aria-expanded="false"]',
+                )
+                if (collapsedAnnotation && attempts++ < 5) {
+                    collapsedAnnotation.click()
+                    setTimeout(tryScroll, 150)
+                    return
+                }
                 el.scrollIntoView({ behavior: 'smooth', block: 'center' })
                 el.style.backgroundColor = 'var(--accent-subtle)'
                 setTimeout(() => { el.style.backgroundColor = '' }, 1500)

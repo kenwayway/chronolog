@@ -3,7 +3,7 @@ import {
     buildGoogleAuthorizationUrl,
     grantedScopes,
     isGoogleUserAllowed,
-    validateClaudeRegistration,
+    validateClientRegistration,
 } from './auth.ts';
 
 describe('MCP Google OAuth helpers', () => {
@@ -36,12 +36,18 @@ describe('MCP Google OAuth helpers', () => {
         expect(url.searchParams.get('state')).toBe('state');
     });
 
-    it('accepts only Claude web callback URLs during dynamic registration', () => {
-        expect(validateClaudeRegistration({
+    it('accepts only approved callback URLs during dynamic registration', () => {
+        expect(validateClientRegistration({
             redirect_uris: ['https://claude.ai/api/mcp/auth_callback'],
         })).toBeUndefined();
-        expect(validateClaudeRegistration({
+        expect(validateClientRegistration({
+            redirect_uris: ['https://zaddy.sopoi.com/oauth/chronolog/callback'],
+        })).toBeUndefined();
+        expect(validateClientRegistration({
             redirect_uris: ['http://localhost:3000/callback'],
+        })).toEqual(expect.objectContaining({ description: expect.any(String) }));
+        expect(validateClientRegistration({
+            redirect_uris: ['https://zaddy.sopoi.com.evil.example/oauth/chronolog/callback'],
         })).toEqual(expect.objectContaining({ description: expect.any(String) }));
     });
 });
