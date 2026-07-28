@@ -1,0 +1,18 @@
+.appShell {
+    --activity-panel-inset: 0px;
+    padding-right: 0;
+    transition: padding-right 300ms ease-out;
+}
+
+@media (min-width: 1024px) {
+    .activityPanelOpen {
+        --activity-panel-inset: 340px;
+        padding-right: var(--activity-panel-inset);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .appShell {
+        transition: none;
+    }
+}

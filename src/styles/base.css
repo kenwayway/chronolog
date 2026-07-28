@@ -12,8 +12,8 @@
   --bg-tertiary: #313143;
   --bg-glass: rgba(15, 15, 20, 0.8);
 
-  --text-primary: #e8e4e0;
-  --text-secondary: #c4beb8;
+  --text-primary: #ddd7d2;
+  --text-secondary: #ddd7d2;
   --text-muted: #8f8880;
   --text-dim: #8a8983;
 
@@ -28,7 +28,7 @@
   --info: #06b6d4;
 
   --border-subtle: #23283c;
-  --border-light: #464957;
+  --border-light: #626574;
 
   /* Border Radius - Unified scale */
   --radius-none: 0;
@@ -165,24 +165,12 @@ a:hover {
   font-family: "JetBrains Mono", "Fira Code", "Consolas", monospace;
 }
 
-.font-bold {
-  font-weight: 700;
-}
-
-.font-medium {
-  font-weight: 500;
-}
-
 .uppercase {
   text-transform: uppercase;
 }
 
 .tracking-wider {
   letter-spacing: 0.05em;
-}
-
-.tracking-widest {
-  letter-spacing: 0.1em;
 }
 
 .select-none {

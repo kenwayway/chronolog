@@ -1,6 +1,7 @@
 /* ActivityPanel Component Styles */
 
 .overlay {
+    display: none;
     position: fixed;
     inset: 0;
     background-color: rgba(0, 0, 0, 0.5);
@@ -13,15 +14,14 @@
     top: 0;
     right: 0;
     bottom: 0;
-    width: 320px;
+    width: 340px;
     max-width: 100vw;
-    background-color: var(--bg-glass);
-    backdrop-filter: blur(24px);
+    background-color: var(--bg-primary);
     border-left: 1px solid var(--border-light);
     z-index: 401;
     display: flex;
     flex-direction: column;
-    box-shadow: -10px 0 30px rgba(0, 0, 0, 0.3);
+    box-shadow: none;
     transition: transform 300ms ease-out, visibility 0s linear 0s;
     font-family: var(--font-mono);
 }
@@ -72,13 +72,6 @@
     color: var(--text-primary);
 }
 
-.content {
-    flex: 1;
-    overflow-y: auto;
-    padding: 16px;
-    font-family: var(--font-mono);
-}
-
 .sectionHeader {
     display: flex;
     align-items: center;
@@ -98,130 +91,21 @@
     opacity: 0.5;
 }
 
-.emptyState {
-    height: 160px;
-    color: var(--text-muted);
-    text-align: center;
-    opacity: 0.7;
+@media (max-width: 1023px) {
+    .overlay {
+        display: block;
+    }
+
+    .panel {
+        background-color: var(--bg-glass);
+        backdrop-filter: blur(24px);
+        box-shadow: -10px 0 30px rgba(0, 0, 0, 0.3);
+    }
 }
 
-.emptyStateSecondary {
-    height: 160px;
-    color: var(--text-muted);
-    text-align: center;
-    opacity: 0.5;
-}
-
-.emptyIcon {
-    font-size: 24px;
-    margin-bottom: 8px;
-}
-
-.emptyText {
-    font-size: 12px;
-}
-
-.emptyHint {
-    font-size: 10px;
-    margin-top: 4px;
-    color: var(--text-dim);
-}
-
-.refreshBtn {
-    padding: 4px;
-    background-color: transparent;
-    border: none;
-    cursor: pointer;
-    color: var(--text-dim);
-    display: flex;
-    align-items: center;
-}
-
-.refreshBtn:disabled {
-    cursor: default;
-}
-
-.errorBox {
-    padding: 12px;
-    margin-bottom: 16px;
-    background-color: var(--danger-subtle);
-    color: var(--danger);
-    border-radius: 4px;
-    font-size: 12px;
-}
-
-.tasksList {
-    margin-bottom: 32px;
-}
-
-.taskItem {
-    display: flex;
-    gap: 12px;
-    padding: 14px;
-    background-color: var(--bg-primary);
-    border: 1px solid var(--border-light);
-    border-radius: 4px;
-    transition: all 150ms ease;
-}
-
-.checkboxWrapper {
-    position: relative;
-    display: flex;
-    align-items: flex-start;
-    padding-top: 2px;
-    cursor: pointer;
-}
-
-.checkboxInput {
-    position: absolute;
-    opacity: 0;
-    width: 100%;
-    height: 100%;
-    cursor: pointer;
-}
-
-.checkboxBox {
-    width: 16px;
-    height: 16px;
-    border: 1px solid var(--text-muted);
-    border-radius: 3px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: transparent;
-    transition: all 150ms ease;
-}
-
-.taskContent {
-    flex: 1;
-    min-width: 0;
-}
-
-.taskTitle {
-    font-size: 13px;
-    line-height: 1.6;
-    overflow-wrap: break-word;
-    font-family: var(--font-primary);
-    color: var(--text-primary);
-}
-
-.taskNotes {
-    margin-top: 4px;
-    font-size: 11px;
-    color: var(--text-dim);
-    line-height: 1.4;
-}
-
-.taskMeta {
-    margin-top: 6px;
-    font-size: 10px;
-    color: var(--text-dim);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.taskId {
-    font-family: var(--font-mono);
-    opacity: 0.7;
+@media (prefers-reduced-motion: reduce) {
+    .panel,
+    .panel.closed {
+        transition: none;
+    }
 }

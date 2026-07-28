@@ -1,0 +1,165 @@
+.chart {
+    margin-bottom: 32px;
+}
+
+.sectionHeader {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+    color: var(--text-dim);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+}
+
+.sectionLine {
+    flex: 1;
+    height: 1px;
+    background-color: var(--border-light);
+}
+
+.total {
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    letter-spacing: normal;
+}
+
+.weekGrid {
+    display: grid;
+    grid-template-columns: 24px repeat(7, minmax(0, 1fr));
+    column-gap: 3px;
+    row-gap: 7px;
+}
+
+.dayHeader {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    color: var(--text-secondary);
+    font-size: 8px;
+    line-height: 1;
+    letter-spacing: 0.04em;
+}
+
+.dateLabel {
+    color: var(--text-dim);
+    font-size: 7px;
+    letter-spacing: 0;
+}
+
+.timeAxis,
+.dayTrack {
+    position: relative;
+    height: 264px;
+}
+
+.timeLabel {
+    position: absolute;
+    right: 3px;
+    color: var(--text-dim);
+    font-size: 7px;
+    line-height: 1;
+    transform: translateY(-50%);
+}
+
+.timeLabel:first-child {
+    transform: none;
+}
+
+.timeLabel:last-child {
+    transform: translateY(-100%);
+}
+
+.dayTrack {
+    overflow: hidden;
+    background-color: color-mix(in srgb, var(--bg-secondary) 72%, transparent);
+    border-left: 1px solid var(--border-subtle);
+    border-right: 1px solid var(--border-subtle);
+}
+
+.gridLine {
+    position: absolute;
+    right: 0;
+    left: 0;
+    height: 1px;
+    background-color: var(--border-subtle);
+    opacity: 0.8;
+    transform: translateY(-0.5px);
+}
+
+.segment {
+    position: absolute;
+    right: 2px;
+    left: 2px;
+    min-height: 2px;
+    border-radius: 1px;
+    opacity: 0.82;
+    transition: opacity 120ms ease, filter 120ms ease;
+}
+
+.selectedSegment {
+    filter: saturate(1.2) brightness(1.12);
+    opacity: 1;
+}
+
+.dimmedSegment {
+    opacity: 0.16;
+}
+
+.currentTime {
+    position: absolute;
+    right: 0;
+    left: 0;
+    z-index: 2;
+    height: 1px;
+    background-color: var(--text-primary);
+    box-shadow: 0 0 4px color-mix(in srgb, var(--text-primary) 45%, transparent);
+}
+
+.legend {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 12px;
+}
+
+.legendItem {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px;
+    color: var(--text-secondary);
+    background-color: transparent;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    font-size: 10px;
+    text-align: left;
+    transition: all 100ms ease;
+}
+
+.legendSwatch {
+    width: 10px;
+    height: 10px;
+    flex-shrink: 0;
+    border-radius: 2px;
+}
+
+.legendLabel {
+    flex: 1;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.legendDuration {
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .segment,
+    .legendItem {
+        transition: none;
+    }
+}

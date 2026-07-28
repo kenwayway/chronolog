@@ -206,16 +206,6 @@
   -webkit-backdrop-filter: blur(16px);
 }
 
-.metaRowLast {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 12px;
-  background: color-mix(in srgb, var(--bg-primary) 20%, transparent);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-}
-
 .metaLabel {
   font-size: 9px;
   color: var(--text-secondary);
@@ -420,11 +410,6 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-}
-
-.coverUploadInput {
-  padding: 5px 8px;
-  font-size: 10px;
 }
 
 .coverUploadActions {

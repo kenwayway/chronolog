@@ -6,7 +6,7 @@ import { TimelineEntry } from "./TimelineEntry";
 import { buildZaddyAnnotationGroups } from "./annotationGroups";
 import { getTimelineLineState } from "./timelineLineState";
 import type { ZaddyAnnotation } from "./annotationGroups";
-import type { TimelineItem, SessionStatus, CategoryId, TimelineOriginFilter } from "@/types";
+import type { TimelineItem, SessionStatus, CategoryId } from "@/types";
 
 const ENTRIES_PER_PAGE = 20;
 
@@ -28,7 +28,6 @@ interface TimelineProps {
   categoryFilter?: CategoryId[];
   isFilterMode?: boolean;
   filterKey?: string;
-  originFilter?: TimelineOriginFilter;
   onNavigateToEntry?: (entry: TimelineItem) => void;
 }
 
@@ -39,7 +38,6 @@ export function Timeline({
   categoryFilter = [],
   isFilterMode: isFilterModeProp,
   filterKey = '',
-  originFilter = 'all',
   onNavigateToEntry,
 }: TimelineProps) {
   const { state: { mediaItems, sessions }, linkIndex, categories } = useSessionContext();
@@ -53,18 +51,13 @@ export function Timeline({
   const currentPage = pagination.key === paginationKey ? pagination.page : 0;
 
   const isFilterMode = isFilterModeProp ?? categoryFilter.length > 0;
-  const showZaddyAsAnnotations = originFilter !== 'zaddy';
   const primaryEntries = useMemo(
-    () => showZaddyAsAnnotations
-      ? entries.filter(entry => entry.origin !== 'zaddy')
-      : entries,
-    [entries, showZaddyAsAnnotations],
+    () => entries.filter(entry => entry.origin !== 'zaddy'),
+    [entries],
   );
   const zaddyEntries = useMemo(
-    () => showZaddyAsAnnotations
-      ? entries.filter(entry => entry.origin === 'zaddy')
-      : [],
-    [entries, showZaddyAsAnnotations],
+    () => entries.filter(entry => entry.origin === 'zaddy'),
+    [entries],
   );
   const annotationGroups = useMemo(
     () => buildZaddyAnnotationGroups(zaddyEntries, isFilterMode),
@@ -165,12 +158,11 @@ export function Timeline({
       lineStates[entry.id] = getTimelineLineState(
         entry,
         sessions,
-        showZaddyAsAnnotations,
       );
     }
 
     return { sessionDurations: durations, entryLineStates: lineStates };
-  }, [sortedEntries, sessions, showZaddyAsAnnotations]);
+  }, [sortedEntries, sessions]);
 
   const toggleAnnotationCluster = (clusterKey: string) => {
     setExpandedAnnotationClusters(current => {
@@ -298,7 +290,7 @@ export function Timeline({
               showDate={isFilterMode}
               onNavigateToEntry={onNavigateToEntry}
               mediaItems={mediaItems}
-              annotationMode={showZaddyAsAnnotations && entry.origin === 'zaddy'}
+              annotationMode={entry.origin === 'zaddy'}
               annotationEndContent={annotationEndContent.get(entry.id)}
               annotationGroupCount={annotationControl?.annotations.length}
               annotationGroupExpanded={isExpanded}

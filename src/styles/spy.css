@@ -45,14 +45,6 @@
   background-blend-mode: overlay;
 }
 
-[data-style="spy"] .panel-title,
-[data-style="spy"] .section-header {
-  font-family: var(--font-display) !important;
-  letter-spacing: 0.1em;
-  /* Fix Special Elite font baseline offset internally */
-  padding-top: 2px;
-}
-
 /* ===== Component Overrides ===== */
 
 /* Buttons - typewriter key style */
@@ -69,23 +61,11 @@
   box-shadow: 1px 1px 0 var(--text-dim);
 }
 
-/* Panels - document folder style */
-[data-style="spy"] .panel-title {
-  border-bottom: 2px double var(--border-light);
-  padding-bottom: 8px;
-}
-
 /* Input - typewriter paper */
 [data-style="spy"] textarea {
   font-family: var(--font-mono) !important;
   letter-spacing: 0.05em;
   line-height: 1.8;
-}
-
-/* Section headers - stamp style */
-[data-style="spy"] .section-header {
-  text-transform: uppercase;
-  letter-spacing: 0.15em;
 }
 
 /* Scrollbar - aged wood */
@@ -102,32 +82,6 @@
   border: 1px solid var(--border-subtle);
 }
 
-/* ===== Header Indicator - Breathing Light ===== */
-[data-style="spy"] .header-indicator-inner {
-  background-color: var(--success) !important;
-}
-
-/* ===== Category Labels - Stamp Style ===== */
-[data-style="spy"] .category-label {
-  font-family: var(--font-display) !important;
-  font-weight: 700 !important;
-  /* Stamp border: double line style */
-  border: 3px double currentColor !important;
-  border-radius: 2px !important;
-  background: transparent !important;
-  letter-spacing: 0.15em !important;
-  font-size: 10px !important;
-  padding: 6px 10px 4px 10px !important;
-  /* Extra top padding for font baseline */
-  transform: rotate(-5deg);
-  opacity: 0.85;
-  /* Multiply blend mode makes it look like ink on paper */
-  mix-blend-mode: multiply;
-  /* Rough edges for stamp effect */
-  mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' fill='black'/%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.4' style='mix-blend-mode:screen'/%3E%3C/svg%3E");
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' fill='black'/%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.4' style='mix-blend-mode:screen'/%3E%3C/svg%3E");
-}
-
 /* ===== Header Date - Ink Style ===== */
 [data-style="spy"] .header button[title="Select date"] {
   font-family: var(--font-display) !important;
@@ -137,46 +91,6 @@
   opacity: 0.9;
   /* Fix Special Elite font baseline offset internally */
   padding-top: 4px !important;
-}
-
-/* ===== Sidebar Panel ===== */
-[data-style="spy"] .sidebar-panel {
-  background: var(--bg-secondary) !important;
-  border-left: 1px solid var(--border-light) !important;
-  box-shadow: -4px 0 12px var(--paper-shadow) !important;
-  font-family: var(--font-primary) !important;
-}
-
-[data-style="spy"] .sidebar-overlay {
-  background: rgba(30, 25, 20, 0.6) !important;
-  backdrop-filter: blur(2px) sepia(30%) !important;
-}
-
-/* ===== Context Menu ===== */
-[data-style="spy"] .context-menu {
-  background: var(--bg-primary) !important;
-  border: 1px solid var(--border-light) !important;
-  border-radius: 0 !important;
-  box-shadow: 4px 4px 0 var(--paper-shadow) !important;
-  font-family: var(--font-display) !important;
-}
-
-[data-style="spy"] .context-menu-item {
-  font-family: var(--font-display) !important;
-  font-size: 10px !important;
-  letter-spacing: 0.05em !important;
-  text-transform: uppercase !important;
-  border-bottom: 1px dashed var(--border-subtle) !important;
-  /* Fix Special Elite font baseline offset internally */
-  padding-top: 2px;
-}
-
-[data-style="spy"] .context-menu-item:last-child {
-  border-bottom: none !important;
-}
-
-[data-style="spy"] .context-menu-item:hover {
-  background: var(--accent-subtle) !important;
 }
 
 /* ===== Input Panel ===== */

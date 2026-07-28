@@ -32,25 +32,6 @@
   display: none;
 }
 
-/* Timeline Images */
-.imageContainer {
-  margin-top: 8px;
-  margin-bottom: 4px;
-}
-
-.image {
-  max-width: 100%;
-  max-height: 300px;
-  border-radius: var(--radius-none);
-  border: 1px solid var(--border-subtle);
-}
-
-.imageFallback {
-  display: none;
-  color: var(--accent);
-  font-size: 12px;
-}
-
 /* Timeline Columns */
 .timeCol {
   flex-shrink: 0;

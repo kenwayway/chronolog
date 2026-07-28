@@ -22,11 +22,11 @@ function note(timestamp: number, overrides: Partial<TimelineItem> = {}): Timelin
 
 describe("getTimelineLineState", () => {
   it("keeps an unlinked note inside a user session on the active line", () => {
-    expect(getTimelineLineState(note(200), [session], true)).toBe("active");
+    expect(getTimelineLineState(note(200), [session])).toBe("active");
   });
 
   it("keeps a note outside user sessions on the history line", () => {
-    expect(getTimelineLineState(note(400), [session], true)).toBe("default");
+    expect(getTimelineLineState(note(400), [session])).toBe("default");
   });
 
   it("uses start and end line transitions for session boundaries", () => {
@@ -43,16 +43,16 @@ describe("getTimelineLineState", () => {
       kind: "session-end",
     };
 
-    expect(getTimelineLineState(start, [session], true)).toBe("start");
-    expect(getTimelineLineState(end, [session], true)).toBe("end");
+    expect(getTimelineLineState(start, [session])).toBe("start");
+    expect(getTimelineLineState(end, [session])).toBe("end");
   });
 
   it("lets an expanded zaddy annotation share an overlapping user session line", () => {
     expect(
-      getTimelineLineState(note(200, { origin: "zaddy" }), [session], true),
+      getTimelineLineState(note(200, { origin: "zaddy" }), [session]),
     ).toBe("active");
     expect(
-      getTimelineLineState(note(400, { origin: "zaddy" }), [session], true),
+      getTimelineLineState(note(400, { origin: "zaddy" }), [session]),
     ).toBe("default");
   });
 });

@@ -10,11 +10,10 @@ function fallsWithinSession(timestamp: number, session: Session): boolean {
 export function getTimelineLineState(
   entry: TimelineItem,
   sessions: Session[],
-  showZaddyAsAnnotations: boolean,
 ): TimelineLineState {
   const userSessions = sessions.filter(session => session.origin !== "zaddy");
 
-  if (entry.origin === "zaddy" && showZaddyAsAnnotations) {
+  if (entry.origin === "zaddy") {
     return userSessions.some(session => fallsWithinSession(entry.timestamp, session))
       ? "active"
       : "default";

@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from 'react'
-import type { TimelineItem, CategoryId, TimelineOriginFilter } from '@/types'
+import type { TimelineItem, CategoryId } from '@/types'
 
 interface Position {
     x: number
@@ -47,8 +47,6 @@ export interface UIState {
     setTagFilter: (filter: string[]) => void
     contentTypeFilter: string[]
     setContentTypeFilter: (filter: string[]) => void
-    originFilter: TimelineOriginFilter
-    setOriginFilter: (filter: TimelineOriginFilter) => void
     navigateToEntry: (entry: TimelineItem) => void
 }
 
@@ -62,7 +60,6 @@ export function useUIState(): UIState {
     const [categoryFilter, setCategoryFilter] = useState<CategoryId[]>([])
     const [tagFilter, setTagFilter] = useState<string[]>([])
     const [contentTypeFilter, setContentTypeFilter] = useState<string[]>([])
-    const [originFilter, setOriginFilter] = useState<TimelineOriginFilter>('all')
 
     // Context menu
     const [contextMenu, setContextMenu] = useState<ContextMenuState>({
@@ -140,13 +137,12 @@ export function useUIState(): UIState {
         categoryFilter, setCategoryFilter,
         tagFilter, setTagFilter,
         contentTypeFilter, setContentTypeFilter,
-        originFilter, setOriginFilter,
         navigateToEntry,
     }), [
         leftSidebarOpen, settingsOpen, searchOpen, showLanding,
         contextMenu, handleContextMenu, closeContextMenu,
         editModal, openEditModal, closeEditModal,
-        selectedDate, categoryFilter, tagFilter, contentTypeFilter, originFilter,
+        selectedDate, categoryFilter, tagFilter, contentTypeFilter,
         navigateToEntry,
     ])
 }

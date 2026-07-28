@@ -173,7 +173,6 @@ export interface Session {
 }
 
 export type TimelineItemKind = 'note' | 'session-start' | 'session-end'
-export type TimelineOriginFilter = 'all' | 'user' | 'zaddy'
 
 /** Flattened read model used only by timeline/search/gallery UI. */
 export interface TimelineItem {

@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Category, CategoryId, Session } from "@/types";
+import { getActivityWeekStart } from "./activityWeek";
+import styles from "./CategoryTimeChart.module.css";
 
 interface CategoryTimeChartProps {
     sessions: Session[];
@@ -9,20 +11,25 @@ interface CategoryTimeChartProps {
     onToggleCategory: (catId: CategoryId) => void;
 }
 
-const HOUR_MS = 3_600_000;
 const UNCATEGORIZED = "__uncategorized__";
 const MODULE_LOAD_TIME = Date.now();
+const DAY_LABELS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
 
-interface HourCell {
-    hour: number;
-    /** Dominant occupant of this hour (category id or UNCATEGORIZED), null when empty */
-    catId: string | null;
+interface ActivitySegment {
+    id: string;
+    categoryId: string;
     color: string;
+    top: number;
+    height: number;
+    tooltip: string;
+}
+
+interface DayColumn {
+    key: number;
     label: string;
-    /** Fraction of the hour covered by sessions, 0..1 */
-    coverage: number;
-    /** Per-category breakdown for the tooltip */
-    breakdown: Array<{ label: string; ms: number }>;
+    dateLabel: string;
+    segments: ActivitySegment[];
+    currentPosition: number | null;
 }
 
 interface LegendItem {
@@ -36,23 +43,24 @@ interface LegendItem {
 function formatHours(ms: number): string {
     const minutes = Math.round(ms / 60000);
     if (minutes < 60) return `${minutes}m`;
-    const h = Math.floor(minutes / 60);
-    const m = minutes % 60;
-    return m > 0 ? `${h}h ${m}m` : `${h}h`;
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+    return remainingMinutes > 0
+        ? `${hours}h ${remainingMinutes}m`
+        : `${hours}h`;
 }
 
-/** Collect today's sessions as [start, end, category] intervals (includes the live session). */
-function todaySessions(source: Session[], activeSessionId: string | null, dayStart: number, now: number): Array<[number, number, string]> {
-    const intervals: Array<[number, number, string]> = [];
-    for (const session of source) {
-        if (session.origin === 'zaddy') continue;
-        if (session.endAt === null && session.id !== activeSessionId) continue;
-        const endTs = session.endAt ?? now;
-        const s = Math.max(session.startAt, dayStart);
-        const e = Math.min(endTs, dayStart + 24 * HOUR_MS);
-        if (e > s) intervals.push([s, e, session.category || UNCATEGORIZED]);
-    }
-    return intervals;
+function formatClock(timestamp: number): string {
+    const date = new Date(timestamp);
+    return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+}
+
+function getDayWindow(weekStart: number, dayIndex: number): [number, number] {
+    const start = new Date(weekStart);
+    start.setDate(start.getDate() + dayIndex);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 1);
+    return [start.getTime(), end.getTime()];
 }
 
 export function CategoryTimeChart({
@@ -64,9 +72,6 @@ export function CategoryTimeChart({
 }: CategoryTimeChartProps) {
     const [now, setNow] = useState(MODULE_LOAD_TIME);
 
-    // Keep the live-session total and current-hour marker fresh without reading
-    // an impure clock during render. The zero-delay update also covers cases where
-    // this panel mounts long after the application module was first loaded.
     useEffect(() => {
         const updateNow = () => setNow(Date.now());
         const initialTimer = window.setTimeout(updateNow, 0);
@@ -77,51 +82,64 @@ export function CategoryTimeChart({
         };
     }, []);
 
-    const { cells, legend, totalMs, currentHour } = useMemo(() => {
-        const day = new Date(now);
-        day.setHours(0, 0, 0, 0);
-        const dayStart = day.getTime();
+    const { days, legend, totalMs } = useMemo(() => {
+        const weekStart = getActivityWeekStart(now);
+        const [, weekEnd] = getDayWindow(weekStart, 6);
+        const categoryById = new Map(categories.map(category => [category.id, category]));
+        const labelOf = (id: string) => categoryById.get(id as CategoryId)?.label || "Unsorted";
+        const colorOf = (id: string) => categoryById.get(id as CategoryId)?.color || "var(--text-dim)";
 
-        const intervals = todaySessions(sessions, activeSessionId, dayStart, now);
+        const intervals = sessions.flatMap(session => {
+            if (session.origin === "zaddy") return [];
+            if (session.endAt === null && session.id !== activeSessionId) return [];
+            const end = session.endAt ?? now;
+            if (end <= weekStart || session.startAt >= weekEnd) return [];
+            return [{
+                id: session.id,
+                start: Math.max(session.startAt, weekStart),
+                end: Math.min(end, weekEnd),
+                categoryId: session.category || UNCATEGORIZED,
+            }];
+        });
 
-        // Distribute session time into per-hour, per-category buckets
-        const hourBuckets: Array<Map<string, number>> = Array.from({ length: 24 }, () => new Map());
-        const dayTotals = new Map<string, number>();
-        for (const [s, e, cat] of intervals) {
-            dayTotals.set(cat, (dayTotals.get(cat) || 0) + (e - s));
-            const firstHour = Math.floor((s - dayStart) / HOUR_MS);
-            const lastHour = Math.min(23, Math.floor((e - 1 - dayStart) / HOUR_MS));
-            for (let h = firstHour; h <= lastHour; h++) {
-                const hs = dayStart + h * HOUR_MS;
-                const overlap = Math.min(e, hs + HOUR_MS) - Math.max(s, hs);
-                if (overlap > 0) {
-                    const bucket = hourBuckets[h];
-                    bucket.set(cat, (bucket.get(cat) || 0) + overlap);
-                }
-            }
+        const totals = new Map<string, number>();
+        for (const interval of intervals) {
+            totals.set(
+                interval.categoryId,
+                (totals.get(interval.categoryId) || 0) + (interval.end - interval.start),
+            );
         }
 
-        const labelOf = (id: string) => categories.find((c) => c.id === id)?.label || "Unsorted";
-        const colorOf = (id: string) => categories.find((c) => c.id === id)?.color || "var(--text-dim)";
+        const days: DayColumn[] = DAY_LABELS.map((label, dayIndex) => {
+            const [dayStart, dayEnd] = getDayWindow(weekStart, dayIndex);
+            const duration = dayEnd - dayStart;
+            const date = new Date(dayStart);
+            const segments = intervals.flatMap(interval => {
+                const start = Math.max(interval.start, dayStart);
+                const end = Math.min(interval.end, dayEnd);
+                if (end <= start) return [];
+                return [{
+                    id: `${interval.id}-${dayIndex}-${start}`,
+                    categoryId: interval.categoryId,
+                    color: colorOf(interval.categoryId),
+                    top: ((start - dayStart) / duration) * 100,
+                    height: ((end - start) / duration) * 100,
+                    tooltip: `${label} ${date.getMonth() + 1}/${date.getDate()} · ${formatClock(start)}–${formatClock(end)} · ${labelOf(interval.categoryId)} · ${formatHours(end - start)}`,
+                }];
+            });
 
-        const cells: HourCell[] = hourBuckets.map((bucket, hour) => {
-            const ranked = [...bucket.entries()].sort((a, b) => b[1] - a[1]);
-            if (ranked.length === 0) {
-                return { hour, catId: null, color: "", label: "", coverage: 0, breakdown: [] };
-            }
-            const [topId] = ranked[0];
-            const covered = ranked.reduce((sum, [, ms]) => sum + ms, 0);
             return {
-                hour,
-                catId: topId,
-                color: colorOf(topId),
-                label: labelOf(topId),
-                coverage: Math.min(1, covered / HOUR_MS),
-                breakdown: ranked.map(([id, ms]) => ({ label: labelOf(id), ms })),
+                key: dayStart,
+                label,
+                dateLabel: `${date.getMonth() + 1}/${date.getDate()}`,
+                segments,
+                currentPosition: now >= dayStart && now < dayEnd
+                    ? ((now - dayStart) / duration) * 100
+                    : null,
             };
         });
 
-        const legend: LegendItem[] = [...dayTotals.entries()]
+        const legend: LegendItem[] = [...totals.entries()]
             .sort((a, b) => b[1] - a[1])
             .map(([id, ms]) => ({
                 id,
@@ -131,101 +149,111 @@ export function CategoryTimeChart({
                 isCategory: id !== UNCATEGORIZED,
             }));
 
-        const totalMs = [...dayTotals.values()].reduce((a, b) => a + b, 0);
-        const currentHour = Math.floor((now - dayStart) / HOUR_MS);
-
-        return { cells, legend, totalMs, currentHour };
+        return {
+            days,
+            legend,
+            totalMs: [...totals.values()].reduce((sum, value) => sum + value, 0),
+        };
     }, [sessions, activeSessionId, categories, now]);
 
     return (
-        <div style={{ marginBottom: 32 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
-                <span style={{ fontSize: 10, letterSpacing: "0.1em", color: "var(--text-dim)" }}>TODAY</span>
-                <div style={{ flex: 1, height: 1, backgroundColor: "var(--border-light)" }} />
-                <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", color: "var(--text-secondary)" }}>
-                    {totalMs > 0 ? formatHours(totalMs) : "—"}
-                </span>
+        <section className={styles.chart} aria-label="This week's activity by category">
+            <div className={styles.sectionHeader}>
+                <span>THIS WEEK</span>
+                <div className={styles.sectionLine} />
+                <span className={styles.total}>{totalMs > 0 ? formatHours(totalMs) : "—"}</span>
             </div>
 
-            {/* 24-hour grid: 6 per row × 4 rows, one cell per hour */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 28px)", gap: 3, justifyContent: "center" }}>
-                {cells.map((cell) => {
-                    const filled = cell.catId !== null;
-                    const tooltip = filled
-                        ? `${String(cell.hour).padStart(2, "0")}:00–${String(cell.hour + 1).padStart(2, "0")}:00 · ` +
-                          cell.breakdown.map((b) => `${b.label} ${formatHours(b.ms)}`).join(" · ")
-                        : `${String(cell.hour).padStart(2, "0")}:00–${String(cell.hour + 1).padStart(2, "0")}:00`;
-                    return (
-                        <div
-                            key={cell.hour}
-                            title={tooltip}
-                            style={{
-                                position: "relative",
-                                width: 28,
-                                height: 28,
-                                borderRadius: 3,
-                                backgroundColor: filled ? cell.color : "var(--heatmap-empty, var(--bg-secondary))",
-                                opacity: filled ? 0.35 + 0.65 * cell.coverage : 0.5,
-                                border: cell.hour === currentHour ? "1px solid var(--text-dim)" : "1px solid transparent",
-                                boxSizing: "border-box",
-                                transition: "opacity 120ms ease",
-                            }}
+            <div className={styles.weekGrid}>
+                <div aria-hidden="true" />
+                {days.map(day => (
+                    <div className={styles.dayHeader} key={`header-${day.key}`}>
+                        <span>{day.label}</span>
+                        <span className={styles.dateLabel}>{day.dateLabel}</span>
+                    </div>
+                ))}
+
+                <div className={styles.timeAxis} aria-hidden="true">
+                    {[
+                        ["06", 0],
+                        ["12", 25],
+                        ["18", 50],
+                        ["00", 75],
+                        ["06", 100],
+                    ].map(([label, position]) => (
+                        <span
+                            key={`${label}-${position}`}
+                            className={styles.timeLabel}
+                            style={{ top: `${position}%` }}
                         >
+                            {label}
+                        </span>
+                    ))}
+                </div>
+
+                {days.map(day => (
+                    <div className={styles.dayTrack} key={day.key}>
+                        {[0, 25, 50, 75, 100].map(position => (
                             <span
-                                style={{
-                                    position: "absolute",
-                                    top: 2,
-                                    left: 4,
-                                    fontSize: 8,
-                                    fontFamily: "var(--font-mono)",
-                                    color: "var(--text-dim)",
-                                    opacity: 0.8,
-                                    pointerEvents: "none",
-                                }}
-                            >
-                                {cell.hour}
-                            </span>
-                        </div>
-                    );
-                })}
+                                aria-hidden="true"
+                                className={styles.gridLine}
+                                key={position}
+                                style={{ top: `${position}%` }}
+                            />
+                        ))}
+                        {day.segments.map(segment => {
+                            const isSelected = segment.categoryId !== UNCATEGORIZED
+                                && categoryFilter.includes(segment.categoryId as CategoryId);
+                            const isDimmed = categoryFilter.length > 0 && !isSelected;
+                            return (
+                                <span
+                                    className={`${styles.segment} ${isSelected ? styles.selectedSegment : ""} ${isDimmed ? styles.dimmedSegment : ""}`}
+                                    key={segment.id}
+                                    title={segment.tooltip}
+                                    style={{
+                                        top: `${segment.top}%`,
+                                        height: `${segment.height}%`,
+                                        backgroundColor: segment.color,
+                                    }}
+                                />
+                            );
+                        })}
+                        {day.currentPosition !== null && (
+                            <span
+                                aria-label="Current time"
+                                className={styles.currentTime}
+                                style={{ top: `${day.currentPosition}%` }}
+                            />
+                        )}
+                    </div>
+                ))}
             </div>
 
-            {/* Legend: categories active today, click to filter the timeline */}
             {legend.length > 0 && (
-                <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 12 }}>
-                    {legend.map((item) => {
-                        const isActive = item.isCategory && categoryFilter.includes(item.id as CategoryId);
+                <div className={styles.legend}>
+                    {legend.map(item => {
+                        const isActive = item.isCategory
+                            && categoryFilter.includes(item.id as CategoryId);
                         return (
                             <button
+                                className={`${styles.legendItem} ${isActive ? styles.activeLegendItem : ""}`}
                                 key={item.id}
                                 onClick={() => item.isCategory && onToggleCategory(item.id as CategoryId)}
                                 style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 8,
-                                    padding: "4px 8px",
-                                    fontSize: 10,
-                                    color: isActive ? item.color : "var(--text-secondary)",
-                                    backgroundColor: isActive ? `${item.color}20` : "transparent",
-                                    border: isActive ? `1px solid ${item.color}40` : "1px solid transparent",
-                                    borderRadius: 4,
+                                    color: isActive ? item.color : undefined,
+                                    backgroundColor: isActive ? `${item.color}20` : undefined,
+                                    borderColor: isActive ? `${item.color}40` : undefined,
                                     cursor: item.isCategory ? "pointer" : "default",
-                                    textAlign: "left",
-                                    transition: "all 100ms ease",
                                 }}
                             >
-                                <span style={{ width: 10, height: 10, borderRadius: 2, backgroundColor: item.color, flexShrink: 0 }} />
-                                <span style={{ flex: 1, textTransform: "uppercase", letterSpacing: "0.03em" }}>
-                                    {item.label}
-                                </span>
-                                <span style={{ fontFamily: "var(--font-mono)", color: "var(--text-secondary)" }}>
-                                    {formatHours(item.ms)}
-                                </span>
+                                <span className={styles.legendSwatch} style={{ backgroundColor: item.color }} />
+                                <span className={styles.legendLabel}>{item.label}</span>
+                                <span className={styles.legendDuration}>{formatHours(item.ms)}</span>
                             </button>
                         );
                     })}
                 </div>
             )}
-        </div>
+        </section>
     );
 }

@@ -46,7 +46,6 @@ export function SearchPanel() {
         setCategoryFilter,
         setTagFilter,
         setContentTypeFilter,
-        setOriginFilter,
         navigateToEntry,
     } = useUIStateContext()
     const [query, setQuery] = useState('')
@@ -72,7 +71,6 @@ export function SearchPanel() {
         setCategoryFilter([])
         setTagFilter([])
         setContentTypeFilter([])
-        setOriginFilter('all')
         closeSearch()
         navigateToEntry(entry)
     }
