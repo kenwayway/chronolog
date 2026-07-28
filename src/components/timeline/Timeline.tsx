@@ -3,7 +3,9 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 import { useSessionContext } from "@/contexts/SessionContext";
 import { TimelineEntry } from "./TimelineEntry";
-import type { TimelineItem, SessionStatus, CategoryId } from "@/types";
+import { ZaddyAnnotations } from "./ZaddyAnnotations";
+import { buildZaddyAnnotationGroups } from "./annotationGroups";
+import type { TimelineItem, SessionStatus, CategoryId, TimelineOriginFilter } from "@/types";
 
 const ENTRIES_PER_PAGE = 20;
 
@@ -20,10 +22,20 @@ interface TimelineProps {
   categoryFilter?: CategoryId[];
   isFilterMode?: boolean;
   filterKey?: string;
+  originFilter?: TimelineOriginFilter;
   onNavigateToEntry?: (entry: TimelineItem) => void;
 }
 
-export function Timeline({ entries, onContextMenu, onEdit, categoryFilter = [], isFilterMode: isFilterModeProp, filterKey = '', onNavigateToEntry }: TimelineProps) {
+export function Timeline({
+  entries,
+  onContextMenu,
+  onEdit,
+  categoryFilter = [],
+  isFilterMode: isFilterModeProp,
+  filterKey = '',
+  originFilter = 'all',
+  onNavigateToEntry,
+}: TimelineProps) {
   const { state: { mediaItems, sessions }, linkIndex, categories } = useSessionContext();
   const { theme } = useTheme();
 
@@ -34,18 +46,38 @@ export function Timeline({ entries, onContextMenu, onEdit, categoryFilter = [], 
   const currentPage = pagination.key === paginationKey ? pagination.page : 0;
 
   const isFilterMode = isFilterModeProp ?? categoryFilter.length > 0;
-  const totalPages = isFilterMode ? Math.ceil(entries.length / ENTRIES_PER_PAGE) : 1;
+  const showZaddyAsAnnotations = originFilter !== 'zaddy';
+  const primaryEntries = useMemo(
+    () => showZaddyAsAnnotations
+      ? entries.filter(entry => entry.origin !== 'zaddy')
+      : entries,
+    [entries, showZaddyAsAnnotations],
+  );
+  const zaddyEntries = useMemo(
+    () => showZaddyAsAnnotations
+      ? entries.filter(entry => entry.origin === 'zaddy')
+      : [],
+    [entries, showZaddyAsAnnotations],
+  );
+  const annotationCount = useMemo(
+    () => buildZaddyAnnotationGroups(zaddyEntries).reduce(
+      (count, group) => count + group.annotations.length,
+      0,
+    ),
+    [zaddyEntries],
+  );
+  const totalPages = isFilterMode ? Math.ceil(primaryEntries.length / ENTRIES_PER_PAGE) : 1;
 
   // Memoize sorted entries to avoid re-sorting on every render
   const sortedEntries = useMemo(() => {
     const display = isFilterMode
-      ? entries.slice(currentPage * ENTRIES_PER_PAGE, (currentPage + 1) * ENTRIES_PER_PAGE)
-      : entries;
+      ? primaryEntries.slice(currentPage * ENTRIES_PER_PAGE, (currentPage + 1) * ENTRIES_PER_PAGE)
+      : primaryEntries;
 
     return isFilterMode
       ? display // Already sorted in App.tsx
       : [...display].sort((a, b) => a.timestamp - b.timestamp);
-  }, [entries, isFilterMode, currentPage]);
+  }, [primaryEntries, isFilterMode, currentPage]);
 
   // Memoize session duration and line state calculations
   const { sessionDurations, entryLineStates } = useMemo(() => {
@@ -96,7 +128,9 @@ export function Timeline({ entries, onContextMenu, onEdit, categoryFilter = [], 
           }}
         >
           <span>
-            Showing {entries.length} entries matching filter
+            Showing {primaryEntries.length} entries
+            {annotationCount > 0 ? ` · ${annotationCount} zaddy annotations` : ''}
+            {' '}matching filter
           </span>
           {totalPages > 1 && (
             <div className="flex items-center gap-2">
@@ -140,7 +174,7 @@ export function Timeline({ entries, onContextMenu, onEdit, categoryFilter = [], 
         </div>
       )}
 
-      {entries.length === 0 && (
+      {primaryEntries.length === 0 && zaddyEntries.length === 0 && (
         <div
           className="flex flex-col items-center justify-center"
           style={{
@@ -178,6 +212,14 @@ export function Timeline({ entries, onContextMenu, onEdit, categoryFilter = [], 
           mediaItems={mediaItems}
         />
       ))}
+
+      <ZaddyAnnotations
+        entries={zaddyEntries}
+        showDates={isFilterMode}
+        newestFirst={isFilterMode}
+        onContextMenu={onContextMenu}
+        onEdit={onEdit}
+      />
     </div>
   );
 }

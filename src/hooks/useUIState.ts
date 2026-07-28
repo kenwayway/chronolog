@@ -107,6 +107,12 @@ export function useUIState(): UIState {
                 el.style.backgroundColor = 'var(--accent-subtle)'
                 setTimeout(() => { el.style.backgroundColor = '' }, 1500)
             } else if (++attempts < 5) {
+                const annotationGroup = [...document.querySelectorAll<HTMLElement>('[data-zaddy-entry-ids]')]
+                    .find(group => group.dataset.zaddyEntryIds?.split(' ').includes(targetEntry.id))
+                const toggle = annotationGroup?.querySelector<HTMLButtonElement>('button[aria-expanded]')
+                if (toggle?.getAttribute('aria-expanded') === 'false') {
+                    toggle.click()
+                }
                 setTimeout(tryScroll, 150)
             }
         }

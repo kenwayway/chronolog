@@ -227,6 +227,7 @@ function MainView({
                         categoryFilter={ui.categoryFilter}
                         isFilterMode={ui.categoryFilter.length > 0 || ui.tagFilter.length > 0 || ui.contentTypeFilter.length > 0 || ui.originFilter !== 'all'}
                         filterKey={`${ui.categoryFilter.join(',')}|${ui.tagFilter.join(',')}|${ui.contentTypeFilter.join(',')}|${ui.originFilter}`}
+                        originFilter={ui.originFilter}
                         onNavigateToEntry={ui.navigateToEntry}
                     />
                 )}
