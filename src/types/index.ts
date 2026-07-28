@@ -153,6 +153,7 @@ export interface Note {
   fieldValues?: EntryFieldValues
   linkedItems?: string[]
   tags?: string[]
+  origin?: 'zaddy'
 }
 
 /** A timed interval. Session boundaries are derived timeline views, not entities. */
@@ -168,9 +169,11 @@ export interface Session {
   tags?: string[]
   endTags?: string[]
   linkedItems?: string[]
+  origin?: 'zaddy'
 }
 
 export type TimelineItemKind = 'note' | 'session-start' | 'session-end'
+export type TimelineOriginFilter = 'all' | 'user' | 'zaddy'
 
 /** Flattened read model used only by timeline/search/gallery UI. */
 export interface TimelineItem {
@@ -185,6 +188,7 @@ export interface TimelineItem {
   fieldValues?: EntryFieldValues
   linkedItems?: string[]
   tags?: string[]
+  origin?: 'zaddy'
 }
 
 export interface TimelineItemUpdate {

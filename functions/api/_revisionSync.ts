@@ -44,8 +44,8 @@ function upsertNoteStatement(db: D1Database, mutation: RevisionMutation, now: nu
     return db.prepare(`
         INSERT INTO notes
           (id, content, timestamp, session_id, category, content_type,
-           field_values, linked_items, tags, created_at, updated_at, revision)
-        SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, sync_commit.revision
+           field_values, linked_items, tags, origin, created_at, updated_at, revision)
+        SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, sync_commit.revision
         FROM sync_commits AS sync_commit
         WHERE sync_commit.mutation_id = ?
           AND NOT EXISTS (
@@ -61,13 +61,14 @@ function upsertNoteStatement(db: D1Database, mutation: RevisionMutation, now: nu
           field_values = excluded.field_values,
           linked_items = excluded.linked_items,
           tags = excluded.tags,
+          origin = excluded.origin,
           updated_at = excluded.updated_at,
           revision = excluded.revision
         WHERE excluded.revision >= notes.revision
     `).bind(
         row.id, row.content, row.timestamp, row.session_id, row.category,
         row.content_type, row.field_values, row.linked_items, row.tags,
-        row.created_at, row.updated_at, mutation.mutationId, row.id,
+        row.origin, row.created_at, row.updated_at, mutation.mutationId, row.id,
     );
 }
 
@@ -76,8 +77,8 @@ function upsertSessionStatement(db: D1Database, mutation: RevisionMutation, now:
     return db.prepare(`
         INSERT INTO sessions
           (id, content, start_at, end_at, end_content, category, content_type,
-           field_values, linked_items, tags, end_tags, created_at, updated_at, revision)
-        SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, sync_commit.revision
+           field_values, linked_items, tags, end_tags, origin, created_at, updated_at, revision)
+        SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, sync_commit.revision
         FROM sync_commits AS sync_commit
         WHERE sync_commit.mutation_id = ?
           AND NOT EXISTS (
@@ -95,13 +96,14 @@ function upsertSessionStatement(db: D1Database, mutation: RevisionMutation, now:
           linked_items = excluded.linked_items,
           tags = excluded.tags,
           end_tags = excluded.end_tags,
+          origin = excluded.origin,
           updated_at = excluded.updated_at,
           revision = excluded.revision
         WHERE excluded.revision >= sessions.revision
     `).bind(
         row.id, row.content, row.start_at, row.end_at, row.end_content,
         row.category, row.content_type, row.field_values, row.linked_items,
-        row.tags, row.end_tags, row.created_at, row.updated_at,
+        row.tags, row.end_tags, row.origin, row.created_at, row.updated_at,
         mutation.mutationId, row.id,
     );
 }
@@ -193,6 +195,9 @@ function invalidValueReason(mutation: RevisionMutation): string | null {
         return 'upsert value must match entityId';
     }
     const value = mutation.value as unknown as Record<string, unknown>;
+    if (value.origin !== undefined && value.origin !== 'zaddy') {
+        return 'invalid origin';
+    }
     if (
         mutation.entityType === 'note'
         && (

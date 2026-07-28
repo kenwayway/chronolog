@@ -17,6 +17,7 @@ import {
     getNotionSyncStatus,
     type NotionSyncStatus,
 } from './_notionSync.ts';
+import { finalizeStaleZaddyTopics } from './_zaddyObservation.ts';
 import type {
     CFContext,
     ContentTypeRow,
@@ -116,7 +117,8 @@ export async function onRequestGet(context: CFContext): Promise<Response> {
         // Third-party Notion writes and bookkeeping GC run after the
         // response; a pull must never wait on the Notion API.
         context.waitUntil(
-            flushNotionSyncJobs(env)
+            finalizeStaleZaddyTopics(env)
+                .then(() => flushNotionSyncJobs(env))
                 .then(() => collectSyncGarbage(env.CHRONOLOG_DB))
                 .catch(error => console.error('Deferred pull maintenance failed:', error)),
         );

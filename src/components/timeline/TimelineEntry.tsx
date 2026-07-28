@@ -99,6 +99,7 @@ export const TimelineEntry = memo(function TimelineEntry({
 
   const isSessionStart = entry.kind === 'session-start';
   const isSessionEnd = entry.kind === 'session-end';
+  const isZaddy = entry.origin === 'zaddy';
   const contentTypeDisplay = renderContentTypeDisplay(entry, mediaItems);
 
   // Linked entries
@@ -123,6 +124,9 @@ export const TimelineEntry = memo(function TimelineEntry({
 
   const getEntrySymbol = (): ReactNode => {
     const styles = { fontSize: 14 };
+    if (isZaddy) {
+      return <span style={{ ...styles, color: "var(--accent)", fontWeight: 700 }}>Z</span>;
+    }
     const contentTypeSymbol = getContentTypeTimelineSymbol(entry.contentType);
     if (contentTypeSymbol) {
       return <span style={{ ...styles, color: 'var(--accent)' }}>{symbols[contentTypeSymbol]}</span>;
@@ -202,7 +206,7 @@ export const TimelineEntry = memo(function TimelineEntry({
                 fontWeight: 500,
               }}
             >
-              {formatDuration(sessionDuration)}
+              {isZaddy ? `CHAT ${formatDuration(sessionDuration)}` : formatDuration(sessionDuration)}
             </div>
           )}
         </div>
@@ -272,6 +276,9 @@ export const TimelineEntry = memo(function TimelineEntry({
 
           {/* Main content row */}
           <div className="flex flex-wrap items-baseline" style={{ gap: "4px 12px", marginBottom: 6 }}>
+            {isZaddy && (
+              <span className={styles.originBadge}>ZADDY</span>
+            )}
             {entry.content && (
               <span
                 className={styles.contentText}

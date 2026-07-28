@@ -84,6 +84,7 @@ describe('MCP tool surface', () => {
             'add_note',
             'start_session',
             'end_session',
+            'observe',
         ]));
         expect(body.result.tools.map(tool => tool.name)).not.toContain('add_entry');
     });
@@ -94,6 +95,7 @@ describe('MCP tool surface', () => {
         const names = body.result.tools.map(tool => tool.name);
         expect(names).toContain('search_notes');
         expect(names).not.toContain('add_note');
+        expect(names).not.toContain('observe');
     });
 
     it('rejects an unknown token', async () => {

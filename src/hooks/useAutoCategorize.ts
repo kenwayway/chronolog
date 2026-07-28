@@ -48,7 +48,9 @@ export function useAutoCategorize({
 
     useEffect(() => {
         const candidates = items.filter(item =>
-            item.kind !== 'session-end' && !seenEntityIds.current.has(item.entityId),
+            item.kind !== 'session-end'
+            && item.origin !== 'zaddy'
+            && !seenEntityIds.current.has(item.entityId),
         )
         items.forEach(item => seenEntityIds.current.add(item.entityId))
 

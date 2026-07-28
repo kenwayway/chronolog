@@ -39,6 +39,11 @@ describe('projectTimelineItems', () => {
         const items = projectTimelineItems([], [session('s1', 100, 200)])
         expect(timelineItemForEntity(items, 's1')?.kind).toBe('session-start')
     })
+
+    it('projects zaddy origin onto both session boundaries', () => {
+        const items = projectTimelineItems([], [session('s1', 100, 200, { origin: 'zaddy' })])
+        expect(items.map(item => item.origin)).toEqual(['zaddy', 'zaddy'])
+    })
 })
 
 describe('buildTimelineLinkIndex', () => {

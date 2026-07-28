@@ -160,6 +160,7 @@ functions/             # Cloudflare Pages Functions (TypeScript)
 │   ├── _auth.ts       # Shared auth helpers
 │   ├── _db.ts         # D1 helpers & row converters
 │   ├── _revisionSync.ts # Atomic revision commits and tombstones
+│   ├── _zaddyObservation.ts # Ambient-journal topic buffers
 │   ├── types.ts       # Shared type definitions
 │   ├── auth.ts        # Authentication
 │   ├── data.ts        # Data CRUD (incremental sync)
@@ -185,7 +186,7 @@ Cloud sync is optional. Configure these bindings and variables in the Cloudflare
 | `AI_BASE_URL` | Optional OpenAI-compatible API base URL |
 | `AI_MODEL` | Optional categorization model name |
 | `PUBLIC_API_TOKEN` | Token for `GET /api/public` and read-only MCP access |
-| `MCP_WRITE_TOKEN` | MCP token granting read access plus `add_note`, `start_session`, and `end_session` |
+| `MCP_WRITE_TOKEN` | MCP token granting read access plus `add_note`, `start_session`, `end_session`, and `observe` |
 | `DASHBOARD_MCP_TOKEN` | Alternate MCP write token for dashboard integrations (same scope as `MCP_WRITE_TOKEN`) |
 | `NOTION_API_TOKEN` | Notion internal integration secret used only by Pages Functions |
 | `NOTION_TRACKED_MINUTES_PROPERTY` | Optional Notion number property name or ID; defaults to `Tracked Minutes` |
@@ -196,6 +197,11 @@ Migration `0006_note_session_domain.sql` is intentionally breaking: it folds
 historical session boundary rows into `sessions`, moves notes into `notes`, and
 drops the old boundary table. Deploy the migrated database and new application
 code together.
+
+The write-scoped MCP `observe` tool maintains short-lived topic buffers for
+ambient journaling. Finalized buffers become historical Notes or Sessions with
+`origin: "zaddy"`; they never occupy the user's active session, and their
+conversation span is reported separately from tracked time.
 
 For Notion task syncing, add a number property named `Tracked Minutes` (or set
 `NOTION_TRACKED_MINUTES_PROPERTY` to its name/property ID), then share the task

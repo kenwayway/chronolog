@@ -30,6 +30,7 @@ export function projectTimelineItems(notes: Note[], sessions: Session[]): Timeli
       fieldValues: session.fieldValues,
       linkedItems: session.linkedItems,
       tags: session.tags,
+      origin: session.origin,
     })
 
     if (session.endAt !== null) {
@@ -42,6 +43,7 @@ export function projectTimelineItems(notes: Note[], sessions: Session[]): Timeli
         sessionId: session.id,
         linkedItems: session.linkedItems,
         tags: session.endTags,
+        origin: session.origin,
       })
     }
   }

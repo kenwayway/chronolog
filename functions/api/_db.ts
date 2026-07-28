@@ -47,6 +47,7 @@ export function noteRowToObject(row: NoteRow): Note {
         ...(parseObject(row.field_values) ? { fieldValues: parseObject(row.field_values) } : {}),
         ...(parseArray(row.linked_items) ? { linkedItems: parseArray(row.linked_items) } : {}),
         ...(parseArray(row.tags) ? { tags: parseArray(row.tags) } : {}),
+        ...(row.origin === 'zaddy' ? { origin: 'zaddy' as const } : {}),
     };
 }
 
@@ -63,6 +64,7 @@ export function sessionRowToObject(row: SessionRow): Session {
         ...(parseArray(row.linked_items) ? { linkedItems: parseArray(row.linked_items) } : {}),
         ...(parseArray(row.tags) ? { tags: parseArray(row.tags) } : {}),
         ...(parseArray(row.end_tags) ? { endTags: parseArray(row.end_tags) } : {}),
+        ...(row.origin === 'zaddy' ? { origin: 'zaddy' as const } : {}),
     };
 }
 
@@ -77,6 +79,7 @@ export function noteObjectToRow(note: Note, now = Date.now()) {
         field_values: note.fieldValues ? JSON.stringify(note.fieldValues) : null,
         linked_items: note.linkedItems ? JSON.stringify(note.linkedItems) : null,
         tags: note.tags ? JSON.stringify(note.tags) : null,
+        origin: note.origin === 'zaddy' ? 'zaddy' : null,
         created_at: now,
         updated_at: now,
     };
@@ -95,6 +98,7 @@ export function sessionObjectToRow(session: Session, now = Date.now()) {
         linked_items: session.linkedItems ? JSON.stringify(session.linkedItems) : null,
         tags: session.tags ? JSON.stringify(session.tags) : null,
         end_tags: session.endTags ? JSON.stringify(session.endTags) : null,
+        origin: session.origin === 'zaddy' ? 'zaddy' : null,
         created_at: now,
         updated_at: now,
     };

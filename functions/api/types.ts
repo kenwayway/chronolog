@@ -44,6 +44,7 @@ export interface NoteRow {
     field_values: string | null;
     linked_items: string | null;
     tags: string | null;
+    origin: 'zaddy' | null;
     created_at: number;
     updated_at: number;
     revision: number;
@@ -61,6 +62,7 @@ export interface SessionRow {
     linked_items: string | null;
     tags: string | null;
     end_tags: string | null;
+    origin: 'zaddy' | null;
     created_at: number;
     updated_at: number;
     revision: number;
@@ -105,6 +107,7 @@ export interface Note {
     fieldValues?: Record<string, unknown>;
     linkedItems?: string[];
     tags?: string[];
+    origin?: 'zaddy';
 }
 
 export interface Session {
@@ -119,6 +122,21 @@ export interface Session {
     linkedItems?: string[];
     tags?: string[];
     endTags?: string[];
+    origin?: 'zaddy';
+}
+
+export interface ZaddyTopicBufferRow {
+    id: string;
+    content: string;
+    first_observed_at: number;
+    last_observed_at: number;
+    observation_count: number;
+    category: string | null;
+    status: 'open' | 'closed';
+    entity_type: 'note' | 'session' | null;
+    entity_id: string | null;
+    created_at: number;
+    updated_at: number;
 }
 
 export interface ContentType {

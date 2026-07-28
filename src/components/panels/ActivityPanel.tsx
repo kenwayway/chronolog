@@ -6,7 +6,7 @@ import { useSessionContext } from "@/contexts/SessionContext";
 import { extractAllTags } from "@/utils/tagParser";
 import { CategoryTimeChart } from "./CategoryTimeChart";
 import styles from "./ActivityPanel.module.css";
-import type { CategoryId } from "@/types";
+import type { CategoryId, TimelineOriginFilter } from "@/types";
 
 interface ActivityPanelProps {
     isOpen: boolean;
@@ -17,6 +17,8 @@ interface ActivityPanelProps {
     onTagFilterChange: (filter: string[]) => void;
     contentTypeFilter: string[];
     onContentTypeFilterChange: (filter: string[]) => void;
+    originFilter: TimelineOriginFilter;
+    onOriginFilterChange: (filter: TimelineOriginFilter) => void;
 }
 
 export function ActivityPanel({
@@ -28,6 +30,8 @@ export function ActivityPanel({
     onTagFilterChange,
     contentTypeFilter,
     onContentTypeFilterChange,
+    originFilter,
+    onOriginFilterChange,
 }: ActivityPanelProps) {
     const { state: { sessions, activeSessionId, contentTypes }, timelineItems: entries, categories } = useSessionContext();
     const { tokens } = useTheme();
@@ -64,6 +68,8 @@ export function ActivityPanel({
     const clearFilter = () => {
         onCategoryFilterChange([]);
         onContentTypeFilterChange([]);
+        onTagFilterChange([]);
+        onOriginFilterChange('all');
     };
 
     return (
@@ -102,7 +108,7 @@ export function ActivityPanel({
                         <div className={styles.sectionHeader}>
                             <span>FILTER</span>
                             <div className={styles.sectionLine} />
-                            {(categoryFilter.length > 0 || contentTypeFilter.length > 0) && (
+                            {(categoryFilter.length > 0 || contentTypeFilter.length > 0 || tagFilter.length > 0 || originFilter !== 'all') && (
                                 <button
                                     onClick={clearFilter}
                                     style={{
@@ -118,6 +124,30 @@ export function ActivityPanel({
                             )}
                         </div>
                         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6, marginBottom: 8 }}>
+                                {(['all', 'user', 'zaddy'] as const).map(value => {
+                                    const isActive = originFilter === value;
+                                    return (
+                                        <button
+                                            key={value}
+                                            onClick={() => onOriginFilterChange(value)}
+                                            style={{
+                                                padding: "6px 8px",
+                                                fontSize: 9,
+                                                fontFamily: "var(--font-mono)",
+                                                textTransform: "uppercase",
+                                                letterSpacing: "0.06em",
+                                                color: isActive ? "var(--accent)" : "var(--text-dim)",
+                                                backgroundColor: isActive ? "var(--accent-subtle)" : "var(--bg-secondary)",
+                                                border: isActive ? "1px solid var(--accent)" : "1px solid transparent",
+                                                cursor: "pointer",
+                                            }}
+                                        >
+                                            {value === 'user' ? 'YOU' : value}
+                                        </button>
+                                    );
+                                })}
+                            </div>
                             {categories?.map((cat) => {
                                 const isActive = categoryFilter.includes(cat.id);
                                 return (

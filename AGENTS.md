@@ -37,6 +37,7 @@ interface Note {
   fieldValues?: Record<string, unknown>
   linkedItems?: string[] // Note or Session IDs
   tags?: string[]
+  origin?: 'zaddy'
 }
 
 interface Session {
@@ -51,6 +52,7 @@ interface Session {
   linkedItems?: string[] // Note or Session IDs
   tags?: string[]
   endTags?: string[]
+  origin?: 'zaddy'
 }
 
 interface TimelineItem {
@@ -71,6 +73,12 @@ into timeline items. Synthetic session marker IDs are:
 
 Never persist or synchronize `TimelineItem`. Never recreate a boundary-record
 wire format.
+
+Zaddy ambient observations use short-lived `zaddy_topic_buffers` workflow
+rows. A buffer is not a timeline entity and never enters React or revision
+sync. Finalization materializes exactly one historical Note or Session with
+`origin: 'zaddy'`; these Sessions never occupy `activeSessionId`, and their
+conversation span is excluded from user tracked-time totals.
 
 ## Content types
 
@@ -210,6 +218,12 @@ MCP write tools (write token only):
 - `add_note`
 - `start_session`
 - `end_session`
+- `observe`
+
+`observe` starts or continues a durable zaddy topic buffer and optionally
+finalizes it. It is for sustained personally meaningful conversational
+signals, not one-off informational questions. Stale buffers finalize after
+30 minutes through MCP/data-pull maintenance.
 
 MCP auth: write scope requires the token in the `Authorization: Bearer`
 header; a write token sent via `?token=` query string degrades to read-only

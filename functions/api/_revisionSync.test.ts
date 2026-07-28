@@ -89,6 +89,26 @@ describe('revision sync validation', () => {
         });
     });
 
+    it('accepts zaddy origin and rejects unknown origins', () => {
+        const accepted = validateRevisionMutations([{
+            mutationId: 'zaddy-note',
+            entityType: 'note',
+            entityId: 'z1',
+            operation: 'upsert',
+            value: { id: 'z1', content: 'observed', timestamp: 1, origin: 'zaddy' },
+        }]);
+        expect(accepted.accepted).toHaveLength(1);
+
+        const rejected = validateRevisionMutations([{
+            mutationId: 'stranger-note',
+            entityType: 'note',
+            entityId: 'z2',
+            operation: 'upsert',
+            value: { id: 'z2', content: 'observed', timestamp: 1, origin: 'agent' },
+        }]);
+        expect(rejected.rejected[0]).toMatchObject({ detail: 'invalid origin' });
+    });
+
     it('still throws when a mutation cannot be identified for acknowledgement', () => {
         expect(() => validateRevisionMutations([{ entityType: 'note' }])).toThrow('invalid mutationId');
     });

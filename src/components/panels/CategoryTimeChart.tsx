@@ -45,6 +45,7 @@ function formatHours(ms: number): string {
 function todaySessions(source: Session[], activeSessionId: string | null, dayStart: number, now: number): Array<[number, number, string]> {
     const intervals: Array<[number, number, string]> = [];
     for (const session of source) {
+        if (session.origin === 'zaddy') continue;
         if (session.endAt === null && session.id !== activeSessionId) continue;
         const endTs = session.endAt ?? now;
         const s = Math.max(session.startAt, dayStart);

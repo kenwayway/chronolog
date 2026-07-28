@@ -4,6 +4,7 @@ import type { RevisionMutation } from './_revisionSync.ts';
 import type { CFContext, Env, Note, NoteRow, Session, SessionRow } from './types.ts';
 import { CATEGORIES, CATEGORY_IDS } from '../../src/utils/categories.ts';
 import { normalizeNotionPageId } from '../../src/utils/notionPageId.ts';
+import { observeZaddyTopic } from './_zaddyObservation.ts';
 
 const SERVER_INFO = { name: 'chronolog', version: '2.0.0' };
 const SUPPORTED_PROTOCOL_VERSIONS = ['2025-06-18', '2025-03-26', '2024-11-05'];
@@ -61,7 +62,7 @@ const READ_TOOLS = [
     },
     {
         name: 'get_day',
-        description: 'Get first-class notes and sessions for one calendar day plus tracked-time totals by category.',
+        description: 'Get first-class notes and sessions for one calendar day. User tracked time and zaddy conversation span are reported separately.',
         inputSchema: {
             type: 'object',
             properties: {
@@ -73,7 +74,7 @@ const READ_TOOLS = [
     },
     {
         name: 'get_stats',
-        description: 'Aggregate completed session duration and note counts over a date range.',
+        description: 'Aggregate user tracked time and note counts over a date range, with zaddy observations reported separately.',
         inputSchema: {
             type: 'object',
             properties: dateProperties,
@@ -135,6 +136,43 @@ const WRITE_TOOLS = [
                 tags: sharedWriteProperties.tags,
                 timezone: dateProperties.timezone,
             },
+            additionalProperties: false,
+        },
+    },
+    {
+        name: 'observe',
+        description: [
+            'Maintain zaddy-authored ambient-journal topic buffers from ordinary conversation.',
+            'Call only when the user reveals a sustained personally meaningful focus, frustration, decision, insight, or change.',
+            'Do not call for one-off informational questions, raw errors, assistant-only ideas, or trivial repetition.',
+            'Omit bufferId to start; reuse the returned buffer ID when the same underlying topic continues.',
+            'Send the full current summary, not a delta. Backdate firstObservedAt when significance only becomes clear after several messages.',
+            'Set finalize when the topic resolves or clearly shifts; stale buffers finalize automatically.',
+        ].join(' '),
+        inputSchema: {
+            type: 'object',
+            properties: {
+                bufferId: { type: 'string', maxLength: 100 },
+                content: {
+                    type: 'string',
+                    maxLength: 100000,
+                    description: 'Current concise zaddy observation, written as an outside perspective rather than in the user’s voice',
+                },
+                observedAt: {
+                    ...sharedWriteProperties.timestamp,
+                    description: 'Time of the latest meaningful observation; defaults to now',
+                },
+                firstObservedAt: {
+                    ...sharedWriteProperties.timestamp,
+                    description: 'Optional earlier time when this topic first appeared',
+                },
+                category: sharedWriteProperties.category,
+                finalize: {
+                    type: 'boolean',
+                    description: 'Close the buffer and materialize one historical zaddy Note or Session',
+                },
+            },
+            required: ['content'],
             additionalProperties: false,
         },
     },
@@ -424,8 +462,13 @@ async function getDay(args: Record<string, unknown>, db: D1Database) {
     ]);
     const sessionObjects = sessions.results.map(sessionRowToObject);
     const trackedByCategory: Record<string, number> = {};
+    let zaddyObservedMs = 0;
     sessionObjects.forEach(session => {
         if (session.endAt === null || session.endAt <= session.startAt) return;
+        if (session.origin === 'zaddy') {
+            zaddyObservedMs += session.endAt - session.startAt;
+            return;
+        }
         const category = session.category || 'uncategorized';
         trackedByCategory[category] = (trackedByCategory[category] || 0) + session.endAt - session.startAt;
     });
@@ -434,6 +477,7 @@ async function getDay(args: Record<string, unknown>, db: D1Database) {
         notes: notes.results.map(row => compactNote(noteRowToObject(row), timezone)),
         sessions: sessionObjects.map(session => compactSession(session, timezone)),
         trackedByCategory,
+        zaddyObservedMs,
     };
 }
 
@@ -443,27 +487,55 @@ async function getStats(args: Record<string, unknown>, db: D1Database) {
     const end = dayStartMs(args.end, timezone) + DAY_MS;
     const [sessions, notes] = await Promise.all([
         db.prepare(`
-            SELECT category, COUNT(*) AS session_count,
+            SELECT category, origin, COUNT(*) AS session_count,
                    SUM(CASE WHEN end_at IS NOT NULL AND end_at > start_at THEN end_at - start_at ELSE 0 END) AS tracked_ms
-            FROM sessions WHERE start_at >= ? AND start_at < ? GROUP BY category
-        `).bind(start, end).all<{ category: string | null; session_count: number; tracked_ms: number }>(),
+            FROM sessions WHERE start_at >= ? AND start_at < ? GROUP BY category, origin
+        `).bind(start, end).all<{
+            category: string | null;
+            origin: 'zaddy' | null;
+            session_count: number;
+            tracked_ms: number;
+        }>(),
         db.prepare(`
-            SELECT category, COUNT(*) AS note_count
-            FROM notes WHERE timestamp >= ? AND timestamp < ? GROUP BY category
-        `).bind(start, end).all<{ category: string | null; note_count: number }>(),
+            SELECT category, origin, COUNT(*) AS note_count
+            FROM notes WHERE timestamp >= ? AND timestamp < ? GROUP BY category, origin
+        `).bind(start, end).all<{
+            category: string | null;
+            origin: 'zaddy' | null;
+            note_count: number;
+        }>(),
     ]);
     const categories = new Map<string, { trackedMs: number; sessions: number; notes: number }>();
+    const zaddy = { observedMs: 0, sessions: 0, notes: 0 };
     const get = (category: string | null) => {
         const id = category || 'uncategorized';
         if (!categories.has(id)) categories.set(id, { trackedMs: 0, sessions: 0, notes: 0 });
         return categories.get(id)!;
     };
-    sessions.results.forEach(row => Object.assign(get(row.category), {
-        trackedMs: Number(row.tracked_ms || 0),
-        sessions: Number(row.session_count || 0),
-    }));
-    notes.results.forEach(row => { get(row.category).notes = Number(row.note_count || 0); });
-    return { start: args.start, end: args.end, categories: Object.fromEntries(categories) };
+    sessions.results.forEach(row => {
+        if (row.origin === 'zaddy') {
+            zaddy.observedMs += Number(row.tracked_ms || 0);
+            zaddy.sessions += Number(row.session_count || 0);
+            return;
+        }
+        Object.assign(get(row.category), {
+            trackedMs: Number(row.tracked_ms || 0),
+            sessions: Number(row.session_count || 0),
+        });
+    });
+    notes.results.forEach(row => {
+        if (row.origin === 'zaddy') {
+            zaddy.notes += Number(row.note_count || 0);
+            return;
+        }
+        get(row.category).notes = Number(row.note_count || 0);
+    });
+    return {
+        start: args.start,
+        end: args.end,
+        categories: Object.fromEntries(categories),
+        zaddy,
+    };
 }
 
 async function listCategoriesAndTags(db: D1Database) {
@@ -599,6 +671,33 @@ async function endSession(args: Record<string, unknown>, env: Env) {
     };
 }
 
+async function observe(args: Record<string, unknown>, env: Env) {
+    if (typeof args.content !== 'string' || !args.content.trim()) {
+        throw new Error('content must be a non-empty string');
+    }
+    if (args.bufferId !== undefined && (
+        typeof args.bufferId !== 'string'
+        || !args.bufferId
+        || args.bufferId.length > 100
+    )) {
+        throw new Error('bufferId is invalid');
+    }
+    const category = args.category;
+    if (category !== undefined && (typeof category !== 'string' || !CATEGORY_IDS.includes(category))) {
+        throw new Error('category is invalid');
+    }
+    return observeZaddyTopic(env, {
+        ...(typeof args.bufferId === 'string' ? { bufferId: args.bufferId } : {}),
+        content: args.content.trim(),
+        observedAt: parseTimestamp(args.observedAt),
+        ...(args.firstObservedAt !== undefined
+            ? { firstObservedAt: parseTimestamp(args.firstObservedAt) }
+            : {}),
+        ...(typeof category === 'string' ? { category } : {}),
+        finalize: args.finalize === true,
+    });
+}
+
 async function callTool(params: Record<string, unknown> | undefined, env: Env, canWrite: boolean) {
     const name = params?.name;
     const args = (params?.arguments ?? {}) as Record<string, unknown>;
@@ -612,6 +711,7 @@ async function callTool(params: Record<string, unknown> | undefined, env: Env, c
         else if (name === 'add_note' && canWrite) data = await addNote(args, env);
         else if (name === 'start_session' && canWrite) data = await startSession(args, env);
         else if (name === 'end_session' && canWrite) data = await endSession(args, env);
+        else if (name === 'observe' && canWrite) data = await observe(args, env);
         else if (WRITE_TOOLS.some(tool => tool.name === name)) throw new Error(`${String(name)} requires MCP_WRITE_TOKEN`);
         else throw new Error(`Unknown tool: ${String(name)}`);
         return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };

@@ -46,6 +46,7 @@ export function SearchPanel() {
         setCategoryFilter,
         setTagFilter,
         setContentTypeFilter,
+        setOriginFilter,
         navigateToEntry,
     } = useUIStateContext()
     const [query, setQuery] = useState('')
@@ -71,6 +72,7 @@ export function SearchPanel() {
         setCategoryFilter([])
         setTagFilter([])
         setContentTypeFilter([])
+        setOriginFilter('all')
         closeSearch()
         navigateToEntry(entry)
     }
@@ -201,6 +203,7 @@ export function SearchPanel() {
                                     {contentType && contentType.id !== 'note' && (
                                         <span>{contentType.icon} {contentType.name}</span>
                                     )}
+                                    {entry.origin === 'zaddy' && <span>ZADDY</span>}
                                     {entry.tags?.map(tag => <span key={tag}>#{tag}</span>)}
                                 </div>
                                 <div className={styles.preview}>

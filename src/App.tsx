@@ -172,7 +172,8 @@ function MainView({
     const filteredEntries = useMemo(() => {
         const hasFilters = ui.categoryFilter.length > 0
             || ui.tagFilter.length > 0
-            || ui.contentTypeFilter.length > 0;
+            || ui.contentTypeFilter.length > 0
+            || ui.originFilter !== 'all';
 
         if (hasFilters) {
             let results = timelineItems;
@@ -184,6 +185,11 @@ function MainView({
             }
             if (ui.contentTypeFilter.length > 0) {
                 results = results.filter(entry => entry.contentType && ui.contentTypeFilter.includes(entry.contentType));
+            }
+            if (ui.originFilter === 'zaddy') {
+                results = results.filter(entry => entry.origin === 'zaddy');
+            } else if (ui.originFilter === 'user') {
+                results = results.filter(entry => entry.origin !== 'zaddy');
             }
             return [...results].sort((a, b) => b.timestamp - a.timestamp);
         }
@@ -199,7 +205,7 @@ function MainView({
         return timelineItems.filter(entry =>
             entry.timestamp >= dayStart && entry.timestamp < dayEnd
         );
-    }, [timelineItems, ui.categoryFilter, ui.tagFilter, ui.contentTypeFilter, ui.selectedDate]);
+    }, [timelineItems, ui.categoryFilter, ui.tagFilter, ui.contentTypeFilter, ui.originFilter, ui.selectedDate]);
 
     return (
         <div className="min-h-screen flex flex-col font-mono" style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
@@ -219,8 +225,8 @@ function MainView({
                         onContextMenu={ui.handleContextMenu}
                         onEdit={ui.openEditModal}
                         categoryFilter={ui.categoryFilter}
-                        isFilterMode={ui.categoryFilter.length > 0 || ui.tagFilter.length > 0 || ui.contentTypeFilter.length > 0}
-                        filterKey={`${ui.categoryFilter.join(',')}|${ui.tagFilter.join(',')}|${ui.contentTypeFilter.join(',')}`}
+                        isFilterMode={ui.categoryFilter.length > 0 || ui.tagFilter.length > 0 || ui.contentTypeFilter.length > 0 || ui.originFilter !== 'all'}
+                        filterKey={`${ui.categoryFilter.join(',')}|${ui.tagFilter.join(',')}|${ui.contentTypeFilter.join(',')}|${ui.originFilter}`}
                         onNavigateToEntry={ui.navigateToEntry}
                     />
                 )}
@@ -248,6 +254,8 @@ function MainView({
                 onTagFilterChange={ui.setTagFilter}
                 contentTypeFilter={ui.contentTypeFilter}
                 onContentTypeFilterChange={ui.setContentTypeFilter}
+                originFilter={ui.originFilter}
+                onOriginFilterChange={ui.setOriginFilter}
             />
 
             <ContextMenu

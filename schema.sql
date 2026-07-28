@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS notes (
   field_values TEXT,          -- JSON string
   linked_items TEXT,          -- JSON array of Note/Session IDs
   tags TEXT,                  -- JSON array string
+  origin TEXT CHECK(origin IS NULL OR origin = 'zaddy'),
   created_at INTEGER NOT NULL DEFAULT (unixepoch() * 1000),
   updated_at INTEGER NOT NULL DEFAULT (unixepoch() * 1000),
   revision INTEGER NOT NULL DEFAULT 0
@@ -32,6 +33,7 @@ CREATE TABLE IF NOT EXISTS sessions (
   linked_items TEXT,          -- JSON array of Note/Session IDs
   tags TEXT,
   end_tags TEXT,
+  origin TEXT CHECK(origin IS NULL OR origin = 'zaddy'),
   created_at INTEGER NOT NULL DEFAULT (unixepoch() * 1000),
   updated_at INTEGER NOT NULL DEFAULT (unixepoch() * 1000),
   revision INTEGER NOT NULL DEFAULT 0
@@ -42,6 +44,25 @@ CREATE INDEX IF NOT EXISTS idx_sessions_end_at ON sessions(end_at);
 CREATE INDEX IF NOT EXISTS idx_sessions_category ON sessions(category);
 CREATE INDEX IF NOT EXISTS idx_sessions_content_type ON sessions(content_type);
 CREATE INDEX IF NOT EXISTS idx_sessions_revision ON sessions(revision);
+
+-- Short-lived ambient-journaling state. Buffers are workflow records, not
+-- timeline entities; finalization materializes one canonical Note or Session.
+CREATE TABLE IF NOT EXISTS zaddy_topic_buffers (
+  id TEXT PRIMARY KEY,
+  content TEXT NOT NULL,
+  first_observed_at INTEGER NOT NULL,
+  last_observed_at INTEGER NOT NULL,
+  observation_count INTEGER NOT NULL DEFAULT 1,
+  category TEXT,
+  status TEXT NOT NULL DEFAULT 'open' CHECK(status IN ('open', 'closed')),
+  entity_type TEXT CHECK(entity_type IS NULL OR entity_type IN ('note', 'session')),
+  entity_id TEXT,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_zaddy_topic_buffers_open
+ON zaddy_topic_buffers(status, last_observed_at);
 
 -- Content types table
 CREATE TABLE IF NOT EXISTS content_types (
