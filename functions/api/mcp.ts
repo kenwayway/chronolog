@@ -143,8 +143,8 @@ const WRITE_TOOLS = [
         name: 'observe',
         description: [
             'Maintain zaddy-authored ambient-journal topic buffers from ordinary conversation.',
-            'Call only when the user reveals a sustained personally meaningful focus, frustration, decision, insight, or change.',
-            'Do not call for one-off informational questions, raw errors, assistant-only ideas, or trivial repetition.',
+            'Default to observing. Any topic that runs past a couple of exchanges deserves a buffer: building something, working a problem, weighing a decision, or arriving somewhere.',
+            'Skip only genuine one-off lookups. A long debugging or building session is real work and must be observed — do not dismiss it as assistant-only activity.',
             'Omit bufferId to start; reuse the returned buffer ID when the same underlying topic continues.',
             'Send the full current summary, not a delta. Backdate firstObservedAt when significance only becomes clear after several messages.',
             'Set finalize when the topic resolves or clearly shifts; stale buffers finalize automatically.',
@@ -156,7 +156,11 @@ const WRITE_TOOLS = [
                 content: {
                     type: 'string',
                     maxLength: 100000,
-                    description: 'Current concise zaddy observation, written as an outside perspective rather than in the user’s voice',
+                    description:
+                        'Current zaddy observation, written as an outside perspective rather than in the user’s voice. ' +
+                        'Keep it short: two or three sentences, about 100 CJK characters or 50 English words. ' +
+                        'Record only what they are doing, where they are stuck, and what they decided. ' +
+                        'Do not recount the process step by step and do not write it as narrative.',
                 },
                 observedAt: {
                     ...sharedWriteProperties.timestamp,
