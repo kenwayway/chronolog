@@ -68,15 +68,15 @@ function closeSession(session: Session, now: number, content = '', tags?: string
 }
 
 function handleLogIn(state: SessionState, payload: LogInPayload): SessionState {
-    const now = Date.now()
-    const session = createSession(payload, now)
+    const timestamp = payload.timestamp ?? Date.now()
+    const session = createSession(payload, timestamp)
     return {
         ...state,
         status: SESSION_STATUS.STREAMING,
         activeSessionId: session.id,
         sessions: [
             ...state.sessions.map(current =>
-                current.id === state.activeSessionId ? closeSession(current, now) : current
+                current.id === state.activeSessionId ? closeSession(current, timestamp) : current
             ),
             session,
         ],
@@ -111,14 +111,14 @@ function handleLogOff(state: SessionState, payload?: LogOffPayload): SessionStat
     }
 
     const { cleanContent, tags } = parseTags(payload?.content || 'Session ended')
-    const now = Date.now()
+    const timestamp = payload?.timestamp ?? Date.now()
     return {
         ...state,
         status: SESSION_STATUS.IDLE,
         activeSessionId: null,
         sessions: state.sessions.map(session =>
             session.id === state.activeSessionId
-                ? closeSession(session, now, cleanContent, tags)
+                ? closeSession(session, timestamp, cleanContent, tags)
                 : session
         ),
     }

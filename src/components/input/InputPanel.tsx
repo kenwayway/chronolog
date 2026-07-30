@@ -13,6 +13,7 @@ import { appendAttachmentLines, resolveCurrentLocation } from "@/utils/attachmen
 import type { TimelineItem, SessionStatus, CategoryId } from "@/types";
 
 interface NoteOptions {
+    timestamp?: number;
     contentType?: string;
     fieldValues?: Record<string, unknown>;
     category?: CategoryId;
@@ -24,7 +25,7 @@ interface InputPanelProps {
     onLogIn: (content: string, options?: NoteOptions) => void;
     onSwitch: (content: string, options?: NoteOptions) => void;
     onNote: (content: string, options?: NoteOptions) => void;
-    onLogOff: (content: string) => void;
+    onLogOff: (content: string, timestamp?: number) => void;
     followUpEntry: TimelineItem | null;
     onClearFollowUp?: () => void;
 }
@@ -43,13 +44,18 @@ export const InputPanel = forwardRef<InputPanelRef, InputPanelProps>(function In
     onClearFollowUp,
 }, ref) {
     const cloudSync = useCloudSyncContext();
-    const { state: { mediaItems }, actions: { addMediaItem: onAddMediaItem, updateMediaItem: onUpdateMediaItem } } = useSessionContext();
+    const {
+        state: { mediaItems, sessions, activeSessionId },
+        actions: { addMediaItem: onAddMediaItem, updateMediaItem: onUpdateMediaItem },
+    } = useSessionContext();
     const [input, setInput] = useState("");
     const [isFocused, setIsFocused] = useState(false);
     const [mobileExpanded, setMobileExpanded] = useState(false);
     const [showImageInput, setShowImageInput] = useState(false);
     const [imageUrl, setImageUrl] = useState("");
     const [showLocationInput, setShowLocationInput] = useState(false);
+    const [showTimeInput, setShowTimeInput] = useState(false);
+    const [customTime, setCustomTime] = useState("");
     const [location, setLocation] = useState("");
     const [isGettingLocation, setIsGettingLocation] = useState(false);
     const [focusMode, setFocusMode] = useState(false);
@@ -65,6 +71,23 @@ export const InputPanel = forwardRef<InputPanelRef, InputPanelProps>(function In
     const focusInputRef = useRef<HTMLTextAreaElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const isStreaming = status === SESSION_STATUS.STREAMING;
+    const activeSession = sessions.find(session => session.id === activeSessionId);
+
+    const toLocalDateTimeValue = (timestamp: number) => {
+        const date = new Date(timestamp);
+        const offset = date.getTimezoneOffset() * 60_000;
+        return new Date(timestamp - offset).toISOString().slice(0, 16);
+    };
+
+    const toggleTimeInput = () => {
+        if (showTimeInput) {
+            setShowTimeInput(false);
+            setCustomTime("");
+            return;
+        }
+        setCustomTime(toLocalDateTimeValue(Date.now()));
+        setShowTimeInput(true);
+    };
 
     // Expose focus method to parent
     useImperativeHandle(ref, () => ({
@@ -173,6 +196,25 @@ export const InputPanel = forwardRef<InputPanelRef, InputPanelProps>(function In
     const handleSubmit = (action: "note" | "logOff" | "switch" | "logIn") => {
         if (!input.trim() && action !== "logOff") return;
         const content = buildEntryContent();
+        const usesCustomTime = showTimeInput && (action === "logIn" || action === "logOff");
+        const customTimestamp = usesCustomTime ? new Date(customTime).getTime() : undefined;
+
+        if (
+            usesCustomTime
+            && (customTimestamp === undefined || !Number.isFinite(customTimestamp) || customTimestamp > Date.now())
+        ) {
+            alert("Choose a valid time that is not in the future.");
+            return;
+        }
+        if (
+            action === "logOff"
+            && customTimestamp !== undefined
+            && activeSession
+            && customTimestamp < activeSession.startAt
+        ) {
+            alert("Log off time cannot be earlier than the session start.");
+            return;
+        }
 
         let normalizedFieldValues = fieldValues
         if (contentType && action !== 'logOff') {
@@ -195,13 +237,14 @@ export const InputPanel = forwardRef<InputPanelRef, InputPanelProps>(function In
         }
         if (category) options.category = category;
         if (tags.length > 0) options.tags = tags;
+        if (action === "logIn" && customTimestamp !== undefined) options.timestamp = customTimestamp;
         const hasOptions = Object.keys(options).length > 0;
 
         switch (action) {
             case "logIn": onLogIn(content, hasOptions ? options : undefined); break;
             case "switch": onSwitch(content, hasOptions ? options : undefined); break;
             case "note": onNote(content, hasOptions ? options : undefined); break;
-            case "logOff": onLogOff(content); break;
+            case "logOff": onLogOff(content, customTimestamp); break;
         }
 
         setInput("");
@@ -209,6 +252,8 @@ export const InputPanel = forwardRef<InputPanelRef, InputPanelProps>(function In
         setLocation("");
         setShowImageInput(false);
         setShowLocationInput(false);
+        setShowTimeInput(false);
+        setCustomTime("");
         setIsFocused(false);
         setMobileExpanded(false);
         setFocusMode(false);
@@ -379,6 +424,39 @@ export const InputPanel = forwardRef<InputPanelRef, InputPanelProps>(function In
                 onGetLocation={getCurrentLocation}
             />
 
+            {showTimeInput && (
+                <div className={styles.timeInputRow}>
+                    <label className={styles.timeInputLabel} htmlFor={inFocusMode ? "focus-boundary-time" : "boundary-time"}>
+                        {isStreaming ? "LOG OFF AT" : "LOG IN AT"}
+                    </label>
+                    <input
+                        id={inFocusMode ? "focus-boundary-time" : "boundary-time"}
+                        className={styles.timeInput}
+                        type="datetime-local"
+                        value={customTime}
+                        min={isStreaming && activeSession ? toLocalDateTimeValue(activeSession.startAt) : undefined}
+                        max={toLocalDateTimeValue(Date.now())}
+                        onChange={(event) => setCustomTime(event.target.value)}
+                    />
+                    <button
+                        type="button"
+                        className={styles.timeNowButton}
+                        onClick={() => setCustomTime(toLocalDateTimeValue(Date.now()))}
+                    >
+                        NOW
+                    </button>
+                    <button
+                        type="button"
+                        className="input-panel-close-btn"
+                        onClick={toggleTimeInput}
+                        aria-label="Use current time"
+                        title="Use current time"
+                    >
+                        ×
+                    </button>
+                </div>
+            )}
+
             {/* Metadata input (category, type, tags) */}
             {(inFocusMode || (mobileExpanded && isFocused)) && (
                 <EntryMetadataInput
@@ -405,11 +483,13 @@ export const InputPanel = forwardRef<InputPanelRef, InputPanelProps>(function In
                 showImageInput={showImageInput}
                 showLocationInput={showLocationInput}
                 showMetadata={showMetadata}
+                showTimeInput={showTimeInput}
                 inFocusMode={inFocusMode}
                 onSubmit={handleSubmit}
                 onToggleImage={() => setShowImageInput(!showImageInput)}
                 onToggleLocation={() => setShowLocationInput(!showLocationInput)}
                 onToggleMetadata={() => setShowMetadata(!showMetadata)}
+                onToggleTime={toggleTimeInput}
                 onOpenFocusMode={() => setFocusMode(true)}
             />
 

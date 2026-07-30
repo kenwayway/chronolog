@@ -217,6 +217,7 @@ export interface SessionState {
 /** Action payloads */
 export interface LogInPayload {
   content: string
+  timestamp?: number
   contentType?: string
   fieldValues?: Record<string, unknown>
   category?: CategoryId
@@ -241,6 +242,7 @@ export interface NotePayload {
 
 export interface LogOffPayload {
   content?: string
+  timestamp?: number
 }
 
 export interface DeleteNotePayload {
@@ -320,10 +322,10 @@ export type SessionAction =
 
 /** Actions returned by useSession */
 export interface SessionActions {
-  logIn: (content: string, options?: { contentType?: string; fieldValues?: Record<string, unknown>; category?: CategoryId; tags?: string[] }) => void
+  logIn: (content: string, options?: { timestamp?: number; contentType?: string; fieldValues?: Record<string, unknown>; category?: CategoryId; tags?: string[] }) => void
   switchSession: (content: string, options?: { contentType?: string; fieldValues?: Record<string, unknown>; category?: CategoryId; tags?: string[] }) => void
   addNote: (content: string, options?: { contentType?: string; fieldValues?: Record<string, unknown>; category?: CategoryId; tags?: string[] }) => void
-  logOff: (content?: string) => void
+  logOff: (content?: string, timestamp?: number) => void
   deleteNote: (noteId: string) => void
   deleteSession: (sessionId: string) => void
   updateNote: (noteId: string, updates: Omit<UpdateNotePayload, 'noteId'>) => void

@@ -7,6 +7,7 @@ import {
     MapPin,
     Maximize2,
     Plus,
+    Clock3,
 } from "lucide-react";
 
 interface InputActionsProps {
@@ -17,11 +18,13 @@ interface InputActionsProps {
     showImageInput: boolean;
     showLocationInput: boolean;
     showMetadata: boolean;
+    showTimeInput: boolean;
     inFocusMode: boolean;
     onSubmit: (action: "note" | "logOff" | "switch" | "logIn") => void;
     onToggleImage: () => void;
     onToggleLocation: () => void;
     onToggleMetadata: () => void;
+    onToggleTime: () => void;
     onOpenFocusMode: () => void;
 }
 
@@ -33,11 +36,13 @@ export function InputActions({
     showImageInput,
     showLocationInput,
     showMetadata,
+    showTimeInput,
     inFocusMode,
     onSubmit,
     onToggleImage,
     onToggleLocation,
     onToggleMetadata,
+    onToggleTime,
     onOpenFocusMode,
 }: InputActionsProps) {
     return (
@@ -65,6 +70,15 @@ export function InputActions({
                     className={`icon-btn ${showLocationInput || location ? "active" : ""}`}
                 >
                     <MapPin size={14} />
+                </button>
+                <button
+                    onClick={onToggleTime}
+                    title={isStreaming ? "Set log off time" : "Set log in time"}
+                    aria-label={isStreaming ? "Set log off time" : "Set log in time"}
+                    aria-expanded={showTimeInput}
+                    className={`icon-btn ${showTimeInput ? "active" : ""}`}
+                >
+                    <Clock3 size={14} />
                 </button>
                 {/* Metadata button (only in focus mode) */}
                 {inFocusMode && (

@@ -48,6 +48,21 @@ describe('sessionReducer domain model', () => {
         })
     })
 
+    it('uses custom timestamps for log in and log off', () => {
+        vi.spyOn(Date, 'now').mockReturnValue(1_000)
+        const started = sessionReducer(initialState, {
+            type: ACTIONS.LOG_IN,
+            payload: { content: 'backfilled work', timestamp: 400 },
+        })
+        expect(started.sessions[0].startAt).toBe(400)
+
+        const closed = sessionReducer(started, {
+            type: ACTIONS.LOG_OFF,
+            payload: { content: 'done', timestamp: 900 },
+        })
+        expect(closed.sessions[0].endAt).toBe(900)
+    })
+
     it('switches by closing the current session and opening another atomically', () => {
         vi.spyOn(Date, 'now').mockReturnValue(300)
         const current = session({ id: 'old', startAt: 100 })

@@ -49,11 +49,12 @@ export function useSession(): UseSessionReturn {
 
   // --- Actions ---
 
-  const logIn = useCallback((content: string, options?: { contentType?: string; fieldValues?: Record<string, unknown>; category?: CategoryId; tags?: string[] }) => {
+  const logIn = useCallback((content: string, options?: { timestamp?: number; contentType?: string; fieldValues?: Record<string, unknown>; category?: CategoryId; tags?: string[] }) => {
     dispatch({
       type: ACTIONS.LOG_IN,
       payload: {
         content,
+        timestamp: options?.timestamp,
         contentType: options?.contentType,
         fieldValues: options?.fieldValues,
         category: options?.category,
@@ -75,8 +76,8 @@ export function useSession(): UseSessionReturn {
     })
   }, [])
 
-  const logOff = useCallback((content: string = '') => {
-    dispatch({ type: ACTIONS.LOG_OFF, payload: { content } })
+  const logOff = useCallback((content: string = '', timestamp?: number) => {
+    dispatch({ type: ACTIONS.LOG_OFF, payload: { content, timestamp } })
   }, [])
 
   const deleteNote = useCallback((noteId: string) => {

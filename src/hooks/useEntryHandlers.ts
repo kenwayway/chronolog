@@ -8,10 +8,10 @@ interface UseEntryHandlersProps {
 
 interface EntryHandlers {
     requireLogin: () => boolean
-    handleLogIn: (content: string, options?: { contentType?: string; fieldValues?: Record<string, unknown>; category?: CategoryId; tags?: string[] }) => void
+    handleLogIn: (content: string, options?: { timestamp?: number; contentType?: string; fieldValues?: Record<string, unknown>; category?: CategoryId; tags?: string[] }) => void
     handleSwitch: (content: string, options?: { contentType?: string; fieldValues?: Record<string, unknown>; category?: CategoryId; tags?: string[] }) => void
     handleNote: (content: string, options?: { contentType?: string; fieldValues?: Record<string, unknown>; category?: CategoryId; tags?: string[] }) => void
-    handleLogOff: (content: string) => void
+    handleLogOff: (content: string, timestamp?: number) => void
     handleEditEntry: (item: TimelineItem, openModal: (item: TimelineItem) => void) => void
     handleSaveEdit: (item: TimelineItem, updates: TimelineItemUpdate) => void
     handleDeleteEntry: (item: TimelineItem) => void
@@ -36,7 +36,7 @@ export function useEntryHandlers({
         return true
     }, [isLoggedIn])
 
-    const handleLogIn = useCallback((content: string, options?: { contentType?: string; fieldValues?: Record<string, unknown>; category?: CategoryId; tags?: string[] }) => {
+    const handleLogIn = useCallback((content: string, options?: { timestamp?: number; contentType?: string; fieldValues?: Record<string, unknown>; category?: CategoryId; tags?: string[] }) => {
         actions.logIn(content, options)
     }, [actions])
 
@@ -48,8 +48,8 @@ export function useEntryHandlers({
         actions.addNote(content, options)
     }, [actions])
 
-    const handleLogOff = useCallback((content: string) => {
-        actions.logOff(content)
+    const handleLogOff = useCallback((content: string, timestamp?: number) => {
+        actions.logOff(content, timestamp)
     }, [actions])
 
     const handleEditEntry = useCallback((item: TimelineItem, openModal: (item: TimelineItem) => void) => {
