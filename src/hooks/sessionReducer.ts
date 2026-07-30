@@ -1,6 +1,7 @@
 import { ACTIONS, BUILTIN_CONTENT_TYPES, SESSION_STATUS } from '@/utils/constants'
 import { generateId } from '@/utils/formatters'
 import { parseTags } from '@/utils/tagParser'
+import { sanitizeContentTypeFieldValues, sanitizeContentTypedEntity } from '@/features/contentTypes/sanitize'
 import type {
     AddMediaItemPayload,
     ContentType,
@@ -52,7 +53,7 @@ function createSession(payload: LogInPayload | SwitchPayload, now: number): Sess
         startAt: now,
         endAt: null,
         contentType: payload.contentType,
-        fieldValues: payload.fieldValues,
+        fieldValues: sanitizeContentTypeFieldValues(payload.contentType, payload.fieldValues),
         category: payload.category,
         tags,
     }
@@ -95,7 +96,7 @@ function handleNote(state: SessionState, payload: NotePayload): SessionState {
         timestamp: Date.now(),
         sessionId: state.activeSessionId || undefined,
         contentType: payload.contentType,
-        fieldValues: payload.fieldValues,
+        fieldValues: sanitizeContentTypeFieldValues(payload.contentType, payload.fieldValues),
         category: payload.category,
         tags: payload.tags?.length
             ? payload.tags
@@ -182,7 +183,7 @@ function updateCommonFields<T extends Note | Session>(
     }
     if (payload.linkedItems !== undefined) updated.linkedItems = payload.linkedItems
     if (payload.tags !== undefined) updated.tags = payload.tags.length ? payload.tags : undefined
-    return updated
+    return sanitizeContentTypedEntity(updated)
 }
 
 function handleUpdateNote(state: SessionState, payload: UpdateNotePayload): SessionState {
@@ -221,12 +222,12 @@ function loadedActiveSession(sessions: Session[]): string | null {
 }
 
 function handleLoadState(state: SessionState, payload: Partial<SessionState>): SessionState {
-    const sessions = payload.sessions ?? []
+    const sessions = (payload.sessions ?? []).map(sanitizeContentTypedEntity)
     const activeSessionId = loadedActiveSession(sessions)
     return {
         ...initialState,
         ...payload,
-        notes: payload.notes ?? [],
+        notes: (payload.notes ?? []).map(sanitizeContentTypedEntity),
         sessions,
         activeSessionId,
         contentTypes: mergeContentTypes(payload.contentTypes ?? []),
@@ -236,11 +237,11 @@ function handleLoadState(state: SessionState, payload: Partial<SessionState>): S
 }
 
 function handleImportData(state: SessionState, payload: ImportDataPayload): SessionState {
-    const sessions = payload.sessions ?? state.sessions
+    const sessions = (payload.sessions ?? state.sessions).map(sanitizeContentTypedEntity)
     const activeSessionId = loadedActiveSession(sessions)
     return {
         ...state,
-        notes: payload.notes ?? state.notes,
+        notes: (payload.notes ?? state.notes).map(sanitizeContentTypedEntity),
         sessions,
         activeSessionId,
         contentTypes: payload.contentTypes

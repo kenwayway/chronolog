@@ -9,6 +9,7 @@ import type {
     SessionRow,
 } from './types.ts';
 import { CATEGORY_IDS } from '../../src/utils/categories.ts';
+import { sanitizeContentTypeFieldValues } from '../../src/features/contentTypes/sanitize.ts';
 
 function parseObject(value: string | null): Record<string, unknown> | undefined {
     if (!value) return undefined;
@@ -37,6 +38,7 @@ function validCategory(category?: string): string | null {
 }
 
 export function noteRowToObject(row: NoteRow): Note {
+    const fieldValues = sanitizeContentTypeFieldValues(row.content_type, parseObject(row.field_values));
     return {
         id: row.id,
         content: row.content,
@@ -44,7 +46,7 @@ export function noteRowToObject(row: NoteRow): Note {
         ...(row.session_id ? { sessionId: row.session_id } : {}),
         ...(row.category ? { category: row.category } : {}),
         ...(row.content_type && row.content_type !== 'note' ? { contentType: row.content_type } : {}),
-        ...(parseObject(row.field_values) ? { fieldValues: parseObject(row.field_values) } : {}),
+        ...(fieldValues ? { fieldValues } : {}),
         ...(parseArray(row.linked_items) ? { linkedItems: parseArray(row.linked_items) } : {}),
         ...(parseArray(row.tags) ? { tags: parseArray(row.tags) } : {}),
         ...(row.origin === 'zaddy' ? { origin: 'zaddy' as const } : {}),
@@ -52,6 +54,7 @@ export function noteRowToObject(row: NoteRow): Note {
 }
 
 export function sessionRowToObject(row: SessionRow): Session {
+    const fieldValues = sanitizeContentTypeFieldValues(row.content_type, parseObject(row.field_values));
     return {
         id: row.id,
         content: row.content,
@@ -60,7 +63,7 @@ export function sessionRowToObject(row: SessionRow): Session {
         ...(row.end_content ? { endContent: row.end_content } : {}),
         ...(row.category ? { category: row.category } : {}),
         ...(row.content_type && row.content_type !== 'note' ? { contentType: row.content_type } : {}),
-        ...(parseObject(row.field_values) ? { fieldValues: parseObject(row.field_values) } : {}),
+        ...(fieldValues ? { fieldValues } : {}),
         ...(parseArray(row.linked_items) ? { linkedItems: parseArray(row.linked_items) } : {}),
         ...(parseArray(row.tags) ? { tags: parseArray(row.tags) } : {}),
         ...(parseArray(row.end_tags) ? { endTags: parseArray(row.end_tags) } : {}),
@@ -69,6 +72,7 @@ export function sessionRowToObject(row: SessionRow): Session {
 }
 
 export function noteObjectToRow(note: Note, now = Date.now()) {
+    const fieldValues = sanitizeContentTypeFieldValues(note.contentType, note.fieldValues);
     return {
         id: note.id,
         content: note.content || '',
@@ -76,7 +80,7 @@ export function noteObjectToRow(note: Note, now = Date.now()) {
         session_id: note.sessionId || null,
         category: validCategory(note.category),
         content_type: note.contentType || 'note',
-        field_values: note.fieldValues ? JSON.stringify(note.fieldValues) : null,
+        field_values: fieldValues ? JSON.stringify(fieldValues) : null,
         linked_items: note.linkedItems ? JSON.stringify(note.linkedItems) : null,
         tags: note.tags ? JSON.stringify(note.tags) : null,
         origin: note.origin === 'zaddy' ? 'zaddy' : null,
@@ -86,6 +90,7 @@ export function noteObjectToRow(note: Note, now = Date.now()) {
 }
 
 export function sessionObjectToRow(session: Session, now = Date.now()) {
+    const fieldValues = sanitizeContentTypeFieldValues(session.contentType, session.fieldValues);
     return {
         id: session.id,
         content: session.content || '',
@@ -94,7 +99,7 @@ export function sessionObjectToRow(session: Session, now = Date.now()) {
         end_content: session.endContent || null,
         category: validCategory(session.category),
         content_type: session.contentType || 'note',
-        field_values: session.fieldValues ? JSON.stringify(session.fieldValues) : null,
+        field_values: fieldValues ? JSON.stringify(fieldValues) : null,
         linked_items: session.linkedItems ? JSON.stringify(session.linkedItems) : null,
         tags: session.tags ? JSON.stringify(session.tags) : null,
         end_tags: session.endTags ? JSON.stringify(session.endTags) : null,

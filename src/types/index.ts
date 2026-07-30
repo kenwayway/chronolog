@@ -110,7 +110,6 @@ export interface MoodFields {
 export interface WorkoutFields {
   workoutType?: 'Strength' | 'Cardio' | 'Flexibility' | 'Mixed'
   place?: 'Home' | 'In Building Gym' | 'Outside Gym'
-  exercises?: string  // Comma-separated exercise names
 }
 
 /** Vault field values (Obsidian note links) */

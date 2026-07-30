@@ -356,29 +356,12 @@ interface WorkoutDisplayProps {
 }
 
 /**
- * Display component for workout entries - full width card with exercises
+ * Display component for workout entries.
  */
 export const WorkoutDisplay = memo(function WorkoutDisplay({ fieldValues }: WorkoutDisplayProps) {
   if (!fieldValues) return null;
 
-  const { workoutType, place, exercises } = fieldValues;
-
-  // Parse exercises: comma-separated names, or legacy JSON array
-  let exerciseNames: string[] = [];
-  if (exercises) {
-    if (exercises.startsWith('[')) {
-      try {
-        const parsed = JSON.parse(exercises);
-        exerciseNames = parsed.map((ex: { name?: string } | string) =>
-          typeof ex === 'string' ? ex : ex.name || ''
-        ).filter(Boolean);
-      } catch {
-        exerciseNames = exercises.split(/[,，]/).map(s => s.trim()).filter(Boolean);
-      }
-    } else {
-      exerciseNames = exercises.split(/[,，]/).map(s => s.trim()).filter(Boolean);
-    }
-  }
+  const { workoutType, place } = fieldValues;
 
   const iconSize = 13;
 
@@ -418,7 +401,6 @@ export const WorkoutDisplay = memo(function WorkoutDisplay({ fieldValues }: Work
         display: 'flex',
         alignItems: 'center',
         gap: 8,
-        marginBottom: exerciseNames.length > 0 ? 8 : 0,
       }}>
         <span style={{
           color: 'var(--accent)',
@@ -442,23 +424,6 @@ export const WorkoutDisplay = memo(function WorkoutDisplay({ fieldValues }: Work
         )}
       </div>
 
-      {/* Exercises - simple name list */}
-      {exerciseNames.length > 0 && (
-        <div style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: '4px 8px',
-          color: 'var(--text-secondary)',
-          fontSize: 11,
-        }}>
-          {exerciseNames.map((name, i) => (
-            <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <span style={{ color: 'var(--text-dim)' }}>•</span>
-              {name}
-            </span>
-          ))}
-        </div>
-      )}
     </div>
   );
 });

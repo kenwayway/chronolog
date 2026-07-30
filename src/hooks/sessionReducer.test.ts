@@ -162,4 +162,23 @@ describe('sessionReducer domain model', () => {
         expect(result.activeSessionId).toBe('newer')
         expect(result.status).toBe('STREAMING')
     })
+
+    it('removes retired workout exercises from loaded notes and sessions', () => {
+        const result = sessionReducer(initialState, {
+            type: ACTIONS.LOAD_STATE,
+            payload: {
+                notes: [note({
+                    contentType: 'workout',
+                    fieldValues: { workoutType: 'Strength', exercises: 'squats' },
+                })],
+                sessions: [session({
+                    contentType: 'workout',
+                    fieldValues: { place: 'Home', exercises: 'push-ups' },
+                })],
+            },
+        })
+
+        expect(result.notes[0].fieldValues).toEqual({ workoutType: 'Strength' })
+        expect(result.sessions[0].fieldValues).toEqual({ place: 'Home' })
+    })
 })

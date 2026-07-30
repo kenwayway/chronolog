@@ -34,4 +34,21 @@ describe('noteObjectToRow', () => {
             origin: 'zaddy',
         }).origin).toBe('zaddy');
     });
+
+    it('does not persist retired workout exercises from old clients', () => {
+        expect(noteObjectToRow({
+            ...base,
+            contentType: 'workout',
+            fieldValues: { workoutType: 'Strength', exercises: 'squats' },
+        }).field_values).toBe('{"workoutType":"Strength"}');
+
+        expect(sessionObjectToRow({
+            id: 's1',
+            content: 'training',
+            startAt: 1,
+            endAt: 2,
+            contentType: 'workout',
+            fieldValues: { exercises: 'squats' },
+        }).field_values).toBeNull();
+    });
 });

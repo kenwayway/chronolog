@@ -69,7 +69,7 @@ Content type detection rules:
 FieldValues by content type:
 - bookmark: {url: "extracted URL", title: "title from content", type: "Article"|"Video"|"Tool"|"Paper", status: "Inbox"}
 - mood: {feeling: "Happy"|"Calm"|"Tired"|"Anxious"|"Sad"|"Angry", energy: 1-5, trigger: "Work"|"Health"|"Social"|"Money"|"Family"|"Sleep"|"Weather"|"Other"}
-- workout: {workoutType: "Strength"|"Cardio"|"Flexibility"|"Mixed", place: "Home"|"In Building Gym"|"Outside Gym", exercises: "comma-separated exercise names"}
+- workout: {workoutType: "Strength"|"Cardio"|"Flexibility"|"Mixed", place: "Home"|"In Building Gym"|"Outside Gym"}
 - vault: {title: "note title", obsidianUrl: "obsidian://open?vault=VaultName&file=NotePath"}
 - note: null
 
@@ -82,7 +82,7 @@ Example responses:
 {"category":"hustle","contentType":"note","fieldValues":null}
 {"category":"sparks","contentType":"bookmark","fieldValues":{"url":"https://example.com/article","title":"Great Article","type":"Article","status":"Inbox"}}
 {"category":"hardware","contentType":"mood","fieldValues":{"feeling":"Tired","energy":2,"trigger":"Work"}}
-{"category":"hardware","contentType":"workout","fieldValues":{"workoutType":"Strength","place":"Outside Gym","exercises":"bench press, squat, deadlift"}}
+{"category":"hardware","contentType":"workout","fieldValues":{"workoutType":"Strength","place":"Outside Gym"}}
 {"category":"craft","contentType":"vault","fieldValues":{"title":"React Fiber Architecture","obsidianUrl":"obsidian://open?vault=Notes&file=React/Fiber"}}`;
 }
 

@@ -41,6 +41,17 @@ describe('content type registry', () => {
     expect(getContentTypeTimelineSymbol('bookmark')).toBeUndefined()
   })
 
+  it('drops the retired workout exercises field during submission', () => {
+    expect(prepareContentTypeSubmission(
+      'workout',
+      { workoutType: 'Strength', place: 'Home', exercises: 'squats' },
+      'note',
+    )).toEqual({
+      ok: true,
+      fieldValues: { workoutType: 'Strength', place: 'Home' },
+    })
+  })
+
   it('normalizes a valid Notion task and limits it to session starts', () => {
     expect(prepareContentTypeSubmission(
       'notion-task',

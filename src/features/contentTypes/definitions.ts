@@ -46,11 +46,10 @@ export const BUILTIN_CONTENT_TYPE_DEFINITIONS = {
     fields: [
       { id: 'workoutType', name: 'Type', type: 'dropdown', options: ['Strength', 'Cardio', 'Flexibility', 'Mixed'], default: 'Strength' },
       { id: 'place', name: 'Place', type: 'dropdown', options: ['Home', 'In Building Gym', 'Outside Gym'] },
-      { id: 'exercises', name: 'Exercises', type: 'text' },
     ],
     builtIn: true,
     order: 4,
-    version: 3,
+    version: 4,
   },
   vault: {
     id: 'vault',

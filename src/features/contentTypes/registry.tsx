@@ -12,6 +12,7 @@ import type {
 } from '@/types'
 import type { ThemeConfig } from '@/themes'
 import { normalizeNotionPageId } from '@/utils/notionPageId'
+import { sanitizeContentTypeFieldValues } from './sanitize'
 import {
   BookmarkDisplay,
   MediaDisplay,
@@ -73,6 +74,10 @@ const contentTypePlugins = [
   },
   {
     definition: BUILTIN_CONTENT_TYPE_DEFINITIONS.workout,
+    normalize: (fieldValues: FieldValues): NormalizationResult => ({
+      ok: true,
+      fieldValues: sanitizeContentTypeFieldValues('workout', fieldValues) ?? {},
+    }),
     render: ({ item }: DisplayContext) => (
       <WorkoutDisplay fieldValues={item.fieldValues as WorkoutFields | undefined} />
     ),
