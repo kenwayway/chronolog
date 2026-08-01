@@ -12,6 +12,7 @@ A local-first personal timeline, session tracker, journal, and media log. Chrono
 - **Tags** — Add #hashtags for easy filtering
 - **Calendar & Filters** — Browse notes and sessions by date, category, tag, and content type
 - **Linked Items** — Create bidirectional connections between notes and sessions
+- **Retrospective** — Resurface a random past entry, weighted toward older, richer, and anniversary entries
 
 ### Content Types
 - **Note** — Default text record
@@ -36,7 +37,8 @@ A local-first personal timeline, session tracker, journal, and media log. Chrono
 - **Content Type Detection** — Automatically identifies bookmarks, moods, workouts, etc.
 
 ### User Experience
-- **Dark/Light Mode** — Persistent manual toggle with selectable accent colors
+- **Dark/Light Mode** — Persistent manual toggle in Settings → Appearance, with selectable accent colors
+- **Destination Panel** — One "Go to" drawer for every page, so the header stays fixed as features are added
 - **PWA Support** — Install as an app on mobile devices
 - **Responsive Design** — Optimized for desktop and mobile
 - **Multiple Themes** — Including a WW2 spy "Operation" theme

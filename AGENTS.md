@@ -74,6 +74,13 @@ into timeline items. Synthetic session marker IDs are:
 Never persist or synchronize `TimelineItem`. Never recreate a boundary-record
 wire format.
 
+`src/domain/retrospective.ts` selects past entries to resurface on `/retro`.
+It is pure and reads the in-memory timeline only — never the network, D1, or
+the sync protocol. An entry joins the pool once it is at least 30 days old and
+carries prose beyond its attachment lines; `origin: 'zaddy'` entries never
+qualify. Draw weight is age (log scale) × content richness × anniversary
+bonus, and recent draws are held out through a localStorage ring.
+
 Zaddy ambient observations use short-lived `zaddy_topic_buffers` workflow
 rows. A buffer is not a timeline entity and never enters React or revision
 sync. Finalization materializes exactly one historical Note or Session with
@@ -247,6 +254,8 @@ LIKE scan. Tag filters are exact matches (SQL LIKE is only a prefilter).
 src/
   App.tsx
   domain/timeline.ts
+  domain/retrospective.ts
+  pages/
   features/contentTypes/
   features/sync/
   hooks/
@@ -267,6 +276,16 @@ mcp-worker/
 migrations/
 schema.sql
 ```
+
+## Navigation
+
+The header carries only **actions** on the current view — search, activity,
+settings — and does not grow. **Destinations** live in `NavPanel`
+(`src/components/panels/NavPanel.tsx`), whose `DESTINATIONS` array is the one
+place a new route is registered for users. Add a page there rather than adding
+another header icon.
+
+Routes are hash-based (`HashRouter`), so links resolve as `#/retro`.
 
 ## Styling
 

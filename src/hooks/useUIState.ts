@@ -21,6 +21,8 @@ export interface UIState {
     // Sidebars & modals
     leftSidebarOpen: boolean
     setLeftSidebarOpen: (open: boolean) => void
+    navOpen: boolean
+    setNavOpen: (open: boolean) => void
     settingsOpen: boolean
     setSettingsOpen: (open: boolean) => void
     searchOpen: boolean
@@ -53,6 +55,7 @@ export interface UIState {
 export function useUIState(): UIState {
     // Panel states
     const [leftSidebarOpen, setLeftSidebarOpen] = useState(false)
+    const [navOpen, setNavOpen] = useState(false)
     const [settingsOpen, setSettingsOpen] = useState(false)
     const [searchOpen, setSearchOpen] = useState(false)
     const [showLanding, setShowLanding] = useState(true)
@@ -128,6 +131,7 @@ export function useUIState(): UIState {
     // state actually changes, not on every provider render.
     return useMemo(() => ({
         leftSidebarOpen, setLeftSidebarOpen,
+        navOpen, setNavOpen,
         settingsOpen, setSettingsOpen,
         searchOpen, setSearchOpen,
         showLanding, setShowLanding,
@@ -139,7 +143,7 @@ export function useUIState(): UIState {
         contentTypeFilter, setContentTypeFilter,
         navigateToEntry,
     }), [
-        leftSidebarOpen, settingsOpen, searchOpen, showLanding,
+        leftSidebarOpen, navOpen, settingsOpen, searchOpen, showLanding,
         contextMenu, handleContextMenu, closeContextMenu,
         editModal, openEditModal, closeEditModal,
         selectedDate, categoryFilter, tagFilter, contentTypeFilter,

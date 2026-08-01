@@ -21,6 +21,7 @@ import {
     ContextMenu,
     EditModal,
     ActivityPanel,
+    NavPanel,
     SearchPanel,
 } from "./components";
 import type { CategoryId, UseSessionReturn } from "./types";
@@ -31,6 +32,7 @@ import styles from "./App.module.css";
 // small; these chunks load on navigation or when settings first opens.
 const LibraryPage = lazy(() => import("./pages/LibraryPage").then(m => ({ default: m.LibraryPage })));
 const GalleryPage = lazy(() => import("./pages/GalleryPage").then(m => ({ default: m.GalleryPage })));
+const RetroPage = lazy(() => import("./pages/RetroPage").then(m => ({ default: m.RetroPage })));
 const SettingsModal = lazy(() => import("./components/modals/SettingsModal").then(m => ({ default: m.SettingsModal })));
 
 function App() {
@@ -133,6 +135,7 @@ function HydratedApp({ session }: { session: UseSessionReturn }) {
                         <Routes>
                             <Route path="/library" element={<LibraryPage />} />
                             <Route path="/gallery" element={<GalleryPage />} />
+                            <Route path="/retro" element={<RetroPage />} />
                             <Route path="/" element={
                                 <MainView
                                     isStreaming={isStreaming}
@@ -252,6 +255,11 @@ function MainView({
                 onTagFilterChange={ui.setTagFilter}
                 contentTypeFilter={ui.contentTypeFilter}
                 onContentTypeFilterChange={ui.setContentTypeFilter}
+            />
+
+            <NavPanel
+                isOpen={ui.navOpen}
+                onClose={() => ui.setNavOpen(false)}
             />
 
             <ContextMenu

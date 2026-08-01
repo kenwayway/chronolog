@@ -13,6 +13,9 @@ export const STORAGE_KEYS = {
 
     // UI preferences
     THEME: 'chronolog_theme',
+
+    // Recently resurfaced retrospective entries, newest first
+    RETRO_HISTORY: 'chronolog_retro_history',
 } as const
 
 export type StorageKey = typeof STORAGE_KEYS[keyof typeof STORAGE_KEYS]

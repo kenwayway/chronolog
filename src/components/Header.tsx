@@ -3,15 +3,13 @@ import {
     Settings,
     ChevronLeft,
     ChevronRight,
-    Moon,
-    Sun,
     Activity,
+    Compass,
     Menu,
     X,
     Cloud,
     Search,
 } from "lucide-react";
-import { useTheme } from "@/hooks/useTheme";
 import { formatDate } from "@/utils/formatters";
 import { Calendar } from "./common/Calendar";
 import styles from "./Header.module.css";
@@ -30,9 +28,9 @@ export function Header({
     onDateChange,
 }: HeaderProps) {
     const cloudSync = useCloudSyncContext();
-    const { isDark, toggleTheme: onToggleTheme, canToggleMode } = useTheme();
     const ui = useUIStateContext();
     const onOpenLeftSidebar = () => ui.setLeftSidebarOpen(true);
+    const onOpenNav = () => ui.setNavOpen(true);
     const onOpenSettings = () => ui.setSettingsOpen(true);
     const onOpenSearch = () => ui.setSearchOpen(true);
     const [showCalendar, setShowCalendar] = useState(false);
@@ -197,22 +195,11 @@ export function Header({
 
                 <button
                     className="btn btn-ghost rounded-lg"
-                    style={{
-                        width: 36,
-                        height: 36,
-                        padding: 0,
-                        opacity: canToggleMode ? 1 : 0.3,
-                        cursor: canToggleMode ? 'pointer' : 'not-allowed',
-                    }}
-                    onClick={canToggleMode ? onToggleTheme : undefined}
-                    disabled={!canToggleMode}
-                    title={canToggleMode ? (isDark ? "Light mode" : "Dark mode") : "Theme locked to light mode"}
+                    style={{ width: 36, height: 36, padding: 0 }}
+                    onClick={onOpenNav}
+                    title="Go to…"
                 >
-                    {isDark ? (
-                        <Sun size={20} strokeWidth={1.5} />
-                    ) : (
-                        <Moon size={20} strokeWidth={1.5} />
-                    )}
+                    <Compass size={20} strokeWidth={1.5} />
                 </button>
 
                 <button
@@ -257,11 +244,10 @@ export function Header({
                         </button>
                         <button
                             className={styles.mobileMenuItem}
-                            onClick={() => { if (canToggleMode) { onToggleTheme(); setMobileMenuOpen(false); } }}
-                            style={{ opacity: canToggleMode ? 1 : 0.4 }}
+                            onClick={() => { onOpenNav(); setMobileMenuOpen(false); }}
                         >
-                            {isDark ? <Sun size={18} /> : <Moon size={18} />}
-                            <span>{isDark ? "Light mode" : "Dark mode"}</span>
+                            <Compass size={18} />
+                            <span>Go to…</span>
                         </button>
                         <button
                             className={styles.mobileMenuItem}

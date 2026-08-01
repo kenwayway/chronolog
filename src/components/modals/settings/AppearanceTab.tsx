@@ -10,10 +10,40 @@ interface AppearanceTabProps {
  * Appearance settings tab - theme style, accent color, and categories display
  */
 export function AppearanceTab({ categories }: AppearanceTabProps) {
-    const { theme, setAccent, setStyle, availableStyles } = useTheme();
+    const { theme, setAccent, setStyle, setMode, availableStyles, canToggleMode } = useTheme();
 
     return (
         <div className="space-y-5">
+            {/* Light / Dark mode. Lives here rather than in the header so the
+                header only carries actions that act on the current view. */}
+            <div>
+                <div className="settings-section-label">MODE</div>
+                <div className="flex flex-wrap gap-2">
+                    {(['dark', 'light'] as const).map((mode) => {
+                        const isActive = theme.mode === mode;
+                        const isDisabled = !canToggleMode && !isActive;
+                        return (
+                            <button
+                                key={mode}
+                                onClick={() => setMode(mode)}
+                                disabled={isDisabled}
+                                title={canToggleMode ? undefined : 'This theme is light mode only'}
+                                className="settings-theme-btn"
+                                style={{
+                                    backgroundColor: isActive ? "var(--accent)" : "var(--bg-secondary)",
+                                    color: isActive ? "white" : "var(--text-secondary)",
+                                    border: isActive ? "1px solid var(--accent)" : "1px solid var(--border-light)",
+                                    opacity: isDisabled ? 0.4 : 1,
+                                    cursor: isDisabled ? 'not-allowed' : 'pointer',
+                                }}
+                            >
+                                {mode === 'dark' ? 'Dark' : 'Light'}
+                            </button>
+                        );
+                    })}
+                </div>
+            </div>
+
             {/* Theme Style */}
             <div>
                 <div className="settings-section-label">THEME STYLE</div>
