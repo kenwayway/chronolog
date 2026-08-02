@@ -33,6 +33,8 @@ interface TimelineEntryProps {
   showDate?: boolean;
   onNavigateToEntry?: (entry: TimelineItem) => void;
   mediaItems?: MediaItem[];
+  /** Zaddy comments about this entry, oldest first. */
+  comments?: TimelineItem[];
   annotationMode?: boolean;
   annotationEndContent?: string;
   annotationGroupCount?: number;
@@ -59,6 +61,7 @@ export const TimelineEntry = memo(function TimelineEntry({
   showDate = false,
   onNavigateToEntry,
   mediaItems = [],
+  comments,
   annotationMode = false,
   annotationEndContent,
   annotationGroupCount,
@@ -423,6 +426,28 @@ export const TimelineEntry = memo(function TimelineEntry({
                   <span key={tag}>#{tag}</span>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Zaddy comments about this entry — attached, never a row of their
+              own, and deliberately wearing the same muted ZADDY voice as an
+              ambient annotation. */}
+          {comments && comments.length > 0 && !isCollapsedAnnotationGroup && (
+            <div className={styles.commentList}>
+              {comments.map(comment => (
+                <div key={comment.id} className={styles.comment}>
+                  <div className={styles.commentMeta}>
+                    <MessageSquareQuote size={9} strokeWidth={1.75} aria-hidden="true" />
+                    <span>ZADDY</span>
+                    <span className={styles.commentDate}>
+                      {formatDate(comment.timestamp)}
+                    </span>
+                  </div>
+                  <span className={styles.commentBody}>
+                    <ContentRenderer content={comment.content} onImageClick={setLightboxImage} />
+                  </span>
+                </div>
+              ))}
             </div>
           )}
 

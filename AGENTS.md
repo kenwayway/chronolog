@@ -81,6 +81,25 @@ carries prose beyond its attachment lines; `origin: 'zaddy'` entries never
 qualify. Draw weight is age (log scale) × content richness × anniversary
 bonus, and recent draws are held out through a localStorage ring.
 
+Zaddy comments (`src/utils/zaddyComment.ts`, kept alias-free so
+`functions/api/mcp.ts` can import it) are a second, distinct zaddy voice.
+An ambient observation is time-anchored: it carries its own timestamp and
+floats in the timeline stream. A comment is entry-anchored — it is a Note with
+`origin: 'zaddy'`, `contentType: 'zaddy-comment'`, and exactly one
+`linkedItems` entry naming its target — so it renders attached beneath that
+entry and never becomes a timeline row, an annotation cluster member, a search
+result, or a retrospective candidate.
+
+Two consequences are load-bearing. The comment link is one-directional:
+`comment` writes a single mutation and never back-links, so commenting cannot
+alter the entry it is about. And `buildTimelineLinkIndex` skips comments
+entirely, so a comment anchor never renders as a link chip. Comments are
+grouped by target in `buildZaddyCommentIndex`, built from the full projection
+rather than a filtered view — a comment has no category or tags of its own and
+would otherwise be filtered off a visible target. `zaddy-comment` is
+deliberately absent from the ContentType registry: it is not a type the user
+can pick, and it has no input form.
+
 Zaddy ambient observations use short-lived `zaddy_topic_buffers` workflow
 rows. A buffer is not a timeline entity and never enters React or revision
 sync. Finalization materializes exactly one historical Note or Session with
@@ -226,11 +245,15 @@ MCP write tools (write token only):
 - `start_session`
 - `end_session`
 - `observe`
+- `comment`
 
 `observe` starts or continues a durable zaddy topic buffer and optionally
 finalizes it. It is for sustained personally meaningful conversational
 signals, not one-off informational questions. Stale buffers finalize after
 30 minutes through MCP/data-pull maintenance.
+
+`comment` writes a zaddy remark about one existing entry. See "Zaddy
+comments" below; the write never touches the entry being commented on.
 
 MCP auth: write scope requires the token in the `Authorization: Bearer`
 header; a write token sent via `?token=` query string degrades to read-only

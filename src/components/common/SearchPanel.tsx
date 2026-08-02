@@ -4,6 +4,7 @@ import { CornerDownLeft, Search, X } from 'lucide-react'
 import { useSessionContext } from '@/contexts/SessionContext'
 import { useUIStateContext } from '@/hooks/useUIStateContext'
 import { searchEntries } from '@/utils/searchEntries'
+import { isZaddyComment } from '@/utils/zaddyComment'
 import type { TimelineItem } from '@/types'
 import styles from './SearchPanel.module.css'
 
@@ -53,11 +54,18 @@ export function SearchPanel() {
     const inputRef = useRef<HTMLInputElement>(null)
     const activeResultRef = useRef<HTMLButtonElement>(null)
 
-    const results = useMemo(() => searchEntries(entries, query, {
+    // Zaddy comments have no timeline row of their own, so a result for one
+    // would navigate nowhere. They stay reachable through the entry they are
+    // attached to.
+    const searchable = useMemo(
+        () => entries.filter(entry => !isZaddyComment(entry)),
+        [entries],
+    )
+    const results = useMemo(() => searchEntries(searchable, query, {
         categories,
         contentTypes,
         mediaItems,
-    }), [entries, query, categories, contentTypes, mediaItems])
+    }), [searchable, query, categories, contentTypes, mediaItems])
     const visibleResults = results.slice(0, RESULT_LIMIT)
     const selectedIndex = Math.min(activeIndex, Math.max(visibleResults.length - 1, 0))
 

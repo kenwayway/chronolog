@@ -247,6 +247,46 @@
   font-style: italic;
 }
 
+/* Zaddy comments hang off the entry they are about. The dashed rule reads as
+ * an attachment rather than a sibling row, while the type matches the ambient
+ * annotation so both remain recognizably the same voice. */
+.commentList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+  padding-left: 10px;
+  border-left: 1px dashed var(--border-light);
+}
+
+.commentMeta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 3px;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+}
+
+.commentDate {
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  opacity: 0.72;
+}
+
+.commentBody {
+  display: block;
+  color: var(--text-muted);
+  font-family: var(--font-primary);
+  font-size: 13px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
 .originBadge {
   display: inline-flex;
   align-items: center;
@@ -329,6 +369,14 @@
 
   .annotationEnd {
     font-size: 13px;
+  }
+
+  .commentMeta {
+    font-size: 10px;
+  }
+
+  .commentBody {
+    font-size: 14px;
   }
 
   .mobileTime {

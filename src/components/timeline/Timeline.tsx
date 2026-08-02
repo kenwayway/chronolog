@@ -6,6 +6,7 @@ import { TimelineEntry } from "./TimelineEntry";
 import { buildZaddyAnnotationGroups } from "./annotationGroups";
 import { getTimelineLineState } from "./timelineLineState";
 import type { ZaddyAnnotation } from "./annotationGroups";
+import { isZaddyComment } from "@/utils/zaddyComment";
 import type { TimelineItem, SessionStatus, CategoryId } from "@/types";
 
 const ENTRIES_PER_PAGE = 20;
@@ -40,7 +41,7 @@ export function Timeline({
   filterKey = '',
   onNavigateToEntry,
 }: TimelineProps) {
-  const { state: { mediaItems, sessions }, linkIndex, categories } = useSessionContext();
+  const { state: { mediaItems, sessions }, linkIndex, commentIndex, categories } = useSessionContext();
   const { theme } = useTheme();
 
   // Stable key for categoryFilter to avoid re-creating strings on every render
@@ -55,8 +56,10 @@ export function Timeline({
     () => entries.filter(entry => entry.origin !== 'zaddy'),
     [entries],
   );
+  // Comments render attached to their target, so they are neither primary
+  // entries nor ambient annotations — they never occupy a row of their own.
   const zaddyEntries = useMemo(
-    () => entries.filter(entry => entry.origin === 'zaddy'),
+    () => entries.filter(entry => entry.origin === 'zaddy' && !isZaddyComment(entry)),
     [entries],
   );
   const annotationGroups = useMemo(
@@ -290,6 +293,9 @@ export function Timeline({
               showDate={isFilterMode}
               onNavigateToEntry={onNavigateToEntry}
               mediaItems={mediaItems}
+              comments={
+                entry.kind === 'session-end' ? undefined : commentIndex.get(entry.entityId)
+              }
               annotationMode={entry.origin === 'zaddy'}
               annotationEndContent={annotationEndContent.get(entry.id)}
               annotationGroupCount={annotationControl?.annotations.length}

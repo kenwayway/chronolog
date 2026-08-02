@@ -7,7 +7,7 @@ import { useAICategories } from "./hooks/useAICategories";
 import { useEntryHandlers } from "./hooks/useEntryHandlers";
 import { useAutoCategorize } from "./hooks/useAutoCategorize";
 import { useFollowUpLink } from "./hooks/useFollowUpLink";
-import { buildTimelineLinkIndex, projectTimelineItems } from "./domain/timeline";
+import { buildTimelineLinkIndex, buildZaddyCommentIndex, projectTimelineItems } from "./domain/timeline";
 import { SessionContext, useSessionContext } from "./contexts/SessionContext";
 import { CloudSyncContext } from "./contexts/CloudSyncContext";
 import { UIStateProvider } from "./components/providers/UIStateProvider";
@@ -58,6 +58,7 @@ function HydratedApp({ session }: { session: UseSessionReturn }) {
         [state.notes, state.sessions],
     );
     const linkIndex = useMemo(() => buildTimelineLinkIndex(timelineItems), [timelineItems]);
+    const commentIndex = useMemo(() => buildZaddyCommentIndex(timelineItems), [timelineItems]);
 
     // Cloud sync
     const cloudSync = useCloudSync({
@@ -89,10 +90,11 @@ function HydratedApp({ session }: { session: UseSessionReturn }) {
         state,
         timelineItems,
         linkIndex,
+        commentIndex,
         actions,
         categories,
         isStreaming,
-    }), [state, timelineItems, linkIndex, actions, categories, isStreaming]);
+    }), [state, timelineItems, linkIndex, commentIndex, actions, categories, isStreaming]);
 
     // Fix: field-by-field deps instead of the spread object (which is always a new ref)
     const cloudSyncContextValue = useMemo(() => ({

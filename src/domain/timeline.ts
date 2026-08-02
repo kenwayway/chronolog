@@ -1,4 +1,5 @@
 import type { Note, Session, TimelineItem } from '@/types'
+import { zaddyCommentTargetId } from '@/utils/zaddyComment'
 
 export function sessionStartTimelineId(sessionId: string): string {
   return `session:${sessionId}:start`
@@ -68,12 +69,17 @@ export interface TimelineLinkIndex {
 /**
  * Precompute link lookups once per projection so each rendered timeline row
  * resolves its links in O(own links) instead of scanning all history.
+ *
+ * Zaddy comments are skipped entirely: their link to their target is an
+ * anchor, not a cross-reference, and surfacing it as a link chip would let a
+ * comment alter how the entry it is about renders.
  */
 export function buildTimelineLinkIndex(items: TimelineItem[]): TimelineLinkIndex {
   const byEntityId = new Map<string, TimelineItem>()
   const incomingSets = new Map<string, Set<string>>()
 
   for (const item of items) {
+    if (zaddyCommentTargetId(item)) continue
     if (item.kind !== 'session-end' && !byEntityId.has(item.entityId)) {
       byEntityId.set(item.entityId, item)
     }
@@ -89,4 +95,29 @@ export function buildTimelineLinkIndex(items: TimelineItem[]): TimelineLinkIndex
   const incoming = new Map<string, string[]>()
   incomingSets.forEach((sources, target) => incoming.set(target, [...sources]))
   return { byEntityId, incoming }
+}
+
+/** Zaddy comments grouped by the entity they are about, oldest first. */
+export type ZaddyCommentIndex = ReadonlyMap<string, TimelineItem[]>
+
+/**
+ * Build the comment index from the full projection rather than a filtered
+ * view: a comment carries no category or tags of its own, so filtering it
+ * alongside ordinary entries would silently strip it off a visible target.
+ */
+export function buildZaddyCommentIndex(items: TimelineItem[]): ZaddyCommentIndex {
+  const byTarget = new Map<string, TimelineItem[]>()
+
+  for (const item of items) {
+    const targetId = zaddyCommentTargetId(item)
+    if (!targetId) continue
+    const existing = byTarget.get(targetId)
+    if (existing) existing.push(item)
+    else byTarget.set(targetId, [item])
+  }
+
+  for (const comments of byTarget.values()) {
+    comments.sort((left, right) => left.timestamp - right.timestamp)
+  }
+  return byTarget
 }

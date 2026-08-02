@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { buildKeywordSearch, buildNote, buildSession, filterByTags, onRequestPost } from './mcp.ts';
+import { buildKeywordSearch, buildNote, buildSession, buildZaddyComment, filterByTags, onRequestPost } from './mcp.ts';
+import { isZaddyComment } from '../../src/utils/zaddyComment.ts';
 import type { Env } from './types.ts';
 
 describe('MCP domain builders', () => {
@@ -38,6 +39,27 @@ describe('MCP domain builders', () => {
             contentType: 'notion-task',
             fieldValues: { notionPageId: '1234567890abcdef1234567890abcdef' },
         })).toThrow('session');
+    });
+
+    it('anchors a comment to exactly one entry, as a zaddy-authored note', () => {
+        const comment = buildZaddyComment('note-1', {
+            id: 'comment-1',
+            content: '  You were closer than you thought here.  ',
+        }, 456);
+
+        expect(comment).toEqual({
+            id: 'comment-1',
+            content: 'You were closer than you thought here.',
+            timestamp: 456,
+            contentType: 'zaddy-comment',
+            linkedItems: ['note-1'],
+            origin: 'zaddy',
+        });
+        expect(isZaddyComment(comment)).toBe(true);
+    });
+
+    it('rejects an empty comment', () => {
+        expect(() => buildZaddyComment('note-1', { content: '   ' })).toThrow('content');
     });
 });
 

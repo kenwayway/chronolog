@@ -132,6 +132,47 @@
   word-break: break-word;
 }
 
+/* Zaddy's remarks on the drawn entry, in the same muted voice the timeline
+ * uses for comments and ambient annotations. */
+.comments {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 0 18px 18px;
+}
+
+.comment {
+  padding-left: 12px;
+  border-left: 1px dashed var(--border-light);
+}
+
+.commentMeta {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 5px;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+}
+
+.commentDate {
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  opacity: 0.72;
+}
+
+.commentBody {
+  font-family: var(--font-primary);
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--text-muted);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 .cardActions {
   display: flex;
   gap: 8px;

@@ -5,6 +5,7 @@ import type { CFContext, Env, Note, NoteRow, Session, SessionRow } from './types
 import { CATEGORIES, CATEGORY_IDS } from '../../src/utils/categories.ts';
 import { normalizeNotionPageId } from '../../src/utils/notionPageId.ts';
 import { observeZaddyTopic } from './_zaddyObservation.ts';
+import { ZADDY_COMMENT_CONTENT_TYPE, isZaddyComment } from '../../src/utils/zaddyComment.ts';
 
 const SERVER_INFO = { name: 'chronolog', version: '2.0.0' };
 const SUPPORTED_PROTOCOL_VERSIONS = ['2025-06-18', '2025-03-26', '2024-11-05'];
@@ -177,6 +178,35 @@ const WRITE_TOOLS = [
                 },
             },
             required: ['content'],
+            additionalProperties: false,
+        },
+    },
+    {
+        name: 'comment',
+        description: [
+            'Say something to the user about one specific existing entry of theirs.',
+            'Unlike observe, this is not a summary of a conversation: it is a remark addressed to them, anchored to the entry it is about — a reaction, a connection to something else they wrote, a question worth sitting with.',
+            'Find the entry first (search_notes, search_sessions, get_day) and pass its ID as targetId.',
+            'The commented entry is never modified, and the comment never occupies a place of its own in their timeline.',
+            'Write in second person and keep it to a couple of sentences. One comment per thing worth saying; do not annotate an entry that does not need it.',
+        ].join(' '),
+        inputSchema: {
+            type: 'object',
+            properties: {
+                targetId: {
+                    type: 'string',
+                    maxLength: 100,
+                    description: 'ID of the note or session this comment is about',
+                },
+                content: { type: 'string', maxLength: 100000 },
+                id: sharedWriteProperties.id,
+                timestamp: {
+                    ...sharedWriteProperties.timestamp,
+                    description: 'When the comment was written; defaults to now',
+                },
+                timezone: dateProperties.timezone,
+            },
+            required: ['targetId', 'content'],
             additionalProperties: false,
         },
     },
@@ -675,6 +705,54 @@ async function endSession(args: Record<string, unknown>, env: Env) {
     };
 }
 
+export function buildZaddyComment(
+    targetId: string,
+    args: Record<string, unknown>,
+    now = Date.now(),
+): Note {
+    if (typeof args.content !== 'string' || !args.content.trim()) {
+        throw new Error('content must be a non-empty string');
+    }
+    return {
+        id: newId(args.id),
+        content: args.content.trim(),
+        timestamp: parseTimestamp(args.timestamp, now),
+        contentType: ZADDY_COMMENT_CONTENT_TYPE,
+        linkedItems: [targetId],
+        origin: 'zaddy',
+    };
+}
+
+async function comment(args: Record<string, unknown>, env: Env) {
+    if (typeof args.targetId !== 'string' || !args.targetId) {
+        throw new Error('targetId must be the ID of the note or session being commented on');
+    }
+    const target = await existingEntity(env.CHRONOLOG_DB, args.targetId);
+    if (!target) throw new Error(`Entry "${args.targetId}" does not exist`);
+    if (isZaddyComment(target.value)) throw new Error('A comment cannot be commented on');
+
+    const note = buildZaddyComment(args.targetId, args);
+    await ensureUniqueId(env.CHRONOLOG_DB, note.id);
+
+    // Deliberately not linkMutations: commenting must never write back into the
+    // entry being commented on. The anchor is one-directional, and the frontend
+    // resolves it by scanning comments for their target.
+    const result = await applyMutationsWithNotionSync(env, [{
+        mutationId: crypto.randomUUID(),
+        entityType: 'note',
+        entityId: note.id,
+        operation: 'upsert',
+        value: note,
+    }]);
+    ensureNothingRejected(result);
+
+    return {
+        comment: compactNote(note, resolveTimezone(args.timezone)),
+        target: { type: target.type, id: target.value.id, content: target.value.content },
+        revision: result.revision,
+    };
+}
+
 async function observe(args: Record<string, unknown>, env: Env) {
     if (typeof args.content !== 'string' || !args.content.trim()) {
         throw new Error('content must be a non-empty string');
@@ -716,6 +794,7 @@ async function callTool(params: Record<string, unknown> | undefined, env: Env, c
         else if (name === 'start_session' && canWrite) data = await startSession(args, env);
         else if (name === 'end_session' && canWrite) data = await endSession(args, env);
         else if (name === 'observe' && canWrite) data = await observe(args, env);
+        else if (name === 'comment' && canWrite) data = await comment(args, env);
         else if (WRITE_TOOLS.some(tool => tool.name === name)) throw new Error(`${String(name)} requires MCP_WRITE_TOKEN`);
         else throw new Error(`Unknown tool: ${String(name)}`);
         return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, CalendarDays, Shuffle } from 'lucide-react'
+import { ArrowLeft, CalendarDays, MessageSquareQuote, Shuffle } from 'lucide-react'
 import { useSessionContext } from '@/contexts/SessionContext'
 import { useUIStateContext } from '@/hooks/useUIStateContext'
 import { ContentRenderer } from '@/components/timeline/ContentRenderer'
@@ -41,7 +41,7 @@ function formatFullDate(timestamp: number): string {
 export function RetroPage() {
     const navigate = useNavigate()
     const ui = useUIStateContext()
-    const { timelineItems: entries, state: { contentTypes }, categories } = useSessionContext()
+    const { timelineItems: entries, state: { contentTypes }, categories, commentIndex } = useSessionContext()
     const [current, setCurrent] = useState<RetroCandidate | null>(null)
     const [lightboxImage, setLightboxImage] = useState<string | null>(null)
 
@@ -102,6 +102,10 @@ export function RetroPage() {
     const contentType = contentTypes?.find(ct => ct.id === current?.item.contentType)
     const anniversary = formatRetroAnniversary(current?.anniversary ?? null)
     const kindLabel = current ? KIND_LABEL[current.item.kind] : undefined
+    // Resurfacing an old entry and reading what zaddy said about it are the
+    // same act, so the card carries its comments rather than making the reader
+    // jump to the timeline to find them.
+    const comments = current ? commentIndex.get(current.item.entityId) : undefined
 
     return (
         <div className={styles.page}>
@@ -149,6 +153,28 @@ export function RetroPage() {
                             <div className={styles.content}>
                                 <ContentRenderer content={current.item.content} onImageClick={setLightboxImage} />
                             </div>
+
+                            {comments && comments.length > 0 && (
+                                <div className={styles.comments}>
+                                    {comments.map(comment => (
+                                        <div key={comment.id} className={styles.comment}>
+                                            <div className={styles.commentMeta}>
+                                                <MessageSquareQuote size={10} strokeWidth={1.75} aria-hidden="true" />
+                                                <span>ZADDY</span>
+                                                <span className={styles.commentDate}>
+                                                    {formatFullDate(comment.timestamp)}
+                                                </span>
+                                            </div>
+                                            <div className={styles.commentBody}>
+                                                <ContentRenderer
+                                                    content={comment.content}
+                                                    onImageClick={setLightboxImage}
+                                                />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
 
                             <div className={styles.cardActions}>
                                 <button onClick={draw} className={`${styles.action} ${styles.actionPrimary}`}>
