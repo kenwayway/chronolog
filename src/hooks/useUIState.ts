@@ -40,6 +40,11 @@ export interface UIState {
     openEditModal: (entry: TimelineItem) => void
     closeEditModal: () => void
 
+    // Inline comment editing (zaddy comments have no modal of their own)
+    editingCommentId: string | null
+    startCommentEdit: (commentId: string) => void
+    stopCommentEdit: () => void
+
     // Navigation
     selectedDate: Date | null
     setSelectedDate: (date: Date | null) => void
@@ -90,6 +95,19 @@ export function useUIState(): UIState {
         setEditModal({ isOpen: false, entry: null })
     }, [])
 
+    // Inline comment editing. A comment's identity lives in its contentType and
+    // its single linkedItems anchor, so it is edited in place — as content and
+    // nothing else — rather than through the modal, which could rewrite both.
+    const [editingCommentId, setEditingCommentId] = useState<string | null>(null)
+
+    const startCommentEdit = useCallback((commentId: string) => {
+        setEditingCommentId(commentId)
+    }, [])
+
+    const stopCommentEdit = useCallback(() => {
+        setEditingCommentId(null)
+    }, [])
+
     // Navigate to an entry
     const navigateToEntry = useCallback((targetEntry: TimelineItem) => {
         if (!targetEntry) return
@@ -137,6 +155,7 @@ export function useUIState(): UIState {
         showLanding, setShowLanding,
         contextMenu, handleContextMenu, closeContextMenu,
         editModal, openEditModal, closeEditModal,
+        editingCommentId, startCommentEdit, stopCommentEdit,
         selectedDate, setSelectedDate,
         categoryFilter, setCategoryFilter,
         tagFilter, setTagFilter,
@@ -146,6 +165,7 @@ export function useUIState(): UIState {
         leftSidebarOpen, navOpen, settingsOpen, searchOpen, showLanding,
         contextMenu, handleContextMenu, closeContextMenu,
         editModal, openEditModal, closeEditModal,
+        editingCommentId, startCommentEdit, stopCommentEdit,
         selectedDate, categoryFilter, tagFilter, contentTypeFilter,
         navigateToEntry,
     ])

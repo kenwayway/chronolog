@@ -1,4 +1,4 @@
-import { useState, memo, useMemo, ReactNode, MouseEvent, TouchEvent } from "react";
+import { useState, useRef, useEffect, memo, useMemo, ReactNode, KeyboardEvent, MouseEvent, TouchEvent } from "react";
 import { ChevronRight, MessageSquareQuote, Play, Square } from "lucide-react";
 import { formatTime, formatDuration, formatDate } from "@/utils/formatters";
 import { darkenColor } from "@/utils/contentParser";
@@ -18,6 +18,77 @@ interface Position {
 
 type LineState = 'start' | 'end' | 'active' | 'default';
 
+/**
+ * In-place editor for a zaddy comment's text.
+ *
+ * Deliberately narrow: it writes `content` and nothing else, so a comment can
+ * never be edited out of being a comment. Enter saves, Shift+Enter breaks the
+ * line, Escape abandons the draft; blurring saves, which keeps a click
+ * elsewhere from silently discarding what was typed.
+ */
+function CommentEditor({
+  initialContent,
+  onSave,
+  onCancel,
+}: {
+  initialContent: string;
+  onSave: (content: string) => void;
+  onCancel: () => void;
+}) {
+  const [draft, setDraft] = useState(initialContent);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  // Escape and a completed save both blur the field; neither should be
+  // followed by the blur handler committing a second time.
+  const settledRef = useRef(false);
+
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    textarea.focus();
+    textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+  }, []);
+
+  const commit = () => {
+    if (settledRef.current) return;
+    settledRef.current = true;
+    const trimmed = draft.trim();
+    // An emptied comment is a mistake, not a deletion — deleting is its own
+    // menu action.
+    if (!trimmed || trimmed === initialContent) onCancel();
+    else onSave(trimmed);
+  };
+
+  const abandon = () => {
+    if (settledRef.current) return;
+    settledRef.current = true;
+    onCancel();
+  };
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      commit();
+    } else if (event.key === "Escape") {
+      event.preventDefault();
+      abandon();
+    }
+  };
+
+  return (
+    <textarea
+      ref={textareaRef}
+      className={styles.commentEditor}
+      value={draft}
+      rows={Math.min(10, draft.split("\n").length + 1)}
+      onChange={event => setDraft(event.target.value)}
+      onKeyDown={handleKeyDown}
+      onBlur={commit}
+      onContextMenu={event => event.stopPropagation()}
+      onDoubleClick={event => event.stopPropagation()}
+    />
+  );
+}
+
 
 interface TimelineEntryProps {
   entry: TimelineItem;
@@ -35,6 +106,11 @@ interface TimelineEntryProps {
   mediaItems?: MediaItem[];
   /** Zaddy comments about this entry, oldest first. */
   comments?: TimelineItem[];
+  /** ID of the comment currently being edited in place, if any. */
+  editingCommentId?: string | null;
+  onEditComment?: (comment: TimelineItem) => void;
+  onSaveComment?: (comment: TimelineItem, content: string) => void;
+  onCancelCommentEdit?: () => void;
   annotationMode?: boolean;
   annotationEndContent?: string;
   annotationGroupCount?: number;
@@ -62,6 +138,10 @@ export const TimelineEntry = memo(function TimelineEntry({
   onNavigateToEntry,
   mediaItems = [],
   comments,
+  editingCommentId,
+  onEditComment,
+  onSaveComment,
+  onCancelCommentEdit,
   annotationMode = false,
   annotationEndContent,
   annotationGroupCount,
@@ -99,6 +179,38 @@ export const TimelineEntry = memo(function TimelineEntry({
     if (pressTimer) {
       clearTimeout(pressTimer);
       setPressTimer(null);
+    }
+  };
+
+  // A comment is rendered inside its target's DOM, so its own gestures must be
+  // kept from reaching the entry underneath: a right-click on a comment is
+  // about the comment, not about the thing it is attached to.
+  const commentPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleCommentContextMenu = (comment: TimelineItem) => (e: MouseEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onContextMenu?.(comment, { x: e.clientX, y: e.clientY });
+  };
+
+  const handleCommentDoubleClick = (comment: TimelineItem) => (e: MouseEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    onEditComment?.(comment);
+  };
+
+  const handleCommentTouchStart = (comment: TimelineItem) => (e: TouchEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    const touch = e.touches[0];
+    commentPressTimer.current = setTimeout(() => {
+      onContextMenu?.(comment, { x: touch.clientX, y: touch.clientY });
+    }, 500);
+  };
+
+  const handleCommentTouchEnd = (e: TouchEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    if (commentPressTimer.current) {
+      clearTimeout(commentPressTimer.current);
+      commentPressTimer.current = null;
     }
   };
 
@@ -435,7 +547,16 @@ export const TimelineEntry = memo(function TimelineEntry({
           {comments && comments.length > 0 && !isCollapsedAnnotationGroup && (
             <div className={styles.commentList}>
               {comments.map(comment => (
-                <div key={comment.id} className={styles.comment}>
+                <div
+                  key={comment.id}
+                  className={styles.comment}
+                  data-comment-id={comment.id}
+                  onContextMenu={handleCommentContextMenu(comment)}
+                  onDoubleClick={handleCommentDoubleClick(comment)}
+                  onTouchStart={handleCommentTouchStart(comment)}
+                  onTouchEnd={handleCommentTouchEnd}
+                  onTouchCancel={handleCommentTouchEnd}
+                >
                   <div className={styles.commentMeta}>
                     <MessageSquareQuote size={9} strokeWidth={1.75} aria-hidden="true" />
                     <span>ZADDY</span>
@@ -443,9 +564,17 @@ export const TimelineEntry = memo(function TimelineEntry({
                       {formatDate(comment.timestamp)}
                     </span>
                   </div>
-                  <span className={styles.commentBody}>
-                    <ContentRenderer content={comment.content} onImageClick={setLightboxImage} />
-                  </span>
+                  {editingCommentId === comment.id ? (
+                    <CommentEditor
+                      initialContent={comment.content || ""}
+                      onSave={content => onSaveComment?.(comment, content)}
+                      onCancel={() => onCancelCommentEdit?.()}
+                    />
+                  ) : (
+                    <span className={styles.commentBody}>
+                      <ContentRenderer content={comment.content} onImageClick={setLightboxImage} />
+                    </span>
+                  )}
                 </div>
               ))}
             </div>

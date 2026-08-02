@@ -1,4 +1,4 @@
-import { lazy, Suspense, useRef, useMemo } from "react";
+import { lazy, Suspense, useCallback, useRef, useMemo } from "react";
 import { Routes, Route } from "react-router-dom";
 import { useSession } from "./hooks/useSession";
 import { useCategories } from "./hooks/useCategories";
@@ -24,7 +24,8 @@ import {
     NavPanel,
     SearchPanel,
 } from "./components";
-import type { CategoryId, UseSessionReturn } from "./types";
+import { isZaddyComment } from "./utils/zaddyComment";
+import type { CategoryId, TimelineItem, UseSessionReturn } from "./types";
 import type { InputPanelRef } from "./components/input/InputPanel";
 import styles from "./App.module.css";
 
@@ -175,6 +176,13 @@ function MainView({
         inputPanelRef,
     });
 
+    // Comments are edited in place and only ever as text; everything else that
+    // makes them a comment stays untouched.
+    const handleSaveComment = useCallback((comment: TimelineItem, content: string) => {
+        actions.updateNote(comment.entityId, { content });
+        ui.stopCommentEdit();
+    }, [actions, ui]);
+
     const filteredEntries = useMemo(() => {
         const hasFilters = ui.categoryFilter.length > 0
             || ui.tagFilter.length > 0
@@ -227,6 +235,10 @@ function MainView({
                         status={state.status}
                         onContextMenu={ui.handleContextMenu}
                         onEdit={ui.openEditModal}
+                        editingCommentId={ui.editingCommentId}
+                        onEditComment={comment => ui.startCommentEdit(comment.id)}
+                        onSaveComment={handleSaveComment}
+                        onCancelCommentEdit={ui.stopCommentEdit}
                         categoryFilter={ui.categoryFilter}
                         isFilterMode={ui.categoryFilter.length > 0 || ui.tagFilter.length > 0 || ui.contentTypeFilter.length > 0}
                         filterKey={`${ui.categoryFilter.join(',')}|${ui.tagFilter.join(',')}|${ui.contentTypeFilter.join(',')}`}
@@ -269,7 +281,9 @@ function MainView({
                 position={ui.contextMenu.position}
                 entry={ui.contextMenu.entry}
                 onClose={ui.closeContextMenu}
-                onEdit={(entry) => handlers.handleEditEntry(entry, ui.openEditModal)}
+                onEdit={(entry) => isZaddyComment(entry)
+                    ? ui.startCommentEdit(entry.id)
+                    : handlers.handleEditEntry(entry, ui.openEditModal)}
                 onDelete={handlers.handleDeleteEntry}
                 onCopy={handlers.handleCopyEntry}
                 onLink={followUp.handleFollowUp}

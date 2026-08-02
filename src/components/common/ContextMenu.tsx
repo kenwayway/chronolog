@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import styles from "./ContextMenu.module.css";
+import { isZaddyComment } from "@/utils/zaddyComment";
 import type { TimelineItem } from "@/types";
 
 interface Position {
@@ -66,6 +67,9 @@ export function ContextMenu({
         onLink?.(entry);
         onClose();
     };
+    // Following up writes a bidirectional link. A comment's single link is its
+    // anchor, not a cross-reference, so it does not take part.
+    const canFollowUp = !isZaddyComment(entry);
     return (
         <div
             ref={menuRef}
@@ -79,9 +83,11 @@ export function ContextMenu({
                 EDIT
             </button>
 
-            <button className={styles.item} onClick={handleLink}>
-                ↪ FOLLOW UP
-            </button>
+            {canFollowUp && (
+                <button className={styles.item} onClick={handleLink}>
+                    ↪ FOLLOW UP
+                </button>
+            )}
 
 
 

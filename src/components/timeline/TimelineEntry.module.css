@@ -259,6 +259,19 @@
   border-left: 1px dashed var(--border-light);
 }
 
+/* Its own hit area: right-click and double-click on a comment address the
+ * comment, so it needs to be a target distinct from the entry it hangs off. */
+.comment {
+  border-radius: 2px;
+  margin: -2px -4px;
+  padding: 2px 4px;
+  transition: background-color 150ms ease;
+}
+
+.comment:hover {
+  background-color: var(--bg-secondary);
+}
+
 .commentMeta {
   display: flex;
   align-items: center;
@@ -285,6 +298,24 @@
   line-height: 1.55;
   white-space: pre-wrap;
   overflow-wrap: break-word;
+}
+
+/* Sits exactly where .commentBody sat, so editing does not move the text. */
+.commentEditor {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0;
+  border: none;
+  border-bottom: 1px solid var(--accent);
+  background-color: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-primary);
+  font-size: 13px;
+  line-height: 1.55;
+  resize: vertical;
+  outline: none;
+  user-select: text;
 }
 
 .originBadge {
@@ -375,7 +406,8 @@
     font-size: 10px;
   }
 
-  .commentBody {
+  .commentBody,
+  .commentEditor {
     font-size: 14px;
   }
 

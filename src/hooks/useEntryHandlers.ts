@@ -1,4 +1,5 @@
 import { useCallback } from 'react'
+import { isZaddyComment } from '@/utils/zaddyComment'
 import type { TimelineItem, SessionActions, TimelineItemUpdate, CategoryId } from '@/types'
 
 interface UseEntryHandlersProps {
@@ -82,7 +83,7 @@ export function useEntryHandlers({
 
     const handleDeleteEntry = useCallback((item: TimelineItem) => {
         if (!requireLogin()) return
-        const label = item.kind === 'note' ? 'note' : 'session'
+        const label = isZaddyComment(item) ? 'comment' : item.kind === 'note' ? 'note' : 'session'
         if (confirm(`Delete this ${label}?`)) {
             if (item.kind === 'note') actions.deleteNote(item.entityId)
             else actions.deleteSession(item.entityId)
