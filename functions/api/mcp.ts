@@ -34,7 +34,12 @@ const dateProperties = {
 const READ_TOOLS = [
     {
         name: 'search_notes',
-        description: 'Literal substring search across note content, tags, and structured fields. Pass several synonym variants; keywords are OR-matched.',
+        description: [
+            'Literal substring search across note content, tags, and structured fields.',
+            'Pass several synonym variants; keywords are OR-matched.',
+            'Results mix the user’s own notes with assistant-written zaddy entries — both ambient observations and entry-anchored comments. Those carry origin: "zaddy"; the field is absent on the user’s own notes. Check it before quoting an entry as something the user said.',
+            'Ordered newest first, then truncated to limit, so a larger limit cannot reach further back. To find the earliest mention, narrow start/end instead.',
+        ].join(' '),
         inputSchema: {
             type: 'object',
             properties: {
@@ -42,28 +47,36 @@ const READ_TOOLS = [
                 ...dateProperties,
                 category: { type: 'string', enum: CATEGORY_IDS },
                 tags: { type: 'array', items: { type: 'string' } },
-                limit: { type: 'number', description: 'Default 50, maximum 200' },
+                limit: { type: 'number', description: 'Default 50, maximum 200. Applied after newest-first ordering, so it drops the oldest matches.' },
             },
             required: ['keywords'],
         },
     },
     {
         name: 'search_sessions',
-        description: 'Literal substring search across session start/end content, tags, and structured fields.',
+        description: [
+            'Literal substring search across session start/end content, tags, and structured fields.',
+            'Results include assistant-written zaddy sessions, which carry origin: "zaddy"; the field is absent on the user’s own sessions. Check it before treating a session as the user’s own work.',
+            'Ordered by start time, newest first, then truncated to limit, so a larger limit cannot reach further back. To find the earliest match, narrow start/end instead.',
+        ].join(' '),
         inputSchema: {
             type: 'object',
             properties: {
                 keywords: { type: 'array', items: { type: 'string' }, minItems: 1, maxItems: 8 },
                 ...dateProperties,
                 category: { type: 'string', enum: CATEGORY_IDS },
-                limit: { type: 'number', description: 'Default 50, maximum 200' },
+                limit: { type: 'number', description: 'Default 50, maximum 200. Applied after newest-first ordering, so it drops the oldest matches.' },
             },
             required: ['keywords'],
         },
     },
     {
         name: 'get_day',
-        description: 'Get first-class notes and sessions for one calendar day. User tracked time and zaddy conversation span are reported separately.',
+        description: [
+            'Get first-class notes and sessions for one calendar day.',
+            'The notes array includes assistant-written zaddy entries, which carry origin: "zaddy"; the field is absent on the user’s own notes.',
+            'Time is reported separately and in milliseconds: trackedByCategory holds the user’s own session time keyed by category, zaddyObservedMs holds the assistant conversation span.',
+        ].join(' '),
         inputSchema: {
             type: 'object',
             properties: {
@@ -75,7 +88,11 @@ const READ_TOOLS = [
     },
     {
         name: 'get_stats',
-        description: 'Aggregate user tracked time and note counts over a date range, with zaddy observations reported separately.',
+        description: [
+            'Aggregate the user’s tracked time, session counts, and note counts over a date range, keyed by category.',
+            'Zaddy observations are excluded from those categories and reported separately under zaddy.',
+            'All durations are milliseconds: categories[id].trackedMs and zaddy.observedMs.',
+        ].join(' '),
         inputSchema: {
             type: 'object',
             properties: dateProperties,
