@@ -187,9 +187,7 @@ Cloud sync is optional. Configure these bindings and variables in the Cloudflare
 | `AI_API_KEY` | API key used by server-side categorization |
 | `AI_BASE_URL` | Optional OpenAI-compatible API base URL |
 | `AI_MODEL` | Optional categorization model name |
-| `PUBLIC_API_TOKEN` | Token for `GET /api/public` and read-only MCP access |
-| `MCP_WRITE_TOKEN` | MCP token granting read access plus `add_note`, `start_session`, `end_session`, and `observe` |
-| `DASHBOARD_MCP_TOKEN` | Alternate MCP write token for dashboard integrations (same scope as `MCP_WRITE_TOKEN`) |
+| `PUBLIC_API_TOKEN` | Token for `GET /api/public` |
 | `NOTION_API_TOKEN` | Notion internal integration secret used only by Pages Functions |
 | `NOTION_TRACKED_MINUTES_PROPERTY` | Optional Notion number property name or ID; defaults to `Tracked Minutes` |
 
@@ -212,8 +210,9 @@ database with the internal integration represented by `NOTION_API_TOKEN`.
 ## Claude web MCP
 
 `mcp-worker/` is a dedicated OAuth-protected Worker for Claude web and Claude
-Desktop remote connectors. It reuses the same MCP request implementation as
-`/api/mcp`, binds the existing D1 database, and stores OAuth clients, grants,
+Desktop remote connectors. It is the only way in: it owns the shared
+MCP request implementation in `functions/api/_mcp.ts`, binds the existing D1
+database, and stores OAuth clients, grants,
 and tokens in a separate KV namespace.
 
 Authentication is a two-layer flow: Google verifies the user's identity, then
@@ -261,10 +260,6 @@ npm run mcp:dev
 npm run mcp:check
 npm run mcp:deploy
 ```
-
-The original Pages endpoint remains available for static-token clients:
-`PUBLIC_API_TOKEN` gives read-only access, while a write token must be sent in
-the `Authorization: Bearer` header.
 
 ## 📝 License
 

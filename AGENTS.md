@@ -82,7 +82,7 @@ qualify. Draw weight is age (log scale) × content richness × anniversary
 bonus, and recent draws are held out through a localStorage ring.
 
 Zaddy comments (`src/utils/zaddyComment.ts`, kept alias-free so
-`functions/api/mcp.ts` can import it) are a second, distinct zaddy voice.
+`functions/api/_mcp.ts` can import it) are a second, distinct zaddy voice.
 An ambient observation is time-anchored: it carries its own timestamp and
 floats in the timeline stream. A comment is entry-anchored — it is a Note with
 `origin: 'zaddy'`, `contentType: 'zaddy-comment'`, and exactly one
@@ -239,7 +239,7 @@ MCP read tools:
 - `get_stats`
 - `list_categories_and_tags`
 
-MCP write tools (write token only):
+MCP write tools (write scope only):
 
 - `add_note`
 - `start_session`
@@ -255,9 +255,10 @@ signals, not one-off informational questions. Stale buffers finalize after
 `comment` writes a zaddy remark about one existing entry. See "Zaddy
 comments" below; the write never touches the entry being commented on.
 
-MCP auth: write scope requires the token in the `Authorization: Bearer`
-header; a write token sent via `?token=` query string degrades to read-only
-(query strings land in access logs). Token comparisons are constant-time.
+MCP auth is OAuth only. `functions/api/_mcp.ts` is a transport-agnostic
+handler with no route of its own (hence the `_` prefix); its sole caller is the
+Worker, which derives `canWrite` from the granted OAuth scopes. The former
+static-token Pages endpoint at `/api/mcp` was removed once the Worker shipped.
 
 Claude web uses the dedicated Worker in `mcp-worker/`, configured by
 `wrangler.mcp.toml`. It wraps the shared MCP request handler with
@@ -292,7 +293,7 @@ functions/
   api/_notionSync.ts
   api/data.ts
   api/public.ts
-  api/mcp.ts
+  api/_mcp.ts
 mcp-worker/
   auth.ts
   index.ts

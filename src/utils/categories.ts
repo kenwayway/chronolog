@@ -1,6 +1,6 @@
 /**
  * Fixed life-area categories (not user-editable) — the single source of truth,
- * shared by the frontend and Cloudflare Pages Functions (functions/api/mcp.ts
+ * shared by the frontend and Cloudflare Pages Functions (functions/api/_mcp.ts
  * imports this file directly). Keep it free of '@/' alias imports and runtime
  * dependencies so both tsconfig projects and the Pages bundler can consume it.
  */

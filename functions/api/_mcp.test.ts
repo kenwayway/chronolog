@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildKeywordSearch, buildNote, buildSession, buildZaddyComment, filterByTags, onRequestPost } from './mcp.ts';
+import { buildKeywordSearch, buildNote, buildSession, buildZaddyComment, filterByTags, handleMcpRequest } from './_mcp.ts';
 import { isZaddyComment } from '../../src/utils/zaddyComment.ts';
 import type { Env } from './types.ts';
 
@@ -63,34 +63,20 @@ describe('MCP domain builders', () => {
     });
 });
 
-function context(token: string, { viaQuery = false } = {}) {
-    const env = {
-        PUBLIC_API_TOKEN: 'read-token',
-        MCP_WRITE_TOKEN: 'write-token',
-    } as Env;
-    const url = viaQuery
-        ? `https://chronolog.test/api/mcp?token=${token}`
-        : 'https://chronolog.test/api/mcp';
-    const request = new Request(url, {
+async function listTools(canWrite: boolean): Promise<string[]> {
+    const request = new Request('https://chronolog-mcp.test/mcp', {
         method: 'POST',
-        headers: {
-            ...(viaQuery ? {} : { Authorization: `Bearer ${token}` }),
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            jsonrpc: '2.0',
-            id: 1,
-            method: 'tools/list',
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' }),
     });
-    return { request, env } as Parameters<typeof onRequestPost>[0];
+    const response = await handleMcpRequest(request, {} as Env, canWrite);
+    const body = await response.json<{ result: { tools: Array<{ name: string }> } }>();
+    return body.result.tools.map(tool => tool.name);
 }
 
 describe('MCP tool surface', () => {
-    it('exposes only domain read tools to the public token', async () => {
-        const response = await onRequestPost(context('read-token'));
-        const body = await response.json<{ result: { tools: Array<{ name: string }> } }>();
-        expect(body.result.tools.map(tool => tool.name)).toEqual([
+    it('exposes only domain read tools without the write scope', async () => {
+        expect(await listTools(false)).toEqual([
             'search_notes',
             'search_sessions',
             'get_day',
@@ -99,30 +85,15 @@ describe('MCP tool surface', () => {
         ]);
     });
 
-    it('adds separate note/session write tools for the write token', async () => {
-        const response = await onRequestPost(context('write-token'));
-        const body = await response.json<{ result: { tools: Array<{ name: string }> } }>();
-        expect(body.result.tools.map(tool => tool.name)).toEqual(expect.arrayContaining([
+    it('adds separate note/session write tools with the write scope', async () => {
+        const names = await listTools(true);
+        expect(names).toEqual(expect.arrayContaining([
             'add_note',
             'start_session',
             'end_session',
             'observe',
         ]));
-        expect(body.result.tools.map(tool => tool.name)).not.toContain('add_entry');
-    });
-
-    it('degrades a write token in the query string to read-only', async () => {
-        const response = await onRequestPost(context('write-token', { viaQuery: true }));
-        const body = await response.json<{ result: { tools: Array<{ name: string }> } }>();
-        const names = body.result.tools.map(tool => tool.name);
-        expect(names).toContain('search_notes');
-        expect(names).not.toContain('add_note');
-        expect(names).not.toContain('observe');
-    });
-
-    it('rejects an unknown token', async () => {
-        const response = await onRequestPost(context('wrong-token'));
-        expect(response.status).toBe(401);
+        expect(names).not.toContain('add_entry');
     });
 });
 

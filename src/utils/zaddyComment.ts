@@ -8,7 +8,7 @@
  * timeline row, an annotation cluster member, or a retrospective candidate.
  *
  * Keep this file free of '@/' alias imports and runtime dependencies so both
- * tsconfig projects can consume it: functions/api/mcp.ts imports it directly.
+ * tsconfig projects can consume it: functions/api/_mcp.ts imports it directly.
  */
 
 export const ZADDY_COMMENT_CONTENT_TYPE = 'zaddy-comment'

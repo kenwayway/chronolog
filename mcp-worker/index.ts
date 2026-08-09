@@ -4,7 +4,7 @@ import {
     type OAuthHelpers,
 } from '@cloudflare/workers-oauth-provider';
 import { WorkerEntrypoint } from 'cloudflare:workers';
-import { handleMcpRequest } from '../functions/api/mcp.ts';
+import { handleMcpRequest } from '../functions/api/_mcp.ts';
 import type { Env as ChronologEnv } from '../functions/api/types.ts';
 import {
     buildGoogleAuthorizationUrl,

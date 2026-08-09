@@ -1,7 +1,7 @@
 import { noteRowToObject, sessionRowToObject } from './_db.ts';
 import { applyMutationsWithNotionSync, type NotionSyncStatus } from './_notionSync.ts';
 import type { RevisionMutation } from './_revisionSync.ts';
-import type { CFContext, Env, Note, NoteRow, Session, SessionRow } from './types.ts';
+import type { Env, Note, NoteRow, Session, SessionRow } from './types.ts';
 import { CATEGORIES, CATEGORY_IDS } from '../../src/utils/categories.ts';
 import { normalizeNotionPageId } from '../../src/utils/notionPageId.ts';
 import { observeZaddyTopic } from './_zaddyObservation.ts';
@@ -812,7 +812,7 @@ async function callTool(params: Record<string, unknown> | undefined, env: Env, c
         else if (name === 'end_session' && canWrite) data = await endSession(args, env);
         else if (name === 'observe' && canWrite) data = await observe(args, env);
         else if (name === 'comment' && canWrite) data = await comment(args, env);
-        else if (WRITE_TOOLS.some(tool => tool.name === name)) throw new Error(`${String(name)} requires MCP_WRITE_TOKEN`);
+        else if (WRITE_TOOLS.some(tool => tool.name === name)) throw new Error(`${String(name)} requires the chronolog:write scope`);
         else throw new Error(`Unknown tool: ${String(name)}`);
         return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
     } catch (error) {
@@ -848,50 +848,12 @@ async function handleMessage(message: unknown, env: Env, canWrite: boolean): Pro
     return id === undefined ? null : rpcError(id ?? null, -32601, `Method not found: ${method}`);
 }
 
-/** Constant-time token comparison; length is the only observable difference. */
-function tokenMatches(provided: string, expected: string | undefined): boolean {
-    if (!expected) return false;
-    const encoder = new TextEncoder();
-    const left = encoder.encode(provided);
-    const right = encoder.encode(expected);
-    if (left.byteLength !== right.byteLength) return false;
-    // timingSafeEqual is a Workers-specific extension; fall back to a manual
-    // constant-time loop elsewhere (vitest runs these handlers under Node).
-    const subtle = crypto.subtle as SubtleCrypto & {
-        timingSafeEqual?: (a: ArrayBufferView, b: ArrayBufferView) => boolean
-    };
-    if (typeof subtle.timingSafeEqual === 'function') return subtle.timingSafeEqual(left, right);
-    let difference = 0;
-    for (let index = 0; index < left.length; index++) difference |= left[index] ^ right[index];
-    return difference === 0;
-}
-
-export async function onRequestPost(context: CFContext): Promise<Response> {
-    const { request, env } = context;
-    if (!env.PUBLIC_API_TOKEN && !env.MCP_WRITE_TOKEN && !env.DASHBOARD_MCP_TOKEN) {
-        return Response.json({ error: 'MCP server not configured' }, { status: 503 });
-    }
-    const auth = request.headers.get('Authorization');
-    const headerToken = auth?.startsWith('Bearer ') ? auth.slice(7) : null;
-    // Query-string tokens land in access logs and browser history; they are
-    // accepted for read access only. Write scope requires the header.
-    const token = headerToken ?? new URL(request.url).searchParams.get('token');
-    const isWriteToken = (candidate: string) =>
-        tokenMatches(candidate, env.MCP_WRITE_TOKEN) || tokenMatches(candidate, env.DASHBOARD_MCP_TOKEN);
-    const canWrite = headerToken !== null && isWriteToken(headerToken);
-    // A write token sent via query string degrades to read-only.
-    const canRead = canWrite || (Boolean(token)
-        && (tokenMatches(token as string, env.PUBLIC_API_TOKEN) || isWriteToken(token as string)));
-    if (!canRead) return Response.json({ error: 'Invalid or missing token' }, { status: 401 });
-
-    return handleMcpRequest(request, env, canWrite);
-}
-
 /**
  * Process an authenticated MCP request.
  *
- * Authentication is deliberately kept outside this function so the Pages
- * endpoint can use static tokens while the dedicated MCP Worker uses OAuth.
+ * This module is the transport-agnostic MCP implementation; authentication
+ * lives entirely in the caller. The only caller is the OAuth-protected Worker
+ * in `mcp-worker/`, which decides `canWrite` from the granted OAuth scopes.
  */
 export async function handleMcpRequest(request: Request, env: Env, canWrite: boolean): Promise<Response> {
     let body: unknown;
@@ -907,12 +869,4 @@ export async function handleMcpRequest(request: Request, env: Env, canWrite: boo
     }
     const response = await handleMessage(body, env, canWrite);
     return response ? Response.json(response) : new Response(null, { status: 202 });
-}
-
-export async function onRequestGet(): Promise<Response> {
-    return new Response('Method Not Allowed', { status: 405, headers: { Allow: 'POST' } });
-}
-
-export async function onRequestDelete(): Promise<Response> {
-    return new Response('Method Not Allowed', { status: 405, headers: { Allow: 'POST' } });
 }
