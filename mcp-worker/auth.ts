@@ -63,22 +63,28 @@ export function buildGoogleAuthorizationUrl(
     return url.toString();
 }
 
+function isWellFormedRedirect(uri: string): boolean {
+    try {
+        new URL(uri);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+// Open dynamic registration: any client may register. Access is still gated by
+// the Google identity allowlist during authorization — see isGoogleUserAllowed.
 export function validateClientRegistration(
     clientMetadata: Record<string, unknown>,
 ): ClientRegistrationCallbackResult | undefined {
     const redirectUris = clientMetadata.redirect_uris;
     if (!Array.isArray(redirectUris) || redirectUris.length === 0) {
-        return { description: 'At least one approved callback URL is required.' };
+        return { description: 'At least one callback URL is required.' };
     }
-    const allowed = new Set([
-        'https://claude.ai/api/mcp/auth_callback',
-        'https://claude.com/api/mcp/auth_callback',
-        'https://zaddy.sopoi.com/oauth/chronolog/callback',
-    ]);
-    const valid = redirectUris.every(uri => typeof uri === 'string' && allowed.has(uri));
+    const valid = redirectUris.every(uri => typeof uri === 'string' && isWellFormedRedirect(uri));
     return valid
         ? undefined
-        : { description: 'This private MCP server only accepts approved callback URLs.' };
+        : { description: 'Every callback URL must be a valid absolute URI.' };
 }
 
 export function oauthErrorRedirect(request: AuthRequest, error: string, description: string): Response {

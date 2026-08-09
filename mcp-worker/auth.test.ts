@@ -36,18 +36,21 @@ describe('MCP Google OAuth helpers', () => {
         expect(url.searchParams.get('state')).toBe('state');
     });
 
-    it('accepts only approved callback URLs during dynamic registration', () => {
+    it('accepts any well-formed callback URL during dynamic registration', () => {
         expect(validateClientRegistration({
             redirect_uris: ['https://claude.ai/api/mcp/auth_callback'],
         })).toBeUndefined();
         expect(validateClientRegistration({
-            redirect_uris: ['https://zaddy.sopoi.com/oauth/chronolog/callback'],
+            redirect_uris: ['http://127.0.0.1:59733/callback'],
         })).toBeUndefined();
         expect(validateClientRegistration({
-            redirect_uris: ['http://localhost:3000/callback'],
-        })).toEqual(expect.objectContaining({ description: expect.any(String) }));
-        expect(validateClientRegistration({
-            redirect_uris: ['https://zaddy.sopoi.com.evil.example/oauth/chronolog/callback'],
-        })).toEqual(expect.objectContaining({ description: expect.any(String) }));
+            redirect_uris: ['http://localhost:3000/callback', 'https://anything.example/cb'],
+        })).toBeUndefined();
+        expect(validateClientRegistration({ redirect_uris: [] }))
+            .toEqual(expect.objectContaining({ description: expect.any(String) }));
+        expect(validateClientRegistration({ redirect_uris: ['not-a-url'] }))
+            .toEqual(expect.objectContaining({ description: expect.any(String) }));
+        expect(validateClientRegistration({ redirect_uris: [42] }))
+            .toEqual(expect.objectContaining({ description: expect.any(String) }));
     });
 });
