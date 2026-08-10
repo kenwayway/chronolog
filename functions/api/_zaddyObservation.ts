@@ -8,15 +8,23 @@ import type {
     ZaddyTopicBufferRow,
 } from './types.ts';
 
-/** Quiet for this long and the topic is over; the buffer waits to be summarized. */
+/** Quiet for this long and the topic is over; a new line starts its own buffer. */
 const STALE_MS = 15 * 60 * 1000;
-/** Nobody came back to summarize it within a day: keep the log rather than lose it. */
-const ABANDONED_MS = 24 * 60 * 60 * 1000;
-/** Hand back at most this many at once — a long queue gets summarized carelessly. */
-const HANDOFF_LIMIT = 2;
+/**
+ * Quiet for this long and the buffer settles onto the timeline by itself.
+ *
+ * Nothing has to be summarized for a day to be recorded. A summary is an
+ * upgrade applied to an entry that already exists, not a toll paid before it
+ * may exist — which is the whole point: when finalizing was the only way to
+ * land an entry, whoever happened to be passing would summarize a conversation
+ * they were never part of, just to stop it rotting.
+ */
+const SETTLE_MS = 45 * 60 * 1000;
 /** How far back an append may claim to have happened. */
 const BACKDATE_MS = 15 * 60 * 1000;
-const ABANDONED_BATCH_LIMIT = 20;
+const SETTLE_BATCH_LIMIT = 20;
+/** Open buffers reported back per call, newest first. */
+const OPEN_BUFFER_LIMIT = 8;
 
 export interface ObserveZaddyTopicInput {
     bufferId?: string;
@@ -33,7 +41,21 @@ export type ZaddyTimelineEntity =
     | { entityType: 'note'; value: Note }
     | { entityType: 'session'; value: Session };
 
-/** A buffer that went quiet, handed back with its log so it can be summarized. */
+/** A topic still running, reported so the caller can pick the right one. */
+export interface ZaddyOpenBuffer {
+    id: string;
+    category?: string;
+    appendCount: number;
+    lastAppendAt: number;
+    quietMinutes: number;
+    /** How long until it lands on the timeline by itself. */
+    settlesInMinutes: number;
+    lastLine?: string;
+    /** True for the buffer this call just wrote to. */
+    current?: boolean;
+}
+
+/** A buffer split away from, handed back with its log so it can be summarized. */
 export interface ZaddyTopicHandoff {
     id: string;
     category?: string;
@@ -90,18 +112,17 @@ export function buildZaddyTimelineEntity(
     return { entityType: 'note', value: { ...common, timestamp: endAt } };
 }
 
+/**
+ * Land the buffer on the timeline. Safe to call again on one already settled:
+ * the entity id is derived from the buffer, so a later call with a better
+ * summary rewrites the same entry in place rather than adding a second one.
+ * That is what makes a summary an upgrade instead of a deadline.
+ */
 async function finalizeBuffer(
     env: Env,
     row: ZaddyTopicBufferRow,
     appends: ZaddyTopicAppendRow[],
 ) {
-    if (row.status === 'closed' && row.entity_type && row.entity_id) {
-        return {
-            buffer: publicBuffer(row, appends.length),
-            entity: { entityType: row.entity_type, id: row.entity_id },
-        };
-    }
-
     const entity = buildZaddyTimelineEntity(row, appends);
     const mutation: RevisionMutation = {
         mutationId: `zaddy-buffer:${row.id}:finalize`,
@@ -136,73 +157,72 @@ async function finalizeBuffer(
 }
 
 /**
- * Materialize buffers nobody ever came back to summarize. Read paths call this
+ * Land every buffer that has gone quiet past SETTLE_MS. Read paths call this
  * too: a pull may be the only traffic the account sees for days.
+ *
+ * These settle on their log alone, with no summary, and that is the intended
+ * resting state — not a failure mode. Anyone who was actually in the
+ * conversation can still call finalize afterwards to replace the log with a
+ * real summary; the entry keeps its id and its span either way.
  */
-export async function expireAbandonedZaddyTopics(
+export async function settleQuietZaddyTopics(
     env: Env,
     now = Date.now(),
 ): Promise<number> {
-    const abandoned = await env.CHRONOLOG_DB.prepare(`
+    const quiet = await env.CHRONOLOG_DB.prepare(`
         SELECT * FROM zaddy_topic_buffers
         WHERE status = 'open' AND last_append_at < ?
         ORDER BY last_append_at ASC
         LIMIT ?
-    `).bind(now - ABANDONED_MS, ABANDONED_BATCH_LIMIT).all<ZaddyTopicBufferRow>();
+    `).bind(now - SETTLE_MS, SETTLE_BATCH_LIMIT).all<ZaddyTopicBufferRow>();
 
-    for (const row of abandoned.results ?? []) {
+    for (const row of quiet.results ?? []) {
         await finalizeBuffer(env, row, await loadAppends(env, row.id));
     }
-    return (abandoned.results ?? []).length;
-}
-
-async function loadHandoff(env: Env, row: ZaddyTopicBufferRow): Promise<ZaddyTopicHandoff> {
-    const appends = await loadAppends(env, row.id);
-    return {
-        id: row.id,
-        ...(row.category ? { category: row.category } : {}),
-        appends: appends.map(append => ({ at: append.observed_at, content: append.content })),
-    };
+    return (quiet.results ?? []).length;
 }
 
 /**
- * Buffers whose topic has gone quiet, returned with their log so the next
- * conversation can write the summary. They may belong to a different
- * conversation than the one asking; the log is the material either way.
+ * Every buffer still open, so the caller can see what it is already holding
+ * before it decides to open another one. This is the cure for two habits that
+ * only look like different bugs: starting a fresh buffer because the id of the
+ * right one was forgotten, and finalizing one topic with another topic's
+ * summary. Both come from working blind.
  *
- * `pinnedBufferId` jumps the queue: a buffer this very call just orphaned must
- * come back now, not once the older ones ahead of it clear the HANDOFF_LIMIT.
+ * Deliberately no logs here, only the last line. A caller that recognizes a
+ * buffer from one line was in that conversation; a caller that does not should
+ * leave it alone and let it settle on its own.
  */
-export async function collectZaddyHandoffs(
+export async function openZaddyBuffers(
     env: Env,
     now = Date.now(),
-    excludeBufferId?: string,
-    pinnedBufferId?: string,
-): Promise<ZaddyTopicHandoff[]> {
-    const handoffs: ZaddyTopicHandoff[] = [];
-    if (pinnedBufferId) {
-        const pinned = await env.CHRONOLOG_DB.prepare(
-            "SELECT * FROM zaddy_topic_buffers WHERE id = ? AND status = 'open'"
-        ).bind(pinnedBufferId).first<ZaddyTopicBufferRow>();
-        if (pinned) handoffs.push(await loadHandoff(env, pinned));
-    }
-
-    const stale = await env.CHRONOLOG_DB.prepare(`
+    currentBufferId?: string,
+): Promise<ZaddyOpenBuffer[]> {
+    const rows = await env.CHRONOLOG_DB.prepare(`
         SELECT * FROM zaddy_topic_buffers
-        WHERE status = 'open' AND last_append_at < ? AND id NOT IN (?, ?)
-        ORDER BY last_append_at ASC
+        WHERE status = 'open'
+        ORDER BY last_append_at DESC
         LIMIT ?
-    `).bind(
-        now - STALE_MS,
-        excludeBufferId ?? '',
-        pinnedBufferId ?? '',
-        Math.max(HANDOFF_LIMIT - handoffs.length, 0),
-    ).all<ZaddyTopicBufferRow>();
+    `).bind(OPEN_BUFFER_LIMIT).all<ZaddyTopicBufferRow>();
 
-    for (const row of stale.results ?? []) {
-        handoffs.push(await loadHandoff(env, row));
+    const open: ZaddyOpenBuffer[] = [];
+    for (const row of rows.results ?? []) {
+        const appends = await loadAppends(env, row.id);
+        open.push({
+            id: row.id,
+            ...(row.category ? { category: row.category } : {}),
+            appendCount: appends.length,
+            lastAppendAt: row.last_append_at,
+            quietMinutes: Math.max(Math.round((now - row.last_append_at) / 60000), 0),
+            settlesInMinutes: Math.max(
+                Math.round((row.last_append_at + SETTLE_MS - now) / 60000),
+                0,
+            ),
+            ...(appends.length ? { lastLine: appends[appends.length - 1].content } : {}),
+            ...(row.id === currentBufferId ? { current: true } : {}),
+        });
     }
-    return handoffs;
+    return open;
 }
 
 async function appendToBuffer(env: Env, bufferId: string, content: string, observedAt: number) {
@@ -215,7 +235,7 @@ async function appendToBuffer(env: Env, bufferId: string, content: string, obser
 
 export async function observeZaddyTopic(env: Env, input: ObserveZaddyTopicInput) {
     const now = Date.now();
-    await expireAbandonedZaddyTopics(env, now);
+    await settleQuietZaddyTopics(env, now);
 
     const finalize = input.finalize === true;
     const content = input.content?.trim();
@@ -239,11 +259,28 @@ export async function observeZaddyTopic(env: Env, input: ObserveZaddyTopicInput)
         ).bind(input.bufferId).first<ZaddyTopicBufferRow>();
         if (!current) throw new Error(`Unknown zaddy buffer "${input.bufferId}"`);
         if (current.status === 'closed') {
-            if (finalize) return finalizeBuffer(env, current, await loadAppends(env, current.id));
-            throw new Error(`Zaddy buffer "${input.bufferId}" is already closed; start a new observation`);
+            // Already on the timeline. Finalizing again is the upgrade path: the
+            // entry keeps its id and span and just gets better words. A call
+            // with no content is necessarily a finalize — the validation above
+            // rejects every other shape — so there is nothing else to handle.
+            if (!content) {
+                return {
+                    ...await finalizeBuffer(
+                        env,
+                        { ...current, content: summary as string },
+                        await loadAppends(env, current.id),
+                    ),
+                    openBuffers: await openZaddyBuffers(env, now),
+                };
+            }
+            // It settled while nobody was talking. This line is a new topic, not
+            // a reopening — the settled entry's span must stay where it is.
+            splitFrom = current;
+        } else if (content && current.last_append_at < now - STALE_MS) {
+            splitFrom = current;
+        } else {
+            row = current;
         }
-        if (content && current.last_append_at < now - STALE_MS) splitFrom = current;
-        else row = current;
     }
     if (!row) {
         row = {
@@ -291,26 +328,37 @@ export async function observeZaddyTopic(env: Env, input: ObserveZaddyTopicInput)
     const result = finalize && !splitFrom
         ? await finalizeBuffer(env, row, appends)
         : { buffer: publicBuffer(row, appends.length) };
+    // A buffer split away from is handed back with its whole log — unlike the
+    // open-buffer list, which shows one line. The caller was in that
+    // conversation a moment ago, so it is the one person who can summarize it.
+    let previous: ZaddyTopicHandoff | undefined;
+    if (splitFrom && !closed && splitFrom.status === 'open') {
+        const priorAppends = await loadAppends(env, splitFrom.id);
+        previous = {
+            id: splitFrom.id,
+            ...(splitFrom.category ? { category: splitFrom.category } : {}),
+            appends: priorAppends.map(a => ({ at: a.observed_at, content: a.content })),
+        };
+    }
+
     const split = splitFrom
         ? {
             split: {
                 previousBufferId: splitFrom.id,
-                reason: 'stale' as const,
-                detail: 'that topic had been quiet past the staleness window; '
-                    + 'this line opened a new buffer so the entry cannot span the gap',
+                reason: splitFrom.status === 'closed' ? ('settled' as const) : ('stale' as const),
+                detail: splitFrom.status === 'closed'
+                    ? 'that topic had already settled onto the timeline; this line '
+                        + 'opened a new buffer rather than moving a finished entry'
+                    : 'that topic had been quiet past the staleness window; '
+                        + 'this line opened a new buffer so the entry cannot span the gap',
+                ...(previous ? { previous } : {}),
             },
             ...(closed ? { entity: closed.entity, revision: closed.revision } : {}),
         }
         : {};
-    const pendingHandoff = await collectZaddyHandoffs(
-        env,
-        now,
-        row.id,
-        splitFrom && !closed ? splitFrom.id : undefined,
-    );
     return {
         ...result,
         ...split,
-        ...(pendingHandoff.length ? { pendingHandoff } : {}),
+        openBuffers: await openZaddyBuffers(env, now, row.id),
     };
 }

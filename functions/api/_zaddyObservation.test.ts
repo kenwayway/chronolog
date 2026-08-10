@@ -10,9 +10,9 @@ vi.mock('./_notionSync.ts', () => ({
 
 import {
     buildZaddyTimelineEntity,
-    collectZaddyHandoffs,
-    expireAbandonedZaddyTopics,
     observeZaddyTopic,
+    openZaddyBuffers,
+    settleQuietZaddyTopics,
 } from './_zaddyObservation.ts';
 import type { Env, ZaddyTopicAppendRow, ZaddyTopicBufferRow } from './types.ts';
 
@@ -63,15 +63,21 @@ function fakeEnv() {
                                 .sort((left, right) => left.observed_at - right.observed_at),
                         };
                     }
-                    const cutoff = Number(values[0]);
-                    const excluded = sql.includes('id NOT IN (?, ?)')
-                        ? [String(values[1]), String(values[2])]
-                        : [];
                     const limit = Number(values[values.length - 1]);
+                    const open = [...buffers.values()].filter(row => row.status === 'open');
+                    // The open-buffer listing takes every open row, newest first;
+                    // the settle sweep takes only those quiet past a cutoff.
+                    if (!sql.includes('last_append_at < ?')) {
+                        return {
+                            results: open
+                                .sort((left, right) => right.last_append_at - left.last_append_at)
+                                .slice(0, limit),
+                        };
+                    }
+                    const cutoff = Number(values[0]);
                     return {
-                        results: [...buffers.values()]
-                            .filter(row => row.status === 'open' && row.last_append_at < cutoff)
-                            .filter(row => !excluded.includes(row.id))
+                        results: open
+                            .filter(row => row.last_append_at < cutoff)
                             .sort((left, right) => left.last_append_at - right.last_append_at)
                             .slice(0, limit),
                     };
@@ -252,23 +258,52 @@ describe('observeZaddyTopic', () => {
         expect(buffers.get(started.buffer.id)?.status).toBe('closed');
     });
 
-    it('hands back a buffer that went quiet, with its log, excluding the live one', async () => {
-        const { env, buffers } = fakeEnv();
+    it('reports every open buffer, so a second topic need not replace the first', async () => {
+        const { env, buffers, appends } = fakeEnv();
         const now = Date.now();
-        const quiet = await observeZaddyTopic(env, { content: 'Earlier topic.', observedAt: now });
-        buffers.set(quiet.buffer.id, {
-            ...buffers.get(quiet.buffer.id)!,
-            last_append_at: now - 20 * MINUTE,
+        const first = await observeZaddyTopic(env, {
+            content: 'Rewatching POI.', category: 'wander', observedAt: now,
         });
+        backdate(buffers, appends, first.buffer.id, now - 20 * MINUTE);
 
-        const live = await observeZaddyTopic(env, { content: 'A new topic.', observedAt: now });
-        expect(live).toMatchObject({
-            pendingHandoff: [{ id: quiet.buffer.id, appends: [{ content: 'Earlier topic.' }] }],
-        });
-        expect(await collectZaddyHandoffs(env, now, quiet.buffer.id)).toEqual([]);
+        const second = await observeZaddyTopic(env, { content: 'Back to the sync bug.', observedAt: now });
+
+        expect(second.openBuffers).toEqual(expect.arrayContaining([
+            expect.objectContaining({
+                id: first.buffer.id,
+                category: 'wander',
+                lastLine: 'Rewatching POI.',
+                quietMinutes: 20,
+                settlesInMinutes: 25,
+            }),
+            expect.objectContaining({ id: second.buffer.id, current: true, quietMinutes: 0 }),
+        ]));
     });
 
-    it('splits a stale reuse into a new buffer and hands the old one back', async () => {
+    it('splits a stale reuse into a new buffer and hands the old log back', async () => {
+        const { env, buffers, appends } = fakeEnv();
+        const now = Date.now();
+        const paused = await observeZaddyTopic(env, { content: 'Hook work.', observedAt: now });
+        backdate(buffers, appends, paused.buffer.id, now - 20 * MINUTE);
+
+        const resumed = await observeZaddyTopic(env, {
+            bufferId: paused.buffer.id,
+            content: 'Wrapping the topic up.',
+            observedAt: now,
+        });
+
+        expect(resumed.buffer.id).not.toBe(paused.buffer.id);
+        expect(resumed).toMatchObject({
+            split: {
+                previousBufferId: paused.buffer.id,
+                reason: 'stale',
+                previous: { id: paused.buffer.id, appends: [{ content: 'Hook work.' }] },
+            },
+        });
+        expect(buffers.get(paused.buffer.id)?.status).toBe('open');
+    });
+
+    it('starts a new buffer rather than reopening one that already settled', async () => {
         const { env, buffers, appends } = fakeEnv();
         const now = Date.now();
         const slept = await observeZaddyTopic(env, { content: 'Late-night hook work.', observedAt: now });
@@ -280,47 +315,52 @@ describe('observeZaddyTopic', () => {
             observedAt: now,
         });
 
+        // The sweep settled it on the way in, so the entry is already placed and
+        // the morning line cannot drag its end across the night.
+        expect(buffers.get(slept.buffer.id)?.status).toBe('closed');
         expect(morning.buffer.id).not.toBe(slept.buffer.id);
-        expect(morning).toMatchObject({
-            split: { previousBufferId: slept.buffer.id, reason: 'stale' },
-            pendingHandoff: [{ id: slept.buffer.id, appends: [{ content: 'Late-night hook work.' }] }],
-        });
-        expect(buffers.get(slept.buffer.id)?.status).toBe('open');
+        expect(morning).toMatchObject({ split: { reason: 'settled' } });
+        // Nothing to hand back: the entry is already placed, not waiting on words.
+        expect(morning).not.toMatchObject({ split: { previous: expect.anything() } });
     });
 
     it('lands a split summary on the topic it describes, not on the new buffer', async () => {
         const { env, buffers, appends } = fakeEnv();
         const now = Date.now();
-        const slept = await observeZaddyTopic(env, { content: 'Late-night hook work.', observedAt: now });
-        backdate(buffers, appends, slept.buffer.id, now - 9 * 60 * MINUTE);
+        const paused = await observeZaddyTopic(env, { content: 'Hook work.', observedAt: now });
+        backdate(buffers, appends, paused.buffer.id, now - 20 * MINUTE);
 
-        const morning = await observeZaddyTopic(env, {
-            bufferId: slept.buffer.id,
-            content: 'Wrapping the topic up.',
+        const resumed = await observeZaddyTopic(env, {
+            bufferId: paused.buffer.id,
+            content: 'A new thing she just said.',
             summary: 'She wired the time hook and mapped the hindsight surface.',
             finalize: true,
             observedAt: now,
         });
 
-        // The entry spans only the real appends; the morning line is not one of them.
-        expect(morning).toMatchObject({
-            split: { previousBufferId: slept.buffer.id },
+        // The entry spans only the real appends; the new line is not one of them.
+        expect(resumed).toMatchObject({
+            split: { previousBufferId: paused.buffer.id },
             entity: {
                 content: 'She wired the time hook and mapped the hindsight surface.',
-                timestamp: now - 9 * 60 * MINUTE,
+                timestamp: now - 20 * MINUTE,
             },
         });
-        expect(buffers.get(slept.buffer.id)?.status).toBe('closed');
-        expect(morning.buffer.status).toBe('open');
-        expect(morning).not.toHaveProperty('pendingHandoff');
+        expect(buffers.get(paused.buffer.id)?.status).toBe('closed');
+        expect(resumed.buffer.status).toBe('open');
     });
 
-    it('lets a quiet buffer be finalized late without splitting', async () => {
+    it('upgrades a settled entry when a real summary arrives late', async () => {
         const { env, buffers, appends } = fakeEnv();
         const now = Date.now();
         const started = await observeZaddyTopic(env, { content: 'Auth cleanup.', observedAt: now });
         backdate(buffers, appends, started.buffer.id, now - 9 * 60 * MINUTE);
 
+        // The sweep settles it on its raw log first...
+        await settleQuietZaddyTopics(env, now);
+        expect(buffers.get(started.buffer.id)).toMatchObject({ status: 'closed' });
+
+        // ...and the summary written afterwards replaces that entry in place.
         const done = await observeZaddyTopic(env, {
             bufferId: started.buffer.id,
             summary: 'She finished the auth cleanup.',
@@ -330,19 +370,34 @@ describe('observeZaddyTopic', () => {
 
         expect(done.buffer.id).toBe(started.buffer.id);
         expect(done).not.toHaveProperty('split');
-        expect(buffers.get(started.buffer.id)?.status).toBe('closed');
+        expect(done).toMatchObject({
+            entity: { id: `zaddy:${started.buffer.id}`, content: 'She finished the auth cleanup.' },
+        });
     });
 
-    it('materializes an abandoned buffer as its raw log', async () => {
+    it('settles a quiet buffer on its raw log without waiting for a summary', async () => {
         const { env, buffers } = fakeEnv();
         const now = Date.now();
         const started = await observeZaddyTopic(env, { content: 'Nobody came back.', observedAt: now });
         buffers.set(started.buffer.id, {
             ...buffers.get(started.buffer.id)!,
-            last_append_at: now - 25 * 60 * MINUTE,
+            last_append_at: now - 50 * MINUTE,
         });
 
-        expect(await expireAbandonedZaddyTopics(env, now)).toBe(1);
+        expect(await settleQuietZaddyTopics(env, now)).toBe(1);
         expect(buffers.get(started.buffer.id)).toMatchObject({ status: 'closed', entity_type: 'note' });
+    });
+
+    it('leaves a buffer alone while it is merely stale', async () => {
+        const { env, buffers } = fakeEnv();
+        const now = Date.now();
+        const started = await observeZaddyTopic(env, { content: 'Still going.', observedAt: now });
+        buffers.set(started.buffer.id, {
+            ...buffers.get(started.buffer.id)!,
+            last_append_at: now - 20 * MINUTE,
+        });
+
+        expect(await settleQuietZaddyTopics(env, now)).toBe(0);
+        expect(await openZaddyBuffers(env, now)).toHaveLength(1);
     });
 });

@@ -178,9 +178,10 @@ const WRITE_TOOLS = [
             'Skip only genuine one-off lookups. A long debugging or building session is real work and must be observed — do not dismiss it as assistant-only activity.',
             'Each call appends one short line to a running log. Never rewrite the story so far and never resend earlier lines; the log already has them.',
             'Omit bufferId to start; reuse the returned buffer ID while the same topic continues.',
-            'Appending to a buffer that has been quiet for more than 15 minutes splits instead: the line opens a fresh buffer, returned under `split`, so one late line cannot stretch an entry across the hours nobody was talking. Finalizing such a buffer is always allowed and still lands on its own span.',
-            'Finalize with a summary when the topic resolves or clearly shifts. The summary is the only thing that reaches the timeline, and the entry spans the append timestamps — not the moment you wrote it, so a late summary is still an accurate one.',
-            'A buffer left quiet for 15 minutes comes back in pendingHandoff with its log. Summarize and finalize it even when it belongs to another conversation: the log is the material, and an unclaimed buffer eventually lands as raw log lines.',
+            'Several topics may be open at once and always could be — `openBuffers` in every response lists them with their last line, so append to the one that matches instead of opening a duplicate. Read it before you decide you need a new buffer, and check it again before you finalize: a summary must describe the log of the buffer it is being written onto, never a different topic you also have in mind.',
+            'Appending to a buffer quiet for more than 15 minutes splits instead: the line opens a fresh buffer, returned under `split` along with the old buffer\'s log under `split.previous`, so one late line cannot stretch an entry across the hours nobody was talking.',
+            'Finalize with a summary when the topic resolves or clearly shifts. The entry spans the append timestamps — not the moment you wrote it — so a late summary is still an accurate one.',
+            'Finalizing is an upgrade, not a deadline: a buffer quiet for 45 minutes settles onto the timeline by itself, carrying its raw log. Nothing is ever lost by leaving one alone, so never summarize a conversation you were not part of just to tidy it away — finalize it later with real words and the same entry is rewritten in place.',
         ].join(' '),
         inputSchema: {
             type: 'object',
