@@ -247,10 +247,27 @@ MCP write tools (write scope only):
 - `observe`
 - `comment`
 
-`observe` starts or continues a durable zaddy topic buffer and optionally
-finalizes it. It is for sustained personally meaningful conversational
-signals, not one-off informational questions. Stale buffers finalize after
-30 minutes through MCP/data-pull maintenance.
+`observe` maintains a durable zaddy topic buffer. It is for sustained
+personally meaningful conversational signals, not one-off informational
+questions.
+
+Each call appends one line to `zaddy_topic_appends`; the summary is written
+once, at finalization, into the buffer's `content` slot. Only the summary
+reaches the timeline, and the entity's span is `MIN`/`MAX` of the append
+timestamps — so a buffer summarized hours later, or from a different
+conversation, still lands where it happened. An append may not be backdated
+more than 15 minutes, which is the only way a span could otherwise be inflated.
+
+A buffer with no append for 15 minutes is returned as `pendingHandoff` (at
+most two per call, newest conversation excluded) carrying its log, so the next
+`observe` call can summarize and finalize it. Unclaimed after 24 hours, it
+materializes as its raw log lines through MCP or data-pull maintenance:
+deliberately ugly, and still better than losing the day.
+
+`list_categories_and_tags` returns content types as names and field names
+only; `includeFieldDefinitions` adds each field's type, options, and default,
+which is roughly four times the payload and only needed to compose a typed
+write.
 
 `comment` writes a zaddy remark about one existing entry. See "Zaddy
 comments" below; the write never touches the entry being commented on.

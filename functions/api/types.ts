@@ -125,16 +125,25 @@ export interface Session {
 
 export interface ZaddyTopicBufferRow {
     id: string;
+    /** Summary slot: empty until the topic is finalized. */
     content: string;
-    first_observed_at: number;
-    last_observed_at: number;
-    observation_count: number;
+    /** Mirror of the newest append, kept only so the stale sweep can index it. */
+    last_append_at: number;
     category: string | null;
     status: 'open' | 'closed';
     entity_type: 'note' | 'session' | null;
     entity_id: string | null;
     created_at: number;
     updated_at: number;
+}
+
+/** One line of the running log. These timestamps are the entry's real span. */
+export interface ZaddyTopicAppendRow {
+    id: string;
+    buffer_id: string;
+    content: string;
+    observed_at: number;
+    created_at: number;
 }
 
 export interface ContentType {

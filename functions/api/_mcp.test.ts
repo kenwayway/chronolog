@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { buildKeywordSearch, buildNote, buildSession, buildZaddyComment, filterByTags, handleMcpRequest } from './_mcp.ts';
+import {
+    buildKeywordSearch,
+    buildNote,
+    buildSession,
+    buildZaddyComment,
+    filterByTags,
+    handleMcpRequest,
+    summarizeContentType,
+} from './_mcp.ts';
 import { isZaddyComment } from '../../src/utils/zaddyComment.ts';
 import type { Env } from './types.ts';
 
@@ -94,6 +102,36 @@ describe('MCP tool surface', () => {
             'observe',
         ]));
         expect(names).not.toContain('add_entry');
+    });
+});
+
+describe('summarizeContentType', () => {
+    const mood = {
+        id: 'mood',
+        name: 'Mood',
+        fields: '[{"id":"feeling","type":"dropdown","options":["Happy","Sad"],"default":"Happy"},{"id":"energy","type":"number"}]',
+    };
+
+    it('reduces a content type to its field names', () => {
+        expect(summarizeContentType(mood, false)).toEqual({
+            id: 'mood',
+            name: 'Mood',
+            fields: ['feeling', 'energy'],
+        });
+    });
+
+    it('drops the field key entirely when a type has none', () => {
+        expect(summarizeContentType({ id: 'note', name: 'Note', fields: '[]' }, false))
+            .toEqual({ id: 'note', name: 'Note' });
+    });
+
+    it('returns the raw definition when the caller is about to write a typed entry', () => {
+        expect(summarizeContentType(mood, true)).toBe(mood);
+    });
+
+    it('survives a malformed historical definition', () => {
+        expect(summarizeContentType({ id: 'legacy', name: 'Legacy', fields: 'not json' }, false))
+            .toEqual({ id: 'legacy', name: 'Legacy' });
     });
 });
 

@@ -198,10 +198,16 @@ historical session boundary rows into `sessions`, moves notes into `notes`, and
 drops the old boundary table. Deploy the migrated database and new application
 code together.
 
-The write-scoped MCP `observe` tool maintains short-lived topic buffers for
-ambient journaling. Finalized buffers become historical Notes or Sessions with
-`origin: "zaddy"`; they never occupy the user's active session, and their
-conversation span is reported separately from tracked time.
+The write-scoped MCP `observe` tool maintains topic buffers for ambient
+journaling: each call appends one line to a running log, and a summary is
+written once when the topic ends. Finalized buffers become historical Notes or
+Sessions with `origin: "zaddy"` spanning the append timestamps rather than the
+moment the summary was composed. They never occupy the user's active session,
+and their conversation span is reported separately from tracked time.
+
+Migration `0010_zaddy_topic_appends.sql` is breaking in the same way as `0006`:
+it drops `first_observed_at` and `observation_count`, so the migrated database
+and new code must deploy together.
 
 For Notion task syncing, add a number property named `Tracked Minutes` (or set
 `NOTION_TRACKED_MINUTES_PROPERTY` to its name/property ID), then share the task

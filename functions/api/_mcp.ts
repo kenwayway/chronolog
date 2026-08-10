@@ -101,8 +101,21 @@ const READ_TOOLS = [
     },
     {
         name: 'list_categories_and_tags',
-        description: 'List fixed categories, content types, and most-used note/session tags.',
-        inputSchema: { type: 'object', properties: {} },
+        description: [
+            'List fixed categories, content types, and most-used note/session tags.',
+            'Content types come back as names and field names only.',
+            'Set includeFieldDefinitions when you are about to write a typed entry and need each field’s type, options, and default.',
+        ].join(' '),
+        inputSchema: {
+            type: 'object',
+            properties: {
+                includeFieldDefinitions: {
+                    type: 'boolean',
+                    description: 'Return the full field definition of every content type instead of just field names',
+                },
+            },
+            additionalProperties: false,
+        },
     },
 ] as const;
 
@@ -163,9 +176,10 @@ const WRITE_TOOLS = [
             'Maintain zaddy-authored ambient-journal topic buffers from ordinary conversation.',
             'Default to observing. Any topic that runs past a couple of exchanges deserves a buffer: building something, working a problem, weighing a decision, or arriving somewhere.',
             'Skip only genuine one-off lookups. A long debugging or building session is real work and must be observed — do not dismiss it as assistant-only activity.',
-            'Omit bufferId to start; reuse the returned buffer ID when the same underlying topic continues.',
-            'Send the full current summary, not a delta. Backdate firstObservedAt when significance only becomes clear after several messages.',
-            'Set finalize when the topic resolves or clearly shifts; stale buffers finalize automatically.',
+            'Each call appends one short line to a running log. Never rewrite the story so far and never resend earlier lines; the log already has them.',
+            'Omit bufferId to start; reuse the returned buffer ID while the same topic continues.',
+            'Finalize with a summary when the topic resolves or clearly shifts. The summary is the only thing that reaches the timeline, and the entry spans the append timestamps — not the moment you wrote it, so a late summary is still an accurate one.',
+            'A buffer left quiet for 15 minutes comes back in pendingHandoff with its log. Summarize and finalize it even when it belongs to another conversation: the log is the material, and an unclaimed buffer eventually lands as raw log lines.',
         ].join(' '),
         inputSchema: {
             type: 'object',
@@ -173,25 +187,30 @@ const WRITE_TOOLS = [
                 bufferId: { type: 'string', maxLength: 100 },
                 content: {
                     type: 'string',
-                    maxLength: 100000,
+                    maxLength: 200,
                     description:
-                        'Current zaddy observation, written as an outside perspective rather than in the user’s voice. ' +
-                        'Keep it short: two or three sentences, about 100 CJK characters or 50 English words. ' +
-                        'Record only what they are doing, where they are stuck, and what they decided. ' +
-                        'Do not recount the process step by step and do not write it as narrative.',
+                        'One line appended to the running log: what just happened, or what they just decided. ' +
+                        'One or two sentences. Not a restatement of the topic so far. ' +
+                        'Written as an outside perspective rather than in the user’s voice. ' +
+                        'Omit only when finalizing a buffer you are not adding to.',
+                },
+                summary: {
+                    type: 'string',
+                    maxLength: 300,
+                    description:
+                        'The single entry that lands in the timeline, composed from the log when the topic ends. ' +
+                        'Two or three sentences, about 100 CJK characters or 50 English words: what they were doing, ' +
+                        'where they got stuck, what they decided. Not a step-by-step retelling of the log. ' +
+                        'Required whenever finalize is set.',
                 },
                 observedAt: {
                     ...sharedWriteProperties.timestamp,
-                    description: 'Time of the latest meaningful observation; defaults to now',
-                },
-                firstObservedAt: {
-                    ...sharedWriteProperties.timestamp,
-                    description: 'Optional earlier time when this topic first appeared',
+                    description: 'When this line happened; defaults to now, and may not be more than 15 minutes in the past',
                 },
                 category: sharedWriteProperties.category,
                 finalize: {
                     type: 'boolean',
-                    description: 'Close the buffer and materialize one historical zaddy Note or Session',
+                    description: 'Write the summary and materialize one historical zaddy Note or Session',
                 },
             },
             required: ['content'],
@@ -589,9 +608,34 @@ async function getStats(args: Record<string, unknown>, db: D1Database) {
     };
 }
 
-async function listCategoriesAndTags(db: D1Database) {
+interface ContentTypeSummaryRow {
+    id: string;
+    name: string;
+    fields: string;
+}
+
+/**
+ * Field names alone are enough to pick a content type; the options and
+ * defaults behind them are several times larger and only matter once a typed
+ * write is actually being composed.
+ */
+export function summarizeContentType(row: ContentTypeSummaryRow, includeDefinitions: boolean) {
+    if (includeDefinitions) return row;
+    let fields: string[] = [];
+    try {
+        fields = (JSON.parse(row.fields) as { id?: unknown }[])
+            .map(field => String(field.id ?? ''))
+            .filter(Boolean);
+    } catch { /* ignore malformed historical definitions */ }
+    return fields.length
+        ? { id: row.id, name: row.name, fields }
+        : { id: row.id, name: row.name };
+}
+
+async function listCategoriesAndTags(db: D1Database, includeFieldDefinitions: boolean) {
     const [contentTypes, noteTags, sessionTags] = await Promise.all([
-        db.prepare('SELECT id, name, icon, fields FROM content_types ORDER BY sort_order').all(),
+        db.prepare('SELECT id, name, fields FROM content_types ORDER BY sort_order')
+            .all<ContentTypeSummaryRow>(),
         db.prepare("SELECT tags FROM notes WHERE tags IS NOT NULL AND tags != '[]'").all<{ tags: string }>(),
         db.prepare("SELECT tags, end_tags FROM sessions WHERE tags IS NOT NULL OR end_tags IS NOT NULL")
             .all<{ tags: string | null; end_tags: string | null }>(),
@@ -607,7 +651,7 @@ async function listCategoriesAndTags(db: D1Database) {
     sessionTags.results.forEach(row => { count(row.tags); count(row.end_tags); });
     return {
         categories: CATEGORIES,
-        contentTypes: contentTypes.results,
+        contentTypes: contentTypes.results.map(row => summarizeContentType(row, includeFieldDefinitions)),
         tags: [...counts].sort((a, b) => b[1] - a[1]).slice(0, 100)
             .map(([tag, total]) => ({ tag, count: total })),
     };
@@ -771,8 +815,11 @@ async function comment(args: Record<string, unknown>, env: Env) {
 }
 
 async function observe(args: Record<string, unknown>, env: Env) {
-    if (typeof args.content !== 'string' || !args.content.trim()) {
+    if (args.content !== undefined && (typeof args.content !== 'string' || !args.content.trim())) {
         throw new Error('content must be a non-empty string');
+    }
+    if (args.summary !== undefined && (typeof args.summary !== 'string' || !args.summary.trim())) {
+        throw new Error('summary must be a non-empty string');
     }
     if (args.bufferId !== undefined && (
         typeof args.bufferId !== 'string'
@@ -787,11 +834,9 @@ async function observe(args: Record<string, unknown>, env: Env) {
     }
     return observeZaddyTopic(env, {
         ...(typeof args.bufferId === 'string' ? { bufferId: args.bufferId } : {}),
-        content: args.content.trim(),
+        ...(typeof args.content === 'string' ? { content: args.content.trim() } : {}),
+        ...(typeof args.summary === 'string' ? { summary: args.summary.trim() } : {}),
         observedAt: parseTimestamp(args.observedAt),
-        ...(args.firstObservedAt !== undefined
-            ? { firstObservedAt: parseTimestamp(args.firstObservedAt) }
-            : {}),
         ...(typeof category === 'string' ? { category } : {}),
         finalize: args.finalize === true,
     });
@@ -806,7 +851,9 @@ async function callTool(params: Record<string, unknown> | undefined, env: Env, c
         else if (name === 'search_sessions') data = await searchSessions(args, env.CHRONOLOG_DB);
         else if (name === 'get_day') data = await getDay(args, env.CHRONOLOG_DB);
         else if (name === 'get_stats') data = await getStats(args, env.CHRONOLOG_DB);
-        else if (name === 'list_categories_and_tags') data = await listCategoriesAndTags(env.CHRONOLOG_DB);
+        else if (name === 'list_categories_and_tags') {
+            data = await listCategoriesAndTags(env.CHRONOLOG_DB, args.includeFieldDefinitions === true);
+        }
         else if (name === 'add_note' && canWrite) data = await addNote(args, env);
         else if (name === 'start_session' && canWrite) data = await startSession(args, env);
         else if (name === 'end_session' && canWrite) data = await endSession(args, env);

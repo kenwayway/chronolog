@@ -47,12 +47,13 @@ CREATE INDEX IF NOT EXISTS idx_sessions_revision ON sessions(revision);
 
 -- Short-lived ambient-journaling state. Buffers are workflow records, not
 -- timeline entities; finalization materializes one canonical Note or Session.
+-- `content` is the summary slot and stays empty until the topic is finalized;
+-- `last_append_at` mirrors the newest append so the staleness sweep can use an
+-- index. Time itself comes from zaddy_topic_appends, never from this row.
 CREATE TABLE IF NOT EXISTS zaddy_topic_buffers (
   id TEXT PRIMARY KEY,
   content TEXT NOT NULL,
-  first_observed_at INTEGER NOT NULL,
-  last_observed_at INTEGER NOT NULL,
-  observation_count INTEGER NOT NULL DEFAULT 1,
+  last_append_at INTEGER NOT NULL,
   category TEXT,
   status TEXT NOT NULL DEFAULT 'open' CHECK(status IN ('open', 'closed')),
   entity_type TEXT CHECK(entity_type IS NULL OR entity_type IN ('note', 'session')),
@@ -62,7 +63,19 @@ CREATE TABLE IF NOT EXISTS zaddy_topic_buffers (
 );
 
 CREATE INDEX IF NOT EXISTS idx_zaddy_topic_buffers_open
-ON zaddy_topic_buffers(status, last_observed_at);
+ON zaddy_topic_buffers(status, last_append_at);
+
+-- The running log of one topic: what happened, and when it actually happened.
+CREATE TABLE IF NOT EXISTS zaddy_topic_appends (
+  id TEXT PRIMARY KEY,
+  buffer_id TEXT NOT NULL,
+  content TEXT NOT NULL,
+  observed_at INTEGER NOT NULL,
+  created_at INTEGER NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_zaddy_topic_appends_buffer
+ON zaddy_topic_appends(buffer_id, observed_at);
 
 -- Content types table
 CREATE TABLE IF NOT EXISTS content_types (
