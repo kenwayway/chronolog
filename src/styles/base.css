@@ -232,6 +232,19 @@ a:hover {
   font-style: italic;
 }
 
+.md-blockquote-line {
+  white-space: pre-wrap;
+}
+
+.md-blockquote-cite {
+  display: block;
+  margin-top: 6px;
+  color: var(--text-dim);
+  font-size: 0.9em;
+  font-style: normal;
+  opacity: 0.85;
+}
+
 /* Headings - CLI aesthetic, same font size */
 .md-h1 {
   display: flex;

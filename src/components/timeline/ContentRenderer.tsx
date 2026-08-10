@@ -1,6 +1,6 @@
 import { useMemo, ReactNode } from "react";
 import { MapPin } from "lucide-react";
-import { parseContent, type ContentParseResult, TableContent } from "@/utils/contentParser";
+import { parseContent, type ContentParseResult, type BlockquoteContent, TableContent } from "@/utils/contentParser";
 
 interface ContentRendererProps {
     content: string;
@@ -68,12 +68,21 @@ export function ContentRenderer({ content, onImageClick }: ContentRendererProps)
                     </div>
                 );
 
-            case 'blockquote':
+            case 'blockquote': {
+                const { lines, attribution } = item.content as BlockquoteContent;
                 return (
                     <blockquote key={item.key} className="md-blockquote">
-                        {item.content as string}
+                        {lines.map((line, li) => (
+                            <div key={li} className="md-blockquote-line">
+                                {line.length > 0 ? line : " "}
+                            </div>
+                        ))}
+                        {attribution && (
+                            <cite className="md-blockquote-cite">— {attribution}</cite>
+                        )}
                     </blockquote>
                 );
+            }
 
             case 'table': {
                 const { headers, alignments, rows } = item.content as TableContent;

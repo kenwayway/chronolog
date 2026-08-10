@@ -75,11 +75,24 @@ export interface TableContent {
   rows: React.ReactNode[][][];
 }
 
+export interface BlockquoteContent {
+  /** Quoted lines, in order. A blank quoted line stays as an empty array. */
+  lines: React.ReactNode[][];
+  /** Trailing `> — source` line, split off so it can be rendered as a cite. */
+  attribution: React.ReactNode[] | null;
+}
+
 export interface ContentParseResult {
   type: 'text' | 'image' | 'location' | 'blockquote' | 'heading' | 'codeblock' | 'table';
-  content: React.ReactNode | HeadingContent | TableContent | string;
+  content: React.ReactNode | HeadingContent | TableContent | BlockquoteContent | string;
   key: string;
 }
+
+/** `>`, `> text` — the marker, with the single optional space after it eaten. */
+const BLOCKQUOTE_LINE = /^>[ \t]?(.*)$/;
+
+/** Trailing attribution inside a quote: `— source`, `-- source`, `– source` */
+const BLOCKQUOTE_ATTRIBUTION = /^(?:—|–|--)[ \t]*(.+)$/;
 
 /** Split a `| a | b |` (or `a | b`, no outer pipes) row into trimmed cells */
 function splitTableRow(line: string): string[] {
@@ -197,13 +210,49 @@ export function parseContent(text: string): ContentParseResult[] {
       continue;
     }
 
-    // Blockquote: > text
-    if (line.startsWith('> ')) {
+    // Blockquote: consecutive `> text` lines collapse into one quote, so a
+    // multi-line quote reads as a single block instead of a stack of boxes.
+    const quoteMatch = line.match(BLOCKQUOTE_LINE);
+    if (quoteMatch) {
+      const rawLines: string[] = [quoteMatch[1]];
+      let quoteIdx = lineIdx + 1;
+      while (quoteIdx < lines.length) {
+        const nextQuote = lines[quoteIdx].match(BLOCKQUOTE_LINE);
+        if (!nextQuote) break;
+        rawLines.push(nextQuote[1]);
+        quoteIdx++;
+      }
+
+      // Drop blank lines at the edges so `>` used as spacing doesn't pad the box
+      while (rawLines.length > 0 && rawLines[rawLines.length - 1].trim() === '') rawLines.pop();
+      while (rawLines.length > 0 && rawLines[0].trim() === '') rawLines.shift();
+
+      if (rawLines.length === 0) {
+        lineIdx = quoteIdx - 1;
+        continue;
+      }
+
+      let attribution: React.ReactNode[] | null = null;
+      const lastLine = rawLines[rawLines.length - 1]?.trim() ?? '';
+      const attributionMatch = lastLine.match(BLOCKQUOTE_ATTRIBUTION);
+      // Only a *trailing* dash line counts, and never the only line — a one-line
+      // quote that happens to start with a dash is still the quote itself.
+      if (attributionMatch && rawLines.length > 1) {
+        attribution = parseInlineMarkdown(attributionMatch[1], `${key}-cite`);
+        rawLines.pop();
+      }
+
       result.push({
         type: 'blockquote',
-        content: parseInlineMarkdown(line.slice(2), key),
-        key,
+        content: {
+          lines: rawLines.map((quoted, qi) =>
+            quoted.trim() === '' ? [] : parseInlineMarkdown(quoted, `${key}-q${qi}`),
+          ),
+          attribution,
+        },
+        key: `quote-${lineIdx}`,
       });
+      lineIdx = quoteIdx - 1;
       continue;
     }
 

@@ -90,3 +90,56 @@ describe('parseContent tables', () => {
         expect(result[0].type).toBe('text')
     })
 })
+
+describe('parseContent — blockquotes', () => {
+    type Quote = { lines: unknown[][]; attribution: unknown[] | null }
+
+    it('merges consecutive quoted lines into one block', () => {
+        const result = parseContent('> first\n> second\n> third')
+        expect(result).toHaveLength(1)
+        expect(result[0].type).toBe('blockquote')
+        const quote = result[0].content as Quote
+        expect(quote.lines).toHaveLength(3)
+        expect(quote.lines[0][0]).toBe('first')
+        expect(quote.attribution).toBeNull()
+    })
+
+    it('ends the quote at the first unquoted line', () => {
+        const result = parseContent('> quoted\nplain\n> quoted again')
+        expect(result.map(r => r.type)).toEqual(['blockquote', 'text', 'blockquote'])
+    })
+
+    it('splits a trailing dash line off as attribution', () => {
+        const result = parseContent('> to be or not to be\n> — Hamlet')
+        const quote = result[0].content as Quote
+        expect(quote.lines).toHaveLength(1)
+        expect(quote.attribution?.[0]).toBe('Hamlet')
+    })
+
+    it('accepts -- and – as attribution markers', () => {
+        for (const dash of ['--', '–']) {
+            const quote = parseContent(`> quoted\n> ${dash} source`)[0].content as Quote
+            expect(quote.attribution?.[0]).toBe('source')
+        }
+    })
+
+    it('keeps a lone dash line as the quote itself', () => {
+        const quote = parseContent('> — just a dashed line')[0].content as Quote
+        expect(quote.lines).toHaveLength(1)
+        expect(quote.attribution).toBeNull()
+    })
+
+    it('keeps interior blank quoted lines but trims the edges', () => {
+        const quote = parseContent('>\n> a\n>\n> b\n>')[0].content as Quote
+        expect(quote.lines.map(line => line.length)).toEqual([1, 0, 1])
+    })
+
+    it('drops a quote that is nothing but markers', () => {
+        expect(parseContent('>\n>')).toHaveLength(0)
+    })
+
+    it('still parses inline markdown inside a quote', () => {
+        const quote = parseContent('> **bold** quote')[0].content as Quote
+        expect((quote.lines[0][0] as { type: string }).type).toBe('strong')
+    })
+})
