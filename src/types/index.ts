@@ -233,6 +233,7 @@ export interface SwitchPayload {
 
 export interface NotePayload {
   content: string
+  timestamp?: number
   contentType?: string
   fieldValues?: Record<string, unknown>
   category?: CategoryId

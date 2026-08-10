@@ -196,7 +196,7 @@ export const InputPanel = forwardRef<InputPanelRef, InputPanelProps>(function In
     const handleSubmit = (action: "note" | "logOff" | "switch" | "logIn") => {
         if (!input.trim() && action !== "logOff") return;
         const content = buildEntryContent();
-        const usesCustomTime = showTimeInput && (action === "logIn" || action === "logOff");
+        const usesCustomTime = showTimeInput && (action === "logIn" || action === "logOff" || action === "note");
         const customTimestamp = usesCustomTime ? new Date(customTime).getTime() : undefined;
 
         if (
@@ -237,7 +237,7 @@ export const InputPanel = forwardRef<InputPanelRef, InputPanelProps>(function In
         }
         if (category) options.category = category;
         if (tags.length > 0) options.tags = tags;
-        if (action === "logIn" && customTimestamp !== undefined) options.timestamp = customTimestamp;
+        if ((action === "logIn" || action === "note") && customTimestamp !== undefined) options.timestamp = customTimestamp;
         const hasOptions = Object.keys(options).length > 0;
 
         switch (action) {

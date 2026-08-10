@@ -45,7 +45,7 @@ export function useEntryHandlers({
         actions.switchSession(content, options)
     }, [actions])
 
-    const handleNote = useCallback((content: string, options?: { contentType?: string; fieldValues?: Record<string, unknown>; category?: CategoryId; tags?: string[] }) => {
+    const handleNote = useCallback((content: string, options?: { timestamp?: number; contentType?: string; fieldValues?: Record<string, unknown>; category?: CategoryId; tags?: string[] }) => {
         actions.addNote(content, options)
     }, [actions])
 

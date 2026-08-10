@@ -93,7 +93,7 @@ function handleNote(state: SessionState, payload: NotePayload): SessionState {
     const note: Note = {
         id: generateId(),
         content: cleanContent,
-        timestamp: Date.now(),
+        timestamp: payload.timestamp ?? Date.now(),
         sessionId: state.activeSessionId || undefined,
         contentType: payload.contentType,
         fieldValues: sanitizeContentTypeFieldValues(payload.contentType, payload.fieldValues),
