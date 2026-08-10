@@ -63,6 +63,21 @@ describe('sessionReducer domain model', () => {
         expect(closed.sessions[0].endAt).toBe(900)
     })
 
+    it('uses a custom timestamp for a note, falling back to now', () => {
+        vi.spyOn(Date, 'now').mockReturnValue(1_000)
+        const backdated = sessionReducer(initialState, {
+            type: ACTIONS.NOTE,
+            payload: { content: 'logged late', timestamp: 400 },
+        })
+        expect(backdated.notes[0].timestamp).toBe(400)
+
+        const live = sessionReducer(initialState, {
+            type: ACTIONS.NOTE,
+            payload: { content: 'logged now' },
+        })
+        expect(live.notes[0].timestamp).toBe(1_000)
+    })
+
     it('switches by closing the current session and opening another atomically', () => {
         vi.spyOn(Date, 'now').mockReturnValue(300)
         const current = session({ id: 'old', startAt: 100 })

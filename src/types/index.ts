@@ -324,7 +324,7 @@ export type SessionAction =
 export interface SessionActions {
   logIn: (content: string, options?: { timestamp?: number; contentType?: string; fieldValues?: Record<string, unknown>; category?: CategoryId; tags?: string[] }) => void
   switchSession: (content: string, options?: { contentType?: string; fieldValues?: Record<string, unknown>; category?: CategoryId; tags?: string[] }) => void
-  addNote: (content: string, options?: { contentType?: string; fieldValues?: Record<string, unknown>; category?: CategoryId; tags?: string[] }) => void
+  addNote: (content: string, options?: { timestamp?: number; contentType?: string; fieldValues?: Record<string, unknown>; category?: CategoryId; tags?: string[] }) => void
   logOff: (content?: string, timestamp?: number) => void
   deleteNote: (noteId: string) => void
   deleteSession: (sessionId: string) => void

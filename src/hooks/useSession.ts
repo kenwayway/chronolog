@@ -63,11 +63,12 @@ export function useSession(): UseSessionReturn {
     })
   }, [])
 
-  const addNote = useCallback((content: string, options?: { contentType?: string; fieldValues?: Record<string, unknown>; category?: CategoryId; tags?: string[] }) => {
+  const addNote = useCallback((content: string, options?: { timestamp?: number; contentType?: string; fieldValues?: Record<string, unknown>; category?: CategoryId; tags?: string[] }) => {
     dispatch({
       type: ACTIONS.NOTE,
       payload: {
         content,
+        timestamp: options?.timestamp,
         contentType: options?.contentType,
         fieldValues: options?.fieldValues,
         category: options?.category,
