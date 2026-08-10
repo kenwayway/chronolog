@@ -64,18 +64,22 @@ function fakeEnv() {
                         };
                     }
                     const cutoff = Number(values[0]);
-                    const excluded = sql.includes('id <> ?') ? String(values[1]) : null;
+                    const excluded = sql.includes('id NOT IN (?, ?)')
+                        ? [String(values[1]), String(values[2])]
+                        : [];
                     const limit = Number(values[values.length - 1]);
                     return {
                         results: [...buffers.values()]
                             .filter(row => row.status === 'open' && row.last_append_at < cutoff)
-                            .filter(row => row.id !== excluded)
+                            .filter(row => !excluded.includes(row.id))
                             .sort((left, right) => left.last_append_at - right.last_append_at)
                             .slice(0, limit),
                     };
                 },
                 async first() {
-                    return buffers.get(String(values[0])) ?? null;
+                    const row = buffers.get(String(values[0])) ?? null;
+                    if (row && sql.includes("status = 'open'") && row.status !== 'open') return null;
+                    return row;
                 },
                 async run() {
                     if (sql.includes('INSERT INTO zaddy_topic_buffers')) {
@@ -104,6 +108,9 @@ function fakeEnv() {
                             entity_id: String(values[1]),
                             updated_at: Number(values[2]),
                         });
+                    } else if (sql.includes('SET content = ? WHERE id = ?')) {
+                        const current = buffers.get(String(values[1]))!;
+                        buffers.set(current.id, { ...current, content: String(values[0]) });
                     } else if (sql.includes('SET content = ?')) {
                         const current = buffers.get(String(values[4]))!;
                         buffers.set(current.id, {
@@ -121,6 +128,17 @@ function fakeEnv() {
         },
     } as unknown as D1Database;
     return { env: { CHRONOLOG_DB: db } as Env, buffers, appends };
+}
+
+/** Age a buffer and its log, since observe itself refuses to backdate that far. */
+function backdate(
+    buffers: Map<string, ZaddyTopicBufferRow>,
+    appends: ZaddyTopicAppendRow[],
+    bufferId: string,
+    at: number,
+) {
+    buffers.set(bufferId, { ...buffers.get(bufferId)!, last_append_at: at });
+    appends.filter(row => row.buffer_id === bufferId).forEach(row => { row.observed_at = at; });
 }
 
 describe('buildZaddyTimelineEntity', () => {
@@ -248,6 +266,71 @@ describe('observeZaddyTopic', () => {
             pendingHandoff: [{ id: quiet.buffer.id, appends: [{ content: 'Earlier topic.' }] }],
         });
         expect(await collectZaddyHandoffs(env, now, quiet.buffer.id)).toEqual([]);
+    });
+
+    it('splits a stale reuse into a new buffer and hands the old one back', async () => {
+        const { env, buffers, appends } = fakeEnv();
+        const now = Date.now();
+        const slept = await observeZaddyTopic(env, { content: 'Late-night hook work.', observedAt: now });
+        backdate(buffers, appends, slept.buffer.id, now - 9 * 60 * MINUTE);
+
+        const morning = await observeZaddyTopic(env, {
+            bufferId: slept.buffer.id,
+            content: 'Wrapping the topic up.',
+            observedAt: now,
+        });
+
+        expect(morning.buffer.id).not.toBe(slept.buffer.id);
+        expect(morning).toMatchObject({
+            split: { previousBufferId: slept.buffer.id, reason: 'stale' },
+            pendingHandoff: [{ id: slept.buffer.id, appends: [{ content: 'Late-night hook work.' }] }],
+        });
+        expect(buffers.get(slept.buffer.id)?.status).toBe('open');
+    });
+
+    it('lands a split summary on the topic it describes, not on the new buffer', async () => {
+        const { env, buffers, appends } = fakeEnv();
+        const now = Date.now();
+        const slept = await observeZaddyTopic(env, { content: 'Late-night hook work.', observedAt: now });
+        backdate(buffers, appends, slept.buffer.id, now - 9 * 60 * MINUTE);
+
+        const morning = await observeZaddyTopic(env, {
+            bufferId: slept.buffer.id,
+            content: 'Wrapping the topic up.',
+            summary: 'She wired the time hook and mapped the hindsight surface.',
+            finalize: true,
+            observedAt: now,
+        });
+
+        // The entry spans only the real appends; the morning line is not one of them.
+        expect(morning).toMatchObject({
+            split: { previousBufferId: slept.buffer.id },
+            entity: {
+                content: 'She wired the time hook and mapped the hindsight surface.',
+                timestamp: now - 9 * 60 * MINUTE,
+            },
+        });
+        expect(buffers.get(slept.buffer.id)?.status).toBe('closed');
+        expect(morning.buffer.status).toBe('open');
+        expect(morning).not.toHaveProperty('pendingHandoff');
+    });
+
+    it('lets a quiet buffer be finalized late without splitting', async () => {
+        const { env, buffers, appends } = fakeEnv();
+        const now = Date.now();
+        const started = await observeZaddyTopic(env, { content: 'Auth cleanup.', observedAt: now });
+        backdate(buffers, appends, started.buffer.id, now - 9 * 60 * MINUTE);
+
+        const done = await observeZaddyTopic(env, {
+            bufferId: started.buffer.id,
+            summary: 'She finished the auth cleanup.',
+            finalize: true,
+            observedAt: now,
+        });
+
+        expect(done.buffer.id).toBe(started.buffer.id);
+        expect(done).not.toHaveProperty('split');
+        expect(buffers.get(started.buffer.id)?.status).toBe('closed');
     });
 
     it('materializes an abandoned buffer as its raw log', async () => {

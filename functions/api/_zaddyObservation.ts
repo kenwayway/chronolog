@@ -156,31 +156,51 @@ export async function expireAbandonedZaddyTopics(
     return (abandoned.results ?? []).length;
 }
 
+async function loadHandoff(env: Env, row: ZaddyTopicBufferRow): Promise<ZaddyTopicHandoff> {
+    const appends = await loadAppends(env, row.id);
+    return {
+        id: row.id,
+        ...(row.category ? { category: row.category } : {}),
+        appends: appends.map(append => ({ at: append.observed_at, content: append.content })),
+    };
+}
+
 /**
  * Buffers whose topic has gone quiet, returned with their log so the next
  * conversation can write the summary. They may belong to a different
  * conversation than the one asking; the log is the material either way.
+ *
+ * `pinnedBufferId` jumps the queue: a buffer this very call just orphaned must
+ * come back now, not once the older ones ahead of it clear the HANDOFF_LIMIT.
  */
 export async function collectZaddyHandoffs(
     env: Env,
     now = Date.now(),
     excludeBufferId?: string,
+    pinnedBufferId?: string,
 ): Promise<ZaddyTopicHandoff[]> {
+    const handoffs: ZaddyTopicHandoff[] = [];
+    if (pinnedBufferId) {
+        const pinned = await env.CHRONOLOG_DB.prepare(
+            "SELECT * FROM zaddy_topic_buffers WHERE id = ? AND status = 'open'"
+        ).bind(pinnedBufferId).first<ZaddyTopicBufferRow>();
+        if (pinned) handoffs.push(await loadHandoff(env, pinned));
+    }
+
     const stale = await env.CHRONOLOG_DB.prepare(`
         SELECT * FROM zaddy_topic_buffers
-        WHERE status = 'open' AND last_append_at < ? AND id <> ?
+        WHERE status = 'open' AND last_append_at < ? AND id NOT IN (?, ?)
         ORDER BY last_append_at ASC
         LIMIT ?
-    `).bind(now - STALE_MS, excludeBufferId ?? '', HANDOFF_LIMIT).all<ZaddyTopicBufferRow>();
+    `).bind(
+        now - STALE_MS,
+        excludeBufferId ?? '',
+        pinnedBufferId ?? '',
+        Math.max(HANDOFF_LIMIT - handoffs.length, 0),
+    ).all<ZaddyTopicBufferRow>();
 
-    const handoffs: ZaddyTopicHandoff[] = [];
     for (const row of stale.results ?? []) {
-        const appends = await loadAppends(env, row.id);
-        handoffs.push({
-            id: row.id,
-            ...(row.category ? { category: row.category } : {}),
-            appends: appends.map(append => ({ at: append.observed_at, content: append.content })),
-        });
+        handoffs.push(await loadHandoff(env, row));
     }
     return handoffs;
 }
@@ -210,7 +230,9 @@ export async function observeZaddyTopic(env: Env, input: ObserveZaddyTopicInput)
         throw new Error('observedAt cannot be more than 15 minutes in the past');
     }
 
-    let row: ZaddyTopicBufferRow;
+    let row: ZaddyTopicBufferRow | null = null;
+    /** Set when a stale reuse was split off; the old buffer still needs a summary. */
+    let splitFrom: ZaddyTopicBufferRow | null = null;
     if (input.bufferId) {
         const current = await env.CHRONOLOG_DB.prepare(
             'SELECT * FROM zaddy_topic_buffers WHERE id = ?'
@@ -220,13 +242,15 @@ export async function observeZaddyTopic(env: Env, input: ObserveZaddyTopicInput)
             if (finalize) return finalizeBuffer(env, current, await loadAppends(env, current.id));
             throw new Error(`Zaddy buffer "${input.bufferId}" is already closed; start a new observation`);
         }
-        row = current;
-    } else {
+        if (content && current.last_append_at < now - STALE_MS) splitFrom = current;
+        else row = current;
+    }
+    if (!row) {
         row = {
             id: crypto.randomUUID(),
             content: '',
             last_append_at: input.observedAt,
-            category: input.category ?? null,
+            category: input.category ?? splitFrom?.category ?? null,
             status: 'open',
             entity_type: null,
             entity_id: null,
@@ -240,12 +264,22 @@ export async function observeZaddyTopic(env: Env, input: ObserveZaddyTopicInput)
         `).bind(row.id, row.last_append_at, row.category, row.created_at, row.updated_at).run();
     }
 
+    // The summary was written about the topic that just ended, so it belongs to
+    // the buffer being split away from — never to the line that outlived it.
+    let closed: Awaited<ReturnType<typeof finalizeBuffer>> | null = null;
+    if (splitFrom && summary) {
+        closed = await finalizeBuffer(env, { ...splitFrom, content: summary }, await loadAppends(env, splitFrom.id));
+        await env.CHRONOLOG_DB.prepare(
+            'UPDATE zaddy_topic_buffers SET content = ? WHERE id = ?'
+        ).bind(summary, splitFrom.id).run();
+    }
+
     if (content) {
         await appendToBuffer(env, row.id, content, input.observedAt);
         row = { ...row, last_append_at: Math.max(row.last_append_at, input.observedAt) };
     }
     const category = input.category ?? row.category;
-    if (summary) row = { ...row, content: summary };
+    if (summary && !splitFrom) row = { ...row, content: summary };
     await env.CHRONOLOG_DB.prepare(`
         UPDATE zaddy_topic_buffers
         SET content = ?, last_append_at = ?, category = ?, updated_at = ?
@@ -254,9 +288,29 @@ export async function observeZaddyTopic(env: Env, input: ObserveZaddyTopicInput)
     row = { ...row, category: category ?? null, updated_at: now };
 
     const appends = await loadAppends(env, row.id);
-    const result = finalize
+    const result = finalize && !splitFrom
         ? await finalizeBuffer(env, row, appends)
         : { buffer: publicBuffer(row, appends.length) };
-    const pendingHandoff = await collectZaddyHandoffs(env, now, row.id);
-    return pendingHandoff.length ? { ...result, pendingHandoff } : result;
+    const split = splitFrom
+        ? {
+            split: {
+                previousBufferId: splitFrom.id,
+                reason: 'stale' as const,
+                detail: 'that topic had been quiet past the staleness window; '
+                    + 'this line opened a new buffer so the entry cannot span the gap',
+            },
+            ...(closed ? { entity: closed.entity, revision: closed.revision } : {}),
+        }
+        : {};
+    const pendingHandoff = await collectZaddyHandoffs(
+        env,
+        now,
+        row.id,
+        splitFrom && !closed ? splitFrom.id : undefined,
+    );
+    return {
+        ...result,
+        ...split,
+        ...(pendingHandoff.length ? { pendingHandoff } : {}),
+    };
 }
