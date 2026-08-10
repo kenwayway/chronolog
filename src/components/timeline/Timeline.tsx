@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronsDownUp, ChevronsUpDown } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 import { useSessionContext } from "@/contexts/SessionContext";
 import { TimelineEntry } from "./TimelineEntry";
@@ -175,6 +175,18 @@ export function Timeline({
     return { sessionDurations: durations, entryLineStates: lineStates };
   }, [sortedEntries, sessions]);
 
+  const allAnnotationsExpanded =
+    annotationClusters.length > 0
+    && annotationClusters.every(cluster => expandedAnnotationClusters.has(cluster.key));
+
+  const toggleAllAnnotationClusters = () => {
+    setExpandedAnnotationClusters(
+      allAnnotationsExpanded
+        ? new Set()
+        : new Set(annotationClusters.map(cluster => cluster.key)),
+    );
+  };
+
   const toggleAnnotationCluster = (clusterKey: string) => {
     setExpandedAnnotationClusters(current => {
       const next = new Set(current);
@@ -255,6 +267,42 @@ export function Timeline({
               </button>
             </div>
           )}
+        </div>
+      )}
+
+      {annotationClusters.length > 0 && (
+        <div className="flex justify-end" style={{ marginBottom: 8 }}>
+          <button
+            type="button"
+            onClick={toggleAllAnnotationClusters}
+            title={
+              allAnnotationsExpanded
+                ? "Collapse every zaddy annotation"
+                : "Expand every zaddy annotation"
+            }
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "2px 6px",
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              color: "var(--text-dim)",
+              fontFamily: "var(--font-mono)",
+              fontSize: 9,
+              fontWeight: 600,
+              letterSpacing: "0.12em",
+            }}
+          >
+            {allAnnotationsExpanded ? "COLLAPSE ALL" : "EXPAND ALL"}
+            <span style={{ fontWeight: 400, opacity: 0.72 }}>
+              {annotationCount}
+            </span>
+            {allAnnotationsExpanded
+              ? <ChevronsDownUp size={13} aria-hidden="true" />
+              : <ChevronsUpDown size={13} aria-hidden="true" />}
+          </button>
         </div>
       )}
 
