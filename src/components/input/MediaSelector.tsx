@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback, useLayoutEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Book, Film, Gamepad2, Tv, Clapperboard, Mic, Plus, X, ExternalLink, Pencil, Check } from 'lucide-react';
 import type { MediaItem, MediaType } from '@/types';
 import { generateId } from '@/utils/formatters';
@@ -12,6 +13,19 @@ interface MediaSelectorProps {
 }
 
 const MEDIA_TYPES: MediaType[] = ['Book', 'Movie', 'Game', 'TV', 'Anime', 'Podcast'];
+
+const MENU_GAP = 4;
+const MENU_MAX_HEIGHT = 300;
+const MENU_MIN_HEIGHT = 160;
+const MENU_MIN_WIDTH = 220;
+
+interface MenuPosition {
+    left: number;
+    width: number;
+    maxHeight: number;
+    top?: number;
+    bottom?: number;
+}
 
 const getMediaIcon = (mediaType: MediaType, size: number = 14) => {
     const iconProps = { size, strokeWidth: 2 };
@@ -46,8 +60,10 @@ export function MediaSelector({
     const [editTitle, setEditTitle] = useState('');
     const [editType, setEditType] = useState<MediaType>('Movie');
     const [editNotionUrl, setEditNotionUrl] = useState('');
+    const [menuPosition, setMenuPosition] = useState<MenuPosition | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const menuRef = useRef<HTMLDivElement>(null);
 
     const selectedMedia = mediaItems.find(m => m.id === selectedMediaId);
 
@@ -56,16 +72,53 @@ export function MediaSelector({
         item.title.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
+    // The metadata row clips its children (grid expand animation), so the menu is
+    // rendered in a portal and positioned against the trigger instead.
+    const updateMenuPosition = useCallback(() => {
+        const trigger = dropdownRef.current;
+        if (!trigger) return;
+
+        const rect = trigger.getBoundingClientRect();
+        const spaceBelow = window.innerHeight - rect.bottom - MENU_GAP;
+        const spaceAbove = rect.top - MENU_GAP;
+        // The input panel lives at the bottom of the viewport, so flip up when
+        // there is not enough room underneath.
+        const openUp = spaceBelow < Math.min(MENU_MAX_HEIGHT, spaceAbove);
+        const width = Math.max(rect.width, MENU_MIN_WIDTH);
+
+        setMenuPosition({
+            left: Math.max(8, Math.min(rect.left, window.innerWidth - width - 8)),
+            width,
+            maxHeight: Math.max(MENU_MIN_HEIGHT, Math.min(MENU_MAX_HEIGHT, openUp ? spaceAbove : spaceBelow)),
+            ...(openUp
+                ? { bottom: window.innerHeight - rect.top + MENU_GAP }
+                : { top: rect.bottom + MENU_GAP }),
+        });
+    }, []);
+
+    useLayoutEffect(() => {
+        if (!isDropdownOpen) return;
+        updateMenuPosition();
+        window.addEventListener('resize', updateMenuPosition);
+        window.addEventListener('scroll', updateMenuPosition, true);
+        return () => {
+            window.removeEventListener('resize', updateMenuPosition);
+            window.removeEventListener('scroll', updateMenuPosition, true);
+        };
+    }, [isDropdownOpen, updateMenuPosition]);
+
     // Close dropdown when clicking outside
     useEffect(() => {
+        if (!isDropdownOpen) return;
         const handleClickOutside = (e: MouseEvent) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-                setIsDropdownOpen(false);
-            }
+            const target = e.target as Node;
+            if (dropdownRef.current?.contains(target)) return;
+            if (menuRef.current?.contains(target)) return;
+            setIsDropdownOpen(false);
         };
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
+    }, [isDropdownOpen]);
 
     const handleCreate = () => {
         if (!newTitle.trim()) return;
@@ -379,20 +432,20 @@ export function MediaSelector({
                 )}
             </div>
 
-            {/* Dropdown */}
-            {isDropdownOpen && (
-                <div style={{
-                    position: 'absolute',
-                    top: '100%',
-                    left: 0,
-                    right: 0,
-                    marginTop: 4,
+            {/* Dropdown - portaled so the input panel cannot clip or cover it */}
+            {isDropdownOpen && menuPosition && createPortal(
+                <div ref={menuRef} style={{
+                    position: 'fixed',
+                    top: menuPosition.top,
+                    bottom: menuPosition.bottom,
+                    left: menuPosition.left,
+                    width: menuPosition.width,
                     backgroundColor: 'var(--bg-primary)',
                     border: '1px solid var(--border-light)',
                     borderRadius: 0,
                     boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-                    zIndex: 1000,
-                    maxHeight: 300,
+                    zIndex: 9999,
+                    maxHeight: menuPosition.maxHeight,
                     overflow: 'hidden',
                     display: 'flex',
                     flexDirection: 'column',
@@ -483,7 +536,8 @@ export function MediaSelector({
                         <Plus size={14} />
                         ADD NEW MEDIA
                     </button>
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );
