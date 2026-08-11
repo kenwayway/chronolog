@@ -70,6 +70,9 @@ function EditModalForm({ entry, onSave, onClose }: Omit<EditModalProps, 'isOpen'
   const { state: { contentTypes: ctFromContext, mediaItems }, timelineItems: allItems, actions: { addMediaItem: onAddMediaItem, updateMediaItem: onUpdateMediaItem } } = useSessionContext();
   const types = ctFromContext.length > 0 ? ctFromContext : BUILTIN_CONTENT_TYPES;
   const [initialState] = useState(() => getInitialEditFormState(entry));
+  // A session end is a boundary on its session, not an entry of its own: it
+  // carries no category, type, or fields, and the save path drops them.
+  const isSessionEnd = entry.kind === 'session-end';
   // Content state
   const [content, setContent] = useState(initialState.content);
   const [timestamp, setTimestamp] = useState(initialState.timestamp);
@@ -112,7 +115,7 @@ function EditModalForm({ entry, onSave, onClose }: Omit<EditModalProps, 'isOpen'
     const newContent = buildContent();
     let normalizedFieldValues = fieldValues;
 
-    if (contentType && entry.kind !== 'session-end') {
+    if (contentType && !isSessionEnd) {
       const prepared = prepareContentTypeSubmission(
         contentType,
         fieldValues,
@@ -132,9 +135,9 @@ function EditModalForm({ entry, onSave, onClose }: Omit<EditModalProps, 'isOpen'
     onSave(entry, {
       content: newContent !== entry.content ? newContent : undefined,
       timestamp: newTimestamp !== entry.timestamp ? newTimestamp : undefined,
-      category: category !== (entry.category ?? null) ? category : undefined,
-      contentType: contentType !== (entry.contentType ?? null) ? contentType : undefined,
-      fieldValues: JSON.stringify(normalizedFieldValues) !== JSON.stringify(entry.fieldValues) ? normalizedFieldValues : undefined,
+      category: !isSessionEnd && category !== (entry.category ?? null) ? category : undefined,
+      contentType: !isSessionEnd && contentType !== (entry.contentType ?? null) ? contentType : undefined,
+      fieldValues: !isSessionEnd && JSON.stringify(normalizedFieldValues) !== JSON.stringify(entry.fieldValues) ? normalizedFieldValues : undefined,
       linkedItems: JSON.stringify(linkedItems) !== JSON.stringify(entry.linkedItems || []) ? linkedItems : undefined,
       tags: tagsChanged ? tags : undefined,
     });
@@ -238,6 +241,7 @@ function EditModalForm({ entry, onSave, onClose }: Omit<EditModalProps, 'isOpen'
           isExpanded={showMetadata}
           showLinkedEntries={true}
           showAutoOption={false}
+          showClassification={!isSessionEnd}
           mediaItems={mediaItems}
           onAddMediaItem={onAddMediaItem}
           onUpdateMediaItem={onUpdateMediaItem}

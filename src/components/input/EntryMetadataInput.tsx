@@ -36,6 +36,7 @@ interface EntryMetadataInputProps {
   // Modes
   showLinkedEntries?: boolean; // Whether to show linked entries section
   showAutoOption?: boolean; // Whether to show 'Auto' option in dropdowns (false for EditModal)
+  showClassification?: boolean; // Whether category/type/fields apply to this entry (false for session ends)
 }
 
 /**
@@ -63,6 +64,7 @@ export function EntryMetadataInput({
   isExpanded,
   showLinkedEntries = false,
   showAutoOption = true,
+  showClassification = true,
 }: EntryMetadataInputProps) {
   const types = contentTypes || BUILTIN_CONTENT_TYPES;
 
@@ -101,6 +103,7 @@ export function EntryMetadataInput({
           }}
         >
           {/* Category */}
+          {showClassification && (
           <div className="flex items-center gap-2">
             <span style={{ fontSize: 10, color: 'var(--text-dim)', userSelect: 'none' }}>
               CATEGORY
@@ -119,8 +122,10 @@ export function EntryMetadataInput({
               ]}
             />
           </div>
+          )}
 
           {/* Content Type */}
+          {showClassification && (
           <div className="flex items-center gap-2">
             <span style={{ fontSize: 10, color: 'var(--text-dim)', userSelect: 'none' }}>
               TYPE
@@ -141,13 +146,14 @@ export function EntryMetadataInput({
               ]}
             />
           </div>
+          )}
 
           {/* Tags */}
           <TagInput tags={tags} setTags={setTags} />
         </div>
 
         {/* Row 2: Dynamic Field Form */}
-        {contentType && contentType !== 'note' && setFieldValues && (
+        {showClassification && contentType && contentType !== 'note' && setFieldValues && (
           <DynamicFieldForm
             contentType={currentContentType}
             fieldValues={fieldValues}
