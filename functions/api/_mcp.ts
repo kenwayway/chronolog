@@ -177,7 +177,6 @@ const WRITE_TOOLS = [
             'Default to observing. Any topic that runs past a couple of exchanges deserves a buffer: building something, working a problem, weighing a decision, or arriving somewhere.',
             'Skip only genuine one-off lookups. A long debugging or building session is real work and must be observed — do not dismiss it as assistant-only activity.',
             'Each call appends one short line to a running log. Never rewrite the story so far and never resend earlier lines; the log already has them.',
-            'Append when the picture actually changes — a decision, a turn, a stuck point, an arrival — not once per exchange and not once per step taken. If the last line still says where things stand, stay quiet and let the buffer run; a topic usually needs a handful of lines, not a dozen.',
             'Coding work is recorded at the level of the project, not the mechanics: which project and what is being chased there. Not the files touched, the fix applied, or a walkthrough of how it was done.',
             'Omit bufferId to start; reuse the returned buffer ID while the same topic continues.',
             'Several topics may be open at once and always could be — `openBuffers` in every response lists them with their last line, so append to the one that matches instead of opening a duplicate. Read it before you decide you need a new buffer, and check it again before you finalize: a summary must describe the log of the buffer it is being written onto, never a different topic you also have in mind.',
