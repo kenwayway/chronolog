@@ -230,8 +230,17 @@ function createOAuthProvider(origin: string): OAuthProvider<McpWorkerEnv> {
         allowPlainPKCE: false,
         allowImplicitFlow: false,
         accessTokenTTL: 60 * 60,
-        refreshTokenTTL: 30 * 24 * 60 * 60,
-        clientRegistrationTTL: 90 * 24 * 60 * 60,
+        // A grant's lifetime is fixed when it is issued: refreshing mints a new
+        // refresh token but never pushes the expiry out (the provider rejects
+        // refreshTokenTTL changes during a refresh exchange). Thirty days
+        // therefore meant every client went dark monthly, unattended ones
+        // included — the Dashboard has no way to open a browser and sign in
+        // again. A year still expires an abandoned grant, without making an
+        // always-on reader a recurring chore.
+        refreshTokenTTL: 365 * 24 * 60 * 60,
+        // Same shape of problem: the client record's KV entry expires this long
+        // after registration and is never renewed by use.
+        clientRegistrationTTL: 365 * 24 * 60 * 60,
         resourceMetadata: {
             resource,
             authorization_servers: [origin],
