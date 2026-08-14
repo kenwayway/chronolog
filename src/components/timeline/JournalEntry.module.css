@@ -1,0 +1,361 @@
+/* ==========================================================================
+   JournalEntry.module.css - the card skin
+
+   One saturated colour per card, and it is always the spine. Everything else
+   is surface, hairline, and type.
+   ========================================================================== */
+
+.card {
+    position: relative;
+    display: grid;
+    grid-template-columns: 6px 1fr;
+    gap: 0 14px;
+    padding: 16px 18px 16px 15px;
+    margin-bottom: 12px;
+    border-radius: var(--radius-lg);
+    background: var(--card-surface);
+    font-family: var(--font-primary);
+    box-shadow: var(--card-shadow);
+    cursor: default;
+    user-select: none;
+    transition:
+        box-shadow 220ms cubic-bezier(0.2, 0.6, 0.2, 1),
+        transform 220ms cubic-bezier(0.2, 0.6, 0.2, 1),
+        background-color 220ms ease;
+}
+
+.card:hover {
+    background: var(--card-surface-hover);
+    box-shadow: var(--card-shadow-hover);
+    transform: translateY(-1px);
+}
+
+.card:active {
+    transform: scale(0.995);
+    transition-duration: 90ms;
+}
+
+/* ===== The spine: the one place duration is visible =====
+   A session has length, so its spine is a filled capsule running the height
+   of the card. A note is an instant, so it gets a dot and nothing more. */
+
+.spine {
+    grid-row: 1 / -1;
+    align-self: stretch;
+    justify-self: center;
+    width: 4px;
+    border-radius: var(--radius-full);
+    background: var(--spine-color, var(--text-dim));
+}
+
+.spineDot {
+    grid-row: 1 / -1;
+    align-self: start;
+    width: 6px;
+    height: 6px;
+    margin-top: 4px;
+    border-radius: var(--radius-full);
+    background: var(--spine-color, var(--text-dim));
+}
+
+/* A session's closing card is the terminus of that bracket. A filled bar is a
+   session running; a ring is one closed. */
+.spineEnd {
+    grid-row: 1 / -1;
+    align-self: start;
+    width: 6px;
+    height: 6px;
+    margin-top: 4px;
+    border-radius: var(--radius-full);
+    border: 1.5px solid var(--spine-color, var(--text-dim));
+    opacity: 0.75;
+}
+
+.body {
+    min-width: 0;
+}
+
+/* ===== Header row: time, category, duration ===== */
+
+.head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 7px;
+}
+
+.time {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 12px;
+    letter-spacing: 0;
+    color: var(--text-muted);
+}
+
+.date {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 12px;
+    color: var(--text-dim);
+}
+
+.glyph {
+    font-size: 12px;
+    line-height: 1;
+    color: var(--text-dim);
+}
+
+.category {
+    font-size: 12px;
+    font-weight: 550;
+    letter-spacing: -0.006em;
+    color: var(--category-color, var(--text-muted));
+}
+
+.dot {
+    width: 2px;
+    height: 2px;
+    border-radius: var(--radius-full);
+    background: var(--text-dim);
+    opacity: 0.6;
+}
+
+.duration {
+    margin-left: auto;
+    padding: 3px 9px;
+    border-radius: var(--radius-full);
+    background: var(--card-inset);
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.zaddyBadge {
+    padding: 2px 7px;
+    border-radius: var(--radius-full);
+    background: var(--accent-subtle);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--accent);
+}
+
+/* ===== Content ===== */
+
+.content {
+    font-family: var(--font-primary);
+    font-size: 16px;
+    line-height: 1.5;
+    letter-spacing: -0.011em;
+    color: var(--text-primary);
+    overflow-wrap: break-word;
+    white-space: pre-wrap;
+}
+
+/* A session's closing words are an aside to the card above it, not a new
+   statement, so they are set smaller and dimmer. */
+.contentClosing {
+    font-size: 14px;
+    color: var(--text-muted);
+}
+
+.typeDisplay {
+    margin-top: 10px;
+}
+
+.tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 11px;
+}
+
+.tag {
+    padding: 3px 9px;
+    border-radius: var(--radius-full);
+    background: var(--card-inset);
+    font-size: 11.5px;
+    font-weight: 500;
+    letter-spacing: -0.004em;
+    color: var(--text-muted);
+}
+
+.links {
+    margin-top: 10px;
+}
+
+.linksBefore {
+    margin-bottom: 10px;
+    margin-top: 0;
+}
+
+/* ===== Comments — inset into the card, never beside it ===== */
+
+.commentList {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--card-hairline);
+}
+
+.comment {
+    padding: 10px 12px;
+    border-radius: var(--radius-md);
+    background: var(--card-inset);
+}
+
+.commentMeta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    color: var(--text-dim);
+}
+
+.commentDate {
+    font-weight: 400;
+    letter-spacing: 0;
+    opacity: 0.8;
+}
+
+.commentBody {
+    font-size: 14px;
+    line-height: 1.5;
+    letter-spacing: -0.008em;
+    color: var(--text-secondary);
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+}
+
+.commentEditor {
+    width: 100%;
+    padding: 0;
+    border: none;
+    outline: none;
+    background: transparent;
+    resize: none;
+    font-family: var(--font-primary);
+    font-size: 14px;
+    line-height: 1.5;
+    letter-spacing: -0.008em;
+    color: var(--text-primary);
+}
+
+/* ===== Annotations — zaddy's ambient notes get no card at all =====
+   They happened around her day rather than in it, so they sit on the page
+   itself and let the cards keep the depth. */
+
+.annotation {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin: 2px 0 10px;
+    padding: 4px 18px 4px 16px;
+    cursor: default;
+    user-select: none;
+    font-family: var(--font-primary);
+}
+
+.annotationRule {
+    flex-shrink: 0;
+    width: 4px;
+    align-self: stretch;
+    min-height: 16px;
+    border-radius: var(--radius-full);
+    background: var(--text-dim);
+    opacity: 0.28;
+}
+
+.annotationBody {
+    min-width: 0;
+    flex: 1;
+}
+
+.annotationText {
+    font-size: 13.5px;
+    line-height: 1.5;
+    letter-spacing: -0.006em;
+    color: var(--text-muted);
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+}
+
+.annotationEnd {
+    display: flex;
+    gap: 6px;
+    margin-top: 4px;
+    font-size: 13px;
+    color: var(--text-dim);
+}
+
+.annotationToggle {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 2px 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-family: var(--font-primary);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    color: var(--text-dim);
+}
+
+.annotationToggle:hover {
+    color: var(--text-muted);
+}
+
+.annotationCount {
+    font-weight: 400;
+    letter-spacing: 0;
+    opacity: 0.75;
+}
+
+.annotationChevron {
+    transition: transform 220ms cubic-bezier(0.2, 0.6, 0.2, 1);
+}
+
+.annotationChevronExpanded {
+    transform: rotate(90deg);
+}
+
+.card:focus-visible,
+.annotationToggle:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .card,
+    .annotationChevron {
+        transition: none;
+    }
+
+    .card:hover,
+    .card:active {
+        transform: none;
+    }
+}
+
+@media (max-width: 640px) {
+    .card {
+        padding: 14px 15px 14px 13px;
+        gap: 0 13px;
+        border-radius: var(--radius-md);
+    }
+
+    .content {
+        font-size: 15px;
+    }
+}

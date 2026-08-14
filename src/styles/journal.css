@@ -1,0 +1,74 @@
+/* ==========================================================================
+   journal.css - Journal Theme (card layout)
+
+   Loaded after base.css so these tokens win over the mode defaults, while
+   [data-style="journal"][data-theme="light"] still wins over these.
+   ========================================================================== */
+
+/* ===== Journal Theme Variables — dark by default ===== */
+[data-style="journal"] {
+  --bg-primary: #0c0c10;
+  --bg-secondary: #16161c;
+  --bg-tertiary: #21212a;
+  --bg-glass: rgba(12, 12, 16, 0.72);
+
+  --text-primary: #f2f0ee;
+  --text-secondary: #c6c4c8;
+  --text-muted: #8b8992;
+  --text-dim: #62606a;
+
+  --border-subtle: rgba(255, 255, 255, 0.07);
+  --border-light: rgba(255, 255, 255, 0.14);
+
+  /* Card surfaces. A card sits above the page rather than being drawn on it,
+     so it gets its own lift and hairline instead of a border. */
+  --card-surface: #16161c;
+  --card-surface-hover: #1c1c24;
+  --card-hairline: rgba(255, 255, 255, 0.07);
+  --card-inset: rgba(255, 255, 255, 0.04);
+  --card-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.4),
+    0 6px 16px -6px rgba(0, 0, 0, 0.5);
+  --card-shadow-hover:
+    0 2px 4px rgba(0, 0, 0, 0.45),
+    0 14px 28px -10px rgba(0, 0, 0, 0.6);
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 18px;
+
+  --font-primary: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', system-ui, 'Segoe UI', sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', system-ui, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'JetBrains Mono', 'Menlo', monospace;
+}
+
+[data-style="journal"][data-theme="light"] {
+  --bg-primary: #f4f4f6;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #ebebef;
+  --bg-glass: rgba(244, 244, 246, 0.76);
+
+  --text-primary: #131318;
+  --text-secondary: #3e3e48;
+  --text-muted: #6c6c78;
+  --text-dim: #9a9aa4;
+
+  --border-subtle: rgba(0, 0, 0, 0.07);
+  --border-light: rgba(0, 0, 0, 0.14);
+
+  --card-surface: #ffffff;
+  --card-surface-hover: #ffffff;
+  --card-hairline: rgba(0, 0, 0, 0.055);
+  --card-inset: rgba(0, 0, 0, 0.032);
+  --card-shadow:
+    0 1px 1px rgba(18, 18, 26, 0.04),
+    0 6px 16px -8px rgba(18, 18, 26, 0.14);
+  --card-shadow-hover:
+    0 2px 3px rgba(18, 18, 26, 0.06),
+    0 16px 32px -12px rgba(18, 18, 26, 0.2);
+}
+
+/* The rest of the app is monospace by inheritance; in this layout it isn't. */
+[data-style="journal"] body {
+  font-family: var(--font-primary);
+}

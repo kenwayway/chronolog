@@ -3,12 +3,24 @@
 
 import { terminalTheme } from './terminal'
 import { spyTheme } from './spy'
+import { journalTheme } from './journal'
+
+/**
+ * Which shape a theme draws entries in.
+ *
+ * Tokens can restyle a layout but cannot replace one: a stream of rows on a
+ * rule and a stack of cards are different markup, so a theme names the layout
+ * it wants and the skin for it does the drawing.
+ */
+export type ThemeLayout = 'timeline' | 'cards'
 
 // Theme configuration type
 export interface ThemeConfig {
   id: string
   name: string
   lightModeOnly?: boolean
+  /** Defaults to the original timeline layout when a theme doesn't say. */
+  layout?: ThemeLayout
   fonts: {
     primary: string
     display: string
@@ -41,6 +53,12 @@ export interface ThemeConfig {
 export const themes: Record<string, ThemeConfig> = {
   terminal: terminalTheme,
   spy: spyTheme,
+  journal: journalTheme,
+}
+
+/** The layout a theme draws in, defaulting to the original timeline. */
+export function getThemeLayout(theme: ThemeConfig): ThemeLayout {
+  return theme.layout ?? 'timeline'
 }
 
 // Get theme by ID, fallback to terminal

@@ -3,6 +3,8 @@ import { ChevronLeft, ChevronRight, ChevronsDownUp, ChevronsUpDown } from "lucid
 import { useTheme } from "@/hooks/useTheme";
 import { useSessionContext } from "@/contexts/SessionContext";
 import { TimelineEntry } from "./TimelineEntry";
+import { JournalEntry } from "./JournalEntry";
+import { getThemeLayout } from "@/themes";
 import { buildZaddyAnnotationGroups } from "./annotationGroups";
 import { getTimelineLineState } from "./timelineLineState";
 import type { ZaddyAnnotation } from "./annotationGroups";
@@ -50,7 +52,8 @@ export function Timeline({
   onNavigateToEntry,
 }: TimelineProps) {
   const { state: { mediaItems, sessions }, linkIndex, commentIndex, categories } = useSessionContext();
-  const { theme } = useTheme();
+  const { theme, themeConfig } = useTheme();
+  const isCardLayout = getThemeLayout(themeConfig) === 'cards';
 
   // Stable key for categoryFilter to avoid re-creating strings on every render
   const categoryFilterKey = categoryFilter.join(',');
@@ -205,8 +208,10 @@ export function Timeline({
       style={{
         flex: 1,
         overflowY: "auto",
-        padding: "24px 16px 160px",
-        fontFamily: "var(--font-mono)",
+        // Cards carry their own inset, so the container gives them room to
+        // cast a shadow instead of padding their content.
+        padding: isCardLayout ? "20px 14px 160px" : "24px 16px 160px",
+        fontFamily: isCardLayout ? "var(--font-primary)" : "var(--font-mono)",
         position: "relative",
       }}
     >
@@ -333,41 +338,47 @@ export function Timeline({
             ? expandedAnnotationClusters.has(annotationControl.key)
             : false;
 
-          return (
+          // Both skins answer to the same props; only the line state is
+          // particular to the timeline, which is the one thing a card has no
+          // use for.
+          const shared = {
+            entry,
+            linkIndex,
+            sessionDuration: sessionDurations[entry.id],
+            categories,
+            onContextMenu,
+            onEdit,
+            isLightMode: theme.mode === "light",
+            showDate: isFilterMode,
+            onNavigateToEntry,
+            mediaItems,
+            comments:
+              entry.kind === 'session-end' ? undefined : commentIndex.get(entry.entityId),
+            editingCommentId,
+            onEditComment,
+            onSaveComment,
+            onCancelCommentEdit,
+            annotationMode: entry.origin === 'zaddy',
+            annotationEndContent: annotationEndContent.get(entry.id),
+            annotationGroupCount: annotationControl?.annotations.length,
+            annotationGroupExpanded: isExpanded,
+            annotationGroupEntryIds: annotationControl?.annotations.map(
+              annotation => annotation.entry.id,
+            ),
+            onToggleAnnotationGroup: annotationControl
+              ? () => toggleAnnotationCluster(annotationControl.key)
+              : undefined,
+          };
+
+          return isCardLayout ? (
+            <JournalEntry key={entry.id} {...shared} />
+          ) : (
             <TimelineEntry
               key={entry.id}
-              entry={entry}
-              linkIndex={linkIndex}
+              {...shared}
               isFirst={index === 0}
               isLast={index === sortedEntries.length - 1}
-              sessionDuration={sessionDurations[entry.id]}
-              categories={categories}
-              onContextMenu={onContextMenu}
-              onEdit={onEdit}
               lineState={entryLineStates[entry.id]}
-              isLightMode={theme.mode === "light"}
-              showDate={isFilterMode}
-              onNavigateToEntry={onNavigateToEntry}
-              mediaItems={mediaItems}
-              comments={
-                entry.kind === 'session-end' ? undefined : commentIndex.get(entry.entityId)
-              }
-              editingCommentId={editingCommentId}
-              onEditComment={onEditComment}
-              onSaveComment={onSaveComment}
-              onCancelCommentEdit={onCancelCommentEdit}
-              annotationMode={entry.origin === 'zaddy'}
-              annotationEndContent={annotationEndContent.get(entry.id)}
-              annotationGroupCount={annotationControl?.annotations.length}
-              annotationGroupExpanded={isExpanded}
-              annotationGroupEntryIds={annotationControl?.annotations.map(
-                annotation => annotation.entry.id,
-              )}
-              onToggleAnnotationGroup={
-                annotationControl
-                  ? () => toggleAnnotationCluster(annotationControl.key)
-                  : undefined
-              }
             />
           );
         })()
