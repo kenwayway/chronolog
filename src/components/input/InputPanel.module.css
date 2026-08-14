@@ -165,9 +165,13 @@
         0 18px 40px -14px rgba(0, 0, 0, 0.28);
 }
 
+/* Focus is a change of altitude, not of hue. A wide translucent halo of
+   whatever accent happens to be selected reads as grime; the composer rising
+   off the page reads as intent, and it survives every accent she picks. */
 :global([data-style="journal"]) .panel.focused {
+    border-color: var(--border-light);
     box-shadow:
-        0 0 0 3px var(--accent-subtle),
+        0 2px 6px rgba(0, 0, 0, 0.1),
         0 24px 56px -16px rgba(0, 0, 0, 0.34);
 }
 
@@ -230,8 +234,12 @@
     font-size: 13px;
 }
 
+/* A single field can afford the accent, because it is one crisp hairline
+   rather than a bloom — the same colour that looked like dirt at 10% across
+   40px reads as deliberate at full strength across one. */
 :global([data-style="journal"]) .timeInput:focus {
     border-color: var(--accent);
+    background: var(--card-surface);
 }
 
 :global([data-style="journal"]) .timeNowButton {
