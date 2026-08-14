@@ -15,11 +15,21 @@
 }
 
 .title {
-    font-family: "JetBrains Mono", monospace;
+    font-family: var(--font-mono);
     font-size: 12px;
     font-weight: 400;
     letter-spacing: 0.5em;
     color: var(--text-muted);
+}
+
+/* Wide tracking is a terminal mannerism. In a card layout the wordmark is a
+   name, so it is set as one. */
+:global([data-style="journal"]) .title {
+    font-family: var(--font-display);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--text-secondary);
 }
 
 .indicator {

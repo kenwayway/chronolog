@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, forwardRef, useImperativeHandle, ChangeEvent, KeyboardEvent, ClipboardEvent, FocusEvent } from "react";
-import { Terminal, X, Link2 } from "lucide-react";
+import { Terminal, PenLine, X, Link2 } from "lucide-react";
 import { SESSION_STATUS } from "@/utils/constants";
 import { FocusMode } from "./FocusMode";
 import { AttachmentPreview } from "./AttachmentPreview";
@@ -9,6 +9,8 @@ import styles from "./InputPanel.module.css";
 import { useCloudSyncContext } from "@/contexts/CloudSyncContext";
 import { useSessionContext } from "@/contexts/SessionContext";
 import { prepareContentTypeSubmission } from "@/features/contentTypes";
+import { useTheme } from "@/hooks/useTheme";
+import { getThemeLayout } from "@/themes";
 import { appendAttachmentLines, resolveCurrentLocation } from "@/utils/attachments";
 import type { TimelineItem, SessionStatus, CategoryId } from "@/types";
 
@@ -48,6 +50,7 @@ export const InputPanel = forwardRef<InputPanelRef, InputPanelProps>(function In
         state: { mediaItems, sessions, activeSessionId },
         actions: { addMediaItem: onAddMediaItem, updateMediaItem: onUpdateMediaItem },
     } = useSessionContext();
+    const { themeConfig } = useTheme();
     const [input, setInput] = useState("");
     const [isFocused, setIsFocused] = useState(false);
     const [mobileExpanded, setMobileExpanded] = useState(false);
@@ -307,6 +310,9 @@ export const InputPanel = forwardRef<InputPanelRef, InputPanelProps>(function In
         }
     };
 
+    // A prompt marks a terminal; a pen marks a journal.
+    const PromptIcon = getThemeLayout(themeConfig) === 'cards' ? PenLine : Terminal;
+
     const getFollowUpPreview = (content: string | undefined) => {
         if (!content) return "(empty)";
         const firstLine = content.split("\n")[0];
@@ -378,7 +384,7 @@ export const InputPanel = forwardRef<InputPanelRef, InputPanelProps>(function In
                     }}
                     style={{ cursor: mobileExpanded && !inFocusMode ? "pointer" : "default" }}
                 >
-                    <Terminal size={inFocusMode ? 16 : 14} className={styles.terminalIcon} />
+                    <PromptIcon size={inFocusMode ? 16 : 14} className={styles.terminalIcon} />
                 </div>
 
                 <div className={`${styles.editor} ${inFocusMode ? styles.editorFocusMode : ""}`}>
