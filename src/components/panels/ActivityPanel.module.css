@@ -91,6 +91,52 @@
     opacity: 0.5;
 }
 
+/* ==========================================================================
+   Journal layout
+
+   The panel keeps its position and its width; what changes is what it is made
+   of. Beside a column of cards, a monospace drawer with rules across it reads
+   as a second application docked to the first, so the type, the hairlines and
+   the surface all switch material to match.
+   ========================================================================== */
+
+:global([data-style="journal"]) .panel {
+    background-color: var(--bg-primary);
+    border-left: 1px solid var(--card-hairline);
+    font-family: var(--font-primary);
+}
+
+:global([data-style="journal"]) .header {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--card-hairline);
+}
+
+/* Uppercase mono tracking is how a terminal labels a pane. Here a heading is
+   just a heading — sentence case, tighter, and it stops shouting. */
+:global([data-style="journal"]) .title {
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    text-transform: none;
+    color: var(--text-primary);
+}
+
+:global([data-style="journal"]) .sectionHeader {
+    font-family: var(--font-primary);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--text-muted);
+}
+
+/* A rule running out of a section label belongs to a layout drawn in
+   characters. Cards separate by space, so the line goes. */
+:global([data-style="journal"]) .sectionLine {
+    display: none;
+}
+
 @media (max-width: 1023px) {
     .overlay {
         display: block;
