@@ -1,94 +1,16 @@
-import { useState, useRef, useEffect, memo, useMemo, ReactNode, KeyboardEvent, MouseEvent, TouchEvent } from "react";
+import { memo, ReactNode } from "react";
 import { ChevronRight, MessageSquareQuote, Play, Square } from "lucide-react";
 import { formatTime, formatDuration, formatDate } from "@/utils/formatters";
-import { darkenColor } from "@/utils/contentParser";
-import { useTheme } from "@/hooks/useTheme";
 import { ContentRenderer } from "./ContentRenderer";
+import { CommentEditor } from "./CommentEditor";
 import { LinkedEntryPreview } from "./LinkedEntryPreview";
 import { ImageLightbox } from "../common/ImageLightbox";
+import { useTimelineEntry, type EntrySymbol, type Position } from "./useTimelineEntry";
 import styles from "./TimelineEntry.module.css";
 import type { TimelineItem, Category, MediaItem } from "@/types";
 import type { TimelineLinkIndex } from "@/domain/timeline";
-import { getContentTypeTimelineSymbol, renderContentTypeDisplay } from "@/features/contentTypes";
-
-interface Position {
-  x: number;
-  y: number;
-}
 
 type LineState = 'start' | 'end' | 'active' | 'default';
-
-/**
- * In-place editor for a zaddy comment's text.
- *
- * Deliberately narrow: it writes `content` and nothing else, so a comment can
- * never be edited out of being a comment. Enter saves, Shift+Enter breaks the
- * line, Escape abandons the draft; blurring saves, which keeps a click
- * elsewhere from silently discarding what was typed.
- */
-function CommentEditor({
-  initialContent,
-  onSave,
-  onCancel,
-}: {
-  initialContent: string;
-  onSave: (content: string) => void;
-  onCancel: () => void;
-}) {
-  const [draft, setDraft] = useState(initialContent);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  // Escape and a completed save both blur the field; neither should be
-  // followed by the blur handler committing a second time.
-  const settledRef = useRef(false);
-
-  useEffect(() => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-    textarea.focus();
-    textarea.setSelectionRange(textarea.value.length, textarea.value.length);
-  }, []);
-
-  const commit = () => {
-    if (settledRef.current) return;
-    settledRef.current = true;
-    const trimmed = draft.trim();
-    // An emptied comment is a mistake, not a deletion — deleting is its own
-    // menu action.
-    if (!trimmed || trimmed === initialContent) onCancel();
-    else onSave(trimmed);
-  };
-
-  const abandon = () => {
-    if (settledRef.current) return;
-    settledRef.current = true;
-    onCancel();
-  };
-
-  const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (event.key === "Enter" && !event.shiftKey) {
-      event.preventDefault();
-      commit();
-    } else if (event.key === "Escape") {
-      event.preventDefault();
-      abandon();
-    }
-  };
-
-  return (
-    <textarea
-      ref={textareaRef}
-      className={styles.commentEditor}
-      value={draft}
-      rows={Math.min(10, draft.split("\n").length + 1)}
-      onChange={event => setDraft(event.target.value)}
-      onKeyDown={handleKeyDown}
-      onBlur={commit}
-      onContextMenu={event => event.stopPropagation()}
-      onDoubleClick={event => event.stopPropagation()}
-    />
-  );
-}
-
 
 interface TimelineEntryProps {
   entry: TimelineItem;
@@ -122,6 +44,9 @@ interface TimelineEntryProps {
 /**
  * Individual timeline entry component
  * Displays entry content with symbols, categories, and linked entries
+ *
+ * This is the timeline skin: what an entry *is* comes from `useTimelineEntry`,
+ * and everything below is how this layout chooses to draw it.
  */
 export const TimelineEntry = memo(function TimelineEntry({
   entry,
@@ -149,139 +74,57 @@ export const TimelineEntry = memo(function TimelineEntry({
   annotationGroupEntryIds,
   onToggleAnnotationGroup,
 }: TimelineEntryProps) {
-  const { symbols } = useTheme();
-  const [pressTimer, setPressTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
-  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const {
+    category,
+    categoryTextColor,
+    isSessionStart,
+    isSessionEnd,
+    isZaddy,
+    isAnnotation,
+    isCollapsedAnnotationGroup,
+    symbol,
+    beforeLinks,
+    afterLinks,
+    contentTypeDisplay,
+    entryGestures,
+    commentGestures,
+    lightboxImage,
+    openLightbox,
+    closeLightbox,
+  } = useTimelineEntry({
+    entry,
+    linkIndex,
+    categories,
+    isLightMode,
+    mediaItems,
+    annotationMode,
+    annotationGroupCount,
+    annotationGroupExpanded,
+    onContextMenu,
+    onEdit,
+    onEditComment,
+  });
 
-  // Event handlers
-  const handleContextMenu = (e: MouseEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    onContextMenu?.(entry, { x: e.clientX, y: e.clientY });
-  };
-
-  const handleDoubleClick = () => {
-    onEdit?.(entry);
-  };
-
-  const handleTouchStart = (e: TouchEvent<HTMLDivElement>) => {
-    e.currentTarget.style.userSelect = 'none';
-    e.currentTarget.style.setProperty('-webkit-user-select', 'none');
-    const timer = setTimeout(() => {
-      const touch = e.touches[0];
-      onContextMenu?.(entry, { x: touch.clientX, y: touch.clientY });
-    }, 500);
-    setPressTimer(timer);
-  };
-
-  const handleTouchEnd = (e: TouchEvent<HTMLDivElement>) => {
-    e.currentTarget.style.userSelect = '';
-    e.currentTarget.style.removeProperty('-webkit-user-select');
-    if (pressTimer) {
-      clearTimeout(pressTimer);
-      setPressTimer(null);
-    }
-  };
-
-  // A comment is rendered inside its target's DOM, so its own gestures must be
-  // kept from reaching the entry underneath: a right-click on a comment is
-  // about the comment, not about the thing it is attached to.
-  const commentPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const handleCommentContextMenu = (comment: TimelineItem) => (e: MouseEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    onContextMenu?.(comment, { x: e.clientX, y: e.clientY });
-  };
-
-  const handleCommentDoubleClick = (comment: TimelineItem) => (e: MouseEvent<HTMLDivElement>) => {
-    e.stopPropagation();
-    onEditComment?.(comment);
-  };
-
-  const handleCommentTouchStart = (comment: TimelineItem) => (e: TouchEvent<HTMLDivElement>) => {
-    e.stopPropagation();
-    const touch = e.touches[0];
-    commentPressTimer.current = setTimeout(() => {
-      onContextMenu?.(comment, { x: touch.clientX, y: touch.clientY });
-    }, 500);
-  };
-
-  const handleCommentTouchEnd = (e: TouchEvent<HTMLDivElement>) => {
-    e.stopPropagation();
-    if (commentPressTimer.current) {
-      clearTimeout(commentPressTimer.current);
-      commentPressTimer.current = null;
-    }
-  };
-
-  // Computed values
-  const category = useMemo(
-    () => categories?.find((c) => c.id === entry.category),
-    [categories, entry.category]
-  );
-
-  const categoryTextColor = useMemo(
-    () => category ? (isLightMode ? darkenColor(category.color, 10) : category.color) : null,
-    [category, isLightMode]
-  );
-
-  const isSessionStart = entry.kind === 'session-start';
-  const isSessionEnd = entry.kind === 'session-end';
-  const isZaddy = entry.origin === 'zaddy';
-  const isAnnotation = isZaddy && annotationMode;
-  const isCollapsedAnnotationGroup = isAnnotation
-    && annotationGroupCount !== undefined
-    && !annotationGroupExpanded;
-  const contentTypeDisplay = renderContentTypeDisplay(entry, mediaItems);
-
-  // Linked entries
-  const linkedEntryData = useMemo(() => {
-    const outgoingLinks = entry.linkedItems || [];
-    const incomingLinks = linkIndex.incoming.get(entry.entityId) ?? [];
-    const allLinkedIds = [...new Set([...outgoingLinks, ...incomingLinks])];
-    return allLinkedIds
-      .map(id => linkIndex.byEntityId.get(id))
-      .filter((e): e is TimelineItem => Boolean(e));
-  }, [entry.entityId, entry.linkedItems, linkIndex]);
-
-  const beforeLinks = useMemo(
-    () => linkedEntryData.filter(e => e.timestamp < entry.timestamp),
-    [linkedEntryData, entry.timestamp]
-  );
-
-  const afterLinks = useMemo(
-    () => linkedEntryData.filter(e => e.timestamp >= entry.timestamp),
-    [linkedEntryData, entry.timestamp]
-  );
-
-  const getEntrySymbol = (): ReactNode => {
-    const symbolStyles = { fontSize: 14 };
-    if (isAnnotation) {
-      return (
-        <MessageSquareQuote
-          size={10}
-          strokeWidth={1.75}
-          className={`${styles.timelineIcon} ${styles.annotationIcon}`}
-          aria-hidden="true"
-        />
-      );
-    }
-    if (isZaddy) {
-      return (
-        <MessageSquareQuote
-          size={12}
-          strokeWidth={2}
-          className={`${styles.timelineIcon} ${styles.zaddyIcon}`}
-          aria-hidden="true"
-        />
-      );
-    }
-    const contentTypeSymbol = getContentTypeTimelineSymbol(entry.contentType);
-    if (contentTypeSymbol) {
-      return <span style={{ ...symbolStyles, color: 'var(--accent)' }}>{symbols[contentTypeSymbol]}</span>;
-    }
-
-    switch (entry.kind) {
+  const renderSymbol = (symbol: EntrySymbol): ReactNode => {
+    switch (symbol.kind) {
+      case 'annotation':
+        return (
+          <MessageSquareQuote
+            size={10}
+            strokeWidth={1.75}
+            className={`${styles.timelineIcon} ${styles.annotationIcon}`}
+            aria-hidden="true"
+          />
+        );
+      case 'zaddy':
+        return (
+          <MessageSquareQuote
+            size={12}
+            strokeWidth={2}
+            className={`${styles.timelineIcon} ${styles.zaddyIcon}`}
+            aria-hidden="true"
+          />
+        );
       case 'session-start':
         return (
           <Play
@@ -302,9 +145,11 @@ export const TimelineEntry = memo(function TimelineEntry({
             aria-hidden="true"
           />
         );
-      case 'note':
+      case 'content-glyph':
+        return <span style={{ fontSize: 14, color: 'var(--accent)' }}>{symbol.glyph}</span>;
+      case 'note-glyph':
       default:
-        return <span style={{ ...symbolStyles, color: "var(--text-dim)" }}>{symbols.note}</span>;
+        return <span style={{ fontSize: 14, color: "var(--text-dim)" }}>{symbol.glyph}</span>;
     }
   };
 
@@ -338,11 +183,7 @@ export const TimelineEntry = memo(function TimelineEntry({
           userSelect: "none",
           transition: "background-color 300ms ease",
         }}
-        onContextMenu={handleContextMenu}
-        onDoubleClick={handleDoubleClick}
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-        onTouchCancel={handleTouchEnd}
+        {...entryGestures}
       >
         {/* Time Column */}
         <div
@@ -422,7 +263,7 @@ export const TimelineEntry = memo(function TimelineEntry({
             />
           )}
           <div className={styles.symbolWrapper}>
-            {getEntrySymbol()}
+            {renderSymbol(symbol)}
           </div>
         </div>
 
@@ -510,7 +351,7 @@ export const TimelineEntry = memo(function TimelineEntry({
                     fontStyle: isSessionEnd ? "italic" : "normal",
                   }}
                 >
-                  <ContentRenderer content={entry.content} onImageClick={setLightboxImage} />
+                  <ContentRenderer content={entry.content} onImageClick={openLightbox} />
                 </span>
               )}
             </div>
@@ -551,11 +392,7 @@ export const TimelineEntry = memo(function TimelineEntry({
                   key={comment.id}
                   className={styles.comment}
                   data-comment-id={comment.id}
-                  onContextMenu={handleCommentContextMenu(comment)}
-                  onDoubleClick={handleCommentDoubleClick(comment)}
-                  onTouchStart={handleCommentTouchStart(comment)}
-                  onTouchEnd={handleCommentTouchEnd}
-                  onTouchCancel={handleCommentTouchEnd}
+                  {...commentGestures(comment)}
                 >
                   <div className={styles.commentMeta}>
                     <MessageSquareQuote size={9} strokeWidth={1.75} aria-hidden="true" />
@@ -569,10 +406,11 @@ export const TimelineEntry = memo(function TimelineEntry({
                       initialContent={comment.content || ""}
                       onSave={content => onSaveComment?.(comment, content)}
                       onCancel={() => onCancelCommentEdit?.()}
+                      className={styles.commentEditor}
                     />
                   ) : (
                     <span className={styles.commentBody}>
-                      <ContentRenderer content={comment.content} onImageClick={setLightboxImage} />
+                      <ContentRenderer content={comment.content} onImageClick={openLightbox} />
                     </span>
                   )}
                 </div>
@@ -601,7 +439,7 @@ export const TimelineEntry = memo(function TimelineEntry({
       {lightboxImage && (
         <ImageLightbox
           src={lightboxImage}
-          onClose={() => setLightboxImage(null)}
+          onClose={closeLightbox}
         />
       )}
     </>
