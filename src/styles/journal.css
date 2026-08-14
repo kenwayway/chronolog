@@ -29,9 +29,6 @@
   --card-shadow:
     0 1px 2px rgba(0, 0, 0, 0.4),
     0 6px 16px -6px rgba(0, 0, 0, 0.5);
-  --card-shadow-hover:
-    0 2px 4px rgba(0, 0, 0, 0.45),
-    0 14px 28px -10px rgba(0, 0, 0, 0.6);
 
   --radius-sm: 6px;
   --radius-md: 10px;
@@ -57,15 +54,15 @@
   --border-light: rgba(0, 0, 0, 0.14);
 
   --card-surface: #ffffff;
-  --card-surface-hover: #ffffff;
+  /* A white card cannot go whiter, so on this ground hover reads as the
+     faintest cool grey. It has to carry the state by itself now that nothing
+     moves and nothing lifts. */
+  --card-surface-hover: #f7f7fa;
   --card-hairline: rgba(0, 0, 0, 0.055);
   --card-inset: rgba(0, 0, 0, 0.032);
   --card-shadow:
     0 1px 1px rgba(18, 18, 26, 0.04),
     0 6px 16px -8px rgba(18, 18, 26, 0.14);
-  --card-shadow-hover:
-    0 2px 3px rgba(18, 18, 26, 0.06),
-    0 16px 32px -12px rgba(18, 18, 26, 0.2);
 }
 
 /* The rest of the app is monospace by inheritance; in this layout it isn't. */

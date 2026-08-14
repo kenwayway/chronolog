@@ -79,7 +79,9 @@ export function ActivityPanel({
                 <div className={styles.header}>
                     <div className={styles.title}>
                         <span className={styles.titlePrefix}>{tokens.panelTitlePrefix}</span>
-                        <span>ACTIVITY</span>
+                        {/* Sentence case in the markup so the skin decides:
+                            the terminal layouts uppercase it back in CSS. */}
+                        <span>Activity</span>
                     </div>
                     <button
                         type="button"
@@ -106,7 +108,7 @@ export function ActivityPanel({
                     {/* Category Filter Section */}
                     <div>
                         <div className={styles.sectionHeader}>
-                            <span>FILTER</span>
+                            <span>Filter</span>
                             <div className={styles.sectionLine} />
                             {(categoryFilter.length > 0 || contentTypeFilter.length > 0 || tagFilter.length > 0) && (
                                 <button
@@ -176,7 +178,7 @@ export function ActivityPanel({
                     {contentTypeStats.length > 0 && (
                         <div style={{ marginTop: 32 }}>
                             <div className={styles.sectionHeader}>
-                                <span>TYPES</span>
+                                <span>Types</span>
                                 <div className={styles.sectionLine} />
                                 {contentTypeFilter.length > 0 && (
                                     <button
@@ -244,7 +246,7 @@ export function ActivityPanel({
                     {tagStats.length > 0 && (
                         <div style={{ marginTop: 32 }}>
                             <div className={styles.sectionHeader}>
-                                <span>TAGS</span>
+                                <span>Tags</span>
                                 <div className={styles.sectionLine} />
                                 {tagFilter.length > 0 && (
                                     <button
