@@ -99,10 +99,25 @@
     color: var(--text-dim);
 }
 
-.glyph {
-    font-size: 12px;
+/* ===== The margin mark =====
+   A notebook flags a passage in the margin, not inside the line. Beans and
+   sparks are stamped in the card's corner: big enough to catch a scrolling
+   eye, faint enough that the spine keeps the only saturated colour. */
+.mark {
+    position: absolute;
+    top: 13px;
+    right: 15px;
+    font-size: 17px;
     line-height: 1;
-    color: var(--text-dim);
+    color: var(--category-color, var(--text-muted));
+    opacity: 0.4;
+    pointer-events: none;
+}
+
+/* A session's duration pill also lives on the top edge, so it stops short of
+   the corner the mark has taken. */
+.headMarked {
+    padding-right: 24px;
 }
 
 .category {

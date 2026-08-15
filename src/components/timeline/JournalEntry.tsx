@@ -181,6 +181,12 @@ export const JournalEntry = memo(function JournalEntry({
             >
                 <span className={spineClass} aria-hidden="true" />
 
+                {/* Stamped in the corner the way a notebook flags a page, rather
+                    than sat in the line where the type is doing the reading. */}
+                {symbol.kind === "content-glyph" && (
+                    <span className={styles.mark} aria-hidden="true">{symbol.glyph}</span>
+                )}
+
                 <div className={styles.body}>
                     {beforeLinks.length > 0 && (
                         <div className={`${styles.links} ${styles.linksBefore}`}>
@@ -195,15 +201,11 @@ export const JournalEntry = memo(function JournalEntry({
                         </div>
                     )}
 
-                    <div className={styles.head}>
+                    <div className={`${styles.head} ${symbol.kind === "content-glyph" ? styles.headMarked : ""}`}>
                         {showDate && (
                             <span className={styles.date}>{formatDate(entry.timestamp)}</span>
                         )}
                         <span className={styles.time}>{formatTime(entry.timestamp)}</span>
-
-                        {symbol.kind === "content-glyph" && (
-                            <span className={styles.glyph} aria-hidden="true">{symbol.glyph}</span>
-                        )}
 
                         {category && (
                             <>
