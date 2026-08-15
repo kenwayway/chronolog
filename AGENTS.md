@@ -119,8 +119,8 @@ The ContentType registry lives in `src/features/contentTypes/`. It owns:
 Built-ins: note, bookmark, mood, workout, vault, beans, sparks, media, and
 notion-task. Notion tasks can only be attached to sessions.
 
-Categories are fixed in `src/utils/categories.ts`: hustle, craft, hardware,
-barter, wander, work.
+Categories are fixed in `src/utils/categories.ts`: hustle, craft, steep,
+hardware, barter, wander, work.
 
 ## State and persistence
 

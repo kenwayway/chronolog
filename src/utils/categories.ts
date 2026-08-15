@@ -8,6 +8,7 @@
 const CATEGORY_DEFS = [
     { id: 'hustle', label: 'Hustle', color: '#7aa2f7', description: 'Life admin: visa, taxes, rent, bills, errands, paperwork' },
     { id: 'craft', label: 'Craft', color: '#bb9af7', description: 'Coding, drawing, creating, building projects' },
+    { id: 'steep', label: 'Steep', color: '#2ac3de', description: 'Deep study: learning a subject, reading, courses, papers, internalizing knowledge' },
     { id: 'hardware', label: 'Hardware', color: '#4dcc59', description: 'Sleep, eating, workout, physical health, mental health' },
     { id: 'barter', label: 'Barter', color: '#c8e068', description: 'Friends, social activities, relationships' },
     { id: 'wander', label: 'Wander', color: '#f7768e', description: 'Travel, movies, relaxation, exploration' },

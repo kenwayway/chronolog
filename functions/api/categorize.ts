@@ -80,7 +80,7 @@ Vault hints: if content contains "obsidian://" URL, use vault contentType. Extra
 
 Example responses:
 {"category":"hustle","contentType":"note","fieldValues":null}
-{"category":"sparks","contentType":"bookmark","fieldValues":{"url":"https://example.com/article","title":"Great Article","type":"Article","status":"Inbox"}}
+{"category":"steep","contentType":"bookmark","fieldValues":{"url":"https://example.com/article","title":"Great Article","type":"Article","status":"Inbox"}}
 {"category":"hardware","contentType":"mood","fieldValues":{"feeling":"Tired","energy":2,"trigger":"Work"}}
 {"category":"hardware","contentType":"workout","fieldValues":{"workoutType":"Strength","place":"Outside Gym"}}
 {"category":"craft","contentType":"vault","fieldValues":{"title":"React Fiber Architecture","obsidianUrl":"obsidian://open?vault=Notes&file=React/Fiber"}}`;

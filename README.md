@@ -8,7 +8,7 @@ A local-first personal timeline, session tracker, journal, and media log. Chrono
 - **Timeline View** — Track daily activities with timestamps
 - **Session Tracking** — Log in/out to track work sessions with duration
 - **Notes** — Add quick notes throughout the day
-- **Life Categories** — Organize notes and sessions with the built-in Hustle, Craft, Hardware, Barter, Wander, and Work areas
+- **Life Categories** — Organize notes and sessions with the built-in Hustle, Craft, Steep, Hardware, Barter, Wander, and Work areas
 - **Tags** — Add #hashtags for easy filtering
 - **Calendar & Filters** — Browse notes and sessions by date, category, tag, and content type
 - **Linked Items** — Create bidirectional connections between notes and sessions

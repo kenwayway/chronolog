@@ -387,43 +387,40 @@ export const WorkoutDisplay = memo(function WorkoutDisplay({ fieldValues }: Work
   return (
     <div
       style={{
-        marginTop: 8,
-        padding: '10px 14px',
-        backgroundColor: 'var(--bg-secondary)',
-        border: '1px solid var(--border-subtle)',
-        fontSize: 12,
-        fontFamily: 'var(--font-mono)',
-        width: '100%',
-      }}
-    >
-      {/* Header row */}
-      <div style={{
         display: 'flex',
         alignItems: 'center',
         gap: 8,
+        marginTop: 8,
+        padding: '8px 12px',
+        backgroundColor: 'var(--bg-secondary)',
+        border: '1px solid var(--border-subtle)',
+        borderLeft: '2px solid var(--accent)',
+        fontSize: 13,
+        fontFamily: 'var(--font-mono)',
+        width: 'fit-content',
+      }}
+    >
+      {/* The type is the headline — the icon already says "workout" */}
+      <span style={{ display: 'flex', alignItems: 'center', color: 'var(--accent)', flexShrink: 0 }}>
+        {getTypeIcon(workoutType)}
+      </span>
+      <span style={{
+        color: 'var(--accent)',
+        fontWeight: 600,
+        fontSize: 11,
+        letterSpacing: '0.5px',
       }}>
-        <span style={{
-          color: 'var(--accent)',
-          fontWeight: 600,
-          fontSize: 11,
-        }}>
-          [WORKOUT]
-        </span>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text-primary)' }}>
-          {getTypeIcon(workoutType)}
-          <span style={{ fontWeight: 500 }}>{workoutType || 'Strength'}</span>
-        </span>
-        {place && (
-          <>
-            <span style={{ color: 'var(--text-dim)' }}>·</span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text-dim)' }}>
-              {getPlaceIcon(place)}
-              {place}
-            </span>
-          </>
-        )}
-      </div>
+        [{(workoutType || 'Strength').toUpperCase()}]
+      </span>
 
+      {/* Place, as a log line reads it: @ somewhere */}
+      {place && (
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text-dim)', fontSize: 11 }}>
+          <span>@</span>
+          {getPlaceIcon(place)}
+          {place.toLowerCase()}
+        </span>
+      )}
     </div>
   );
 });
