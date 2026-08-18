@@ -210,7 +210,7 @@ export const TimelineEntry = memo(function TimelineEntry({
           {isSessionStart && sessionDuration && !isCollapsedAnnotationGroup && (
             <div
               style={{
-                marginTop: "var(--space-1)",
+                marginTop: "var(--space-05)",
                 fontSize: "var(--text-xs)",
                 color: isAnnotation ? "var(--text-dim)" : "var(--accent)",
                 fontWeight: 500,
