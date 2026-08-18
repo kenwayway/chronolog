@@ -1,5 +1,5 @@
 import { useContext } from 'react'
-import type { ThemeConfig } from '@/themes'
+import { getAccentSet, type AccentColor, type ThemeConfig } from '@/themes'
 import { ThemeContext, type ThemeMode, type ThemeState, type AccentColorKey } from '@/contexts/ThemeContext'
 
 export interface UseThemeReturn {
@@ -13,6 +13,8 @@ export interface UseThemeReturn {
     setStyle: (style: string) => void
     availableStyles: { id: string; name: string }[]
     canToggleMode: boolean
+    /** The swatches on offer under the active skin. */
+    accents: Record<AccentColorKey, AccentColor>
     symbols: ThemeConfig['symbols']
     tokens: ThemeConfig['tokens']
     fonts: ThemeConfig['fonts']
@@ -35,6 +37,7 @@ export function useTheme(): UseThemeReturn {
         setStyle,
         availableStyles,
         canToggleMode: !themeConfig.lightModeOnly,
+        accents: getAccentSet(themeConfig),
         symbols: themeConfig.symbols,
         tokens: themeConfig.tokens,
         fonts: themeConfig.fonts,

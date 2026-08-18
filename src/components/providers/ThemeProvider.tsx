@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { getTheme, getThemeList } from '@/themes'
+import { getAccentSet, getTheme, getThemeList } from '@/themes'
 import { STORAGE_KEYS, getStorage, setStorage } from '@/utils/storageService'
-import { ACCENT_COLORS, defaultThemeState, ThemeContext, type AccentColorKey, type ThemeMode, type ThemeState } from '@/contexts/ThemeContext'
+import { defaultThemeState, ThemeContext, type AccentColorKey, type ThemeMode, type ThemeState } from '@/contexts/ThemeContext'
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
     const [themeState, setThemeState] = useState<ThemeState>(() => ({
@@ -13,8 +13,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
     useEffect(() => {
         const root = document.documentElement
-        // A skin that owns its accent outranks the picker (see ThemeConfig.accent).
-        const accent = themeConfig.accent || ACCENT_COLORS[themeState.accent] || ACCENT_COLORS.blue
+        // A skin that owns its accent outranks the picker (see ThemeConfig.accent);
+        // otherwise the picked key resolves against whichever set the skin offers.
+        const accentSet = getAccentSet(themeConfig)
+        const accent = themeConfig.accent || accentSet[themeState.accent] || accentSet.blue
 
         const shiftHue = (hex: string, degrees: number): string => {
             const r = parseInt(hex.slice(1, 3), 16) / 255

@@ -14,6 +14,32 @@ import { journalTheme } from './journal'
  */
 export type ThemeLayout = 'timeline' | 'cards'
 
+export type AccentColorKey = 'blue' | 'indigo' | 'violet' | 'rose' | 'amber' | 'emerald' | 'cyan'
+
+export interface AccentColor {
+  name: string
+  /** Fills, borders and focus rings. */
+  value: string
+  /** One step lifted, for text and hover on a dark ground. The paper-side
+   *  counterpart is derived by deepening `value` - see ThemeProvider. */
+  light: string
+}
+
+/**
+ * The default set, and Terminal's: bright and saturated on purpose. This skin
+ * is built after code editors, where colour is signal against a near-black
+ * ground and is meant to sit forward, not blend.
+ */
+export const ACCENT_COLORS: Record<AccentColorKey, AccentColor> = {
+  blue: { name: 'Blue', value: '#3b82f6', light: '#60a5fa' },
+  indigo: { name: 'Indigo', value: '#6366f1', light: '#818cf8' },
+  violet: { name: 'Violet', value: '#8b5cf6', light: '#a78bfa' },
+  rose: { name: 'Rose', value: '#f43f5e', light: '#fb7185' },
+  amber: { name: 'Amber', value: '#f59e0b', light: '#fbbf24' },
+  emerald: { name: 'Emerald', value: '#10b981', light: '#34d399' },
+  cyan: { name: 'Cyan', value: '#06b6d4', light: '#22d3ee' },
+}
+
 // Theme configuration type
 export interface ThemeConfig {
   id: string
@@ -41,6 +67,12 @@ export interface ThemeConfig {
     value: string
     light: string
   }
+  /**
+   * A skin that wants the whole picker retuned brings its own set under the
+   * same keys, so a stored choice survives switching skins. Terminal's brights
+   * and Journal's pigments are the same seven slots, tuned to their ground.
+   */
+  accents?: Record<AccentColorKey, AccentColor>
   symbols: {
     sessionStart: string
     sessionEnd: string
@@ -85,3 +117,8 @@ export function getThemeList(): { id: string; name: string }[] {
 }
 
 export default themes
+
+/** The accent set on offer under the given skin. */
+export function getAccentSet(theme: ThemeConfig): Record<AccentColorKey, AccentColor> {
+  return theme.accents ?? ACCENT_COLORS
+}

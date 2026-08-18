@@ -1,6 +1,6 @@
 import type { Category } from '@/types';
 import { useTheme } from '@/hooks/useTheme';
-import { ACCENT_COLORS, type AccentColorKey } from '@/contexts/ThemeContext';
+import { type AccentColorKey } from '@/contexts/ThemeContext';
 
 interface AppearanceTabProps {
     categories?: Category[];
@@ -10,7 +10,7 @@ interface AppearanceTabProps {
  * Appearance settings tab - theme style, accent color, and categories display
  */
 export function AppearanceTab({ categories }: AppearanceTabProps) {
-    const { theme, setAccent, setStyle, setMode, availableStyles, canToggleMode, themeConfig } = useTheme();
+    const { theme, setAccent, setStyle, setMode, availableStyles, canToggleMode, themeConfig, accents } = useTheme();
     // Some skins bring their own accent, in which case these swatches would
     // set a value nothing reads.
     const skinOwnsAccent = Boolean(themeConfig.accent);
@@ -72,7 +72,7 @@ export function AppearanceTab({ categories }: AppearanceTabProps) {
             <div>
                 <div className="settings-section-label">ACCENT COLOR</div>
                 <div className="flex flex-wrap gap-2" style={{ opacity: skinOwnsAccent ? 0.4 : 1 }}>
-                    {Object.entries(ACCENT_COLORS).map(([colorKey, color]) => (
+                    {Object.entries(accents).map(([colorKey, color]) => (
                         <button
                             key={colorKey}
                             onClick={() => setAccent(colorKey as AccentColorKey)}
