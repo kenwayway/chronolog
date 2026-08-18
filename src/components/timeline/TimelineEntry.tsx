@@ -186,20 +186,7 @@ export const TimelineEntry = memo(function TimelineEntry({
         {...entryGestures}
       >
         {/* Time Column */}
-        <div
-          className={styles.timeCol}
-          style={{
-            flexShrink: 0,
-            width: 50,
-            textAlign: "right",
-            fontSize: "var(--text-xs)",
-            color: "var(--text-dim)",
-            paddingRight: "var(--space-2)",
-            paddingTop: "var(--space-1)",
-            fontFamily: "var(--font-mono)",
-            opacity: 0.6,
-          }}
-        >
+        <div className={styles.timeCol}>
           {showDate && (
             <div style={{ marginBottom: "var(--space-05)", fontSize: "var(--text-xs)", color: "var(--text-muted)" }}>
               {formatDate(new Date(entry.timestamp).getTime())}
@@ -216,7 +203,7 @@ export const TimelineEntry = memo(function TimelineEntry({
                 fontWeight: 500,
               }}
             >
-              {isZaddy ? `CHAT ${formatDuration(sessionDuration)}` : formatDuration(sessionDuration)}
+              {formatDuration(sessionDuration)}
             </div>
           )}
           {category && !isAnnotation && (

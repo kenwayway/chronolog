@@ -22,7 +22,13 @@ export function formatDate(timestamp: number): string {
 }
 
 /**
- * Format duration in milliseconds to human readable format
+ * Format a session duration.
+ *
+ * Both callers render this into a narrow meta column beside the timeline, so
+ * the result stays at most six characters and never carries two units below
+ * the hour: `26m 50s` wrapped onto a second line, and the seconds on a session
+ * that ran for half an hour were never the point. Sub-minute sessions still
+ * report seconds, because there is nothing else to say about them.
  */
 export function formatDuration(durationMs: number): string {
     const seconds = Math.floor(durationMs / 1000)
@@ -30,13 +36,17 @@ export function formatDuration(durationMs: number): string {
     const hours = Math.floor(minutes / 60)
 
     if (hours > 0) {
+        // Past ten hours the minutes are the same noise the seconds were, and
+        // `10h 30m` is one character wider than the column can hold.
+        if (hours >= 10) {
+            return `${hours}h`
+        }
         const remainingMinutes = minutes % 60
         return `${hours}h ${remainingMinutes}m`
     }
 
     if (minutes > 0) {
-        const remainingSeconds = seconds % 60
-        return `${minutes}m ${remainingSeconds}s`
+        return `${minutes}m`
     }
 
     return `${seconds}s`

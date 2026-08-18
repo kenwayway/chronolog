@@ -7,15 +7,28 @@ describe('formatDuration', () => {
         expect(formatDuration(0)).toBe('0s')
     })
 
-    it('formats minutes and seconds', () => {
-        expect(formatDuration(90_000)).toBe('1m 30s')
-        expect(formatDuration(60_000)).toBe('1m 0s')
+    it('drops seconds once there is a minute to report', () => {
+        expect(formatDuration(90_000)).toBe('1m')
+        expect(formatDuration(60_000)).toBe('1m')
+        expect(formatDuration(1_610_000)).toBe('26m')
+    })
+
+    it('stays within six characters so the meta column cannot wrap', () => {
+        const widest = [59_000, 3_540_000, 43_140_000, 359_940_000]
+        for (const ms of widest) {
+            expect(formatDuration(ms).length).toBeLessThanOrEqual(6)
+        }
     })
 
     it('formats hours and minutes', () => {
         expect(formatDuration(3_600_000)).toBe('1h 0m')
         expect(formatDuration(5_400_000)).toBe('1h 30m')
         expect(formatDuration(7_200_000)).toBe('2h 0m')
+    })
+
+    it('drops minutes past ten hours', () => {
+        expect(formatDuration(37_800_000)).toBe('10h')
+        expect(formatDuration(359_940_000)).toBe('99h')
     })
 
     it('truncates sub-second durations to 0s', () => {

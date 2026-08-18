@@ -43,6 +43,8 @@
   padding-top: var(--space-1);
   font-family: var(--font-mono);
   opacity: 0.6;
+  /* A date or a time is one token and should break like one. */
+  white-space: nowrap;
   /* Four things can stack here - date, time, duration, category - and the row
      is as tall as its tallest column. The body's 1.6 is a measure for prose,
      not for a meta stack, and at four deep it was setting the row height for
