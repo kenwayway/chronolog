@@ -22,6 +22,13 @@ export const spyTheme: ThemeConfig = {
         inputPrefix: '█ ',
     },
 
+    // Aged brass, and not up for negotiation - the parchment ground was built
+    // around it.
+    accent: {
+        value: '#8b6914',
+        light: '#a67c00',
+    },
+
     // Entry symbols
     symbols: {
         sessionStart: '▶',

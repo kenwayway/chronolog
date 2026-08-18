@@ -31,6 +31,16 @@ export interface ThemeConfig {
     panelTitlePrefix: string
     inputPrefix: string
   }
+  /**
+   * A skin whose whole palette depends on one particular accent declares it
+   * here and the global accent picker steps aside. Declaring it in CSS is not
+   * enough: the picker writes to the root element's inline style, which beats
+   * any `[data-style="..."]` rule.
+   */
+  accent?: {
+    value: string
+    light: string
+  }
   symbols: {
     sessionStart: string
     sessionEnd: string

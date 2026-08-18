@@ -16,11 +16,8 @@
   --text-muted: #6a6560;
   --text-dim: #8a8580;
 
-  /* Accent - aged brass/copper */
-  --accent: #8b6914;
-  --accent-light: #a67c00;
-  --accent-glow: rgba(139, 105, 20, 0.15);
-  --accent-subtle: rgba(139, 105, 20, 0.08);
+  /* Accent lives in the theme config (src/themes/spy.ts): the accent picker
+     writes inline styles on the root, so a rule here would never win. */
 
   /* Status colors - muted vintage */
   --success: #2fa90a;

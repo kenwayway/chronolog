@@ -9,9 +9,12 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         ...getStorage<ThemeState>(STORAGE_KEYS.THEME),
     }))
 
+    const themeConfig = getTheme(themeState.style)
+
     useEffect(() => {
         const root = document.documentElement
-        const accent = ACCENT_COLORS[themeState.accent] || ACCENT_COLORS.blue
+        // A skin that owns its accent outranks the picker (see ThemeConfig.accent).
+        const accent = themeConfig.accent || ACCENT_COLORS[themeState.accent] || ACCENT_COLORS.blue
 
         const shiftHue = (hex: string, degrees: number): string => {
             const r = parseInt(hex.slice(1, 3), 16) / 255
@@ -55,17 +58,28 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
             return `#${Math.round(r2 * 255).toString(16).padStart(2, '0')}${Math.round(g2 * 255).toString(16).padStart(2, '0')}${Math.round(b2 * 255).toString(16).padStart(2, '0')}`
         }
 
+        // The accent's second step has to move in opposite directions per mode:
+        // lifted to carry on near-black, deepened to carry on paper. Sending the
+        // lifted value to both was leaving light mode with washed-out headings.
+        const deepen = (hex: string, amount: number): string => {
+            const ch = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16))
+            return '#' + ch
+                .map(v => Math.round(v * (1 - amount)).toString(16).padStart(2, '0'))
+                .join('')
+        }
+        const accentStep = themeState.mode === 'dark' ? accent.light : deepen(accent.value, 0.28)
+
         root.setAttribute('data-theme', themeState.mode)
         root.setAttribute('data-style', themeState.style)
         root.style.setProperty('--accent', accent.value)
-        root.style.setProperty('--accent-light', accent.light)
+        root.style.setProperty('--accent-step', accentStep)
         root.style.setProperty('--accent-glow', `${accent.value}26`)
         root.style.setProperty('--accent-subtle', `${accent.value}1a`)
-        root.style.setProperty('--heading-h1', accent.light)
-        root.style.setProperty('--heading-h2', shiftHue(accent.light, 15))
-        root.style.setProperty('--heading-h3', shiftHue(accent.light, -15))
+        root.style.setProperty('--heading-h1', accentStep)
+        root.style.setProperty('--heading-h2', shiftHue(accentStep, 15))
+        root.style.setProperty('--heading-h3', shiftHue(accentStep, -15))
         setStorage(STORAGE_KEYS.THEME, themeState)
-    }, [themeState])
+    }, [themeState, themeConfig])
 
     const setMode = (mode: ThemeMode) => setThemeState(prev => ({ ...prev, mode }))
     const setAccent = (accent: AccentColorKey) => setThemeState(prev => ({ ...prev, accent }))
@@ -74,8 +88,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         setThemeState(prev => newThemeConfig.lightModeOnly ? { ...prev, style, mode: 'light' } : { ...prev, style })
     }
     const toggleMode = () => setThemeState(prev => ({ ...prev, mode: prev.mode === 'dark' ? 'light' : 'dark' }))
-    const themeConfig = getTheme(themeState.style)
-
     return (
         <ThemeContext.Provider value={{ themeState, themeConfig, setMode, setAccent, setStyle, toggleMode, availableStyles: getThemeList() }}>
             {children}

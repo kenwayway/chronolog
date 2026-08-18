@@ -10,7 +10,10 @@ interface AppearanceTabProps {
  * Appearance settings tab - theme style, accent color, and categories display
  */
 export function AppearanceTab({ categories }: AppearanceTabProps) {
-    const { theme, setAccent, setStyle, setMode, availableStyles, canToggleMode } = useTheme();
+    const { theme, setAccent, setStyle, setMode, availableStyles, canToggleMode, themeConfig } = useTheme();
+    // Some skins bring their own accent, in which case these swatches would
+    // set a value nothing reads.
+    const skinOwnsAccent = Boolean(themeConfig.accent);
 
     return (
         <div className="space-y-5">
@@ -68,20 +71,29 @@ export function AppearanceTab({ categories }: AppearanceTabProps) {
             {/* Accent Color */}
             <div>
                 <div className="settings-section-label">ACCENT COLOR</div>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2" style={{ opacity: skinOwnsAccent ? 0.4 : 1 }}>
                     {Object.entries(ACCENT_COLORS).map(([colorKey, color]) => (
                         <button
                             key={colorKey}
                             onClick={() => setAccent(colorKey as AccentColorKey)}
+                            disabled={skinOwnsAccent}
                             title={color.name}
+                            aria-label={color.name}
+                            aria-pressed={theme.accent === colorKey}
                             className="settings-color-btn"
                             style={{
                                 backgroundColor: color.value,
                                 border: theme.accent === colorKey ? "2px solid var(--text-primary)" : "2px solid transparent",
+                                cursor: skinOwnsAccent ? "default" : "pointer",
                             }}
                         />
                     ))}
                 </div>
+                {skinOwnsAccent && (
+                    <p className="settings-hint" style={{ marginTop: "var(--space-2)" }}>
+                        {themeConfig.name} brings its own accent.
+                    </p>
+                )}
             </div>
 
             {/* Categories (read-only display) */}
