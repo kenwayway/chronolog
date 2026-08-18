@@ -122,7 +122,7 @@ export function Header({
                 {/* Date Navigation */}
                 <div
                     className="flex items-center gap-1 relative"
-                    style={{ marginLeft: 8 }}
+                    style={{ marginLeft: "var(--space-2)" }}
                 >
                     <button
                         className="btn btn-ghost"
@@ -137,8 +137,8 @@ export function Header({
                         className="btn btn-ghost"
                         style={{
                             height: 28,
-                            padding: "0 8px",
-                            fontSize: 12,
+                            padding: "0 var(--space-2)",
+                            fontSize: "var(--text-sm)",
                             fontWeight: 400,
                             fontFamily: "var(--font-mono)",
                             color: isToday ? "var(--accent)" : "var(--text-secondary)",

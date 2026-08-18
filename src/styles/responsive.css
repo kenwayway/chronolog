@@ -8,14 +8,14 @@
   }
 
   .btn {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.7rem;
+    padding: var(--space-1) var(--space-2);
+    font-size: var(--text-xs);
   }
 
   .btn-action {
-    gap: 6px;
-    padding: 8px 12px;
-    font-size: 12px;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--text-sm);
   }
 
   .icon-btn {
@@ -24,7 +24,7 @@
   }
 
   .timeline-container {
-    padding: 12px 8px 120px !important;
+    padding: var(--space-3) var(--space-2) 120px !important;
   }
 
   [data-input-panel][data-mobile-expanded="true"] {
@@ -87,13 +87,13 @@
   }
 
   .font-mono {
-    font-size: 0.875rem;
+    font-size: var(--text-sm);
   }
 
   input,
   textarea,
   select {
-    font-size: 16px !important;
+    font-size: var(--text-input-mobile) !important;
   }
 }
 

@@ -16,8 +16,8 @@ export function ContentTypeSelector({ value, onChange, contentTypes }: ContentTy
             className="content-type-selector"
             style={{
                 display: "flex",
-                gap: 4,
-                padding: "8px 12px",
+                gap: "var(--space-1)",
+                padding: "var(--space-2) var(--space-3)",
                 borderTop: "1px solid var(--border-subtle)",
             }}
         >
@@ -32,9 +32,9 @@ export function ContentTypeSelector({ value, onChange, contentTypes }: ContentTy
                         style={{
                             display: "flex",
                             alignItems: "center",
-                            gap: 4,
-                            padding: "4px 10px",
-                            fontSize: 12,
+                            gap: "var(--space-1)",
+                            padding: "var(--space-1) var(--space-3)",
+                            fontSize: "var(--text-sm)",
                             fontFamily: "var(--font-mono)",
                             backgroundColor: isSelected ? "var(--accent-subtle)" : "transparent",
                             color: isSelected ? "var(--accent)" : "var(--text-muted)",

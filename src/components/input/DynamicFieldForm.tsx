@@ -52,8 +52,8 @@ export function DynamicFieldForm({ contentType, fieldValues, onChange, mediaItem
             style={{
                 display: "flex",
                 flexWrap: "wrap",
-                gap: 8,
-                padding: "8px 12px",
+                gap: "var(--space-2)",
+                padding: "var(--space-2) var(--space-3)",
                 borderTop: "1px solid var(--border-subtle)",
             }}
         >
@@ -69,12 +69,12 @@ export function DynamicFieldForm({ contentType, fieldValues, onChange, mediaItem
                         style={{
                             display: "flex",
                             alignItems: "center",
-                            gap: 6,
+                            gap: "var(--space-2)",
                         }}
                     >
                         <label
                             style={{
-                                fontSize: 11,
+                                fontSize: "var(--text-xs)",
                                 color: "var(--text-dim)",
                                 fontFamily: "var(--font-mono)",
                             }}
@@ -87,8 +87,8 @@ export function DynamicFieldForm({ contentType, fieldValues, onChange, mediaItem
                                 value={value as string}
                                 onChange={(e: ChangeEvent<HTMLSelectElement>) => handleFieldChange(field.id, e.target.value)}
                                 style={{
-                                    padding: "4px 8px",
-                                    fontSize: 12,
+                                    padding: "var(--space-1) var(--space-2)",
+                                    fontSize: "var(--text-sm)",
                                     fontFamily: "var(--font-mono)",
                                     backgroundColor: "var(--bg-secondary)",
                                     color: "var(--text-primary)",
@@ -112,8 +112,8 @@ export function DynamicFieldForm({ contentType, fieldValues, onChange, mediaItem
                                 placeholder="0"
                                 style={{
                                     width: 80,
-                                    padding: "4px 8px",
-                                    fontSize: 12,
+                                    padding: "var(--space-1) var(--space-2)",
+                                    fontSize: "var(--text-sm)",
                                     fontFamily: "var(--font-mono)",
                                     backgroundColor: "var(--bg-secondary)",
                                     color: "var(--text-primary)",
@@ -131,8 +131,8 @@ export function DynamicFieldForm({ contentType, fieldValues, onChange, mediaItem
                                 placeholder={field.id === 'notionPageId' ? 'Notion URL or page ID' : undefined}
                                 style={{
                                     width: field.id === 'notionPageId' ? 260 : 120,
-                                    padding: "4px 8px",
-                                    fontSize: 12,
+                                    padding: "var(--space-1) var(--space-2)",
+                                    fontSize: "var(--text-sm)",
                                     fontFamily: "var(--font-mono)",
                                     backgroundColor: "var(--bg-secondary)",
                                     color: "var(--text-primary)",

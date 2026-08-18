@@ -7,7 +7,7 @@ export function LandingPage({ onDismiss }: { onDismiss: () => void }) {
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      padding: "40px 20px",
+      padding: "var(--space-10) var(--space-5)",
       cursor: "pointer",
       userSelect: "none",
       fontFamily: "var(--font-mono)",
@@ -24,7 +24,7 @@ export function LandingPage({ onDismiss }: { onDismiss: () => void }) {
     // Row 1: 我要大肌肉 (spans 2 cols)
     cell1: {
       gridColumn: "1 / -1",
-      padding: "24px 0",
+      padding: "var(--space-6) 0",
     },
     phrase1: {
       fontSize: "36px",
@@ -38,7 +38,7 @@ export function LandingPage({ onDismiss }: { onDismiss: () => void }) {
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      padding: "48px 24px",
+      padding: "var(--space-12) var(--space-6)",
 
     },
     cat: {
@@ -51,18 +51,18 @@ export function LandingPage({ onDismiss }: { onDismiss: () => void }) {
       display: "flex",
       flexDirection: "column",
       justifyContent: "center",
-      padding: "24px",
+      padding: "var(--space-6)",
     },
     phrase2Label: {
-      fontSize: "10px",
+      fontSize: "var(--text-xs)",
       fontWeight: 600,
       letterSpacing: "0.15em",
       color: "var(--text-dim)",
-      marginBottom: "8px",
+      marginBottom: "var(--space-2)",
       textTransform: "uppercase",
     },
     phrase2: {
-      fontSize: "15px",
+      fontSize: "var(--text-base)",
       fontWeight: 500,
       lineHeight: 1.5,
       color: "var(--text-secondary)",
@@ -73,10 +73,10 @@ export function LandingPage({ onDismiss }: { onDismiss: () => void }) {
       display: "flex",
       alignItems: "baseline",
       justifyContent: "space-between",
-      padding: "24px 0",
+      padding: "var(--space-6) 0",
     },
     countdownLabel: {
-      fontSize: "11px",
+      fontSize: "var(--text-xs)",
       fontWeight: 600,
       letterSpacing: "0.1em",
       color: "var(--text-dim)",
@@ -84,7 +84,7 @@ export function LandingPage({ onDismiss }: { onDismiss: () => void }) {
     countdownValue: {
       display: "flex",
       alignItems: "baseline",
-      gap: "8px",
+      gap: "var(--space-2)",
     },
     countdownNumber: {
       fontSize: "80px",
@@ -94,7 +94,7 @@ export function LandingPage({ onDismiss }: { onDismiss: () => void }) {
       letterSpacing: "-0.05em",
     },
     countdownUnit: {
-      fontSize: "20px",
+      fontSize: "var(--text-lg)",
       fontWeight: 600,
       color: "var(--text-muted)",
     },
@@ -103,7 +103,7 @@ export function LandingPage({ onDismiss }: { onDismiss: () => void }) {
       bottom: "16px",
       left: "50%",
       transform: "translateX(-50%)",
-      fontSize: "10px",
+      fontSize: "var(--text-xs)",
       letterSpacing: "0.15em",
       textTransform: "uppercase",
       color: "var(--text-dim)",

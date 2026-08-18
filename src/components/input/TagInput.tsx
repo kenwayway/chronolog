@@ -34,7 +34,7 @@ export function TagInput({ tags, setTags }: TagInputProps) {
 
     return (
         <div className="flex items-center gap-2" style={{ flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 10, color: 'var(--text-dim)', userSelect: 'none' }}>
+            <span style={{ fontSize: "var(--text-xs)", color: 'var(--text-dim)', userSelect: 'none' }}>
                 TAGS
             </span>
             <input
@@ -46,8 +46,8 @@ export function TagInput({ tags, setTags }: TagInputProps) {
                 style={{
                     width: 60,
                     height: 22,
-                    padding: '0 6px',
-                    fontSize: 11,
+                    padding: '0 var(--space-2)',
+                    fontSize: "var(--text-xs)",
                     fontFamily: 'var(--font-mono)',
                     backgroundColor: 'var(--bg-tertiary)',
                     color: 'var(--text-primary)',
@@ -60,14 +60,14 @@ export function TagInput({ tags, setTags }: TagInputProps) {
                 <span
                     key={tag}
                     style={{
-                        fontSize: 10,
-                        padding: '2px 6px',
+                        fontSize: "var(--text-xs)",
+                        padding: 'var(--space-05) var(--space-2)',
                         backgroundColor: 'var(--bg-tertiary)',
                         color: 'var(--text-secondary)',
                         fontFamily: 'var(--font-mono)',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: 4,
+                        gap: "var(--space-1)",
                     }}
                 >
                     #{tag}

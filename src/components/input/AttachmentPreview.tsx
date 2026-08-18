@@ -61,8 +61,8 @@ export function AttachmentPreview({
                         disabled={isUploading || !cloudSync?.isLoggedIn}
                         title={cloudSync?.isLoggedIn ? "Upload image" : "Connect to cloud to upload"}
                         style={{
-                            padding: "4px 8px",
-                            fontSize: 10,
+                            padding: "var(--space-1) var(--space-2)",
+                            fontSize: "var(--text-xs)",
                             backgroundColor: cloudSync?.isLoggedIn ? "var(--accent-subtle)" : "var(--bg-tertiary)",
                             color: cloudSync?.isLoggedIn ? "var(--accent)" : "var(--text-dim)",
                             border: "none",
@@ -103,7 +103,7 @@ export function AttachmentPreview({
                     />
                     <span
                         style={{
-                            fontSize: 11,
+                            fontSize: "var(--text-xs)",
                             color: "var(--text-dim)",
                             flex: 1,
                             overflow: "hidden",
@@ -120,7 +120,7 @@ export function AttachmentPreview({
                             backgroundColor: "transparent",
                             border: "none",
                             cursor: "pointer",
-                            fontSize: 14,
+                            fontSize: "var(--text-base)",
                         }}
                     >
                         ×
@@ -143,7 +143,7 @@ export function AttachmentPreview({
                         className="btn-action btn-action-secondary"
                         onClick={onGetLocation}
                         disabled={isGettingLocation}
-                        style={{ padding: "4px 8px", fontSize: 10 }}
+                        style={{ padding: "var(--space-1) var(--space-2)", fontSize: "var(--text-xs)" }}
                     >
                         {isGettingLocation ? "..." : "AUTO"}
                     </button>
@@ -163,7 +163,7 @@ export function AttachmentPreview({
             {location && !showLocationInput && (
                 <div className="input-panel-attachment-row">
                     <MapPin size={12} style={{ color: "var(--accent)" }} />
-                    <span style={{ fontSize: 11, color: "var(--text-secondary)", flex: 1 }}>
+                    <span style={{ fontSize: "var(--text-xs)", color: "var(--text-secondary)", flex: 1 }}>
                         {location}
                     </span>
                     <button

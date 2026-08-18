@@ -62,7 +62,7 @@ export function ImageLightbox({ src, onClose }: ImageLightboxProps) {
                     position: 'absolute',
                     top: 16,
                     right: 16,
-                    padding: 8,
+                    padding: "var(--space-2)",
                     backgroundColor: 'rgba(255, 255, 255, 0.1)',
                     border: 'none',
                     borderRadius: 4,
@@ -87,9 +87,9 @@ export function ImageLightbox({ src, onClose }: ImageLightboxProps) {
                     left: '50%',
                     transform: 'translateX(-50%)',
                     display: 'flex',
-                    gap: 8,
+                    gap: "var(--space-2)",
                     backgroundColor: 'rgba(0, 0, 0, 0.6)',
-                    padding: '8px 16px',
+                    padding: 'var(--space-2) var(--space-4)',
                     borderRadius: 8,
                 }}
             >
@@ -97,7 +97,7 @@ export function ImageLightbox({ src, onClose }: ImageLightboxProps) {
                     onClick={handleZoomOut}
                     disabled={scale <= 0.5}
                     style={{
-                        padding: 8,
+                        padding: "var(--space-2)",
                         backgroundColor: 'transparent',
                         border: 'none',
                         color: scale <= 0.5 ? 'rgba(255,255,255,0.3)' : 'white',
@@ -109,14 +109,14 @@ export function ImageLightbox({ src, onClose }: ImageLightboxProps) {
                 >
                     <ZoomOut size={20} />
                 </button>
-                <span style={{ color: 'white', fontSize: 14, display: 'flex', alignItems: 'center', minWidth: 50, justifyContent: 'center' }}>
+                <span style={{ color: 'white', fontSize: "var(--text-base)", display: 'flex', alignItems: 'center', minWidth: 50, justifyContent: 'center' }}>
                     {Math.round(scale * 100)}%
                 </span>
                 <button
                     onClick={handleZoomIn}
                     disabled={scale >= 3}
                     style={{
-                        padding: 8,
+                        padding: "var(--space-2)",
                         backgroundColor: 'transparent',
                         border: 'none',
                         color: scale >= 3 ? 'rgba(255,255,255,0.3)' : 'white',

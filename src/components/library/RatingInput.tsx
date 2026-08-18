@@ -2,7 +2,7 @@ import React from 'react';
 
 export function RatingInput({ value, onChange }: { value: number; onChange: (v: number) => void }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: "var(--space-05)" }}>
       {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
         <button
           key={n}
@@ -15,7 +15,7 @@ export function RatingInput({ value, onChange }: { value: number; onChange: (v: 
             cursor: 'pointer', padding: 0,
             transition: 'all 120ms ease',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 8, fontWeight: 700, fontFamily: 'var(--font-mono)',
+            fontSize: "var(--text-xs)", fontWeight: 700, fontFamily: 'var(--font-mono)',
             color: n <= value ? 'var(--bg-primary)' : 'var(--text-dim)',
           }}
           title={`${n}/10`}

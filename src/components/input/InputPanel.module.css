@@ -7,7 +7,7 @@
     right: var(--activity-panel-inset, 0px);
     display: flex;
     justify-content: center;
-    padding: 0 16px;
+    padding: 0 var(--space-4);
     pointer-events: none;
     z-index: 300;
     transition: right 300ms ease-out;
@@ -43,7 +43,7 @@
 .gutter {
     flex-shrink: 0;
     width: 48px;
-    padding-top: 12px;
+    padding-top: var(--space-3);
     border-right: 1px solid var(--border-subtle);
     background-color: var(--bg-secondary);
     user-select: none;
@@ -51,7 +51,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
-    gap: 12px;
+    gap: var(--space-3);
 }
 
 .gutter .terminalIcon {
@@ -60,11 +60,11 @@
 
 .editor {
     flex: 1;
-    padding: 12px;
+    padding: var(--space-3);
 }
 
 .editorFocusMode {
-    padding: 24px 16px;
+    padding: var(--space-6) var(--space-4);
 }
 
 .textarea {
@@ -73,7 +73,7 @@
     background-color: transparent;
     color: var(--text-primary);
     font-family: var(--font-mono);
-    font-size: 15px;
+    font-size: var(--text-base);
     resize: none;
     border: none;
     outline: none;
@@ -89,7 +89,7 @@
 }
 
 .textareaFocusMode {
-    font-size: 16px;
+    font-size: var(--text-base);
     min-height: 400px;
     max-height: 600px;
 }
@@ -97,8 +97,8 @@
 .timeInputRow {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 16px;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-4);
     border-top: 1px solid var(--border-subtle);
     background-color: var(--bg-secondary);
 }
@@ -107,7 +107,7 @@
     flex: 0 0 auto;
     color: var(--text-muted);
     font-family: var(--font-mono);
-    font-size: 11px;
+    font-size: var(--text-xs);
     font-weight: 600;
     letter-spacing: 0.06em;
 }
@@ -116,14 +116,14 @@
     min-width: 0;
     flex: 1;
     height: 30px;
-    padding: 0 8px;
+    padding: 0 var(--space-2);
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-none);
     outline: none;
     background: var(--bg-tertiary);
     color: var(--text-primary);
     font-family: var(--font-mono);
-    font-size: 12px;
+    font-size: var(--text-sm);
 }
 
 .timeInput:focus {
@@ -132,14 +132,14 @@
 
 .timeNowButton {
     height: 30px;
-    padding: 0 8px;
+    padding: 0 var(--space-2);
     border: 1px solid var(--text-dim);
     border-radius: var(--radius-none);
     background: transparent;
     color: var(--text-secondary);
     cursor: pointer;
     font-family: var(--font-mono);
-    font-size: 10px;
+    font-size: var(--text-xs);
     font-weight: 600;
 }
 
@@ -184,7 +184,7 @@
    mobile. */
 :global([data-style="journal"]) .gutter {
     width: 40px;
-    padding-top: 15px;
+    padding-top: var(--space-4);
     border-right: none;
     background-color: transparent;
 }
@@ -194,12 +194,12 @@
 }
 
 :global([data-style="journal"]) .editor {
-    padding: 12px 16px 12px 0;
+    padding: var(--space-3) var(--space-4) var(--space-3) 0;
 }
 
 :global([data-style="journal"]) .textarea {
     font-family: var(--font-primary);
-    font-size: 16px;
+    font-size: var(--text-base);
     line-height: 1.5;
     letter-spacing: -0.011em;
 }
@@ -211,7 +211,7 @@
 /* The panel keeps overflow visible so its dropdowns can escape, so the last
    row rounds its own corners rather than being clipped to them. */
 :global([data-style="journal"]) .timeInputRow {
-    padding: 10px 16px;
+    padding: var(--space-3) var(--space-4);
     border-top: 1px solid var(--card-hairline);
     border-radius: 0 0 19px 19px;
     background-color: var(--card-inset);
@@ -219,19 +219,19 @@
 
 :global([data-style="journal"]) .timeInputLabel {
     font-family: var(--font-primary);
-    font-size: 11px;
+    font-size: var(--text-xs);
     font-weight: 600;
     letter-spacing: 0.02em;
 }
 
 :global([data-style="journal"]) .timeInput {
     height: 32px;
-    padding: 0 10px;
+    padding: 0 var(--space-3);
     border: 1px solid transparent;
     border-radius: var(--radius-md);
     background: var(--card-surface);
     font-variant-numeric: tabular-nums;
-    font-size: 13px;
+    font-size: var(--text-sm);
 }
 
 /* A single field can afford the accent, because it is one crisp hairline
@@ -244,12 +244,12 @@
 
 :global([data-style="journal"]) .timeNowButton {
     height: 32px;
-    padding: 0 12px;
+    padding: 0 var(--space-3);
     border: none;
     border-radius: var(--radius-full);
     background: var(--card-surface);
     font-family: var(--font-primary);
-    font-size: 11.5px;
+    font-size: var(--text-xs);
     font-weight: 600;
     letter-spacing: 0;
     transition: color 160ms ease, background-color 160ms ease;
@@ -263,7 +263,7 @@
 /* Responsive - Mobile */
 @media (max-width: 640px) {
     .container {
-        padding: 0 0.5rem;
+        padding: 0 var(--space-2);
         bottom: 12px;
     }
 

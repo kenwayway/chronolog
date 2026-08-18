@@ -95,7 +95,7 @@ export function ActivityPanel({
                 </div>
 
                 {/* Content */}
-                <div style={{ flex: 1, overflowY: "auto", padding: 20 }}>
+                <div style={{ flex: 1, overflowY: "auto", padding: "var(--space-5)" }}>
                     {/* Category Time Distribution */}
                     <CategoryTimeChart
                         sessions={sessions}
@@ -114,7 +114,7 @@ export function ActivityPanel({
                                 <button
                                     onClick={clearFilter}
                                     style={{
-                                        fontSize: 9,
+                                        fontSize: "var(--text-xs)",
                                         color: "var(--text-dim)",
                                         backgroundColor: "transparent",
                                         border: "none",
@@ -125,7 +125,7 @@ export function ActivityPanel({
                                 </button>
                             )}
                         </div>
-                        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
                             {categories?.map((cat) => {
                                 const isActive = categoryFilter.includes(cat.id);
                                 return (
@@ -135,9 +135,9 @@ export function ActivityPanel({
                                         style={{
                                             display: "flex",
                                             alignItems: "center",
-                                            gap: 10,
-                                            padding: "8px 12px",
-                                            fontSize: 11,
+                                            gap: "var(--space-3)",
+                                            padding: "var(--space-2) var(--space-3)",
+                                            fontSize: "var(--text-xs)",
                                             color: isActive ? cat.color : "var(--text-secondary)",
                                             backgroundColor: isActive
                                                 ? `${cat.color}20`
@@ -176,7 +176,7 @@ export function ActivityPanel({
 
                     {/* Content Type Filter Section */}
                     {contentTypeStats.length > 0 && (
-                        <div style={{ marginTop: 32 }}>
+                        <div style={{ marginTop: "var(--space-8)" }}>
                             <div className={styles.sectionHeader}>
                                 <span>Types</span>
                                 <div className={styles.sectionLine} />
@@ -184,7 +184,7 @@ export function ActivityPanel({
                                     <button
                                         onClick={() => onContentTypeFilterChange([])}
                                         style={{
-                                            fontSize: 9,
+                                            fontSize: "var(--text-xs)",
                                             color: "var(--text-dim)",
                                             backgroundColor: "transparent",
                                             border: "none",
@@ -195,7 +195,7 @@ export function ActivityPanel({
                                     </button>
                                 )}
                             </div>
-                            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                            <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-2)" }}>
                                 {contentTypeStats.map(ct => {
                                     const isActive = contentTypeFilter.includes(ct.id);
                                     return (
@@ -213,9 +213,9 @@ export function ActivityPanel({
                                             style={{
                                                 display: "flex",
                                                 alignItems: "center",
-                                                gap: 4,
-                                                padding: "4px 10px",
-                                                fontSize: 10,
+                                                gap: "var(--space-1)",
+                                                padding: "var(--space-1) var(--space-3)",
+                                                fontSize: "var(--text-xs)",
                                                 color: isActive ? "var(--accent)" : "var(--text-secondary)",
                                                 backgroundColor: isActive
                                                     ? "var(--accent-subtle, rgba(99,102,241,0.12))"
@@ -232,7 +232,7 @@ export function ActivityPanel({
                                             <span style={{ textTransform: "uppercase", letterSpacing: "0.03em" }}>
                                                 {ct.name}
                                             </span>
-                                            <span style={{ fontSize: 8, opacity: 0.6 }}>
+                                            <span style={{ fontSize: "var(--text-xs)", opacity: 0.6 }}>
                                                 {ct.count}
                                             </span>
                                         </button>
@@ -244,7 +244,7 @@ export function ActivityPanel({
 
                     {/* Tag Filter Section */}
                     {tagStats.length > 0 && (
-                        <div style={{ marginTop: 32 }}>
+                        <div style={{ marginTop: "var(--space-8)" }}>
                             <div className={styles.sectionHeader}>
                                 <span>Tags</span>
                                 <div className={styles.sectionLine} />
@@ -252,7 +252,7 @@ export function ActivityPanel({
                                     <button
                                         onClick={() => onTagFilterChange([])}
                                         style={{
-                                            fontSize: 9,
+                                            fontSize: "var(--text-xs)",
                                             color: "var(--text-dim)",
                                             backgroundColor: "transparent",
                                             border: "none",
@@ -263,7 +263,7 @@ export function ActivityPanel({
                                     </button>
                                 )}
                             </div>
-                            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                            <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-2)" }}>
                                 {tagStats.slice(0, TAG_PREVIEW_COUNT).map(({ tag, count }) => {
                                     const isActive = tagFilter.includes(tag);
                                     return (
@@ -281,9 +281,9 @@ export function ActivityPanel({
                                             style={{
                                                 display: "flex",
                                                 alignItems: "center",
-                                                gap: 4,
-                                                padding: "4px 10px",
-                                                fontSize: 10,
+                                                gap: "var(--space-1)",
+                                                padding: "var(--space-1) var(--space-3)",
+                                                fontSize: "var(--text-xs)",
                                                 color: isActive ? "var(--accent)" : "var(--text-secondary)",
                                                 backgroundColor: isActive
                                                     ? "var(--accent-subtle, rgba(99,102,241,0.12))"
@@ -298,7 +298,7 @@ export function ActivityPanel({
                                         >
                                             <span>#{tag}</span>
                                             <span style={{
-                                                fontSize: 8,
+                                                fontSize: "var(--text-xs)",
                                                 opacity: 0.6,
                                             }}>
                                                 {count}

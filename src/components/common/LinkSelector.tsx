@@ -90,7 +90,7 @@ function LinkSelectorDialog({ sourceEntry, entries, onLink, onClose }: LinkSelec
                 alignItems: "center",
                 justifyContent: "center",
                 zIndex: 1000,
-                padding: 16,
+                padding: "var(--space-4)",
             }}
             onClick={(e) => e.target === e.currentTarget && onClose()}
         >
@@ -115,15 +115,15 @@ function LinkSelectorDialog({ sourceEntry, entries, onLink, onClose }: LinkSelec
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "space-between",
-                        padding: "12px 16px",
+                        padding: "var(--space-3) var(--space-4)",
                         borderBottom: "1px solid var(--border-subtle)",
                     }}
                 >
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
                         <Link2 size={16} style={{ color: "var(--accent)" }} />
                         <span
                             style={{
-                                fontSize: 13,
+                                fontSize: "var(--text-sm)",
                                 fontWeight: 600,
                                 color: "var(--text-primary)",
                                 fontFamily: "var(--font-mono)",
@@ -138,7 +138,7 @@ function LinkSelectorDialog({ sourceEntry, entries, onLink, onClose }: LinkSelec
                             background: "none",
                             border: "none",
                             cursor: "pointer",
-                            padding: 4,
+                            padding: "var(--space-1)",
                             color: "var(--text-muted)",
                         }}
                     >
@@ -147,13 +147,13 @@ function LinkSelectorDialog({ sourceEntry, entries, onLink, onClose }: LinkSelec
                 </div>
 
                 {/* Search */}
-                <div style={{ padding: "12px 16px", borderBottom: "1px solid var(--border-subtle)" }}>
+                <div style={{ padding: "var(--space-3) var(--space-4)", borderBottom: "1px solid var(--border-subtle)" }}>
                     <div
                         style={{
                             display: "flex",
                             alignItems: "center",
-                            gap: 8,
-                            padding: "8px 12px",
+                            gap: "var(--space-2)",
+                            padding: "var(--space-2) var(--space-3)",
                             backgroundColor: "var(--bg-secondary)",
                             borderRadius: 6,
                             border: "1px solid var(--border-subtle)",
@@ -171,7 +171,7 @@ function LinkSelectorDialog({ sourceEntry, entries, onLink, onClose }: LinkSelec
                                 background: "none",
                                 border: "none",
                                 outline: "none",
-                                fontSize: 13,
+                                fontSize: "var(--text-sm)",
                                 color: "var(--text-primary)",
                                 fontFamily: "var(--font-primary)",
                             }}
@@ -184,16 +184,16 @@ function LinkSelectorDialog({ sourceEntry, entries, onLink, onClose }: LinkSelec
                     style={{
                         flex: 1,
                         overflowY: "auto",
-                        padding: "8px 0",
+                        padding: "var(--space-2) 0",
                     }}
                 >
                     {filteredEntries.length === 0 ? (
                         <div
                             style={{
-                                padding: 24,
+                                padding: "var(--space-6)",
                                 textAlign: "center",
                                 color: "var(--text-muted)",
-                                fontSize: 13,
+                                fontSize: "var(--text-sm)",
                             }}
                         >
                             No entries found
@@ -210,9 +210,9 @@ function LinkSelectorDialog({ sourceEntry, entries, onLink, onClose }: LinkSelec
                                     style={{
                                         display: "flex",
                                         alignItems: "flex-start",
-                                        gap: 12,
+                                        gap: "var(--space-3)",
                                         width: "100%",
-                                        padding: "10px 16px",
+                                        padding: "var(--space-3) var(--space-4)",
                                         background: isLinked ? "var(--accent-subtle)" : "transparent",
                                         border: "none",
                                         borderLeft: isLinked ? "3px solid var(--accent)" : "3px solid transparent",
@@ -224,7 +224,7 @@ function LinkSelectorDialog({ sourceEntry, entries, onLink, onClose }: LinkSelec
                                     {/* Direction indicator */}
                                     <span
                                         style={{
-                                            fontSize: 12,
+                                            fontSize: "var(--text-sm)",
                                             color: isOlder ? "var(--accent)" : "var(--warning)",
                                             fontWeight: 600,
                                             width: 16,
@@ -238,7 +238,7 @@ function LinkSelectorDialog({ sourceEntry, entries, onLink, onClose }: LinkSelec
                                     <div style={{ flex: 1, minWidth: 0 }}>
                                         <div
                                             style={{
-                                                fontSize: 13,
+                                                fontSize: "var(--text-sm)",
                                                 color: isLinked ? "var(--accent)" : "var(--text-secondary)",
                                                 lineHeight: 1.4,
                                                 overflow: "hidden",
@@ -250,9 +250,9 @@ function LinkSelectorDialog({ sourceEntry, entries, onLink, onClose }: LinkSelec
                                         </div>
                                         <div
                                             style={{
-                                                fontSize: 10,
+                                                fontSize: "var(--text-xs)",
                                                 color: "var(--text-dim)",
-                                                marginTop: 2,
+                                                marginTop: "var(--space-05)",
                                                 fontFamily: "var(--font-mono)",
                                             }}
                                         >
@@ -273,7 +273,7 @@ function LinkSelectorDialog({ sourceEntry, entries, onLink, onClose }: LinkSelec
                                             justifyContent: "center",
                                             flexShrink: 0,
                                             color: "white",
-                                            fontSize: 12,
+                                            fontSize: "var(--text-sm)",
                                             fontWeight: 700,
                                         }}
                                     >
@@ -291,26 +291,26 @@ function LinkSelectorDialog({ sourceEntry, entries, onLink, onClose }: LinkSelec
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "space-between",
-                        padding: "12px 16px",
+                        padding: "var(--space-3) var(--space-4)",
                         borderTop: "1px solid var(--border-subtle)",
                         backgroundColor: "var(--bg-secondary)",
                     }}
                 >
                     <span
                         style={{
-                            fontSize: 11,
+                            fontSize: "var(--text-xs)",
                             color: "var(--text-muted)",
                             fontFamily: "var(--font-mono)",
                         }}
                     >
                         {selectedIds.length} linked
                     </span>
-                    <div style={{ display: "flex", gap: 8 }}>
+                    <div style={{ display: "flex", gap: "var(--space-2)" }}>
                         <button
                             onClick={onClose}
                             style={{
-                                padding: "6px 12px",
-                                fontSize: 11,
+                                padding: "var(--space-2) var(--space-3)",
+                                fontSize: "var(--text-xs)",
                                 fontFamily: "var(--font-mono)",
                                 backgroundColor: "transparent",
                                 border: "1px solid var(--border-light)",
@@ -324,8 +324,8 @@ function LinkSelectorDialog({ sourceEntry, entries, onLink, onClose }: LinkSelec
                         <button
                             onClick={handleSave}
                             style={{
-                                padding: "6px 12px",
-                                fontSize: 11,
+                                padding: "var(--space-2) var(--space-3)",
+                                fontSize: "var(--text-xs)",
                                 fontFamily: "var(--font-mono)",
                                 backgroundColor: "var(--accent)",
                                 border: "none",

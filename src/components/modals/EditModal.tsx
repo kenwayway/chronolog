@@ -182,7 +182,7 @@ function EditModalForm({ entry, onSave, onClose }: Omit<EditModalProps, 'isOpen'
 
         {/* Attachments (Image & Location) */}
         {(imageUrl || location || showImageInput || showLocationInput) && (
-          <div className={styles.section} style={{ padding: '8px 20px' }}>
+          <div className={styles.section} style={{ padding: 'var(--space-2) var(--space-5)' }}>
             {/* Image URL Input */}
             {showImageInput && (
               <div className="flex items-center gap-2 mb-2">

@@ -146,10 +146,10 @@ export const TimelineEntry = memo(function TimelineEntry({
           />
         );
       case 'content-glyph':
-        return <span style={{ fontSize: 14, color: 'var(--accent)' }}>{symbol.glyph}</span>;
+        return <span style={{ fontSize: "var(--text-base)", color: 'var(--accent)' }}>{symbol.glyph}</span>;
       case 'note-glyph':
       default:
-        return <span style={{ fontSize: 14, color: "var(--text-dim)" }}>{symbol.glyph}</span>;
+        return <span style={{ fontSize: "var(--text-base)", color: "var(--text-dim)" }}>{symbol.glyph}</span>;
     }
   };
 
@@ -178,7 +178,7 @@ export const TimelineEntry = memo(function TimelineEntry({
         style={{
           display: "flex",
           alignItems: "flex-start",
-          gap: 16,
+          gap: "var(--space-4)",
           cursor: "default",
           userSelect: "none",
           transition: "background-color 300ms ease",
@@ -192,16 +192,16 @@ export const TimelineEntry = memo(function TimelineEntry({
             flexShrink: 0,
             width: 50,
             textAlign: "right",
-            fontSize: 10,
+            fontSize: "var(--text-xs)",
             color: "var(--text-dim)",
-            paddingRight: 8,
-            paddingTop: 4,
+            paddingRight: "var(--space-2)",
+            paddingTop: "var(--space-1)",
             fontFamily: "var(--font-mono)",
             opacity: 0.6,
           }}
         >
           {showDate && (
-            <div style={{ marginBottom: 2, fontSize: 9, color: "var(--text-muted)" }}>
+            <div style={{ marginBottom: "var(--space-05)", fontSize: "var(--text-xs)", color: "var(--text-muted)" }}>
               {formatDate(new Date(entry.timestamp).getTime())}
             </div>
           )}
@@ -210,8 +210,8 @@ export const TimelineEntry = memo(function TimelineEntry({
           {isSessionStart && sessionDuration && !isCollapsedAnnotationGroup && (
             <div
               style={{
-                marginTop: 4,
-                fontSize: 9,
+                marginTop: "var(--space-1)",
+                fontSize: "var(--text-xs)",
                 color: isAnnotation ? "var(--text-dim)" : "var(--accent)",
                 fontWeight: 500,
               }}
@@ -238,7 +238,7 @@ export const TimelineEntry = memo(function TimelineEntry({
             flexShrink: 0,
             width: 20,
             textAlign: "center",
-            fontSize: 14,
+            fontSize: "var(--text-base)",
             userSelect: "none",
             display: "flex",
             flexDirection: "column",
@@ -271,7 +271,7 @@ export const TimelineEntry = memo(function TimelineEntry({
         <div className={styles.contentCol} style={{ flex: 1, minWidth: 0 }}>
           {/* Linked entries before (older) */}
           {!isAnnotation && beforeLinks.length > 0 && (
-            <div className="linked-entries-before" style={{ marginBottom: 8 }}>
+            <div className="linked-entries-before" style={{ marginBottom: "var(--space-2)" }}>
               {beforeLinks.map(linked => (
                 <LinkedEntryPreview
                   key={linked.id}
@@ -287,10 +287,10 @@ export const TimelineEntry = memo(function TimelineEntry({
           <div
             className={styles.mobileTime}
             style={{
-              fontSize: 10,
+              fontSize: "var(--text-xs)",
               color: "var(--text-dim)",
               fontFamily: "var(--font-mono)",
-              marginBottom: 4,
+              marginBottom: "var(--space-1)",
               display: "none",
             }}
           >
@@ -334,7 +334,7 @@ export const TimelineEntry = memo(function TimelineEntry({
 
           {/* Main content row */}
           {!isCollapsedAnnotationGroup && (
-            <div className="flex flex-wrap items-baseline" style={{ gap: "4px 12px", marginBottom: 6 }}>
+            <div className="flex flex-wrap items-baseline" style={{ gap: "var(--space-1) var(--space-3)", marginBottom: "var(--space-2)" }}>
               {isZaddy && !isAnnotation && (
                 <span className={styles.originBadge}>ZADDY</span>
               )}
@@ -342,7 +342,7 @@ export const TimelineEntry = memo(function TimelineEntry({
                 <span
                   className={`${styles.contentText} ${isAnnotation ? styles.annotationContent : ""}`}
                   style={{
-                    fontSize: isAnnotation ? 13 : 15,
+                    fontSize: isAnnotation ? "var(--text-sm)" : "var(--text-base)",
                     lineHeight: 1.6,
                     overflowWrap: "break-word",
                     fontFamily: "var(--font-primary)",
@@ -366,7 +366,7 @@ export const TimelineEntry = memo(function TimelineEntry({
 
           {/* Built-in display behavior is registered with the content type. */}
           {contentTypeDisplay && !isAnnotation && (
-            <div style={{ marginTop: 6 }}>
+            <div style={{ marginTop: "var(--space-2)" }}>
               {contentTypeDisplay}
             </div>
           )}
@@ -420,7 +420,7 @@ export const TimelineEntry = memo(function TimelineEntry({
 
           {/* Linked entries after (newer) */}
           {!isAnnotation && afterLinks.length > 0 && (
-            <div className="linked-entries-after" style={{ marginTop: 8 }}>
+            <div className="linked-entries-after" style={{ marginTop: "var(--space-2)" }}>
               {afterLinks.map(linked => (
                 <LinkedEntryPreview
                   key={linked.id}

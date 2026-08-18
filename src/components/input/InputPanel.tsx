@@ -341,11 +341,11 @@ export const InputPanel = forwardRef<InputPanelRef, InputPanelProps>(function In
                     style={{
                         display: "flex",
                         alignItems: "center",
-                        gap: 8,
-                        padding: "6px 12px",
+                        gap: "var(--space-2)",
+                        padding: "var(--space-2) var(--space-3)",
                         backgroundColor: "var(--accent-subtle)",
                         borderBottom: "1px solid var(--border-subtle)",
-                        fontSize: 11,
+                        fontSize: "var(--text-xs)",
                         color: "var(--accent)",
                     }}
                 >
@@ -360,7 +360,7 @@ export const InputPanel = forwardRef<InputPanelRef, InputPanelProps>(function In
                             background: "none",
                             border: "none",
                             cursor: "pointer",
-                            padding: 2,
+                            padding: "var(--space-05)",
                             color: "var(--text-muted)",
                             display: "flex",
                             alignItems: "center",

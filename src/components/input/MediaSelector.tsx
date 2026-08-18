@@ -172,14 +172,14 @@ export function MediaSelector({
             <div style={{
                 display: 'flex',
                 flexDirection: 'column',
-                gap: 6,
-                padding: 10,
+                gap: "var(--space-2)",
+                padding: "var(--space-3)",
                 backgroundColor: 'var(--bg-tertiary)',
                 border: '1px solid var(--accent)',
                 borderRadius: 0,
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--accent)', letterSpacing: '0.05em' }}>EDIT MEDIA</span>
+                    <span style={{ fontSize: "var(--text-xs)", fontWeight: 600, color: 'var(--accent)', letterSpacing: '0.05em' }}>EDIT MEDIA</span>
                     <button
                         onClick={cancelEdit}
                         style={{
@@ -190,12 +190,12 @@ export function MediaSelector({
                         <X size={14} />
                     </button>
                 </div>
-                <div style={{ display: 'flex', gap: 6 }}>
+                <div style={{ display: 'flex', gap: "var(--space-2)" }}>
                     <select
                         value={editType}
                         onChange={(e) => setEditType(e.target.value as MediaType)}
                         style={{
-                            padding: '5px 8px', fontSize: 11, fontFamily: 'var(--font-mono)',
+                            padding: 'var(--space-1) var(--space-2)', fontSize: "var(--text-xs)", fontFamily: 'var(--font-mono)',
                             backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)',
                             border: '1px solid var(--border-light)', borderRadius: 0, cursor: 'pointer',
                         }}
@@ -211,7 +211,7 @@ export function MediaSelector({
                         placeholder="Title..."
                         autoFocus
                         style={{
-                            flex: 1, padding: '5px 8px', fontSize: 11, fontFamily: 'var(--font-mono)',
+                            flex: 1, padding: 'var(--space-1) var(--space-2)', fontSize: "var(--text-xs)", fontFamily: 'var(--font-mono)',
                             backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)',
                             border: '1px solid var(--border-light)', borderRadius: 0,
                         }}
@@ -227,7 +227,7 @@ export function MediaSelector({
                     onChange={(e) => setEditNotionUrl(e.target.value)}
                     placeholder="Notion URL (optional)..."
                     style={{
-                        padding: '5px 8px', fontSize: 11, fontFamily: 'var(--font-mono)',
+                        padding: 'var(--space-1) var(--space-2)', fontSize: "var(--text-xs)", fontFamily: 'var(--font-mono)',
                         backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)',
                         border: '1px solid var(--border-light)', borderRadius: 0,
                     }}
@@ -236,11 +236,11 @@ export function MediaSelector({
                         if (e.key === 'Escape') cancelEdit();
                     }}
                 />
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6 }}>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: "var(--space-2)" }}>
                     <button
                         onClick={cancelEdit}
                         style={{
-                            padding: '4px 8px', fontSize: 10, fontWeight: 600, fontFamily: 'var(--font-mono)',
+                            padding: 'var(--space-1) var(--space-2)', fontSize: "var(--text-xs)", fontWeight: 600, fontFamily: 'var(--font-mono)',
                             backgroundColor: 'transparent', color: 'var(--text-secondary)',
                             border: '1px solid var(--text-dim)', cursor: 'pointer',
                         }}
@@ -251,11 +251,11 @@ export function MediaSelector({
                         onClick={saveEdit}
                         disabled={!editTitle.trim()}
                         style={{
-                            padding: '4px 8px', fontSize: 10, fontWeight: 600, fontFamily: 'var(--font-mono)',
+                            padding: 'var(--space-1) var(--space-2)', fontSize: "var(--text-xs)", fontWeight: 600, fontFamily: 'var(--font-mono)',
                             backgroundColor: editTitle.trim() ? 'var(--accent)' : 'var(--bg-secondary)',
                             color: editTitle.trim() ? 'white' : 'var(--text-dim)',
                             border: 'none', cursor: editTitle.trim() ? 'pointer' : 'default',
-                            display: 'flex', alignItems: 'center', gap: 4,
+                            display: 'flex', alignItems: 'center', gap: "var(--space-1)",
                         }}
                     >
                         <Check size={10} />
@@ -271,14 +271,14 @@ export function MediaSelector({
             <div style={{
                 display: 'flex',
                 flexDirection: 'column',
-                gap: 8,
-                padding: 12,
+                gap: "var(--space-2)",
+                padding: "var(--space-3)",
                 backgroundColor: 'var(--bg-tertiary)',
                 border: '1px solid var(--border-light)',
                 borderRadius: 0,
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)' }}>NEW MEDIA</span>
+                    <span style={{ fontSize: "var(--text-xs)", fontWeight: 600, color: 'var(--text-muted)' }}>NEW MEDIA</span>
                     <button
                         onClick={() => setIsCreating(false)}
                         style={{
@@ -286,20 +286,20 @@ export function MediaSelector({
                             border: 'none',
                             cursor: 'pointer',
                             color: 'var(--text-dim)',
-                            padding: 2,
+                            padding: "var(--space-05)",
                         }}
                     >
                         <X size={14} />
                     </button>
                 </div>
 
-                <div style={{ display: 'flex', gap: 8 }}>
+                <div style={{ display: 'flex', gap: "var(--space-2)" }}>
                     <select
                         value={newType}
                         onChange={(e) => setNewType(e.target.value as MediaType)}
                         style={{
-                            padding: '6px 8px',
-                            fontSize: 12,
+                            padding: 'var(--space-2) var(--space-2)',
+                            fontSize: "var(--text-sm)",
                             fontFamily: 'var(--font-mono)',
                             backgroundColor: 'var(--bg-secondary)',
                             color: 'var(--text-primary)',
@@ -321,8 +321,8 @@ export function MediaSelector({
                         autoFocus
                         style={{
                             flex: 1,
-                            padding: '6px 10px',
-                            fontSize: 12,
+                            padding: 'var(--space-2) var(--space-3)',
+                            fontSize: "var(--text-sm)",
                             fontFamily: 'var(--font-mono)',
                             backgroundColor: 'var(--bg-secondary)',
                             color: 'var(--text-primary)',
@@ -342,8 +342,8 @@ export function MediaSelector({
                     onChange={(e) => setNewNotionUrl(e.target.value)}
                     placeholder="Notion URL (optional)..."
                     style={{
-                        padding: '6px 10px',
-                        fontSize: 12,
+                        padding: 'var(--space-2) var(--space-3)',
+                        fontSize: "var(--text-sm)",
                         fontFamily: 'var(--font-mono)',
                         backgroundColor: 'var(--bg-secondary)',
                         color: 'var(--text-primary)',
@@ -356,8 +356,8 @@ export function MediaSelector({
                     onClick={handleCreate}
                     disabled={!newTitle.trim()}
                     style={{
-                        padding: '6px 12px',
-                        fontSize: 11,
+                        padding: 'var(--space-2) var(--space-3)',
+                        fontSize: "var(--text-xs)",
                         fontWeight: 600,
                         fontFamily: 'var(--font-mono)',
                         backgroundColor: newTitle.trim() ? 'var(--accent)' : 'var(--bg-secondary)',
@@ -381,8 +381,8 @@ export function MediaSelector({
                 style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 8,
-                    padding: '6px 10px',
+                    gap: "var(--space-2)",
+                    padding: 'var(--space-2) var(--space-3)',
                     backgroundColor: 'var(--bg-secondary)',
                     border: '1px solid var(--border-light)',
                     borderRadius: 0,
@@ -395,7 +395,7 @@ export function MediaSelector({
                         <span style={{ color: 'var(--text-secondary)', display: 'flex' }}>
                             {getMediaIcon(selectedMedia.mediaType)}
                         </span>
-                        <span style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)', flex: 1 }}>
+                        <span style={{ fontSize: "var(--text-sm)", fontFamily: 'var(--font-mono)', color: 'var(--text-primary)', flex: 1 }}>
                             {selectedMedia.title}
                         </span>
                         {selectedMedia.notionUrl && (
@@ -414,7 +414,7 @@ export function MediaSelector({
                                 onClick={(e) => { e.stopPropagation(); startEdit(); }}
                                 style={{
                                     background: 'none', border: 'none', cursor: 'pointer',
-                                    color: 'var(--text-dim)', padding: 2, display: 'flex',
+                                    color: 'var(--text-dim)', padding: "var(--space-05)", display: 'flex',
                                     transition: 'color 150ms',
                                 }}
                                 onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--text-secondary)'; }}
@@ -426,7 +426,7 @@ export function MediaSelector({
                         )}
                     </>
                 ) : (
-                    <span style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--text-dim)' }}>
+                    <span style={{ fontSize: "var(--text-sm)", fontFamily: 'var(--font-mono)', color: 'var(--text-dim)' }}>
                         Select media...
                     </span>
                 )}
@@ -458,8 +458,8 @@ export function MediaSelector({
                         placeholder="Search..."
                         autoFocus
                         style={{
-                            padding: '8px 10px',
-                            fontSize: 12,
+                            padding: 'var(--space-2) var(--space-3)',
+                            fontSize: "var(--text-sm)",
                             fontFamily: 'var(--font-mono)',
                             backgroundColor: 'var(--bg-secondary)',
                             color: 'var(--text-primary)',
@@ -478,8 +478,8 @@ export function MediaSelector({
                                 style={{
                                     display: 'flex',
                                     alignItems: 'center',
-                                    gap: 8,
-                                    padding: '8px 10px',
+                                    gap: "var(--space-2)",
+                                    padding: 'var(--space-2) var(--space-3)',
                                     cursor: 'pointer',
                                     backgroundColor: item.id === selectedMediaId ? 'var(--accent-subtle)' : 'transparent',
                                 }}
@@ -495,17 +495,17 @@ export function MediaSelector({
                                 <span style={{ color: 'var(--text-secondary)', display: 'flex' }}>
                                     {getMediaIcon(item.mediaType)}
                                 </span>
-                                <span style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)', flex: 1 }}>
+                                <span style={{ fontSize: "var(--text-sm)", fontFamily: 'var(--font-mono)', color: 'var(--text-primary)', flex: 1 }}>
                                     {item.title}
                                 </span>
-                                <span style={{ fontSize: 10, color: 'var(--text-dim)' }}>
+                                <span style={{ fontSize: "var(--text-xs)", color: 'var(--text-dim)' }}>
                                     {item.mediaType}
                                 </span>
                             </div>
                         ))}
 
                         {filteredItems.length === 0 && (
-                            <div style={{ padding: '12px 10px', fontSize: 11, color: 'var(--text-dim)', textAlign: 'center' }}>
+                            <div style={{ padding: 'var(--space-3) var(--space-3)', fontSize: "var(--text-xs)", color: 'var(--text-dim)', textAlign: 'center' }}>
                                 No media found
                             </div>
                         )}
@@ -520,9 +520,9 @@ export function MediaSelector({
                         style={{
                             display: 'flex',
                             alignItems: 'center',
-                            gap: 6,
-                            padding: '10px',
-                            fontSize: 11,
+                            gap: "var(--space-2)",
+                            padding: 'var(--space-3)',
+                            fontSize: "var(--text-xs)",
                             fontWeight: 600,
                             fontFamily: 'var(--font-mono)',
                             color: 'var(--accent)',

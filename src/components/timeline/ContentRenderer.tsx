@@ -55,14 +55,14 @@ export function ContentRenderer({ content, onImageClick }: ContentRendererProps)
                     <div
                         key={item.key}
                         style={{
-                            marginTop: 4,
+                            marginTop: "var(--space-1)",
                             display: "flex",
                             alignItems: "center",
-                            gap: 6,
+                            gap: "var(--space-2)",
                         }}
                     >
                         <MapPin size={12} style={{ color: "var(--accent)", flexShrink: 0 }} />
-                        <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
+                        <span style={{ fontSize: "var(--text-sm)", color: "var(--text-muted)" }}>
                             {item.content as string}
                         </span>
                     </div>

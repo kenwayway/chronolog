@@ -45,13 +45,13 @@ export class ErrorBoundary extends Component<Props, State> {
         backgroundColor: 'var(--bg-primary, #0f0f14)',
         color: 'var(--text-primary, #e8e4e0)',
         fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
-        padding: 24,
+        padding: "var(--space-6)",
       }}>
         <div style={{ maxWidth: 480, width: '100%' }}>
           <div style={{
-            fontSize: 12,
+            fontSize: "var(--text-sm)",
             color: 'var(--error, #ef4444)',
-            marginBottom: 8,
+            marginBottom: "var(--space-2)",
             letterSpacing: '0.05em',
             textTransform: 'uppercase',
           }}>
@@ -59,23 +59,23 @@ export class ErrorBoundary extends Component<Props, State> {
           </div>
 
           <div style={{
-            padding: '16px 20px',
+            padding: 'var(--space-4) var(--space-5)',
             backgroundColor: 'var(--bg-secondary, #1a1a24)',
             border: '1px solid var(--border-subtle, #23283c)',
             borderRadius: 4,
-            marginBottom: 16,
+            marginBottom: "var(--space-4)",
           }}>
             <div style={{
-              fontSize: 14,
+              fontSize: "var(--text-base)",
               color: 'var(--text-secondary, #c4beb8)',
-              marginBottom: 12,
+              marginBottom: "var(--space-3)",
             }}>
               {this.state.error?.message || 'An unexpected error occurred'}
             </div>
 
             {this.state.error?.stack && (
               <pre style={{
-                fontSize: 11,
+                fontSize: "var(--text-xs)",
                 color: 'var(--text-muted, #8f8880)',
                 whiteSpace: 'pre-wrap',
                 wordBreak: 'break-word',
@@ -88,18 +88,18 @@ export class ErrorBoundary extends Component<Props, State> {
             )}
           </div>
 
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', gap: "var(--space-2)" }}>
             <button
               onClick={this.handleReload}
               style={{
                 flex: 1,
-                padding: '10px 16px',
+                padding: 'var(--space-3) var(--space-4)',
                 backgroundColor: 'var(--accent, #3b82f6)',
                 color: '#fff',
                 border: 'none',
                 borderRadius: 4,
                 fontFamily: 'inherit',
-                fontSize: 13,
+                fontSize: "var(--text-sm)",
                 cursor: 'pointer',
                 letterSpacing: '0.02em',
               }}
@@ -110,13 +110,13 @@ export class ErrorBoundary extends Component<Props, State> {
               onClick={this.handleReset}
               style={{
                 flex: 1,
-                padding: '10px 16px',
+                padding: 'var(--space-3) var(--space-4)',
                 backgroundColor: 'var(--bg-tertiary, #313143)',
                 color: 'var(--text-secondary, #c4beb8)',
                 border: '1px solid var(--border-subtle, #23283c)',
                 borderRadius: 4,
                 fontFamily: 'inherit',
-                fontSize: 13,
+                fontSize: "var(--text-sm)",
                 cursor: 'pointer',
                 letterSpacing: '0.02em',
               }}

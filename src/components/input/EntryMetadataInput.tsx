@@ -94,18 +94,18 @@ export function EntryMetadataInput({
         <div
           className="metadata-row"
           style={{
-            padding: '8px 12px',
+            padding: 'var(--space-2) var(--space-3)',
             display: 'flex',
             flexWrap: 'wrap',
             alignItems: 'center',
-            gap: 8,
-            rowGap: 6,
+            gap: "var(--space-2)",
+            rowGap: "var(--space-2)",
           }}
         >
           {/* Category */}
           {showClassification && (
           <div className="flex items-center gap-2">
-            <span style={{ fontSize: 10, color: 'var(--text-dim)', userSelect: 'none' }}>
+            <span style={{ fontSize: "var(--text-xs)", color: 'var(--text-dim)', userSelect: 'none' }}>
               CATEGORY
             </span>
             <Dropdown
@@ -127,7 +127,7 @@ export function EntryMetadataInput({
           {/* Content Type */}
           {showClassification && (
           <div className="flex items-center gap-2">
-            <span style={{ fontSize: 10, color: 'var(--text-dim)', userSelect: 'none' }}>
+            <span style={{ fontSize: "var(--text-xs)", color: 'var(--text-dim)', userSelect: 'none' }}>
               TYPE
             </span>
             <Dropdown

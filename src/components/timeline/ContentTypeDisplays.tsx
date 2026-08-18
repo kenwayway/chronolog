@@ -67,17 +67,17 @@ export const NotionTaskDisplay = memo(function NotionTaskDisplay({ fieldValues }
       style={{
         display: 'inline-flex',
         alignItems: 'center',
-        gap: 6,
-        marginTop: 4,
-        padding: '2px 0',
+        gap: "var(--space-2)",
+        marginTop: "var(--space-1)",
+        padding: 'var(--space-05) 0',
         color: 'var(--text-secondary)',
         fontFamily: 'var(--font-mono)',
-        fontSize: 11,
+        fontSize: "var(--text-xs)",
         textDecoration: 'none',
       }}
     >
       <SquareCheckBig size={13} style={{ color: 'var(--accent)', flexShrink: 0 }} />
-      <span style={{ color: 'var(--text-dim)', fontSize: 9, fontWeight: 700, letterSpacing: '0.08em' }}>
+      <span style={{ color: 'var(--text-dim)', fontSize: "var(--text-xs)", fontWeight: 700, letterSpacing: '0.08em' }}>
         TASK
       </span>
       <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>
@@ -146,7 +146,7 @@ export const BookmarkDisplay = memo(function BookmarkDisplay({ fieldValues }: Bo
         display: 'flex',
         flexDirection: 'column',
         gap: 0,
-        marginTop: 6,
+        marginTop: "var(--space-2)",
         textDecoration: 'none',
         color: 'var(--text-primary)',
         width: 'fit-content',
@@ -192,7 +192,7 @@ export const BookmarkDisplay = memo(function BookmarkDisplay({ fieldValues }: Bo
               borderLeft: '10px solid white',
               borderTop: '6px solid transparent',
               borderBottom: '6px solid transparent',
-              marginLeft: 2,
+              marginLeft: "var(--space-05)",
             }} />
           </div>
         </div>
@@ -203,11 +203,11 @@ export const BookmarkDisplay = memo(function BookmarkDisplay({ fieldValues }: Bo
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: 8,
-          padding: '6px 10px',
+          gap: "var(--space-2)",
+          padding: 'var(--space-2) var(--space-3)',
           backgroundColor: 'var(--bg-secondary)',
           border: '1px solid var(--border-subtle)',
-          fontSize: 12,
+          fontSize: "var(--text-sm)",
           fontFamily: 'var(--font-mono)',
           transition: 'all 0.2s ease',
           width: thumbnailUrl ? 200 : 'fit-content',
@@ -217,7 +217,7 @@ export const BookmarkDisplay = memo(function BookmarkDisplay({ fieldValues }: Bo
         <span style={{
           color: 'var(--accent)',
           fontWeight: 600,
-          fontSize: 11,
+          fontSize: "var(--text-xs)",
           flexShrink: 0
         }}>
           [MARK]
@@ -235,7 +235,7 @@ export const BookmarkDisplay = memo(function BookmarkDisplay({ fieldValues }: Bo
         {!thumbnailUrl && fieldValues.url && (
           <span style={{
             color: 'var(--text-dim)',
-            fontSize: 11,
+            fontSize: "var(--text-xs)",
             flexShrink: 0,
             overflow: 'hidden',
             textOverflow: 'ellipsis',
@@ -284,12 +284,12 @@ export const MoodDisplay = memo(function MoodDisplay({ fieldValues }: MoodDispla
       style={{
         display: 'flex',
         alignItems: 'center',
-        gap: 12,
-        marginTop: 8,
-        padding: '8px 12px',
+        gap: "var(--space-3)",
+        marginTop: "var(--space-2)",
+        padding: 'var(--space-2) var(--space-3)',
         backgroundColor: 'var(--bg-secondary)',
         border: '1px solid var(--border-subtle)',
-        fontSize: 13,
+        fontSize: "var(--text-sm)",
         fontFamily: 'var(--font-mono)',
         width: 'fit-content',
       }}
@@ -297,7 +297,7 @@ export const MoodDisplay = memo(function MoodDisplay({ fieldValues }: MoodDispla
       <span style={{
         color: 'var(--accent)',
         fontWeight: 600,
-        fontSize: 11,
+        fontSize: "var(--text-xs)",
         flexShrink: 0
       }}>
         [MOOD]
@@ -305,7 +305,7 @@ export const MoodDisplay = memo(function MoodDisplay({ fieldValues }: MoodDispla
 
       {/* Feeling */}
       <div className="flex items-center gap-2">
-        <span style={{ fontSize: 18, lineHeight: 1 }}>
+        <span style={{ fontSize: "var(--text-lg)", lineHeight: 1 }}>
           {getMoodEmoji(fieldValues.feeling)}
         </span>
         <span style={{ color: 'var(--text-primary)' }}>
@@ -316,9 +316,9 @@ export const MoodDisplay = memo(function MoodDisplay({ fieldValues }: MoodDispla
       {/* Energy */}
       {fieldValues.energy != null && (
         <>
-          <span style={{ color: 'var(--text-dim)', fontSize: 11 }}>·</span>
+          <span style={{ color: 'var(--text-dim)', fontSize: "var(--text-xs)" }}>·</span>
           <div className="flex items-center gap-2" title={`Energy: ${fieldValues.energy}/5`}>
-            <div style={{ display: 'flex', gap: 2 }}>
+            <div style={{ display: 'flex', gap: "var(--space-05)" }}>
               {[1, 2, 3, 4, 5].map(level => (
                 <div
                   key={level}
@@ -341,8 +341,8 @@ export const MoodDisplay = memo(function MoodDisplay({ fieldValues }: MoodDispla
       {/* Trigger */}
       {fieldValues.trigger && (
         <>
-          <span style={{ color: 'var(--text-dim)', fontSize: 11 }}>·</span>
-          <span style={{ color: 'var(--text-dim)', fontSize: 11 }}>
+          <span style={{ color: 'var(--text-dim)', fontSize: "var(--text-xs)" }}>·</span>
+          <span style={{ color: 'var(--text-dim)', fontSize: "var(--text-xs)" }}>
             {fieldValues.trigger}
           </span>
         </>
@@ -389,13 +389,13 @@ export const WorkoutDisplay = memo(function WorkoutDisplay({ fieldValues }: Work
       style={{
         display: 'flex',
         alignItems: 'center',
-        gap: 8,
-        marginTop: 8,
-        padding: '8px 12px',
+        gap: "var(--space-2)",
+        marginTop: "var(--space-2)",
+        padding: 'var(--space-2) var(--space-3)',
         backgroundColor: 'var(--bg-secondary)',
         border: '1px solid var(--border-subtle)',
         borderLeft: '2px solid var(--accent)',
-        fontSize: 13,
+        fontSize: "var(--text-sm)",
         fontFamily: 'var(--font-mono)',
         width: 'fit-content',
       }}
@@ -407,7 +407,7 @@ export const WorkoutDisplay = memo(function WorkoutDisplay({ fieldValues }: Work
       <span style={{
         color: 'var(--accent)',
         fontWeight: 600,
-        fontSize: 11,
+        fontSize: "var(--text-xs)",
         letterSpacing: '0.5px',
       }}>
         [{(workoutType || 'Strength').toUpperCase()}]
@@ -415,7 +415,7 @@ export const WorkoutDisplay = memo(function WorkoutDisplay({ fieldValues }: Work
 
       {/* Place, as a log line reads it: @ somewhere */}
       {place && (
-        <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text-dim)', fontSize: 11 }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: "var(--space-1)", color: 'var(--text-dim)', fontSize: "var(--text-xs)" }}>
           <span>@</span>
           {getPlaceIcon(place)}
           {place.toLowerCase()}
@@ -463,16 +463,16 @@ export const VaultDisplay = memo(function VaultDisplay({ fieldValues }: VaultDis
     <div
       onClick={handleClick}
       style={{
-        marginTop: 8,
-        padding: '8px 12px',
+        marginTop: "var(--space-2)",
+        padding: 'var(--space-2) var(--space-3)',
         backgroundColor: 'var(--bg-secondary)',
         border: '1px solid var(--border-subtle)',
-        fontSize: 12,
+        fontSize: "var(--text-sm)",
         fontFamily: 'var(--font-mono)',
         width: '100%',
         display: 'flex',
         alignItems: 'center',
-        gap: 8,
+        gap: "var(--space-2)",
         cursor: obsidianUrl ? 'pointer' : 'default',
         transition: 'border-color 0.15s ease',
       }}
@@ -487,7 +487,7 @@ export const VaultDisplay = memo(function VaultDisplay({ fieldValues }: VaultDis
       <span style={{
         color: 'var(--accent)',
         fontWeight: 600,
-        fontSize: 11,
+        fontSize: "var(--text-xs)",
         flexShrink: 0,
       }}>
         [VAULT]
@@ -583,12 +583,12 @@ export const MediaDisplay = memo(function MediaDisplay({ fieldValues, mediaItems
       style={{
         display: 'flex',
         alignItems: 'center',
-        gap: 10,
-        marginTop: 8,
-        padding: '8px 12px',
+        gap: "var(--space-3)",
+        marginTop: "var(--space-2)",
+        padding: 'var(--space-2) var(--space-3)',
         backgroundColor: 'var(--bg-secondary)',
         border: '1px solid var(--border-subtle)',
-        fontSize: 12,
+        fontSize: "var(--text-sm)",
         fontFamily: 'var(--font-mono)',
         width: 'fit-content',
         maxWidth: '100%',
@@ -622,7 +622,7 @@ export const MediaDisplay = memo(function MediaDisplay({ fieldValues, mediaItems
       <span style={{
         color: 'var(--accent)',
         fontWeight: 600,
-        fontSize: 11,
+        fontSize: "var(--text-xs)",
         flexShrink: 0
       }}>
         [{getMediaLabel(mediaType)}]
@@ -645,7 +645,7 @@ export const MediaDisplay = memo(function MediaDisplay({ fieldValues, mediaItems
       )}
 
       {notionUrl && (
-        <span style={{ color: 'var(--accent)', fontSize: 10, marginLeft: 4 }}>
+        <span style={{ color: 'var(--accent)', fontSize: "var(--text-xs)", marginLeft: "var(--space-1)" }}>
           ↗
         </span>
       )}

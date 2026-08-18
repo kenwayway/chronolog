@@ -210,7 +210,7 @@ export function Timeline({
         overflowY: "auto",
         // Cards carry their own inset, so the container gives them room to
         // cast a shadow instead of padding their content.
-        padding: isCardLayout ? "20px 14px 160px" : "24px 16px 160px",
+        padding: isCardLayout ? "var(--space-5) var(--space-4) 160px" : "var(--space-6) var(--space-4) 160px",
         fontFamily: isCardLayout ? "var(--font-primary)" : "var(--font-mono)",
         position: "relative",
       }}
@@ -220,11 +220,11 @@ export function Timeline({
         <div
           className="flex-between"
           style={{
-            marginBottom: 16,
-            padding: "8px 12px",
+            marginBottom: "var(--space-4)",
+            padding: "var(--space-2) var(--space-3)",
             backgroundColor: "var(--bg-secondary)",
             borderRadius: 4,
-            fontSize: 11,
+            fontSize: "var(--text-xs)",
             color: "var(--text-dim)",
           }}
         >
@@ -239,7 +239,7 @@ export function Timeline({
                 onClick={() => setPagination({ key: paginationKey, page: Math.max(0, currentPage - 1) })}
                 disabled={currentPage === 0}
                 style={{
-                  padding: 4,
+                  padding: "var(--space-1)",
                   backgroundColor: "transparent",
                   border: "none",
                   cursor: currentPage === 0 ? "default" : "pointer",
@@ -251,14 +251,14 @@ export function Timeline({
               >
                 <ChevronLeft size={16} />
               </button>
-              <span style={{ fontSize: 10 }}>
+              <span style={{ fontSize: "var(--text-xs)" }}>
                 {currentPage + 1} / {totalPages}
               </span>
               <button
                 onClick={() => setPagination({ key: paginationKey, page: Math.min(totalPages - 1, currentPage + 1) })}
                 disabled={currentPage === totalPages - 1}
                 style={{
-                  padding: 4,
+                  padding: "var(--space-1)",
                   backgroundColor: "transparent",
                   border: "none",
                   cursor: currentPage === totalPages - 1 ? "default" : "pointer",
@@ -276,7 +276,7 @@ export function Timeline({
       )}
 
       {annotationClusters.length > 0 && (
-        <div className="flex justify-end" style={{ marginBottom: 8 }}>
+        <div className="flex justify-end" style={{ marginBottom: "var(--space-2)" }}>
           <button
             type="button"
             onClick={toggleAllAnnotationClusters}
@@ -288,14 +288,14 @@ export function Timeline({
             style={{
               display: "flex",
               alignItems: "center",
-              gap: 6,
-              padding: "2px 6px",
+              gap: "var(--space-2)",
+              padding: "var(--space-05) var(--space-2)",
               background: "transparent",
               border: "none",
               cursor: "pointer",
               color: "var(--text-dim)",
               fontFamily: "var(--font-mono)",
-              fontSize: 9,
+              fontSize: "var(--text-xs)",
               fontWeight: 600,
               letterSpacing: "0.12em",
             }}
@@ -321,11 +321,11 @@ export function Timeline({
             opacity: 0.5,
           }}
         >
-          <div style={{ fontSize: 32, marginBottom: 16 }}>_</div>
-          <p style={{ fontSize: 14 }}>
+          <div style={{ fontSize: 32, marginBottom: "var(--space-4)" }}>_</div>
+          <p style={{ fontSize: "var(--text-base)" }}>
             {isFilterMode ? "No entries match filter." : "System initialized."}
           </p>
-          <p style={{ fontSize: 12, marginTop: 8 }}>
+          <p style={{ fontSize: "var(--text-sm)", marginTop: "var(--space-2)" }}>
             {isFilterMode ? "Try selecting different categories." : "Waiting for input..."}
           </p>
         </div>

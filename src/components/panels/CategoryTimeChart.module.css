@@ -1,14 +1,14 @@
 .chart {
-    margin-bottom: 32px;
+    margin-bottom: var(--space-8);
 }
 
 .sectionHeader {
     display: flex;
     align-items: center;
-    gap: 8px;
-    margin-bottom: 14px;
+    gap: var(--space-2);
+    margin-bottom: var(--space-4);
     color: var(--text-dim);
-    font-size: 10px;
+    font-size: var(--text-xs);
     letter-spacing: 0.1em;
 }
 
@@ -27,8 +27,8 @@
 .weekGrid {
     display: grid;
     grid-template-columns: 24px repeat(7, minmax(0, 1fr));
-    column-gap: 3px;
-    row-gap: 7px;
+    column-gap: var(--space-1);
+    row-gap: var(--space-2);
 }
 
 .dayHeader {
@@ -36,16 +36,16 @@
     min-width: 0;
     flex-direction: column;
     align-items: center;
-    gap: 2px;
+    gap: var(--space-05);
     color: var(--text-secondary);
-    font-size: 8px;
+    font-size: var(--text-xs);
     line-height: 1;
     letter-spacing: 0.04em;
 }
 
 .dateLabel {
     color: var(--text-dim);
-    font-size: 7px;
+    font-size: var(--text-xs);
     letter-spacing: 0;
 }
 
@@ -59,7 +59,7 @@
     position: absolute;
     right: 3px;
     color: var(--text-dim);
-    font-size: 7px;
+    font-size: var(--text-xs);
     line-height: 1;
     transform: translateY(-50%);
 }
@@ -121,20 +121,20 @@
 .legend {
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    margin-top: 12px;
+    gap: var(--space-1);
+    margin-top: var(--space-3);
 }
 
 .legendItem {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 4px 8px;
+    gap: var(--space-2);
+    padding: var(--space-1) var(--space-2);
     color: var(--text-secondary);
     background-color: transparent;
     border: 1px solid transparent;
     border-radius: 4px;
-    font-size: 10px;
+    font-size: var(--text-xs);
     text-align: left;
     transition: all 100ms ease;
 }

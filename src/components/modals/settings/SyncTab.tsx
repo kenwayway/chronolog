@@ -139,7 +139,7 @@ export function SyncTab({
                     <div className="space-y-2">
                         <div className="settings-sync-status">
                             <Cloud size={14} style={{ color: "var(--success)" }} />
-                            <span style={{ flex: 1, fontSize: 12, color: "var(--text-primary)" }}>已连接</span>
+                            <span style={{ flex: 1, fontSize: "var(--text-sm)", color: "var(--text-primary)" }}>已连接</span>
                             {cloudSync.isSyncing && (
                                 <RefreshCw size={14} style={{ color: "var(--accent)", animation: "spin 1s linear infinite" }} />
                             )}
@@ -239,7 +239,7 @@ export function SyncTab({
                         style={{ display: "none" }}
                     />
                 </div>
-                <p className="settings-hint" style={{ marginTop: 8 }}>
+                <p className="settings-hint" style={{ marginTop: "var(--space-2)" }}>
                     {(notes?.length || 0) + (sessions?.length || 0)} 条记录
                 </p>
             </div>
@@ -258,14 +258,14 @@ export function SyncTab({
                         {isTestingAI ? "测试中..." : "Test AI"}
                     </button>
                     {aiTestResult && (
-                        <p className={aiTestResult.ok ? "settings-hint" : "settings-error"} style={{ marginTop: 8 }}>
+                        <p className={aiTestResult.ok ? "settings-hint" : "settings-error"} style={{ marginTop: "var(--space-2)" }}>
                             {aiTestResult.ok
                                 ? `✓ AI 正常 (${aiTestResult.model})${aiTestResult.sample ? ` — 样例识别: ${aiTestResult.sample.contentType}/${aiTestResult.sample.category ?? '无分类'}` : ''}`
                                 : `✗ AI 不可用: ${aiTestResult.error}`
                             }
                         </p>
                     )}
-                    <p className="settings-hint" style={{ marginTop: 4 }}>
+                    <p className="settings-hint" style={{ marginTop: "var(--space-1)" }}>
                         检查 Cloudflare 后台 AI_API_KEY 是否有效(自动分类依赖它)
                     </p>
                 </div>
@@ -285,7 +285,7 @@ export function SyncTab({
                         {isCleaningUp ? "清理中..." : "清理未使用的图片"}
                     </button>
                     {cleanupResult && (
-                        <p className={cleanupResult.error ? "settings-error" : "settings-hint"} style={{ marginTop: 8 }}>
+                        <p className={cleanupResult.error ? "settings-error" : "settings-hint"} style={{ marginTop: "var(--space-2)" }}>
                             {cleanupResult.error
                                 ? `错误: ${cleanupResult.error}`
                                 : `已清理 ${cleanupResult.deletedCount ?? 0} 张图片 (共 ${cleanupResult.totalImages ?? 0} 张`

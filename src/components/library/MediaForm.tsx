@@ -71,7 +71,7 @@ export function MediaForm({ form, onSave, onCancel, saveLabel }: MediaFormProps)
                     value={(form.formMetadata[field.key] as string | number) ?? ''}
                     onChange={e => form.updateMetaField(field.key, field.inputType === 'number' ? (e.target.value ? Number(e.target.value) : '') as unknown as number : e.target.value)}
                     className="edit-modal-input"
-                    style={{ padding: '4px 8px', fontSize: 11 }}
+                    style={{ padding: 'var(--space-1) var(--space-2)', fontSize: "var(--text-xs)" }}
                     placeholder={field.label}
                   />
                 </div>

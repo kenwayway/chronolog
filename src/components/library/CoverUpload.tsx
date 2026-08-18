@@ -30,7 +30,7 @@ export function CoverUpload({ coverUrl, onCoverUrlChange, onFileUpload, fileInpu
         </div>
         {/* Cover URL + Upload */}
         <div className={detailStyles.coverUploadStack}>
-          <input type="text" value={coverUrl} onChange={e => onCoverUrlChange(e.target.value)} placeholder="Cover image URL..." className="edit-modal-input" style={{ padding: '5px 8px', fontSize: 10 }} />
+          <input type="text" value={coverUrl} onChange={e => onCoverUrlChange(e.target.value)} placeholder="Cover image URL..." className="edit-modal-input" style={{ padding: 'var(--space-1) var(--space-2)', fontSize: "var(--text-xs)" }} />
           <div className={detailStyles.coverUploadActions}>
             <input
               ref={fileInputRef}
