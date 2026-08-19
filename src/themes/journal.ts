@@ -2,22 +2,7 @@
 // A soft, card-based layout: generous surfaces, system type, and colour used
 // once per card rather than everywhere.
 
-import type { AccentColor, AccentColorKey, ThemeConfig } from './index'
-
-/**
- * Pigments, not phosphor. This skin's ground is paper - #f2f0ee over warm
- * greys - and Terminal's saturated set reads as borrowed on it. Same seven
- * slots, desaturated to sit beside the stock, and named for what they are.
- */
-const journalAccents: Record<AccentColorKey, AccentColor> = {
-    blue: { name: 'Ink', value: '#3f6d8f', light: '#79a8c6' },
-    indigo: { name: 'Woad', value: '#55568f', light: '#9092c8' },
-    violet: { name: 'Mulberry', value: '#7a5680', light: '#b28cb7' },
-    rose: { name: 'Madder', value: '#a84a54', light: '#d98c92' },
-    amber: { name: 'Brass', value: '#a67c00', light: '#d6ab48' },
-    emerald: { name: 'Verdigris', value: '#3f8a72', light: '#77bda4' },
-    cyan: { name: 'Celadon', value: '#3f8894', light: '#78b9c3' },
-}
+import type { ThemeConfig } from './index'
 
 export const journalTheme: ThemeConfig = {
     id: 'journal',
@@ -50,8 +35,6 @@ export const journalTheme: ThemeConfig = {
         beans: '◦',
         sparks: '✳',
     },
-
-    accents: journalAccents,
 
     decorations: {
         enabled: false,

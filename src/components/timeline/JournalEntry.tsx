@@ -39,8 +39,13 @@ interface JournalEntryProps {
  *
  * The layout's one claim is on the left edge: a session has length and wears a
  * full spine, a note is an instant and wears a dot, and a session's closing
- * card fades that spine out. It is the only saturated colour on the card, so
- * the shape of a day is readable before a single word is.
+ * card wears the stub that terminates the pair. It is the only saturated colour
+ * on the card, so the shape of a day is readable before a single word is.
+ *
+ * A card stack has no rule running down it, so a session's two ends cannot be
+ * connected by drawing - anything between them is a card, and in filter mode
+ * the stack is reversed and paginated besides. The closing card carries the
+ * link instead: it names the hour it opened and jumps to it.
  */
 export const JournalEntry = memo(function JournalEntry({
     entry,
@@ -95,6 +100,23 @@ export const JournalEntry = memo(function JournalEntry({
         onEdit,
         onEditComment,
     });
+
+    // The link index keys the canonical (never session-end) item per entity, so
+    // a closing card can find the card that opened it without a second scan.
+    const opener = isSessionEnd ? linkIndex.byEntityId.get(entry.entityId) : undefined;
+    const openerDuration = opener ? entry.timestamp - opener.timestamp : undefined;
+
+    const jumpToOpener = () => {
+        if (!opener) return;
+        const card = document.querySelector(`[data-entry-id="${opener.id}"]`) as HTMLElement | null;
+        if (!card) {
+            onNavigateToEntry?.(opener);
+            return;
+        }
+        card.scrollIntoView({ behavior: "smooth", block: "center" });
+        card.style.backgroundColor = "var(--accent-subtle)";
+        setTimeout(() => { card.style.backgroundColor = ""; }, 1500);
+    };
 
     const lightbox = lightboxImage && (
         <ImageLightbox src={lightboxImage} onClose={closeLightbox} />
@@ -159,9 +181,14 @@ export const JournalEntry = memo(function JournalEntry({
     }
 
     // The spine takes the category's own colour; the accent belongs to the
-    // controls she picked it for.
+    // controls she picked it for. A closing card carries no category of its own
+    // - the session holds that - so it borrows the opening card's, which is
+    // what makes the two ends read as one bracket rather than two cards.
+    const openerCategory = opener
+        ? categories.find(candidate => candidate.id === opener.category)
+        : undefined;
     const spineStyle = {
-        "--spine-color": category?.color,
+        "--spine-color": category?.color ?? openerCategory?.color,
         "--category-color": categoryTextColor || undefined,
     } as CSSProperties;
 
@@ -206,6 +233,27 @@ export const JournalEntry = memo(function JournalEntry({
                             <span className={styles.date}>{formatDate(entry.timestamp)}</span>
                         )}
                         <span className={styles.time}>{formatTime(entry.timestamp)}</span>
+
+                        {opener && (
+                            <button
+                                type="button"
+                                className={styles.opener}
+                                title="Go to where this session started"
+                                onClick={event => {
+                                    event.stopPropagation();
+                                    jumpToOpener();
+                                }}
+                                onDoubleClick={event => event.stopPropagation()}
+                            >
+                                <span aria-hidden="true">↳</span>
+                                <span>{formatTime(opener.timestamp)}</span>
+                                {openerDuration !== undefined && (
+                                    <span className={styles.openerSpan}>
+                                        {formatDuration(openerDuration)}
+                                    </span>
+                                )}
+                            </button>
+                        )}
 
                         {category && (
                             <>

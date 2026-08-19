@@ -26,18 +26,20 @@ export interface AccentColor {
 }
 
 /**
- * The default set, and Terminal's: bright and saturated on purpose. This skin
- * is built after code editors, where colour is signal against a near-black
- * ground and is meant to sit forward, not blend.
+ * Phosphor, not pigment. The one set every skin draws from: pushed toward the
+ * saturation of an ANSI bright set, because this app is built after code
+ * editors, where colour is signal against a near-black ground and is meant to
+ * sit forward rather than blend. Journal runs on paper and takes the same set
+ * anyway - one accent vocabulary across skins beat a per-skin retune.
  */
 export const ACCENT_COLORS: Record<AccentColorKey, AccentColor> = {
-  blue: { name: 'Blue', value: '#3b82f6', light: '#60a5fa' },
-  indigo: { name: 'Indigo', value: '#6366f1', light: '#818cf8' },
-  violet: { name: 'Violet', value: '#8b5cf6', light: '#a78bfa' },
-  rose: { name: 'Rose', value: '#f43f5e', light: '#fb7185' },
-  amber: { name: 'Amber', value: '#f59e0b', light: '#fbbf24' },
-  emerald: { name: 'Emerald', value: '#10b981', light: '#34d399' },
-  cyan: { name: 'Cyan', value: '#06b6d4', light: '#22d3ee' },
+  blue: { name: 'Blue', value: '#2b8cff', light: '#66b3ff' },
+  indigo: { name: 'Indigo', value: '#5b5bff', light: '#9490ff' },
+  violet: { name: 'Violet', value: '#9d3cff', light: '#c07dff' },
+  rose: { name: 'Rose', value: '#ff1f4d', light: '#ff6b85' },
+  amber: { name: 'Amber', value: '#ffab00', light: '#ffc233' },
+  emerald: { name: 'Emerald', value: '#00c980', light: '#2fe6a0' },
+  cyan: { name: 'Cyan', value: '#00c8e6', light: '#3ae0f5' },
 }
 
 // Theme configuration type
@@ -68,9 +70,10 @@ export interface ThemeConfig {
     light: string
   }
   /**
-   * A skin that wants the whole picker retuned brings its own set under the
-   * same keys, so a stored choice survives switching skins. Terminal's brights
-   * and Journal's pigments are the same seven slots, tuned to their ground.
+   * A skin that wants the whole picker retuned may bring its own set under the
+   * same keys, so a stored choice survives switching skins. Nothing declares
+   * one today - every skin shares ACCENT_COLORS - but the hook is what keeps
+   * that a choice rather than an assumption.
    */
   accents?: Record<AccentColorKey, AccentColor>
   symbols: {

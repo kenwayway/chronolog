@@ -37,14 +37,17 @@
 
 /* ===== The spine: the one place duration is visible =====
    A session has length, so its spine is a filled capsule running the height
-   of the card. A note is an instant, so it gets a dot and nothing more. */
+   of the card. A note is an instant, so it gets a dot and nothing more.
+
+   The opening card's spine is rounded at the top and cut square at the foot:
+   it starts something that has not finished on this card. */
 
 .spine {
     grid-row: 1 / -1;
     align-self: stretch;
     justify-self: center;
     width: 4px;
-    border-radius: var(--radius-full);
+    border-radius: var(--radius-full) var(--radius-full) 1px 1px;
     background: var(--spine-color, var(--text-dim));
 }
 
@@ -58,16 +61,19 @@
     background: var(--spine-color, var(--text-dim));
 }
 
-/* A session's closing card is the terminus of that bracket. A filled bar is a
-   session running; a ring is one closed. */
+/* A session's closing card is the terminus of that bracket, so it wears the
+   same 4px bar as the opening card - squared where that one was cut, rounded
+   where it ends - rather than a dot, which is the vocabulary for a note. Kept
+   short: the closing card is the end of a length, not another length. */
 .spineEnd {
     grid-row: 1 / -1;
     align-self: start;
-    width: 6px;
-    height: 6px;
+    justify-self: center;
+    width: 4px;
+    height: 18px;
     margin-top: var(--space-1);
-    border-radius: var(--radius-full);
-    border: 1.5px solid var(--spine-color, var(--text-dim));
+    border-radius: 1px 1px var(--radius-full) var(--radius-full);
+    background: var(--spine-color, var(--text-dim));
     opacity: 0.75;
 }
 
@@ -133,6 +139,44 @@
     border-radius: var(--radius-full);
     background: var(--text-dim);
     opacity: 0.6;
+}
+
+/* The closing card's link back to the card that opened the session. It reads
+   as one clause - hour, then span - so it stays a single chip and never wraps
+   away from the time it sits beside. */
+.opener {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: 0 var(--space-1);
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: var(--text-xs);
+    color: var(--text-dim);
+    white-space: nowrap;
+    cursor: pointer;
+    transition: color 140ms ease, background-color 140ms ease;
+}
+
+.opener:hover {
+    background: var(--card-inset);
+    color: var(--text-secondary);
+}
+
+.openerSpan {
+    color: var(--text-dim);
+}
+
+.opener:hover .openerSpan {
+    color: var(--text-secondary);
+}
+
+.opener:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
 }
 
 .duration {
