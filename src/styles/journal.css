@@ -74,6 +74,6 @@
    composer's 768px plus the timeline's own 14px gutters, so a card's edge and
    the composer's edge land on the same vertical line instead of missing it by
    a hair — the alignment is the reason for the odd number. */
-[data-style="journal"] main {
+[data-style="journal"] main[data-timeline-main] {
   max-width: 796px;
 }

@@ -228,7 +228,10 @@ function MainView({
                 onDateChange={ui.setSelectedDate}
             />
 
-            <main className="flex-1 flex flex-col max-w-4xl w-full mx-auto relative">
+            <main
+                data-timeline-main
+                className="flex-1 flex flex-col max-w-4xl w-full mx-auto relative"
+            >
                 {ui.showLanding ? (
                     <LandingPage onDismiss={() => ui.setShowLanding(false)} />
                 ) : (
