@@ -77,6 +77,21 @@
     gap: var(--space-2);
 }
 
+.quickActions {
+    padding: var(--space-4);
+    border-top: 1px solid var(--border-subtle);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.sectionLabel {
+    color: var(--text-dim);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+}
+
 .item {
     display: flex;
     align-items: center;
@@ -98,6 +113,18 @@
 .item.active {
     border-color: var(--border-light);
     color: var(--text-primary);
+}
+
+.item:disabled {
+    cursor: default;
+    border-color: var(--border-subtle);
+    color: var(--text-muted);
+    opacity: 0.7;
+}
+
+.item:disabled:hover {
+    border-color: var(--border-subtle);
+    color: var(--text-muted);
 }
 
 .itemIcon {

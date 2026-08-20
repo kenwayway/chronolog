@@ -241,6 +241,7 @@ MCP read tools:
 
 MCP write tools (write scope only):
 
+- `add_media_item`
 - `add_note`
 - `start_session`
 - `end_session`

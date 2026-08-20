@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
     buildKeywordSearch,
+    buildMediaItem,
     buildNote,
     buildSession,
     buildZaddyComment,
@@ -49,6 +50,56 @@ describe('MCP domain builders', () => {
         })).toThrow('session');
     });
 
+    it('builds a media library item with type-specific metadata', () => {
+        expect(buildMediaItem({
+            title: '  Perfect Blue  ',
+            mediaType: 'Movie',
+            createdAt: '2026-08-20T01:30:00-04:00',
+            rating: 9.5,
+            status: 'Completed',
+            dateFinished: '2026-08-19',
+            coverUrl: '  https://example.com/perfect-blue.jpg  ',
+            notes: '  Still thinking about the edits.  ',
+            metadata: {
+                director: '  Satoshi Kon  ',
+                year: 1997,
+                genre: 'Psychological thriller',
+            },
+        }, 0, 'media-1')).toEqual({
+            id: 'media-1',
+            title: 'Perfect Blue',
+            mediaType: 'Movie',
+            createdAt: Date.parse('2026-08-20T01:30:00-04:00'),
+            rating: 9.5,
+            status: 'Completed',
+            dateFinished: '2026-08-19',
+            coverUrl: 'https://example.com/perfect-blue.jpg',
+            notes: 'Still thinking about the edits.',
+            metadata: {
+                director: 'Satoshi Kon',
+                year: 1997,
+                genre: 'Psychological thriller',
+            },
+        });
+    });
+
+    it('rejects invalid media library fields', () => {
+        expect(() => buildMediaItem({ title: 'Unknown', mediaType: 'Album' }))
+            .toThrow('mediaType');
+        expect(() => buildMediaItem({ title: 'Book', mediaType: 'Book', rating: 11 }))
+            .toThrow('rating');
+        expect(() => buildMediaItem({
+            title: 'Book',
+            mediaType: 'Book',
+            metadata: { director: 'Wrong shape' },
+        })).toThrow('not valid for Book');
+        expect(() => buildMediaItem({
+            title: 'Movie',
+            mediaType: 'Movie',
+            dateFinished: '2026-02-31',
+        })).toThrow('valid calendar date');
+    });
+
     it('anchors a comment to exactly one entry, as a zaddy-authored note', () => {
         const comment = buildZaddyComment('note-1', {
             id: 'comment-1',
@@ -93,15 +144,109 @@ describe('MCP tool surface', () => {
         ]);
     });
 
-    it('adds separate note/session write tools with the write scope', async () => {
+    it('adds domain write tools with the write scope', async () => {
         const names = await listTools(true);
         expect(names).toEqual(expect.arrayContaining([
+            'add_media_item',
             'add_note',
             'start_session',
             'end_session',
             'observe',
         ]));
         expect(names).not.toContain('add_entry');
+    });
+});
+
+function mediaWriteDb() {
+    const batched: Array<{ sql: string; values: unknown[] }> = [];
+    const db = {
+        prepare(sql: string) {
+            const statement = {
+                sql,
+                values: [] as unknown[],
+                bind(...values: unknown[]) {
+                    statement.values = values;
+                    return statement;
+                },
+                async first() {
+                    if (sql.includes('SELECT id FROM media_items')) return null;
+                    if (sql.includes('MAX(revision)')) return { revision: 9 };
+                    return null;
+                },
+                async all() { return { results: [] }; },
+            };
+            return statement;
+        },
+        async batch(statements: Array<{ sql: string; values: unknown[] }>) {
+            batched.push(...statements);
+            return statements.map(() => ({ success: true }));
+        },
+    } as unknown as D1Database;
+    return { db, batched };
+}
+
+describe('add_media_item MCP tool', () => {
+    it('writes a MediaItem mutation without creating a timeline entity', async () => {
+        const { db, batched } = mediaWriteDb();
+        const request = new Request('https://chronolog-mcp.test/mcp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                jsonrpc: '2.0',
+                id: 1,
+                method: 'tools/call',
+                params: {
+                    name: 'add_media_item',
+                    arguments: {
+                        id: 'media-1',
+                        title: 'Perfect Blue',
+                        mediaType: 'Movie',
+                        status: 'Completed',
+                        metadata: { director: 'Satoshi Kon', year: 1997 },
+                    },
+                },
+            }),
+        });
+        const response = await handleMcpRequest(request, { CHRONOLOG_DB: db } as Env, true);
+        const body = await response.json<{
+            result: { content: Array<{ text: string }>; isError?: boolean };
+        }>();
+        const data = JSON.parse(body.result.content[0].text) as {
+            mediaItem: { id: string; title: string; mediaType: string };
+            revision: number;
+        };
+
+        expect(body.result.isError).not.toBe(true);
+        expect(data).toMatchObject({
+            mediaItem: { id: 'media-1', title: 'Perfect Blue', mediaType: 'Movie' },
+            revision: 9,
+        });
+        expect(batched.some(statement => statement.sql.includes('INSERT INTO media_items'))).toBe(true);
+        expect(batched.some(statement => statement.sql.includes('INSERT INTO notes'))).toBe(false);
+        expect(batched.some(statement => statement.sql.includes('INSERT INTO sessions'))).toBe(false);
+    });
+
+    it('requires the write scope before touching the database', async () => {
+        const request = new Request('https://chronolog-mcp.test/mcp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                jsonrpc: '2.0',
+                id: 1,
+                method: 'tools/call',
+                params: {
+                    name: 'add_media_item',
+                    arguments: { title: 'Perfect Blue', mediaType: 'Movie' },
+                },
+            }),
+        });
+        const response = await handleMcpRequest(request, {} as Env, false);
+        const body = await response.json<{
+            result: { content: Array<{ text: string }>; isError?: boolean };
+        }>();
+
+        expect(body.result.isError).toBe(true);
+        expect(body.result.content[0].text).toContain('chronolog:write');
     });
 });
 

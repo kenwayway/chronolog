@@ -1,6 +1,20 @@
 import { useState, useCallback, useMemo } from 'react'
 import type { TimelineItem, CategoryId } from '@/types'
 
+const LANDING_LAST_DISMISSED_KEY = 'chronolog_landing_last_dismissed_at'
+const LANDING_COOLDOWN_MS = 4 * 60 * 60 * 1000
+
+function shouldShowLanding(): boolean {
+    try {
+        const lastDismissedAt = Number(localStorage.getItem(LANDING_LAST_DISMISSED_KEY))
+        return !Number.isFinite(lastDismissedAt)
+            || lastDismissedAt <= 0
+            || Date.now() - lastDismissedAt >= LANDING_COOLDOWN_MS
+    } catch {
+        return true
+    }
+}
+
 interface Position {
     x: number
     y: number
@@ -66,7 +80,18 @@ export function useUIState(): UIState {
     const [datePanelOpen, setDatePanelOpen] = useState(false)
     const [settingsOpen, setSettingsOpen] = useState(false)
     const [searchOpen, setSearchOpen] = useState(false)
-    const [showLanding, setShowLanding] = useState(true)
+    const [showLanding, setShowLandingState] = useState(shouldShowLanding)
+    const setShowLanding = useCallback((show: boolean) => {
+        setShowLandingState(show)
+        if (!show) {
+            try {
+                localStorage.setItem(LANDING_LAST_DISMISSED_KEY, String(Date.now()))
+            } catch {
+                // Storage can be unavailable in private browsing; the landing
+                // page still works, it just cannot remember its cooldown.
+            }
+        }
+    }, [])
     const [selectedDate, setSelectedDate] = useState<Date | null>(null)
     const [categoryFilter, setCategoryFilter] = useState<CategoryId[]>([])
     const [tagFilter, setTagFilter] = useState<string[]>([])
@@ -146,7 +171,7 @@ export function useUIState(): UIState {
             }
         }
         setTimeout(tryScroll, 100)
-    }, [])
+    }, [setShowLanding])
 
     // A stable value object: consumers only re-render when a piece of UI
     // state actually changes, not on every provider render.
@@ -166,7 +191,7 @@ export function useUIState(): UIState {
         contentTypeFilter, setContentTypeFilter,
         navigateToEntry,
     }), [
-        leftSidebarOpen, navOpen, datePanelOpen, settingsOpen, searchOpen, showLanding,
+        leftSidebarOpen, navOpen, datePanelOpen, settingsOpen, searchOpen, showLanding, setShowLanding,
         contextMenu, handleContextMenu, closeContextMenu,
         editModal, openEditModal, closeEditModal,
         editingCommentId, startCommentEdit, stopCommentEdit,

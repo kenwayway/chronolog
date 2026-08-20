@@ -1,6 +1,42 @@
-import { CSSProperties } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useSessionContext } from "@/contexts/SessionContext";
+import { buildStatsSummary } from "@/domain/statistics";
+
+const MINUTE_MS = 60_000;
+
+function formatChineseDuration(durationMs: number): string {
+  const totalMinutes = Math.max(0, Math.floor(durationMs / MINUTE_MS));
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  if (hours === 0) return `${minutes} 分`;
+  return `${hours} 小时 ${minutes} 分`;
+}
 
 export function LandingPage({ onDismiss }: { onDismiss: () => void }) {
+  const { state } = useSessionContext();
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const interval = window.setInterval(() => setNow(Date.now()), MINUTE_MS);
+    return () => window.clearInterval(interval);
+  }, []);
+
+  const todayStart = useMemo(() => {
+    const date = new Date(now);
+    date.setHours(0, 0, 0, 0);
+    return date.getTime();
+  }, [now]);
+
+  const trackedToday = useMemo(() => buildStatsSummary({
+    notes: state.notes,
+    sessions: state.sessions,
+    start: todayStart,
+    end: now,
+    now,
+    activeSessionId: state.activeSessionId,
+  }).trackedMs, [state.notes, state.sessions, state.activeSessionId, todayStart, now]);
+
   const styles: Record<string, CSSProperties> = {
     page: {
       flex: 1,
@@ -21,7 +57,7 @@ export function LandingPage({ onDismiss }: { onDismiss: () => void }) {
       width: "100%",
       maxWidth: "560px",
     },
-    // Row 1: 我要大肌肉 (spans 2 cols)
+    // Row 1: time elapsed today (spans 2 cols)
     cell1: {
       gridColumn: "1 / -1",
       padding: "var(--space-6) 0",
@@ -42,8 +78,9 @@ export function LandingPage({ onDismiss }: { onDismiss: () => void }) {
 
     },
     cat: {
-      width: "100px",
-      height: "100px",
+      width: "160px",
+      height: "110px",
+      maxWidth: "100%",
       objectFit: "contain",
     },
     // Row 2 Right: Phrase 2
@@ -114,25 +151,33 @@ export function LandingPage({ onDismiss }: { onDismiss: () => void }) {
     <>
       <div style={styles.page} onClick={onDismiss}>
         <div style={styles.grid}>
-          {/* Row 1: 我要大肌肉 */}
+          {/* Row 1: time elapsed today */}
           <div style={styles.cell1}>
-            <div style={styles.phrase1}>我要大肌肉 💪</div>
+            <div style={styles.phrase1}>
+              今天已经活了 {formatChineseDuration(now - todayStart)}
+            </div>
           </div>
 
           {/* Row 2 Left: Cat GIF */}
           <div style={styles.cell2}>
-            <img src="/oia-uia.gif" />
+            <img
+              src="/sir-cat.gif"
+              alt="A cat tipping its hat"
+              style={styles.cat}
+            />
           </div>
 
           {/* Row 2 Right: Phrase 2 */}
           <div style={styles.cell3}>
-            <div style={styles.phrase2Label}>MORNING MSG</div>
-            <div style={styles.phrase2}>我能吞下玻璃而不伤身体</div>
+            <div style={styles.phrase2Label}>TODAY'S RECEIPT</div>
+            <div style={styles.phrase2}>
+              其中 {formatChineseDuration(trackedToday)}有据可查
+            </div>
           </div>
 
           {/* Row 3: Countdown */}
           <div style={styles.cell4}>
-            <span style={styles.countdownLabel}>下一次大冒险去哪里？</span>
+            <span style={styles.countdownLabel}>剩下的呢？</span>
           </div>
         </div>
 

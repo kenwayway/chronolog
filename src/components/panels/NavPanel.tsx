@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { BarChart3, BookOpen, Images, History, X, type LucideIcon } from "lucide-react";
+import { BarChart3, BookOpen, Dumbbell, Images, History, X, type LucideIcon } from "lucide-react";
+import { useSessionContext } from "@/contexts/SessionContext";
 import { useTheme } from "@/hooks/useTheme";
 import styles from "./NavPanel.module.css";
 
@@ -55,6 +56,27 @@ interface NavPanelProps {
 export function NavPanel({ isOpen, onClose }: NavPanelProps) {
     const { tokens } = useTheme();
     const { pathname } = useLocation();
+    const {
+        state: { sessions, activeSessionId },
+        actions,
+        isStreaming,
+    } = useSessionContext();
+    const activeSession = sessions.find(session => session.id === activeSessionId);
+    const isWorkoutActive = activeSession?.contentType === "workout";
+
+    const startWorkout = () => {
+        if (isWorkoutActive) return;
+
+        const options = {
+            category: "hardware" as const,
+            contentType: "workout",
+            fieldValues: { workoutType: "Strength" },
+        };
+
+        if (isStreaming) actions.switchSession("Workout", options);
+        else actions.logIn("Workout", options);
+        onClose();
+    };
 
     useEffect(() => {
         if (!isOpen) return;
@@ -105,6 +127,33 @@ export function NavPanel({ isOpen, onClose }: NavPanelProps) {
                         </Link>
                     ))}
                 </nav>
+
+                <div className={styles.quickActions}>
+                    <span className={styles.sectionLabel}>QUICK ACTION</span>
+                    <button
+                        type="button"
+                        className={styles.item}
+                        onClick={startWorkout}
+                        disabled={isWorkoutActive}
+                    >
+                        <span className={styles.itemIcon}>
+                            <Dumbbell size={15} strokeWidth={1.5} />
+                        </span>
+                        <span className={styles.itemText}>
+                            <span className={styles.itemLabel}>
+                                {isWorkoutActive ? "Workout active" : "Workout"}
+                            </span>
+                            <span className={styles.itemDesc}>
+                                {isWorkoutActive
+                                    ? "Currently tracking this session"
+                                    : isStreaming
+                                        ? "Switch the current session to workout"
+                                        : "Start a strength workout session"}
+                            </span>
+                        </span>
+                        <span className={styles.itemArrow}>{isWorkoutActive ? "●" : "→"}</span>
+                    </button>
+                </div>
             </aside>
         </>
     );

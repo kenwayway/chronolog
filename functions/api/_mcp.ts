@@ -1,16 +1,26 @@
 import { noteRowToObject, sessionRowToObject } from './_db.ts';
 import { applyMutationsWithNotionSync, type NotionSyncStatus } from './_notionSync.ts';
 import type { RevisionMutation } from './_revisionSync.ts';
-import type { Env, Note, NoteRow, Session, SessionRow } from './types.ts';
+import type { Env, MediaItem, Note, NoteRow, Session, SessionRow } from './types.ts';
 import { CATEGORIES, CATEGORY_IDS } from '../../src/utils/categories.ts';
 import { normalizeNotionPageId } from '../../src/utils/notionPageId.ts';
 import { observeZaddyTopic } from './_zaddyObservation.ts';
 import { ZADDY_COMMENT_CONTENT_TYPE, isZaddyComment } from '../../src/utils/zaddyComment.ts';
 
-const SERVER_INFO = { name: 'chronolog', version: '2.0.0' };
+const SERVER_INFO = { name: 'chronolog', version: '2.1.0' };
 const SUPPORTED_PROTOCOL_VERSIONS = ['2025-06-18', '2025-03-26', '2024-11-05'];
 const DEFAULT_TIMEZONE = 'America/Toronto';
 const DAY_MS = 86_400_000;
+const MEDIA_TYPES = ['Book', 'Movie', 'Game', 'TV', 'Anime', 'Podcast'] as const;
+const MEDIA_STATUSES = ['Planned', 'In Progress', 'Completed', 'Dropped', 'On Hold'] as const;
+const MEDIA_METADATA_FIELDS: Record<(typeof MEDIA_TYPES)[number], readonly string[]> = {
+    Book: ['author', 'genre'],
+    Movie: ['director', 'year', 'genre', 'releasedDate'],
+    Game: ['developer', 'genre', 'releasedDate'],
+    TV: ['season'],
+    Anime: ['season'],
+    Podcast: ['host'],
+};
 
 interface JsonRpcRequest {
     id?: number | string | null;
@@ -142,6 +152,53 @@ const WRITE_TOOLS = [
                 sessionId: { type: 'string', description: 'Optional owning session ID' },
             },
             required: ['content'],
+            additionalProperties: false,
+        },
+    },
+    {
+        name: 'add_media_item',
+        description: [
+            'Add one item directly to the media library. Use only when the user explicitly asks to save media to their library.',
+            'This creates a MediaItem and does not create a timeline note.',
+            'Put type-specific facts in metadata: author for books; director/year/genre/releasedDate for movies; developer/genre/releasedDate for games; season for TV or anime; host for podcasts.',
+        ].join(' '),
+        inputSchema: {
+            type: 'object',
+            properties: {
+                id: sharedWriteProperties.id,
+                title: { type: 'string', minLength: 1, maxLength: 1000 },
+                mediaType: { type: 'string', enum: MEDIA_TYPES },
+                notionUrl: { type: 'string', maxLength: 4000 },
+                coverUrl: { type: 'string', maxLength: 4000 },
+                spotifyUrl: { type: 'string', maxLength: 4000 },
+                createdAt: {
+                    ...sharedWriteProperties.timestamp,
+                    description: 'When the item was added; defaults to now',
+                },
+                rating: { type: 'number', minimum: 1, maximum: 10 },
+                status: { type: 'string', enum: MEDIA_STATUSES },
+                dateFinished: {
+                    type: 'string',
+                    pattern: '^\\d{4}-\\d{2}-\\d{2}$',
+                    description: 'Completion date in YYYY-MM-DD format',
+                },
+                notes: { type: 'string', maxLength: 100000 },
+                metadata: {
+                    type: 'object',
+                    properties: {
+                        director: { type: 'string', maxLength: 1000 },
+                        year: { type: 'integer', minimum: 1, maximum: 9999 },
+                        genre: { type: 'string', maxLength: 1000 },
+                        releasedDate: { type: 'string', pattern: '^\\d{4}-\\d{2}-\\d{2}$' },
+                        author: { type: 'string', maxLength: 1000 },
+                        developer: { type: 'string', maxLength: 1000 },
+                        season: { type: 'integer', minimum: 1 },
+                        host: { type: 'string', maxLength: 1000 },
+                    },
+                    additionalProperties: false,
+                },
+            },
+            required: ['title', 'mediaType'],
             additionalProperties: false,
         },
     },
@@ -295,13 +352,13 @@ function dayStartMs(value: unknown, timezone: string): number {
     return guess - offsetMinutesAt(first, timezone) * 60_000;
 }
 
-function parseTimestamp(value: unknown, fallback = Date.now()): number {
+function parseTimestamp(value: unknown, fallback = Date.now(), field = 'timestamp'): number {
     if (value === undefined) return fallback;
     if (typeof value !== 'string' || !/(Z|[+-]\d{2}:\d{2})$/.test(value)) {
-        throw new Error('timestamp must be ISO 8601 with an explicit offset or Z');
+        throw new Error(`${field} must be ISO 8601 with an explicit offset or Z`);
     }
     const parsed = Date.parse(value);
-    if (!Number.isFinite(parsed)) throw new Error('timestamp is invalid');
+    if (!Number.isFinite(parsed)) throw new Error(`${field} is invalid`);
     return parsed;
 }
 
@@ -387,6 +444,109 @@ export function buildSession(args: Record<string, unknown>, now = Date.now(), ge
         startAt: parseTimestamp(args.timestamp, now),
         endAt: null,
         ...commonFields(args),
+    };
+}
+
+function optionalText(value: unknown, field: string): string | undefined {
+    if (value === undefined) return undefined;
+    if (typeof value !== 'string') throw new Error(`${field} must be a string`);
+    return value.trim() || undefined;
+}
+
+function optionalDate(value: unknown, field: string): string | undefined {
+    const date = optionalText(value, field);
+    if (date === undefined) return undefined;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error(`${field} must be YYYY-MM-DD`);
+    const parsed = new Date(`${date}T00:00:00Z`);
+    if (!Number.isFinite(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== date) {
+        throw new Error(`${field} must be a valid calendar date`);
+    }
+    return date;
+}
+
+function cleanMediaMetadata(
+    mediaType: (typeof MEDIA_TYPES)[number],
+    value: unknown,
+): Record<string, unknown> | undefined {
+    if (value === undefined) return undefined;
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+        throw new Error('metadata must be an object');
+    }
+
+    const metadata = value as Record<string, unknown>;
+    const allowed = new Set(MEDIA_METADATA_FIELDS[mediaType]);
+    const invalid = Object.keys(metadata).find(key => !allowed.has(key));
+    if (invalid) throw new Error(`metadata.${invalid} is not valid for ${mediaType}`);
+
+    const cleaned: Record<string, unknown> = {};
+    for (const [key, fieldValue] of Object.entries(metadata)) {
+        if (key === 'year' || key === 'season') {
+            if (!Number.isInteger(fieldValue) || Number(fieldValue) < 1 || (key === 'year' && Number(fieldValue) > 9999)) {
+                throw new Error(`metadata.${key} must be a positive integer${key === 'year' ? ' no greater than 9999' : ''}`);
+            }
+            cleaned[key] = fieldValue;
+            continue;
+        }
+        if (key === 'releasedDate') {
+            const date = optionalDate(fieldValue, 'metadata.releasedDate');
+            if (date) cleaned[key] = date;
+            continue;
+        }
+        const text = optionalText(fieldValue, `metadata.${key}`);
+        if (text) cleaned[key] = text;
+    }
+    return Object.keys(cleaned).length > 0 ? cleaned : undefined;
+}
+
+export function buildMediaItem(
+    args: Record<string, unknown>,
+    now = Date.now(),
+    generatedId?: string,
+): MediaItem {
+    if (typeof args.title !== 'string' || !args.title.trim()) {
+        throw new Error('title must be a non-empty string');
+    }
+    if (typeof args.mediaType !== 'string' || !MEDIA_TYPES.includes(args.mediaType as (typeof MEDIA_TYPES)[number])) {
+        throw new Error(`mediaType must be one of: ${MEDIA_TYPES.join(', ')}`);
+    }
+    const mediaType = args.mediaType as (typeof MEDIA_TYPES)[number];
+
+    let rating: number | undefined;
+    if (args.rating !== undefined) {
+        if (typeof args.rating !== 'number' || !Number.isFinite(args.rating) || args.rating < 1 || args.rating > 10) {
+            throw new Error('rating must be a number from 1 to 10');
+        }
+        rating = args.rating;
+    }
+
+    let status: string | undefined;
+    if (args.status !== undefined) {
+        if (typeof args.status !== 'string' || !MEDIA_STATUSES.includes(args.status as (typeof MEDIA_STATUSES)[number])) {
+            throw new Error(`status must be one of: ${MEDIA_STATUSES.join(', ')}`);
+        }
+        status = args.status;
+    }
+
+    const notionUrl = optionalText(args.notionUrl, 'notionUrl');
+    const coverUrl = optionalText(args.coverUrl, 'coverUrl');
+    const spotifyUrl = optionalText(args.spotifyUrl, 'spotifyUrl');
+    const dateFinished = optionalDate(args.dateFinished, 'dateFinished');
+    const notes = optionalText(args.notes, 'notes');
+    const metadata = cleanMediaMetadata(mediaType, args.metadata);
+
+    return {
+        id: generatedId ?? newId(args.id),
+        title: args.title.trim(),
+        mediaType,
+        createdAt: parseTimestamp(args.createdAt, now, 'createdAt'),
+        ...(notionUrl ? { notionUrl } : {}),
+        ...(coverUrl ? { coverUrl } : {}),
+        ...(spotifyUrl ? { spotifyUrl } : {}),
+        ...(rating !== undefined ? { rating } : {}),
+        ...(status ? { status } : {}),
+        ...(dateFinished ? { dateFinished } : {}),
+        ...(notes ? { notes } : {}),
+        ...(metadata ? { metadata } : {}),
     };
 }
 
@@ -705,6 +865,23 @@ function ensureNothingRejected(result: { rejectedMutations: { detail?: string }[
     }
 }
 
+async function addMediaItem(args: Record<string, unknown>, env: Env) {
+    const mediaItem = buildMediaItem(args);
+    const existing = await env.CHRONOLOG_DB.prepare('SELECT id FROM media_items WHERE id = ?')
+        .bind(mediaItem.id).first<{ id: string }>();
+    if (existing) throw new Error(`Media item ID "${mediaItem.id}" already exists`);
+
+    const result = await applyMutationsWithNotionSync(env, [{
+        mutationId: crypto.randomUUID(),
+        entityType: 'mediaItem',
+        entityId: mediaItem.id,
+        operation: 'upsert',
+        value: mediaItem,
+    }]);
+    ensureNothingRejected(result);
+    return { mediaItem, revision: result.revision };
+}
+
 async function addNote(args: Record<string, unknown>, env: Env) {
     const note = buildNote(args);
     await ensureUniqueId(env.CHRONOLOG_DB, note.id);
@@ -858,6 +1035,7 @@ async function callTool(params: Record<string, unknown> | undefined, env: Env, c
         else if (name === 'list_categories_and_tags') {
             data = await listCategoriesAndTags(env.CHRONOLOG_DB, args.includeFieldDefinitions === true);
         }
+        else if (name === 'add_media_item' && canWrite) data = await addMediaItem(args, env);
         else if (name === 'add_note' && canWrite) data = await addNote(args, env);
         else if (name === 'start_session' && canWrite) data = await startSession(args, env);
         else if (name === 'end_session' && canWrite) data = await endSession(args, env);
