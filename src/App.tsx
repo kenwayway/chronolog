@@ -21,19 +21,20 @@ import {
     ContextMenu,
     EditModal,
     ActivityPanel,
+    DatePanel,
     NavPanel,
     SearchPanel,
 } from "./components";
 import { isZaddyComment } from "./utils/zaddyComment";
 import type { CategoryId, TimelineItem, UseSessionReturn } from "./types";
 import type { InputPanelRef } from "./components/input/InputPanel";
-import styles from "./App.module.css";
 
 // Route- and modal-level code splitting: keep the timeline's first paint
 // small; these chunks load on navigation or when settings first opens.
 const LibraryPage = lazy(() => import("./pages/LibraryPage").then(m => ({ default: m.LibraryPage })));
 const GalleryPage = lazy(() => import("./pages/GalleryPage").then(m => ({ default: m.GalleryPage })));
 const RetroPage = lazy(() => import("./pages/RetroPage").then(m => ({ default: m.RetroPage })));
+const StatsPage = lazy(() => import("./pages/StatsPage").then(m => ({ default: m.StatsPage })));
 const SettingsModal = lazy(() => import("./components/modals/SettingsModal").then(m => ({ default: m.SettingsModal })));
 
 function App() {
@@ -139,6 +140,7 @@ function HydratedApp({ session }: { session: UseSessionReturn }) {
                             <Route path="/library" element={<LibraryPage />} />
                             <Route path="/gallery" element={<GalleryPage />} />
                             <Route path="/retro" element={<RetroPage />} />
+                            <Route path="/stats" element={<StatsPage />} />
                             <Route path="/" element={
                                 <MainView
                                     isStreaming={isStreaming}
@@ -217,7 +219,7 @@ function MainView({
 
     return (
         <div
-            className={`${styles.appShell} ${ui.leftSidebarOpen ? styles.activityPanelOpen : ""} min-h-screen flex flex-col font-mono`}
+            className="min-h-screen flex flex-col font-mono"
             style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}
         >
             <Header
@@ -259,6 +261,13 @@ function MainView({
             />
 
             <SearchPanel />
+
+            <DatePanel
+                isOpen={ui.datePanelOpen}
+                selectedDate={ui.selectedDate}
+                onSelect={ui.setSelectedDate}
+                onClose={() => ui.setDatePanelOpen(false)}
+            />
 
             <ActivityPanel
                 isOpen={ui.leftSidebarOpen}

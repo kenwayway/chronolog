@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { formatDuration, generateId } from './formatters'
+import { formatApproxDuration, formatDuration, generateId } from './formatters'
 
 describe('formatDuration', () => {
     it('formats seconds only', () => {
@@ -34,6 +34,14 @@ describe('formatDuration', () => {
     it('truncates sub-second durations to 0s', () => {
         expect(formatDuration(500)).toBe('0s')
         expect(formatDuration(999)).toBe('0s')
+    })
+})
+
+describe('formatApproxDuration', () => {
+    it('rounds conversation spans to whole minutes', () => {
+        expect(formatApproxDuration(24 * 60_000 + 40_000)).toBe('25m')
+        expect(formatApproxDuration(65 * 60_000)).toBe('1h 5m')
+        expect(formatApproxDuration(30_000)).toBe('1m')
     })
 })
 

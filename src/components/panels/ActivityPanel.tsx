@@ -3,7 +3,6 @@ import { X } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 import { useSessionContext } from "@/contexts/SessionContext";
 import { extractAllTags } from "@/utils/tagParser";
-import { CategoryTimeChart } from "./CategoryTimeChart";
 import styles from "./ActivityPanel.module.css";
 import type { CategoryId } from "@/types";
 
@@ -28,7 +27,7 @@ export function ActivityPanel({
     contentTypeFilter,
     onContentTypeFilterChange,
 }: ActivityPanelProps) {
-    const { state: { sessions, activeSessionId, contentTypes }, timelineItems: entries, categories } = useSessionContext();
+    const { state: { contentTypes }, timelineItems: entries, categories } = useSessionContext();
     const { tokens } = useTheme();
 
     // Tag statistics. The panel stays mounted for its slide animation, so
@@ -96,15 +95,6 @@ export function ActivityPanel({
 
                 {/* Content */}
                 <div style={{ flex: 1, overflowY: "auto", padding: "var(--space-5)" }}>
-                    {/* Category Time Distribution */}
-                    <CategoryTimeChart
-                        sessions={sessions}
-                        activeSessionId={activeSessionId}
-                        categories={categories ?? []}
-                        categoryFilter={categoryFilter}
-                        onToggleCategory={toggleCategory}
-                    />
-
                     {/* Category Filter Section */}
                     <div>
                         <div className={styles.sectionHeader}>

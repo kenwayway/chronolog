@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getActivityWeekStart } from "./activityWeek";
+import { getActivityWeekStart, getRollingActivityWindowStart } from "./activityWeek";
 
 function expectLocalDate(
     timestamp: number,
@@ -32,5 +32,17 @@ describe("getActivityWeekStart", () => {
     it("switches to the new week at Monday 06:00", () => {
         const timestamp = new Date(2026, 6, 27, 6, 0).getTime();
         expectLocalDate(getActivityWeekStart(timestamp), 2026, 6, 27, 6);
+    });
+});
+
+describe("getRollingActivityWindowStart", () => {
+    it("starts seven activity days ago including the current day", () => {
+        const now = new Date(2026, 7, 19, 18).getTime();
+        expectLocalDate(getRollingActivityWindowStart(now), 2026, 7, 13, 6);
+    });
+
+    it("treats time before 06:00 as part of the previous activity day", () => {
+        const now = new Date(2026, 7, 19, 5, 59).getTime();
+        expectLocalDate(getRollingActivityWindowStart(now), 2026, 7, 12, 6);
     });
 });

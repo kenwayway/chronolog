@@ -3,7 +3,10 @@
 .overlay {
     display: none;
     position: fixed;
-    inset: 0;
+    top: 48px;
+    right: 0;
+    bottom: 0;
+    left: 0;
     background-color: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(4px);
     z-index: 400;
@@ -11,7 +14,7 @@
 
 .panel {
     position: fixed;
-    top: 0;
+    top: 48px;
     right: 0;
     bottom: 0;
     width: 340px;
@@ -146,6 +149,13 @@
         background-color: var(--bg-glass);
         backdrop-filter: blur(24px);
         box-shadow: -10px 0 30px rgba(0, 0, 0, 0.3);
+    }
+}
+
+@media (max-width: 640px) {
+    .overlay,
+    .panel {
+        top: 44px;
     }
 }
 

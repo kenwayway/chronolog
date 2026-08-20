@@ -23,6 +23,8 @@ export interface UIState {
     setLeftSidebarOpen: (open: boolean) => void
     navOpen: boolean
     setNavOpen: (open: boolean) => void
+    datePanelOpen: boolean
+    setDatePanelOpen: (open: boolean) => void
     settingsOpen: boolean
     setSettingsOpen: (open: boolean) => void
     searchOpen: boolean
@@ -61,6 +63,7 @@ export function useUIState(): UIState {
     // Panel states
     const [leftSidebarOpen, setLeftSidebarOpen] = useState(false)
     const [navOpen, setNavOpen] = useState(false)
+    const [datePanelOpen, setDatePanelOpen] = useState(false)
     const [settingsOpen, setSettingsOpen] = useState(false)
     const [searchOpen, setSearchOpen] = useState(false)
     const [showLanding, setShowLanding] = useState(true)
@@ -150,6 +153,7 @@ export function useUIState(): UIState {
     return useMemo(() => ({
         leftSidebarOpen, setLeftSidebarOpen,
         navOpen, setNavOpen,
+        datePanelOpen, setDatePanelOpen,
         settingsOpen, setSettingsOpen,
         searchOpen, setSearchOpen,
         showLanding, setShowLanding,
@@ -162,7 +166,7 @@ export function useUIState(): UIState {
         contentTypeFilter, setContentTypeFilter,
         navigateToEntry,
     }), [
-        leftSidebarOpen, navOpen, settingsOpen, searchOpen, showLanding,
+        leftSidebarOpen, navOpen, datePanelOpen, settingsOpen, searchOpen, showLanding,
         contextMenu, handleContextMenu, closeContextMenu,
         editModal, openEditModal, closeEditModal,
         editingCommentId, startCommentEdit, stopCommentEdit,

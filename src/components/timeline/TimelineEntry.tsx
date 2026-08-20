@@ -1,6 +1,6 @@
 import { memo, ReactNode } from "react";
 import { ChevronRight, MessageSquareQuote, Play, Square } from "lucide-react";
-import { formatTime, formatDuration, formatDate } from "@/utils/formatters";
+import { formatTime, formatDuration, formatApproxDuration, formatDate } from "@/utils/formatters";
 import { ContentRenderer } from "./ContentRenderer";
 import { CommentEditor } from "./CommentEditor";
 import { LinkedEntryPreview } from "./LinkedEntryPreview";
@@ -203,7 +203,7 @@ export const TimelineEntry = memo(function TimelineEntry({
                 fontWeight: 500,
               }}
             >
-              {formatDuration(sessionDuration)}
+              {isZaddy ? `CHAT ~${formatApproxDuration(sessionDuration)}` : formatDuration(sessionDuration)}
             </div>
           )}
           {category && !isAnnotation && (

@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { BookOpen, Images, History, X, type LucideIcon } from "lucide-react";
+import { BarChart3, BookOpen, Images, History, X, type LucideIcon } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 import styles from "./NavPanel.module.css";
 
@@ -16,6 +16,12 @@ interface Destination {
  * than as another header icon, so the header stops growing with the app.
  */
 const DESTINATIONS: Destination[] = [
+    {
+        to: "/stats",
+        label: "Stats",
+        description: "Patterns in tracked time and recording",
+        icon: BarChart3,
+    },
     {
         to: "/retro",
         label: "Retrospective",

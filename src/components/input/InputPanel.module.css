@@ -4,13 +4,12 @@
     position: fixed;
     bottom: 24px;
     left: 0;
-    right: var(--activity-panel-inset, 0px);
+    right: 0;
     display: flex;
     justify-content: center;
     padding: 0 var(--space-4);
     pointer-events: none;
     z-index: 300;
-    transition: right 300ms ease-out;
 }
 
 .wrapper {
@@ -286,11 +285,5 @@
 
     .timeInputLabel {
         flex-basis: 100%;
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .container {
-        transition: none;
     }
 }

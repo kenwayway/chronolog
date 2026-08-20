@@ -1,0 +1,417 @@
+.page {
+    width: 100%;
+    max-width: 1180px;
+    min-height: 100vh;
+    margin: 0 auto;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+}
+
+.header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 48px;
+    padding: 0 20px;
+    background-color: var(--bg-glass);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.backBtn {
+    display: flex;
+    padding: 4px;
+    border: 0;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.backBtn:hover {
+    color: var(--accent);
+}
+
+.title {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+}
+
+.period {
+    margin-left: auto;
+    color: var(--text-dim);
+    font-size: 10px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.body {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding: 22px 20px 48px;
+}
+
+.rangeBar {
+    display: flex;
+    align-self: flex-start;
+    border: 1px solid var(--border-light);
+}
+
+.rangeBtn {
+    padding: 7px 12px;
+    border: 0;
+    border-right: 1px solid var(--border-light);
+    background-color: transparent;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+}
+
+.rangeBtn:last-child {
+    border-right: 0;
+}
+
+.rangeBtn:hover {
+    color: var(--text-primary);
+    background-color: var(--bg-secondary);
+}
+
+.rangeBtnActive {
+    background-color: var(--accent-subtle);
+    color: var(--accent);
+    box-shadow: inset 0 -2px 0 var(--accent);
+}
+
+.metrics {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    border-top: 1px solid var(--border-light);
+    border-left: 1px solid var(--border-light);
+}
+
+.metric {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    padding: 15px 16px;
+    border-right: 1px solid var(--border-light);
+    border-bottom: 1px solid var(--border-light);
+    background-color: var(--bg-secondary);
+}
+
+.metricLabel {
+    color: var(--text-dim);
+    font-size: 9px;
+    letter-spacing: 0.1em;
+}
+
+.metricValue {
+    margin: 7px 0 4px;
+    color: var(--text-primary);
+    font-size: clamp(20px, 3vw, 28px);
+    font-weight: 500;
+    line-height: 1.15;
+}
+
+.metricDetail {
+    overflow: hidden;
+    color: var(--text-muted);
+    font-size: 9px;
+    letter-spacing: 0.03em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.section {
+    min-width: 0;
+    border: 1px solid var(--border-light);
+    background-color: var(--bg-primary);
+}
+
+.sectionTitle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 38px;
+    padding: 0 14px;
+    border-bottom: 1px solid var(--border-subtle);
+    color: var(--text-muted);
+    font-size: 10px;
+    letter-spacing: 0.09em;
+}
+
+.sectionHint {
+    color: var(--text-dim);
+    font-size: 8px;
+    letter-spacing: 0.05em;
+}
+
+.sectionBody {
+    padding: 18px 18px 0;
+}
+
+.twoColumn {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.65fr);
+    gap: 18px;
+}
+
+.trend {
+    display: flex;
+    height: 250px;
+    gap: 3px;
+    padding: 18px 14px 12px;
+}
+
+.trendColumn {
+    display: flex;
+    min-width: 0;
+    flex: 1;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.trendTrack {
+    position: relative;
+    flex: 1;
+    background-color: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.trendBar {
+    position: absolute;
+    right: 1px;
+    bottom: 0;
+    left: 1px;
+    background-color: var(--accent);
+    opacity: 0.78;
+}
+
+.trendColumn:hover .trendBar {
+    opacity: 1;
+}
+
+.trendLabel {
+    min-height: 12px;
+    overflow: hidden;
+    color: var(--text-dim);
+    font-size: 7px;
+    text-align: center;
+    text-overflow: clip;
+    white-space: nowrap;
+}
+
+.breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 18px 16px;
+}
+
+.weeklyAverage {
+    display: flex;
+    flex-direction: column;
+    padding: 8px 16px;
+}
+
+.weeklyAverageRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 11px 0;
+    border-bottom: 1px solid var(--border-subtle);
+    font-size: 9px;
+}
+
+.weeklyAverageRow:last-child {
+    border-bottom: 0;
+}
+
+.weeklyAverageValue {
+    display: flex;
+    flex-shrink: 0;
+    flex-direction: column;
+    align-items: flex-end;
+    color: var(--text-dim);
+    font-size: 9px;
+    line-height: 1.4;
+    text-transform: uppercase;
+}
+
+.weeklyAverageValue strong {
+    color: var(--text-primary);
+    font-size: 10px;
+    font-weight: 500;
+    text-transform: none;
+}
+
+.breakdownRow {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.breakdownMeta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    color: var(--text-muted);
+    font-size: 9px;
+}
+
+.breakdownName {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+}
+
+.swatch {
+    width: 7px;
+    height: 7px;
+    flex-shrink: 0;
+}
+
+.breakdownTrack {
+    height: 5px;
+    background-color: var(--bg-secondary);
+}
+
+.breakdownTrack > span {
+    display: block;
+    height: 100%;
+    min-width: 1px;
+}
+
+.heatmap {
+    display: grid;
+    grid-template-columns: 34px repeat(4, minmax(38px, 1fr));
+    gap: 5px;
+    padding: 18px 16px 20px;
+}
+
+.heatmapRow {
+    display: contents;
+}
+
+.heatmapHeader,
+.heatmapDay {
+    display: flex;
+    align-items: center;
+    color: var(--text-dim);
+    font-size: 7px;
+}
+
+.heatmapHeader {
+    justify-content: center;
+}
+
+.heatmapCell {
+    height: 25px;
+    border: 1px solid var(--border-subtle);
+}
+
+.recordingMix {
+    display: flex;
+    flex-direction: column;
+    padding: 10px 16px;
+}
+
+.mixRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+    font-size: 10px;
+    text-transform: uppercase;
+}
+
+.mixRow:last-child {
+    border-bottom: 0;
+}
+
+.tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 14px 16px 16px;
+    border-top: 1px solid var(--border-subtle);
+}
+
+.tag {
+    padding: 3px 7px;
+    border: 1px solid var(--border-subtle);
+    color: var(--text-muted);
+    font-size: 9px;
+}
+
+.tag i {
+    margin-left: 3px;
+    color: var(--text-dim);
+    font-style: normal;
+}
+
+.empty {
+    padding: 18px 0;
+    color: var(--text-dim);
+    font-size: 9px;
+    letter-spacing: 0.05em;
+}
+
+@media (max-width: 760px) {
+    .header {
+        min-height: 44px;
+        padding: 0 12px;
+    }
+
+    .body {
+        padding: 16px 10px 36px;
+    }
+
+    .rangeBar {
+        width: 100%;
+    }
+
+    .rangeBtn {
+        flex: 1;
+        padding-right: 4px;
+        padding-left: 4px;
+        font-size: 8px;
+    }
+
+    .metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .twoColumn {
+        grid-template-columns: 1fr;
+    }
+
+    .trend {
+        height: 210px;
+    }
+
+    .period {
+        display: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .trendBar {
+        transition: none;
+    }
+}

@@ -11,7 +11,6 @@ import {
     Search,
 } from "lucide-react";
 import { formatDate } from "@/utils/formatters";
-import { Calendar } from "./common/Calendar";
 import styles from "./Header.module.css";
 import { useCloudSyncContext } from "@/contexts/CloudSyncContext";
 import { useUIStateContext } from "@/hooks/useUIStateContext";
@@ -33,7 +32,6 @@ export function Header({
     const onOpenNav = () => ui.setNavOpen(true);
     const onOpenSettings = () => ui.setSettingsOpen(true);
     const onOpenSearch = () => ui.setSearchOpen(true);
-    const [showCalendar, setShowCalendar] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const mobileMenuRef = useRef<HTMLDivElement>(null);
 
@@ -143,8 +141,10 @@ export function Header({
                             fontFamily: "var(--font-mono)",
                             color: isToday ? "var(--accent)" : "var(--text-secondary)",
                         }}
-                        onClick={() => setShowCalendar(!showCalendar)}
+                        onClick={() => ui.setDatePanelOpen(!ui.datePanelOpen)}
                         title="Select date"
+                        aria-expanded={ui.datePanelOpen}
+                        aria-controls="date-panel"
                     >
                         {formatDate(currentDate.getTime())}
                     </button>
@@ -164,13 +164,6 @@ export function Header({
                         <ChevronRight size={16} />
                     </button>
 
-                    {showCalendar && (
-                        <Calendar
-                            selectedDate={selectedDate}
-                            onSelect={onDateChange}
-                            onClose={() => setShowCalendar(false)}
-                        />
-                    )}
                 </div>
             </div>
 

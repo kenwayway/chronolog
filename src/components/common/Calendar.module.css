@@ -15,6 +15,29 @@
     font-family: var(--font-mono);
 }
 
+.calendar.embedded {
+    position: static;
+    width: 100%;
+    max-width: 280px;
+    min-width: 0;
+    margin: 0 auto;
+    padding: 0;
+    background-color: transparent;
+    border: 0;
+    box-shadow: none;
+}
+
+.embedded .weekdays,
+.embedded .days {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.embedded .weekday,
+.embedded .dayEmpty,
+.embedded .day {
+    width: 100%;
+}
+
 .header {
     display: flex;
     align-items: center;
@@ -82,8 +105,8 @@
 .day {
     width: 32px;
     height: 32px;
-    border-radius: 50%;
-    border: none;
+    border: 1px solid transparent;
+    border-radius: var(--radius-none);
     cursor: pointer;
     font-size: var(--text-sm);
     font-family: var(--font-mono);
@@ -97,15 +120,18 @@
 }
 
 .day.today {
-    background-color: var(--accent-subtle);
+    background-color: transparent;
     color: var(--accent);
     font-weight: 600;
+    box-shadow: inset 0 -2px 0 var(--accent);
 }
 
 .day.selected {
-    background-color: var(--accent);
-    color: white;
+    background-color: var(--accent-subtle);
+    border-color: var(--accent);
+    color: var(--accent);
     font-weight: 600;
+    box-shadow: none;
 }
 
 .day.future {

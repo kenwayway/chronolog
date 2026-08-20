@@ -6,9 +6,17 @@ interface CalendarProps {
     selectedDate: Date | null;
     onSelect: (date: Date | null) => void;
     onClose: () => void;
+    embedded?: boolean;
+    closeOnSelect?: boolean;
 }
 
-export function Calendar({ selectedDate, onSelect, onClose }: CalendarProps) {
+export function Calendar({
+    selectedDate,
+    onSelect,
+    onClose,
+    embedded = false,
+    closeOnSelect = true,
+}: CalendarProps) {
     const [viewDate, setViewDate] = useState(selectedDate || new Date());
     const calendarRef = useRef<HTMLDivElement>(null);
 
@@ -16,6 +24,8 @@ export function Calendar({ selectedDate, onSelect, onClose }: CalendarProps) {
     today.setHours(0, 0, 0, 0);
 
     useEffect(() => {
+        if (embedded) return;
+
         const handleClickOutside = (e: MouseEvent) => {
             if (calendarRef.current && !calendarRef.current.contains(e.target as Node)) {
                 onClose();
@@ -23,7 +33,7 @@ export function Calendar({ selectedDate, onSelect, onClose }: CalendarProps) {
         };
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, [onClose]);
+    }, [embedded, onClose]);
 
     const year = viewDate.getFullYear();
     const month = viewDate.getMonth();
@@ -53,7 +63,8 @@ export function Calendar({ selectedDate, onSelect, onClose }: CalendarProps) {
     for (let day = 1; day <= daysInMonth; day++) {
         const date = new Date(year, month, day);
         const isToday = date.toDateString() === today.toDateString();
-        const isSelected = selectedDate && date.toDateString() === selectedDate.toDateString();
+        const activeDate = selectedDate || today;
+        const isSelected = date.toDateString() === activeDate.toDateString();
         const isFuture = date > today;
 
         days.push(
@@ -62,7 +73,7 @@ export function Calendar({ selectedDate, onSelect, onClose }: CalendarProps) {
                 disabled={isFuture}
                 onClick={() => {
                     onSelect(date);
-                    onClose();
+                    if (closeOnSelect) onClose();
                 }}
                 className={`${styles.day} ${isToday ? styles.today : ""} ${isSelected ? styles.selected : ""} ${isFuture ? styles.future : ""}`}
             >
@@ -74,7 +85,10 @@ export function Calendar({ selectedDate, onSelect, onClose }: CalendarProps) {
     const canGoNext = new Date(year, month + 1, 1) <= today;
 
     return (
-        <div ref={calendarRef} className={`${styles.calendar} animate-slide-in`}>
+        <div
+            ref={calendarRef}
+            className={`${styles.calendar} ${embedded ? styles.embedded : ""} ${embedded ? "" : "animate-slide-in"}`}
+        >
             {/* Header */}
             <div className={styles.header}>
                 <button onClick={prevMonth} className={styles.navBtn}>
@@ -106,7 +120,7 @@ export function Calendar({ selectedDate, onSelect, onClose }: CalendarProps) {
             <button
                 onClick={() => {
                     onSelect(null);
-                    onClose();
+                    if (closeOnSelect) onClose();
                 }}
                 className={styles.todayBtn}
             >
@@ -115,4 +129,3 @@ export function Calendar({ selectedDate, onSelect, onClose }: CalendarProps) {
         </div>
     );
 }
-

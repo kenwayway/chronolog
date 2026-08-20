@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Category, CategoryId, Session } from "@/types";
-import { getActivityWeekStart } from "./activityWeek";
+import { getRollingActivityWindowStart } from "./activityWeek";
 import styles from "./CategoryTimeChart.module.css";
 
 interface CategoryTimeChartProps {
@@ -9,11 +9,11 @@ interface CategoryTimeChartProps {
     categories: Category[];
     categoryFilter: CategoryId[];
     onToggleCategory: (catId: CategoryId) => void;
+    showLegend?: boolean;
 }
 
 const UNCATEGORIZED = "__uncategorized__";
 const MODULE_LOAD_TIME = Date.now();
-const DAY_LABELS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
 
 interface ActivitySegment {
     id: string;
@@ -69,6 +69,7 @@ export function CategoryTimeChart({
     categories,
     categoryFilter,
     onToggleCategory,
+    showLegend = true,
 }: CategoryTimeChartProps) {
     const [now, setNow] = useState(MODULE_LOAD_TIME);
 
@@ -82,9 +83,9 @@ export function CategoryTimeChart({
         };
     }, []);
 
-    const { days, legend, totalMs } = useMemo(() => {
-        const weekStart = getActivityWeekStart(now);
-        const [, weekEnd] = getDayWindow(weekStart, 6);
+    const { days, legend, totalMs, elapsedDays } = useMemo(() => {
+        const windowStart = getRollingActivityWindowStart(now);
+        const [, windowEnd] = getDayWindow(windowStart, 6);
         const categoryById = new Map(categories.map(category => [category.id, category]));
         const labelOf = (id: string) => categoryById.get(id as CategoryId)?.label || "Unsorted";
         const colorOf = (id: string) => categoryById.get(id as CategoryId)?.color || "var(--text-dim)";
@@ -93,11 +94,11 @@ export function CategoryTimeChart({
             if (session.origin === "zaddy") return [];
             if (session.endAt === null && session.id !== activeSessionId) return [];
             const end = session.endAt ?? now;
-            if (end <= weekStart || session.startAt >= weekEnd) return [];
+            if (end <= windowStart || session.startAt >= windowEnd) return [];
             return [{
                 id: session.id,
-                start: Math.max(session.startAt, weekStart),
-                end: Math.min(end, weekEnd),
+                start: Math.max(session.startAt, windowStart),
+                end: Math.min(end, windowEnd),
                 categoryId: session.category || UNCATEGORIZED,
             }];
         });
@@ -110,10 +111,11 @@ export function CategoryTimeChart({
             );
         }
 
-        const days: DayColumn[] = DAY_LABELS.map((label, dayIndex) => {
-            const [dayStart, dayEnd] = getDayWindow(weekStart, dayIndex);
+        const days: DayColumn[] = Array.from({ length: 7 }, (_, dayIndex) => {
+            const [dayStart, dayEnd] = getDayWindow(windowStart, dayIndex);
             const duration = dayEnd - dayStart;
             const date = new Date(dayStart);
+            const label = date.toLocaleDateString("en-US", { weekday: "short" }).toUpperCase();
             const segments = intervals.flatMap(interval => {
                 const start = Math.max(interval.start, dayStart);
                 const end = Math.min(interval.end, dayEnd);
@@ -153,13 +155,17 @@ export function CategoryTimeChart({
             days,
             legend,
             totalMs: [...totals.values()].reduce((sum, value) => sum + value, 0),
+            elapsedDays: Math.max(
+                1,
+                days.findIndex(day => day.currentPosition !== null) + 1,
+            ),
         };
     }, [sessions, activeSessionId, categories, now]);
 
     return (
-        <section className={styles.chart} aria-label="This week's activity by category">
+        <section className={styles.chart} aria-label="Activity by category over the last seven days">
             <div className={styles.sectionHeader}>
-                <span>THIS WEEK</span>
+                <span>LAST 7 DAYS</span>
                 <div className={styles.sectionLine} />
                 <span className={styles.total}>{totalMs > 0 ? formatHours(totalMs) : "—"}</span>
             </div>
@@ -229,7 +235,7 @@ export function CategoryTimeChart({
                 ))}
             </div>
 
-            {legend.length > 0 && (
+            {showLegend && legend.length > 0 && (
                 <div className={styles.legend}>
                     {legend.map(item => {
                         const isActive = item.isCategory
@@ -248,7 +254,10 @@ export function CategoryTimeChart({
                             >
                                 <span className={styles.legendSwatch} style={{ backgroundColor: item.color }} />
                                 <span className={styles.legendLabel}>{item.label}</span>
-                                <span className={styles.legendDuration}>{formatHours(item.ms)}</span>
+                                <span className={styles.legendDuration}>
+                                    <span>{formatHours(item.ms)}</span>
+                                    <span className={styles.legendAverage}>{formatHours(item.ms / elapsedDays)}/d</span>
+                                </span>
                             </button>
                         );
                     })}

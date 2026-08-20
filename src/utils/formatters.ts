@@ -52,6 +52,15 @@ export function formatDuration(durationMs: number): string {
     return `${seconds}s`
 }
 
+/** Format an approximate conversation span without false second precision. */
+export function formatApproxDuration(durationMs: number): string {
+    const minutes = Math.max(1, Math.round(durationMs / 60_000))
+    const hours = Math.floor(minutes / 60)
+    const remainingMinutes = minutes % 60
+
+    return hours > 0 ? `${hours}h ${remainingMinutes}m` : `${minutes}m`
+}
+
 /**
  * Generate a unique ID
  */
