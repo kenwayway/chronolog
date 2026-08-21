@@ -31,13 +31,13 @@ export const BUILTIN_CONTENT_TYPE_DEFINITIONS = {
     name: 'Mood',
     icon: '🫧',
     fields: [
-      { id: 'feeling', name: 'Feeling', type: 'dropdown', options: ['Happy', 'Excited', 'Calm', 'Tired', 'Anxious', 'Sad', 'Angry'], default: 'Calm' },
+      { id: 'feeling', name: 'Feeling', type: 'dropdown', options: ['Happy', 'Excited', 'Calm', 'Tired', 'Anxious', 'Sad', 'Angry', 'Horny'], default: 'Calm' },
       { id: 'energy', name: 'Energy', type: 'number', default: 3 },
       { id: 'trigger', name: 'Trigger', type: 'dropdown', options: ['Work', 'Health', 'Social', 'Money', 'Family', 'Sleep', 'Weather', 'Other'] },
     ],
     builtIn: true,
     order: 3,
-    version: 2,
+    version: 3,
   },
   workout: {
     id: 'workout',

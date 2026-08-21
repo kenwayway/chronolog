@@ -101,7 +101,7 @@ export interface BookmarkFields {
 
 /** Mood field values */
 export interface MoodFields {
-  feeling?: 'Happy' | 'Excited' | 'Calm' | 'Tired' | 'Anxious' | 'Sad' | 'Angry'
+  feeling?: 'Happy' | 'Excited' | 'Calm' | 'Tired' | 'Anxious' | 'Sad' | 'Angry' | 'Horny'
   energy?: number
   trigger?: 'Work' | 'Health' | 'Social' | 'Money' | 'Family' | 'Sleep' | 'Weather' | 'Other'
 }

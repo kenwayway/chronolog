@@ -269,6 +269,7 @@ export const MoodDisplay = memo(function MoodDisplay({ fieldValues }: MoodDispla
       'Sad': '😢',
       'Angry': '😠',
       'Excited': '🤩',
+      'Horny': '🥵',
     };
     return emojis[feeling || ''] || '😐';
   };

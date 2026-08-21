@@ -68,12 +68,12 @@ Content type detection rules:
 
 FieldValues by content type:
 - bookmark: {url: "extracted URL", title: "title from content", type: "Article"|"Video"|"Tool"|"Paper", status: "Inbox"}
-- mood: {feeling: "Happy"|"Calm"|"Tired"|"Anxious"|"Sad"|"Angry", energy: 1-5, trigger: "Work"|"Health"|"Social"|"Money"|"Family"|"Sleep"|"Weather"|"Other"}
+- mood: {feeling: "Happy"|"Calm"|"Tired"|"Anxious"|"Sad"|"Angry"|"Horny", energy: 1-5, trigger: "Work"|"Health"|"Social"|"Money"|"Family"|"Sleep"|"Weather"|"Other"}
 - workout: {workoutType: "Strength"|"Cardio"|"Flexibility"|"Mixed", place: "Home"|"In Building Gym"|"Outside Gym"}
 - vault: {title: "note title", obsidianUrl: "obsidian://open?vault=VaultName&file=NotePath"}
 - note: null
 
-Mood hints: 开心/excited/joyful = Happy, 平静/relaxed = Calm, 累/疲惫/sleepy = Tired, 焦虑/stressed/nervous = Anxious, 难过/down/upset = Sad, 生气/frustrated = Angry
+Mood hints: 开心/excited/joyful = Happy, 平静/relaxed = Calm, 累/疲惫/sleepy = Tired, 焦虑/stressed/nervous = Anxious, 难过/down/upset = Sad, 生气/frustrated = Angry, 性欲/发情/欲求不满/aroused/turned on/thirsty = Horny
 Trigger hints: 工作/office/deadline/meeting = Work, 身体/sick/headache = Health, 朋友/party/social = Social, 钱/broke/expensive = Money, 家/parents = Family, 睡眠/insomnia/晚睡 = Sleep, rain/hot/cold = Weather
 Energy hints: very tired/exhausted = 1, tired = 2, normal/okay = 3, energetic = 4, very energetic = 5
 Vault hints: if content contains "obsidian://" URL, use vault contentType. Extract note title from content or URL file parameter.
