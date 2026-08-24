@@ -96,7 +96,6 @@ export interface BookmarkFields {
   url?: string
   title?: string
   type?: 'Article' | 'Video' | 'Tool' | 'Paper'
-  status?: 'Inbox' | 'Reading' | 'Archived'
 }
 
 /** Mood field values */

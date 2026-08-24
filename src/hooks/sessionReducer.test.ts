@@ -196,4 +196,47 @@ describe('sessionReducer domain model', () => {
         expect(result.notes[0].fieldValues).toEqual({ workoutType: 'Strength' })
         expect(result.sessions[0].fieldValues).toEqual({ place: 'Home' })
     })
+
+    it('removes the retired bookmark status from loaded notes', () => {
+        const result = sessionReducer(initialState, {
+            type: ACTIONS.LOAD_STATE,
+            payload: {
+                notes: [note({
+                    contentType: 'bookmark',
+                    fieldValues: { url: 'https://example.com', type: 'Article', status: 'Inbox' },
+                })],
+            },
+        })
+
+        expect(result.notes[0].fieldValues).toEqual({
+            url: 'https://example.com',
+            type: 'Article',
+        })
+    })
+
+    it('drops fieldValues entirely when the retired field was all that was left', () => {
+        const result = sessionReducer(initialState, {
+            type: ACTIONS.LOAD_STATE,
+            payload: {
+                notes: [note({ contentType: 'bookmark', fieldValues: { status: 'Reading' } })],
+            },
+        })
+
+        expect(result.notes[0].fieldValues).toBeUndefined()
+    })
+
+    it('leaves other content types untouched', () => {
+        const result = sessionReducer(initialState, {
+            type: ACTIONS.LOAD_STATE,
+            payload: {
+                notes: [note({
+                    contentType: 'mood',
+                    fieldValues: { feeling: 'Calm', status: 'Inbox' },
+                })],
+            },
+        })
+
+        // `status` is only retired on bookmark; a custom type may still use the name.
+        expect(result.notes[0].fieldValues).toEqual({ feeling: 'Calm', status: 'Inbox' })
+    })
 })

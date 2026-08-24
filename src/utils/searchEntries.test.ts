@@ -12,7 +12,7 @@ const entries: TimelineItem[] = [
         category: 'craft',
         contentType: 'bookmark',
         tags: ['frontend'],
-        fieldValues: { title: 'React documentation', status: 'Reading' },
+        fieldValues: { title: 'React documentation reading list', type: 'Article' },
     },
     {
         id: 'newer',

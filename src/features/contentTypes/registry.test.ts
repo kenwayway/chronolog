@@ -22,7 +22,6 @@ describe('content type registry', () => {
   it('derives initial field values from schema defaults', () => {
     expect(getContentTypeDefaultValues('bookmark')).toEqual({
       type: 'Article',
-      status: 'Inbox',
     })
     expect(getContentTypeDefaultValues('mood')).toEqual({
       feeling: 'Calm',

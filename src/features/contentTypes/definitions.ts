@@ -20,11 +20,13 @@ export const BUILTIN_CONTENT_TYPE_DEFINITIONS = {
       { id: 'url', name: 'URL', type: 'text' },
       { id: 'title', name: 'Title', type: 'text' },
       { id: 'type', name: 'Type', type: 'dropdown', options: ['Article', 'Video', 'Tool', 'Paper'], default: 'Article' },
-      { id: 'status', name: 'Status', type: 'dropdown', options: ['Inbox', 'Reading', 'Archived'], default: 'Inbox' },
+      // `status` (Inbox/Reading/Archived) retired: it defaulted to Inbox and was
+      // never moved off it, so every clipping quietly became an unread debt.
+      // Clipping something is not a promise to read it.
     ],
     builtIn: true,
     order: 2,
-    version: 2,
+    version: 3,
   },
   mood: {
     id: 'mood',
