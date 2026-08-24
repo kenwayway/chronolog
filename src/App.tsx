@@ -185,6 +185,11 @@ function MainView({
         ui.stopCommentEdit();
     }, [actions, ui]);
 
+    const handleSaveNewComment = useCallback((target: TimelineItem, content: string) => {
+        actions.addComment(target.entityId, content);
+        ui.stopCommentCreate();
+    }, [actions, ui]);
+
     const filteredEntries = useMemo(() => {
         const hasFilters = ui.categoryFilter.length > 0
             || ui.tagFilter.length > 0
@@ -244,6 +249,9 @@ function MainView({
                         onEditComment={comment => ui.startCommentEdit(comment.id)}
                         onSaveComment={handleSaveComment}
                         onCancelCommentEdit={ui.stopCommentEdit}
+                        creatingCommentTargetId={ui.creatingCommentTargetId}
+                        onSaveNewComment={handleSaveNewComment}
+                        onCancelNewComment={ui.stopCommentCreate}
                         categoryFilter={ui.categoryFilter}
                         isFilterMode={ui.categoryFilter.length > 0 || ui.tagFilter.length > 0 || ui.contentTypeFilter.length > 0}
                         filterKey={`${ui.categoryFilter.join(',')}|${ui.tagFilter.join(',')}|${ui.contentTypeFilter.join(',')}`}
@@ -299,6 +307,7 @@ function MainView({
                 onDelete={handlers.handleDeleteEntry}
                 onCopy={handlers.handleCopyEntry}
                 onLink={followUp.handleFollowUp}
+                onComment={entry => ui.startCommentCreate(entry.entityId)}
             />
 
             <EditModal

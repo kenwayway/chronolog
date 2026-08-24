@@ -239,6 +239,12 @@ export interface NotePayload {
   tags?: string[]
 }
 
+export interface CommentPayload {
+  targetId: string
+  content: string
+  timestamp?: number
+}
+
 export interface LogOffPayload {
   content?: string
   timestamp?: number
@@ -304,6 +310,7 @@ export type SessionAction =
   | { type: 'LOG_IN'; payload: LogInPayload }
   | { type: 'SWITCH'; payload: SwitchPayload }
   | { type: 'NOTE'; payload: NotePayload }
+  | { type: 'COMMENT'; payload: CommentPayload }
   | { type: 'LOG_OFF'; payload?: LogOffPayload }
   | { type: 'DELETE_NOTE'; payload: DeleteNotePayload }
   | { type: 'DELETE_SESSION'; payload: DeleteSessionPayload }
@@ -324,6 +331,7 @@ export interface SessionActions {
   logIn: (content: string, options?: { timestamp?: number; contentType?: string; fieldValues?: Record<string, unknown>; category?: CategoryId; tags?: string[] }) => void
   switchSession: (content: string, options?: { contentType?: string; fieldValues?: Record<string, unknown>; category?: CategoryId; tags?: string[] }) => void
   addNote: (content: string, options?: { timestamp?: number; contentType?: string; fieldValues?: Record<string, unknown>; category?: CategoryId; tags?: string[] }) => void
+  addComment: (targetId: string, content: string) => void
   logOff: (content?: string, timestamp?: number) => void
   deleteNote: (noteId: string) => void
   deleteSession: (sessionId: string) => void

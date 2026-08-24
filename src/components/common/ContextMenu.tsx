@@ -17,6 +17,7 @@ interface ContextMenuProps {
     onDelete: (entry: TimelineItem) => void;
     onCopy: (entry: TimelineItem) => void;
     onLink?: (entry: TimelineItem) => void;
+    onComment?: (entry: TimelineItem) => void;
 }
 
 export function ContextMenu({
@@ -28,6 +29,7 @@ export function ContextMenu({
     onDelete,
     onCopy,
     onLink,
+    onComment,
 }: ContextMenuProps) {
     const menuRef = useRef<HTMLDivElement>(null);
 
@@ -67,9 +69,14 @@ export function ContextMenu({
         onLink?.(entry);
         onClose();
     };
+    const handleComment = () => {
+        onComment?.(entry);
+        onClose();
+    };
     // Following up writes a bidirectional link. A comment's single link is its
     // anchor, not a cross-reference, so it does not take part.
     const canFollowUp = !isZaddyComment(entry);
+    const canComment = entry.origin !== 'zaddy' && entry.kind !== 'session-end';
     return (
         <div
             ref={menuRef}
@@ -86,6 +93,12 @@ export function ContextMenu({
             {canFollowUp && (
                 <button className={styles.item} onClick={handleLink}>
                     ↪ FOLLOW UP
+                </button>
+            )}
+
+            {canComment && (
+                <button className={styles.item} onClick={handleComment}>
+                    COMMENT
                 </button>
             )}
 

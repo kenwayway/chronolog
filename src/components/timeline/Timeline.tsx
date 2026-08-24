@@ -32,6 +32,9 @@ interface TimelineProps {
   onEditComment?: (comment: TimelineItem) => void;
   onSaveComment?: (comment: TimelineItem, content: string) => void;
   onCancelCommentEdit?: () => void;
+  creatingCommentTargetId?: string | null;
+  onSaveNewComment?: (target: TimelineItem, content: string) => void;
+  onCancelNewComment?: () => void;
   categoryFilter?: CategoryId[];
   isFilterMode?: boolean;
   filterKey?: string;
@@ -46,6 +49,9 @@ export function Timeline({
   onEditComment,
   onSaveComment,
   onCancelCommentEdit,
+  creatingCommentTargetId,
+  onSaveNewComment,
+  onCancelNewComment,
   categoryFilter = [],
   isFilterMode: isFilterModeProp,
   filterKey = '',
@@ -358,6 +364,10 @@ export function Timeline({
             onEditComment,
             onSaveComment,
             onCancelCommentEdit,
+            isCreatingComment:
+              entry.kind !== 'session-end' && creatingCommentTargetId === entry.entityId,
+            onSaveNewComment,
+            onCancelNewComment,
             annotationMode: entry.origin === 'zaddy',
             annotationEndContent: annotationEndContent.get(entry.id),
             annotationGroupCount: annotationControl?.annotations.length,

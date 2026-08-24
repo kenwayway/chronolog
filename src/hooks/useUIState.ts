@@ -60,6 +60,9 @@ export interface UIState {
     editingCommentId: string | null
     startCommentEdit: (commentId: string) => void
     stopCommentEdit: () => void
+    creatingCommentTargetId: string | null
+    startCommentCreate: (targetId: string) => void
+    stopCommentCreate: () => void
 
     // Navigation
     selectedDate: Date | null
@@ -127,13 +130,24 @@ export function useUIState(): UIState {
     // its single linkedItems anchor, so it is edited in place — as content and
     // nothing else — rather than through the modal, which could rewrite both.
     const [editingCommentId, setEditingCommentId] = useState<string | null>(null)
+    const [creatingCommentTargetId, setCreatingCommentTargetId] = useState<string | null>(null)
 
     const startCommentEdit = useCallback((commentId: string) => {
+        setCreatingCommentTargetId(null)
         setEditingCommentId(commentId)
     }, [])
 
     const stopCommentEdit = useCallback(() => {
         setEditingCommentId(null)
+    }, [])
+
+    const startCommentCreate = useCallback((targetId: string) => {
+        setEditingCommentId(null)
+        setCreatingCommentTargetId(targetId)
+    }, [])
+
+    const stopCommentCreate = useCallback(() => {
+        setCreatingCommentTargetId(null)
     }, [])
 
     // Navigate to an entry
@@ -185,6 +199,7 @@ export function useUIState(): UIState {
         contextMenu, handleContextMenu, closeContextMenu,
         editModal, openEditModal, closeEditModal,
         editingCommentId, startCommentEdit, stopCommentEdit,
+        creatingCommentTargetId, startCommentCreate, stopCommentCreate,
         selectedDate, setSelectedDate,
         categoryFilter, setCategoryFilter,
         tagFilter, setTagFilter,
@@ -195,6 +210,7 @@ export function useUIState(): UIState {
         contextMenu, handleContextMenu, closeContextMenu,
         editModal, openEditModal, closeEditModal,
         editingCommentId, startCommentEdit, stopCommentEdit,
+        creatingCommentTargetId, startCommentCreate, stopCommentCreate,
         selectedDate, categoryFilter, tagFilter, contentTypeFilter,
         navigateToEntry,
     ])

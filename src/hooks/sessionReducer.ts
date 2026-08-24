@@ -1,9 +1,11 @@
 import { ACTIONS, BUILTIN_CONTENT_TYPES, SESSION_STATUS } from '@/utils/constants'
 import { generateId } from '@/utils/formatters'
 import { parseTags } from '@/utils/tagParser'
+import { isZaddyComment, ZADDY_COMMENT_CONTENT_TYPE } from '@/utils/zaddyComment'
 import { sanitizeContentTypeFieldValues, sanitizeContentTypedEntity } from '@/features/contentTypes/sanitize'
 import type {
     AddMediaItemPayload,
+    CommentPayload,
     ContentType,
     DeleteMediaItemPayload,
     ImportDataPayload,
@@ -103,6 +105,24 @@ function handleNote(state: SessionState, payload: NotePayload): SessionState {
             : (parsedTags.length > 0 ? parsedTags : undefined),
     }
     return { ...state, notes: [...state.notes, note] }
+}
+
+function handleComment(state: SessionState, payload: CommentPayload): SessionState {
+    const content = payload.content.trim()
+    const target = state.notes.find(note => note.id === payload.targetId)
+        ?? state.sessions.find(session => session.id === payload.targetId)
+
+    if (!content || !target || isZaddyComment(target)) return state
+
+    const comment: Note = {
+        id: generateId(),
+        content,
+        timestamp: payload.timestamp ?? Date.now(),
+        contentType: ZADDY_COMMENT_CONTENT_TYPE,
+        linkedItems: [payload.targetId],
+        origin: 'zaddy',
+    }
+    return { ...state, notes: [...state.notes, comment] }
 }
 
 function handleLogOff(state: SessionState, payload?: LogOffPayload): SessionState {
@@ -274,6 +294,7 @@ export function sessionReducer(state: SessionState, action: SessionAction): Sess
         case ACTIONS.LOG_IN: return handleLogIn(state, action.payload)
         case ACTIONS.SWITCH: return handleSwitch(state, action.payload)
         case ACTIONS.NOTE: return handleNote(state, action.payload)
+        case ACTIONS.COMMENT: return handleComment(state, action.payload)
         case ACTIONS.LOG_OFF: return handleLogOff(state, action.payload)
         case ACTIONS.DELETE_NOTE: return handleDeleteNote(state, action.payload.noteId)
         case ACTIONS.DELETE_SESSION: return handleDeleteSession(state, action.payload.sessionId)

@@ -26,6 +26,9 @@ interface JournalEntryProps {
     onEditComment?: (comment: TimelineItem) => void;
     onSaveComment?: (comment: TimelineItem, content: string) => void;
     onCancelCommentEdit?: () => void;
+    isCreatingComment?: boolean;
+    onSaveNewComment?: (target: TimelineItem, content: string) => void;
+    onCancelNewComment?: () => void;
     annotationMode?: boolean;
     annotationEndContent?: string;
     annotationGroupCount?: number;
@@ -63,6 +66,9 @@ export const JournalEntry = memo(function JournalEntry({
     onEditComment,
     onSaveComment,
     onCancelCommentEdit,
+    isCreatingComment = false,
+    onSaveNewComment,
+    onCancelNewComment,
     annotationMode = false,
     annotationEndContent,
     annotationGroupCount,
@@ -293,9 +299,9 @@ export const JournalEntry = memo(function JournalEntry({
                         </div>
                     )}
 
-                    {comments && comments.length > 0 && (
+                    {((comments?.length ?? 0) > 0 || isCreatingComment) && (
                         <div className={styles.commentList}>
-                            {comments.map(comment => (
+                            {comments?.map(comment => (
                                 <div
                                     key={comment.id}
                                     className={styles.comment}
@@ -323,6 +329,21 @@ export const JournalEntry = memo(function JournalEntry({
                                     )}
                                 </div>
                             ))}
+                            {isCreatingComment && (
+                                <div className={styles.comment}>
+                                    <div className={styles.commentMeta}>
+                                        <MessageSquareQuote size={9} strokeWidth={1.75} aria-hidden="true" />
+                                        <span>ZADDY</span>
+                                        <span className={styles.commentDate}>NOW</span>
+                                    </div>
+                                    <CommentEditor
+                                        initialContent=""
+                                        onSave={content => onSaveNewComment?.(entry, content)}
+                                        onCancel={() => onCancelNewComment?.()}
+                                        className={styles.commentEditor}
+                                    />
+                                </div>
+                            )}
                         </div>
                     )}
 

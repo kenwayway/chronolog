@@ -113,6 +113,54 @@ describe('sessionReducer domain model', () => {
         })
     })
 
+    it('creates an entry-anchored zaddy comment without touching its target or active session', () => {
+        vi.spyOn(Date, 'now').mockReturnValue(175)
+        const target = note()
+        const base = stateWith({
+            status: 'STREAMING',
+            activeSessionId: 'session-1',
+            sessions: [session()],
+            notes: [target],
+        })
+        const result = sessionReducer(base, {
+            type: ACTIONS.COMMENT,
+            payload: { targetId: target.id, content: '  I see you.  ' },
+        })
+
+        expect(result.notes[0]).toBe(target)
+        expect(result.notes[1]).toMatchObject({
+            content: 'I see you.',
+            timestamp: 175,
+            contentType: 'zaddy-comment',
+            linkedItems: [target.id],
+            origin: 'zaddy',
+        })
+        expect(result.notes[1].sessionId).toBeUndefined()
+        expect(result.sessions[0]).toBe(base.sessions[0])
+    })
+
+    it('does not create a comment for an invalid target or another comment', () => {
+        const existingComment = note({
+            id: 'comment-1',
+            contentType: 'zaddy-comment',
+            linkedItems: ['note-1'],
+            origin: 'zaddy',
+        })
+        const base = stateWith({ notes: [existingComment] })
+
+        const missing = sessionReducer(base, {
+            type: ACTIONS.COMMENT,
+            payload: { targetId: 'missing', content: 'nope' },
+        })
+        const nested = sessionReducer(base, {
+            type: ACTIONS.COMMENT,
+            payload: { targetId: existingComment.id, content: 'also nope' },
+        })
+
+        expect(missing).toBe(base)
+        expect(nested).toBe(base)
+    })
+
     it('updates notes and session boundaries through separate actions', () => {
         const base = stateWith({ notes: [note()], sessions: [session()] })
         const withNote = sessionReducer(base, {

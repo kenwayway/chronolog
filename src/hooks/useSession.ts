@@ -77,6 +77,13 @@ export function useSession(): UseSessionReturn {
     })
   }, [])
 
+  const addComment = useCallback((targetId: string, content: string) => {
+    dispatch({
+      type: ACTIONS.COMMENT,
+      payload: { targetId, content }
+    })
+  }, [])
+
   const logOff = useCallback((content: string = '', timestamp?: number) => {
     dispatch({ type: ACTIONS.LOG_OFF, payload: { content, timestamp } })
   }, [])
@@ -132,6 +139,7 @@ export function useSession(): UseSessionReturn {
     logIn,
     switchSession,
     addNote,
+    addComment,
     logOff,
     deleteNote,
     deleteSession,
@@ -142,7 +150,7 @@ export function useSession(): UseSessionReturn {
     updateMediaItem,
     deleteMediaItem
   }), [
-    logIn, switchSession, addNote, logOff, deleteNote, deleteSession,
+    logIn, switchSession, addNote, addComment, logOff, deleteNote, deleteSession,
     updateNote, updateSession, importData,
     addMediaItem, updateMediaItem, deleteMediaItem
   ])
