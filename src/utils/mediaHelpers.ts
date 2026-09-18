@@ -1,6 +1,6 @@
 import React from 'react';
-import { Book, Film, Gamepad2, Tv, Clapperboard, Mic } from 'lucide-react';
-import type { MediaType, MediaStatus, MediaMetadata } from '@/types';
+import { Book, Film, Gamepad2, Tv, Clapperboard, Mic, CalendarCheck, CalendarOff } from 'lucide-react';
+import type { MediaType, MediaStatus, MediaMetadata, MediaItem, TimelineItem } from '@/types';
 
 export const MEDIA_TYPES: MediaType[] = ['Book', 'Movie', 'Game', 'TV', 'Anime', 'Podcast'];
 export const MEDIA_STATUSES: MediaStatus[] = ['Planned', 'In Progress', 'Completed', 'Dropped', 'On Hold'];
@@ -65,4 +65,128 @@ export function getMetadataFields(type: MediaType): { key: keyof MediaMetadata; 
     ];
     default: return [];
   }
+}
+
+// ============================================
+// Grouping
+// ============================================
+
+/** How the library page buckets its cards */
+export type LibraryGroupMode = 'type' | 'month';
+
+/** One rendered section of the library grid */
+export interface LibrarySection {
+  key: string;
+  label: string;
+  icon: React.ReactNode;
+  items: MediaItem[];
+}
+
+/** Bucket key for items with no dateFinished — sorts last, never a real month */
+const UNDATED_KEY = '__undated';
+
+const MONTH_NAMES = [
+  'JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE',
+  'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER',
+];
+
+/**
+ * Month bucket for an item, derived from dateFinished ("YYYY-MM-DD" → "YYYY-MM").
+ * Sliced as a string rather than parsed as a Date: `new Date('2026-09-01')` is
+ * UTC midnight, which lands in the previous month for anyone west of Greenwich.
+ */
+export function getMonthKey(item: MediaItem): string {
+  const d = item.dateFinished;
+  if (!d || !/^\d{4}-\d{2}/.test(d)) return UNDATED_KEY;
+  return d.slice(0, 7);
+}
+
+/** "2026-09" → "SEPTEMBER 2026"; the undated bucket gets its own label */
+export function getMonthLabel(key: string): string {
+  if (key === UNDATED_KEY) return 'NO FINISH DATE';
+  const [year, month] = key.split('-');
+  const name = MONTH_NAMES[Number(month) - 1];
+  return name ? `${name} ${year}` : key;
+}
+
+/** Group by media type, in MEDIA_TYPES order, newest-added first within a type */
+export function groupByType(items: MediaItem[]): LibrarySection[] {
+  const sections: LibrarySection[] = [];
+  for (const type of MEDIA_TYPES) {
+    const group = items.filter(m => m.mediaType === type);
+    if (group.length === 0) continue;
+    sections.push({
+      key: type,
+      label: getMediaLabel(type),
+      icon: getMediaIcon(type, 12),
+      items: group.sort((a, b) => b.createdAt - a.createdAt),
+    });
+  }
+  return sections;
+}
+
+/**
+ * Group by the month an item was finished, newest month first, with everything
+ * missing a dateFinished collected into a trailing bucket.
+ */
+export function groupByMonth(items: MediaItem[]): LibrarySection[] {
+  const buckets = new Map<string, MediaItem[]>();
+  for (const item of items) {
+    const key = getMonthKey(item);
+    const bucket = buckets.get(key);
+    if (bucket) bucket.push(item);
+    else buckets.set(key, [item]);
+  }
+
+  return [...buckets.keys()]
+    .sort((a, b) => {
+      // The undated bucket always trails the real months
+      if (a === UNDATED_KEY) return 1;
+      if (b === UNDATED_KEY) return -1;
+      return b.localeCompare(a);
+    })
+    .map(key => ({
+      key,
+      label: getMonthLabel(key),
+      icon: React.createElement(key === UNDATED_KEY ? CalendarOff : CalendarCheck, { size: 12, strokeWidth: 2 }),
+      items: buckets.get(key)!.sort((a, b) => {
+        const byDate = (b.dateFinished ?? '').localeCompare(a.dateFinished ?? '');
+        return byDate !== 0 ? byDate : b.createdAt - a.createdAt;
+      }),
+    }));
+}
+
+// ============================================
+// Reverse links: timeline entries → media item
+// ============================================
+
+/** Attachment lines appended by `appendAttachmentLines` — noise in a preview */
+const ATTACHMENT_LINE_RE = /^(📍|🖼[︎️]?)\s/;
+
+/**
+ * Timeline entries that reference this media item, newest first.
+ *
+ * Matches on `fieldValues.mediaId` rather than on contentType: a custom
+ * content type carrying a media-select field links up just the same.
+ */
+export function findLinkedEntries(entries: TimelineItem[], mediaId: string): TimelineItem[] {
+  if (!mediaId) return [];
+  return entries
+    .filter(entry => {
+      const values = entry.fieldValues;
+      if (!values || !('mediaId' in values)) return false;
+      return (values as { mediaId?: unknown }).mediaId === mediaId;
+    })
+    .sort((a, b) => b.timestamp - a.timestamp);
+}
+
+/** One-line preview of an entry's text, with location/image lines dropped */
+export function getEntryPreview(entry: TimelineItem): string {
+  const text = (entry.content ?? '')
+    .split('\n')
+    .filter(line => !ATTACHMENT_LINE_RE.test(line.trim()))
+    .join(' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return text || '(no text)';
 }

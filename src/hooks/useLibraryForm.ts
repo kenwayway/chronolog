@@ -3,7 +3,8 @@ import { useSessionContext } from '@/contexts/SessionContext';
 import { useCloudSyncContext } from '@/contexts/CloudSyncContext';
 import type { MediaItem, MediaType, MediaStatus, MediaMetadata } from '@/types';
 import { generateId } from '@/utils/formatters';
-import { MEDIA_TYPES, getMetadataFields } from '@/utils/mediaHelpers';
+import { getMetadataFields, groupByType, groupByMonth } from '@/utils/mediaHelpers';
+import type { LibraryGroupMode } from '@/utils/mediaHelpers';
 
 export function useLibraryForm() {
   const { state: { mediaItems }, actions: { addMediaItem, updateMediaItem, deleteMediaItem } } = useSessionContext();
@@ -15,6 +16,7 @@ export function useLibraryForm() {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [groupMode, setGroupMode] = useState<LibraryGroupMode>('type');
 
   // Edit/create form state
   const [formTitle, setFormTitle] = useState('');
@@ -35,17 +37,11 @@ export function useLibraryForm() {
       item.title.toLowerCase().includes(searchQuery.toLowerCase())
     ), [mediaItems, searchQuery]);
 
-  // Group by type
-  const grouped = useMemo(() => {
-    const groups: Record<string, MediaItem[]> = {};
-    for (const type of MEDIA_TYPES) {
-      const items = filtered.filter(m => m.mediaType === type);
-      if (items.length > 0) {
-        groups[type] = items.sort((a, b) => b.createdAt - a.createdAt);
-      }
-    }
-    return groups;
-  }, [filtered]);
+  // Group into rendered sections — by media type, or by the month finished
+  const sections = useMemo(
+    () => (groupMode === 'month' ? groupByMonth(filtered) : groupByType(filtered)),
+    [filtered, groupMode]
+  );
 
   const resetForm = useCallback(() => {
     setFormTitle('');
@@ -175,10 +171,11 @@ export function useLibraryForm() {
     // Data
     mediaItems,
     filtered,
-    grouped,
+    sections,
 
     // UI state
     searchQuery, setSearchQuery,
+    groupMode, setGroupMode,
     editingId,
     deleteConfirmId, setDeleteConfirmId,
     isCreating, setIsCreating,

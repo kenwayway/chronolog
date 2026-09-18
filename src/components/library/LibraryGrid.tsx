@@ -1,21 +1,18 @@
 import React from 'react';
-import { getMediaIcon, getMediaLabel } from '@/utils/mediaHelpers';
-import type { MediaItem } from '@/types';
+import type { LibrarySection } from '@/utils/mediaHelpers';
 import { MediaCard } from './MediaCard';
 import { MediaForm } from './MediaForm';
 import type { UseLibraryFormReturn } from '@/hooks/useLibraryForm';
 import styles from './LibraryPage.module.css';
 
 interface LibraryGridProps {
-  grouped: Record<string, MediaItem[]>;
+  sections: LibrarySection[];
   totalCount: number;
   form: UseLibraryFormReturn;
 }
 
-export function LibraryGrid({ grouped, totalCount, form }: LibraryGridProps) {
-  const entries = Object.entries(grouped);
-
-  if (entries.length === 0) {
+export function LibraryGrid({ sections, totalCount, form }: LibraryGridProps) {
+  if (sections.length === 0) {
     return (
       <div className={styles.content}>
         <div className={styles.emptyState}>
@@ -27,19 +24,19 @@ export function LibraryGrid({ grouped, totalCount, form }: LibraryGridProps) {
 
   return (
     <div className={styles.content}>
-      {entries.map(([type, items]) => (
-        <div key={type} className={styles.sectionGroup}>
+      {sections.map(section => (
+        <div key={section.key} className={styles.sectionGroup}>
           {/* Section header */}
           <div className={styles.sectionHeader}>
-            {getMediaIcon(type, 12)}
-            <span>{getMediaLabel(type)}</span>
-            <span className={styles.sectionCount}>&middot; {items.length}</span>
+            {section.icon}
+            <span>{section.label}</span>
+            <span className={styles.sectionCount}>&middot; {section.items.length}</span>
             <div className={styles.sectionLine} />
           </div>
 
           {/* Cards grid */}
           <div className={styles.cardsGrid}>
-            {items.map(item => {
+            {section.items.map(item => {
               const isEditingThis = form.editingId === item.id && form.expandedId !== item.id;
               return (
                 <React.Fragment key={item.id}>

@@ -1,6 +1,7 @@
 import React from 'react';
-import { ArrowLeft, Search, X, Plus } from 'lucide-react';
+import { ArrowLeft, Search, X, Plus, LayoutGrid, CalendarDays } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
+import type { LibraryGroupMode } from '@/utils/mediaHelpers';
 import styles from './LibraryPage.module.css';
 
 interface LibraryHeaderProps {
@@ -9,9 +10,11 @@ interface LibraryHeaderProps {
   onSearchChange: (q: string) => void;
   onBack: () => void;
   onAdd: () => void;
+  groupMode: LibraryGroupMode;
+  onGroupModeChange: (mode: LibraryGroupMode) => void;
 }
 
-export function LibraryHeader({ totalCount, searchQuery, onSearchChange, onBack, onAdd }: LibraryHeaderProps) {
+export function LibraryHeader({ totalCount, searchQuery, onSearchChange, onBack, onAdd, groupMode, onGroupModeChange }: LibraryHeaderProps) {
   const { tokens } = useTheme();
 
   return (
@@ -25,6 +28,26 @@ export function LibraryHeader({ totalCount, searchQuery, onSearchChange, onBack,
           <span className={styles.headerLabel}>LIBRARY</span>
           <span className={styles.headerCount}>&middot; {totalCount}</span>
         </div>
+      </div>
+      <div className={styles.groupToggle} role="group" aria-label="Group by">
+        <button
+          onClick={() => onGroupModeChange('type')}
+          className={`${styles.groupToggleBtn} ${groupMode === 'type' ? styles.groupToggleBtnActive : ''}`}
+          aria-pressed={groupMode === 'type'}
+          title="Group by type"
+        >
+          <LayoutGrid size={12} />
+          TYPE
+        </button>
+        <button
+          onClick={() => onGroupModeChange('month')}
+          className={`${styles.groupToggleBtn} ${groupMode === 'month' ? styles.groupToggleBtnActive : ''}`}
+          aria-pressed={groupMode === 'month'}
+          title="Group by month finished"
+        >
+          <CalendarDays size={12} />
+          MONTH
+        </button>
       </div>
       <div className={styles.headerSearch}>
         <Search size={13} className={styles.headerSearchIcon} />

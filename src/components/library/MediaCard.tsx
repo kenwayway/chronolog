@@ -1,5 +1,6 @@
 import React, { memo } from 'react';
 import { Image, Star } from 'lucide-react';
+import { thumbUrl } from '@/utils/imageExtractor';
 import type { MediaItem } from '@/types';
 import styles from './LibraryPage.module.css';
 
@@ -18,7 +19,19 @@ export const MediaCard = memo(function MediaCard({ item, isDeleting, onClick }: 
       {/* Cover image */}
       <div className={styles.cardCover}>
         {item.coverUrl ? (
-          <img src={item.coverUrl} alt={item.title} className={styles.cardCoverImg} />
+          <img
+            src={thumbUrl(item.coverUrl)}
+            alt={item.title}
+            className={styles.cardCoverImg}
+            loading="lazy"
+            decoding="async"
+            onError={(e) => {
+              // Old uploads have no .thumb object — fall back to the
+              // original (once, no retry loop)
+              const img = e.currentTarget;
+              if (img.src.endsWith('.thumb')) img.src = item.coverUrl!;
+            }}
+          />
         ) : (
           <div className={styles.cardCoverPlaceholder}>
             <Image size={20} />

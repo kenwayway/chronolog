@@ -2,6 +2,7 @@ export { LibraryHeader } from './LibraryHeader';
 export { LibraryGrid } from './LibraryGrid';
 export { MediaCard } from './MediaCard';
 export { MediaDetailView } from './MediaDetailView';
+export { LinkedEntries } from './LinkedEntries';
 export { MediaEditForm } from './MediaEditForm';
 export { MediaForm } from './MediaForm';
 export { CoverUpload } from './CoverUpload';

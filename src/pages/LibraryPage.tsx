@@ -12,7 +12,8 @@ import {
 import styles from '@/components/library/LibraryPage.module.css';
 
 /**
- * LibraryPage — standalone page showing all media items as cards grouped by type
+ * LibraryPage — standalone page showing all media items as cards, grouped by
+ * media type or by the month they were finished
  */
 export function LibraryPage() {
   const navigate = useNavigate();
@@ -31,6 +32,8 @@ export function LibraryPage() {
         onSearchChange={form.setSearchQuery}
         onBack={() => navigate('/')}
         onAdd={form.startCreate}
+        groupMode={form.groupMode}
+        onGroupModeChange={form.setGroupMode}
       />
 
       {/* Create form */}
@@ -51,9 +54,9 @@ export function LibraryPage() {
         </div>
       )}
 
-      {/* Content: grouped by type */}
+      {/* Content: grouped by type or by month finished */}
       <LibraryGrid
-        grouped={form.grouped}
+        sections={form.sections}
         totalCount={form.mediaItems.length}
         form={form}
       />

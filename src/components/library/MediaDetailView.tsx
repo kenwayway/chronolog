@@ -4,6 +4,7 @@ import { getMediaIcon } from '@/utils/mediaHelpers';
 import type { MediaItem } from '@/types';
 import { MetadataTable } from './MetadataTable';
 import { MediaEditForm } from './MediaEditForm';
+import { LinkedEntries } from './LinkedEntries';
 import type { UseLibraryFormReturn } from '@/hooks/useLibraryForm';
 import styles from './MediaDetailView.module.css';
 
@@ -129,6 +130,10 @@ export function MediaDetailView({ item, form }: MediaDetailViewProps) {
                   )}
                 </div>
               </div>
+              <LinkedEntries
+                mediaId={item.id}
+                onNavigateAway={() => form.setExpandedId(null)}
+              />
             </div>
           </div>
         )}
