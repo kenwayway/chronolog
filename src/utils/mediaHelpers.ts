@@ -163,8 +163,6 @@ export function groupByMonth(items: MediaItem[]): LibrarySection[] {
 /** One row in a media item's LOGS, oldest first */
 export interface LinkedEntry {
   entry: TimelineItem;
-  /** Written inside a linked session (a note during it, or its end) */
-  nested: boolean;
   /** On a linked session start: how long the session ran, once it has ended */
   durationMs?: number;
 }
@@ -198,7 +196,7 @@ export function findLinkedEntries(entries: TimelineItem[], mediaId: string): Lin
   );
   const directIds = new Set(direct.map(e => e.id));
 
-  const nested = entries.filter(entry => {
+  const duringSessions = entries.filter(entry => {
     if (directIds.has(entry.id)) return false;
     if (entry.contentType === 'zaddy-comment') return false;
     if (entry.kind === 'session-end') {
@@ -212,10 +210,9 @@ export function findLinkedEntries(entries: TimelineItem[], mediaId: string): Lin
       const end = entry.kind === 'session-start' ? endAt.get(entry.entityId) : undefined;
       return {
         entry,
-        nested: false,
         durationMs: end !== undefined ? end - entry.timestamp : undefined,
       };
     }),
-    ...nested.map(entry => ({ entry, nested: true })),
+    ...duringSessions.map(entry => ({ entry })),
   ].sort((a, b) => a.entry.timestamp - b.entry.timestamp);
 }

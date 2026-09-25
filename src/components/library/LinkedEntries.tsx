@@ -50,16 +50,10 @@ export function LinkedEntries({ mediaId, onNavigateAway }: LinkedEntriesProps) {
         <span className={styles.notesEmpty}>No logs reference this yet.</span>
       ) : (
         <ul className={styles.linkedList}>
-          {linked.map(({ entry, nested, durationMs }) => (
-            <li
-              key={entry.id}
-              className={`${styles.linkedEntry} ${nested ? styles.linkedNested : ''}`}
-            >
+          {linked.map(({ entry, durationMs }) => (
+            <li key={entry.id} className={styles.linkedEntry}>
               <div className={styles.linkedEntryHead}>
                 <span className={styles.linkedWhen}>
-                  {entry.kind === 'session-end' && (
-                    <span className={styles.linkedEndMark} aria-hidden="true">↳ </span>
-                  )}
                   {formatDate(entry.timestamp)} {formatTime(entry.timestamp)}
                   {durationMs !== undefined && (
                     <span className={styles.linkedDuration}>

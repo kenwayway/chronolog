@@ -355,11 +355,6 @@
   border-left: 1px solid var(--border-subtle);
 }
 
-/* Written inside a linked session — sits under that session's start */
-.linkedNested {
-  margin-left: var(--space-4);
-}
-
 .linkedEntryHead {
   display: flex;
   align-items: center;
@@ -376,10 +371,6 @@
 
 .linkedDuration {
   color: var(--text-dim);
-}
-
-.linkedEndMark {
-  color: var(--accent);
 }
 
 .linkedJump {

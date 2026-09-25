@@ -114,11 +114,7 @@ describe('findLinkedEntries', () => {
         const elsewhere = { id: 'n2', entityId: 'n2', kind: 'note' as const, content: 'unrelated', timestamp: 170, sessionId: 's9' }
         const end = { id: 'session:s1:end', entityId: 's1', kind: 'session-end' as const, content: 'Loved the ending', timestamp: 200, sessionId: 's1' }
         const linked = findLinkedEntries([end, elsewhere, comment, during, start], 'm1')
-        expect(linked.map(l => [l.entry.id, l.nested])).toEqual([
-            ['session:s1:start', false],
-            ['n1', true],
-            ['session:s1:end', true],
-        ])
+        expect(linked.map(l => l.entry.id)).toEqual(['session:s1:start', 'n1', 'session:s1:end'])
         expect(linked[0].durationMs).toBe(100)
     })
 
