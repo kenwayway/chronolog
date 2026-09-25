@@ -180,29 +180,36 @@ function referencesMedia(entry: TimelineItem, mediaId: string): boolean {
  * custom content type carrying a media-select field links up just the same.
  *
  * Only session starts carry fieldValues, so a linked session also pulls in
- * what was written while it ran — the notes logged during it and its closing
- * text, which is usually where the verdict lives. Zaddy comments stay out:
- * they hang off an entry, they are not logs of their own.
+ * what was written while it ran — its closing text, which is usually where
+ * the verdict lives, and every note inside it. A note is inside a session the
+ * same way the timeline decides it: by `sessionId`, or by falling within the
+ * session's span, which is the only link a note has to a session added after
+ * the fact. Zaddy entries stay out of that sweep: they are not her logs.
  */
 export function findLinkedEntries(entries: TimelineItem[], mediaId: string): LinkedEntry[] {
   if (!mediaId) return [];
   const direct = entries.filter(entry => referencesMedia(entry, mediaId));
-  const sessionIds = new Set(
-    direct.filter(e => e.kind === 'session-start').map(e => e.entityId)
-  );
+  const directIds = new Set(direct.map(e => e.id));
+  const starts = direct.filter(e => e.kind === 'session-start');
+  const sessionIds = new Set(starts.map(e => e.entityId));
   const endAt = new Map(
     entries.filter(e => e.kind === 'session-end' && sessionIds.has(e.entityId))
       .map(e => [e.entityId, e.timestamp])
   );
-  const directIds = new Set(direct.map(e => e.id));
+  // Open-ended while the session is still running, matching the timeline
+  const spans = starts.map(start => ({
+    from: start.timestamp,
+    to: endAt.get(start.entityId) ?? Infinity,
+  }));
 
   const duringSessions = entries.filter(entry => {
     if (directIds.has(entry.id)) return false;
-    if (entry.contentType === 'zaddy-comment') return false;
     if (entry.kind === 'session-end') {
       return sessionIds.has(entry.entityId) && entry.content.trim() !== '';
     }
-    return entry.kind === 'note' && !!entry.sessionId && sessionIds.has(entry.sessionId);
+    if (entry.kind !== 'note' || entry.origin === 'zaddy') return false;
+    if (entry.sessionId && sessionIds.has(entry.sessionId)) return true;
+    return spans.some(span => entry.timestamp > span.from && entry.timestamp < span.to);
   });
 
   return [

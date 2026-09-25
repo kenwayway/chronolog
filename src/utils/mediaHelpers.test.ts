@@ -110,8 +110,8 @@ describe('findLinkedEntries', () => {
     it('pulls in what was written during a linked session, and its duration', () => {
         const start = { id: 'session:s1:start', entityId: 's1', kind: 'session-start' as const, content: 'Started', timestamp: 100, sessionId: 's1', fieldValues: { mediaId: 'm1' } }
         const during = { id: 'n1', entityId: 'n1', kind: 'note' as const, content: 'Chapter 3 hit hard', timestamp: 150, sessionId: 's1' }
-        const comment = { id: 'c1', entityId: 'c1', kind: 'note' as const, content: 'zaddy', timestamp: 160, sessionId: 's1', contentType: 'zaddy-comment' }
-        const elsewhere = { id: 'n2', entityId: 'n2', kind: 'note' as const, content: 'unrelated', timestamp: 170, sessionId: 's9' }
+        const comment = { id: 'c1', entityId: 'c1', kind: 'note' as const, content: 'zaddy', timestamp: 160, sessionId: 's1', contentType: 'zaddy-comment', origin: 'zaddy' as const }
+        const elsewhere = { id: 'n2', entityId: 'n2', kind: 'note' as const, content: 'unrelated', timestamp: 250, sessionId: 's9' }
         const end = { id: 'session:s1:end', entityId: 's1', kind: 'session-end' as const, content: 'Loved the ending', timestamp: 200, sessionId: 's1' }
         const linked = findLinkedEntries([end, elsewhere, comment, during, start], 'm1')
         expect(linked.map(l => l.entry.id)).toEqual(['session:s1:start', 'n1', 'session:s1:end'])
@@ -124,5 +124,23 @@ describe('findLinkedEntries', () => {
         const linked = findLinkedEntries([start, end], 'm1')
         expect(linked.map(l => l.entry.id)).toEqual(['session:s1:start'])
         expect(linked[0].durationMs).toBe(300)
+    })
+
+    it('counts notes inside a session added after the fact by its span', () => {
+        const start = { id: 'session:s1:start', entityId: 's1', kind: 'session-start' as const, content: 'Backfilled', timestamp: 100, fieldValues: { mediaId: 'm1' } }
+        const end = { id: 'session:s1:end', entityId: 's1', kind: 'session-end' as const, content: '', timestamp: 500 }
+        const before = { id: 'before', entityId: 'before', kind: 'note' as const, content: 'before', timestamp: 50 }
+        const inside = { id: 'inside', entityId: 'inside', kind: 'note' as const, content: 'inside', timestamp: 300 }
+        const zaddy = { id: 'z', entityId: 'z', kind: 'note' as const, content: 'observation', timestamp: 310, origin: 'zaddy' as const }
+        const after = { id: 'after', entityId: 'after', kind: 'note' as const, content: 'after', timestamp: 600 }
+        const linked = findLinkedEntries([before, start, inside, zaddy, end, after], 'm1')
+        expect(linked.map(l => l.entry.id)).toEqual(['session:s1:start', 'inside'])
+    })
+
+    it('treats a still-running session as open-ended', () => {
+        const start = { id: 'session:s1:start', entityId: 's1', kind: 'session-start' as const, content: 'Reading', timestamp: 100, fieldValues: { mediaId: 'm1' } }
+        const later = { id: 'later', entityId: 'later', kind: 'note' as const, content: 'still going', timestamp: 9_000 }
+        expect(findLinkedEntries([start, later], 'm1').map(l => l.entry.id)).toEqual(['session:s1:start', 'later'])
+        expect(findLinkedEntries([start, later], 'm1')[0].durationMs).toBeUndefined()
     })
 })
