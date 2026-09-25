@@ -351,13 +351,13 @@
 }
 
 .linkedEntry {
-  padding: var(--space-2) 0 var(--space-2) var(--space-3);
+  padding-left: var(--space-3);
   border-left: 1px solid var(--border-subtle);
-  transition: border-color 150ms ease;
 }
 
-.linkedEntry:hover {
-  border-left-color: var(--accent);
+/* Written inside a linked session — sits under that session's start */
+.linkedNested {
+  margin-left: var(--space-4);
 }
 
 .linkedEntryHead {
@@ -378,25 +378,61 @@
   color: var(--text-dim);
 }
 
+.linkedEndMark {
+  color: var(--accent);
+}
+
 .linkedJump {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
+  gap: 3px;
   flex-shrink: 0;
-  padding: 2px var(--space-1);
+  padding: 2px 0;
   background: none;
-  border: 1px solid transparent;
+  border: none;
   color: var(--text-dim);
   font-family: var(--font-mono);
   font-size: 10px;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
   cursor: pointer;
-  transition: color 150ms ease, border-color 150ms ease;
+  transition: color 250ms ease;
 }
 
-.linkedJump:hover {
-  color: var(--accent);
-  border-color: var(--accent);
+/* Underline draws in from the left, and retracts to the right on leave */
+.linkedJumpLabel {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat;
+  background-position: right bottom;
+  background-size: 0% 1px;
+  padding-bottom: 2px;
+  transition: background-size 350ms cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+.linkedJumpIcon {
+  transition: transform 350ms cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+.linkedJump:hover,
+.linkedJump:focus-visible {
+  color: var(--text-primary);
+}
+
+.linkedJump:hover .linkedJumpLabel,
+.linkedJump:focus-visible .linkedJumpLabel {
+  background-position: left bottom;
+  background-size: 100% 1px;
+}
+
+.linkedJump:hover .linkedJumpIcon,
+.linkedJump:focus-visible .linkedJumpIcon {
+  transform: translate(2px, -2px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .linkedJumpLabel,
+  .linkedJumpIcon {
+    transition: none;
+  }
 }
 
 .linkedBody {
@@ -406,19 +442,6 @@
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   min-width: 0;
-}
-
-.linkedEnd {
-  display: flex;
-  gap: var(--space-2);
-  margin-top: var(--space-2);
-}
-
-.linkedEndMark {
-  flex-shrink: 0;
-  color: var(--accent);
-  font-size: var(--text-sm);
-  line-height: 1.8;
 }
 
 /* ===== Edit mode ===== */

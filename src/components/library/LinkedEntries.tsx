@@ -17,9 +17,9 @@ interface LinkedEntriesProps {
 }
 
 /**
- * Timeline entries that reference this media item, in full. The library is a
- * list of what you watched; this is the part that says when, and what you
- * were writing about at the time.
+ * Every timeline entry about this media item, oldest first and in full. The
+ * library is a list of what you watched; this is the part that says when, and
+ * what you were writing about at the time.
  */
 export function LinkedEntries({ mediaId, onNavigateAway }: LinkedEntriesProps) {
   const navigate = useNavigate();
@@ -50,14 +50,20 @@ export function LinkedEntries({ mediaId, onNavigateAway }: LinkedEntriesProps) {
         <span className={styles.notesEmpty}>No logs reference this yet.</span>
       ) : (
         <ul className={styles.linkedList}>
-          {linked.map(({ entry, end }) => (
-            <li key={entry.id} className={styles.linkedEntry}>
+          {linked.map(({ entry, nested, durationMs }) => (
+            <li
+              key={entry.id}
+              className={`${styles.linkedEntry} ${nested ? styles.linkedNested : ''}`}
+            >
               <div className={styles.linkedEntryHead}>
                 <span className={styles.linkedWhen}>
+                  {entry.kind === 'session-end' && (
+                    <span className={styles.linkedEndMark} aria-hidden="true">↳ </span>
+                  )}
                   {formatDate(entry.timestamp)} {formatTime(entry.timestamp)}
-                  {end && (
+                  {durationMs !== undefined && (
                     <span className={styles.linkedDuration}>
-                      {' '}&middot; {formatDuration(end.timestamp - entry.timestamp)}
+                      {' '}&middot; {formatDuration(durationMs)}
                     </span>
                   )}
                 </span>
@@ -67,23 +73,14 @@ export function LinkedEntries({ mediaId, onNavigateAway }: LinkedEntriesProps) {
                   className={styles.linkedJump}
                   title="Jump to this entry on the timeline"
                 >
-                  TIMELINE
-                  <ArrowUpRight size={11} />
+                  <span className={styles.linkedJumpLabel}>TIMELINE</span>
+                  <ArrowUpRight size={11} className={styles.linkedJumpIcon} />
                 </button>
               </div>
 
               {entry.content.trim() && (
                 <div className={styles.linkedBody}>
                   <ContentRenderer content={entry.content} onImageClick={setLightboxImage} />
-                </div>
-              )}
-
-              {end && (
-                <div className={styles.linkedEnd}>
-                  <span className={styles.linkedEndMark} aria-hidden="true">↳</span>
-                  <div className={styles.linkedBody}>
-                    <ContentRenderer content={end.content} onImageClick={setLightboxImage} />
-                  </div>
                 </div>
               )}
             </li>

@@ -87,13 +87,13 @@ describe('findLinkedEntries', () => {
         return { id, entityId: id, kind: 'note' as const, content: id, timestamp, fieldValues }
     }
 
-    it('matches entries by fieldValues.mediaId, newest first', () => {
+    it('matches entries by fieldValues.mediaId, oldest first', () => {
         const linked = findLinkedEntries([
-            entry('older', 100, { mediaId: 'm1' }),
-            entry('other', 200, { mediaId: 'm2' }),
             entry('newer', 300, { mediaId: 'm1' }),
+            entry('other', 200, { mediaId: 'm2' }),
+            entry('older', 100, { mediaId: 'm1' }),
         ], 'm1')
-        expect(linked.map(l => l.entry.id)).toEqual(['newer', 'older'])
+        expect(linked.map(l => l.entry.id)).toEqual(['older', 'newer'])
     })
 
     it('ignores entries with no fieldValues or no mediaId', () => {
@@ -107,15 +107,26 @@ describe('findLinkedEntries', () => {
         expect(findLinkedEntries([entry('a', 100, { mediaId: undefined })], '')).toEqual([])
     })
 
-    it('pairs a linked session start with its non-empty end', () => {
-        const start = { id: 'session:s1:start', entityId: 's1', kind: 'session-start' as const, content: 'Started', timestamp: 100, fieldValues: { mediaId: 'm1' } }
-        const end = { id: 'session:s1:end', entityId: 's1', kind: 'session-end' as const, content: 'Loved the ending', timestamp: 200 }
-        const blankEnd = { id: 'session:s2:end', entityId: 's2', kind: 'session-end' as const, content: '  ', timestamp: 400 }
-        const blankStart = { ...start, id: 'session:s2:start', entityId: 's2', timestamp: 300 }
-        const linked = findLinkedEntries([start, end, blankStart, blankEnd], 'm1')
-        expect(linked.map(l => [l.entry.id, l.end?.id])).toEqual([
-            ['session:s2:start', undefined],
-            ['session:s1:start', 'session:s1:end'],
+    it('pulls in what was written during a linked session, and its duration', () => {
+        const start = { id: 'session:s1:start', entityId: 's1', kind: 'session-start' as const, content: 'Started', timestamp: 100, sessionId: 's1', fieldValues: { mediaId: 'm1' } }
+        const during = { id: 'n1', entityId: 'n1', kind: 'note' as const, content: 'Chapter 3 hit hard', timestamp: 150, sessionId: 's1' }
+        const comment = { id: 'c1', entityId: 'c1', kind: 'note' as const, content: 'zaddy', timestamp: 160, sessionId: 's1', contentType: 'zaddy-comment' }
+        const elsewhere = { id: 'n2', entityId: 'n2', kind: 'note' as const, content: 'unrelated', timestamp: 170, sessionId: 's9' }
+        const end = { id: 'session:s1:end', entityId: 's1', kind: 'session-end' as const, content: 'Loved the ending', timestamp: 200, sessionId: 's1' }
+        const linked = findLinkedEntries([end, elsewhere, comment, during, start], 'm1')
+        expect(linked.map(l => [l.entry.id, l.nested])).toEqual([
+            ['session:s1:start', false],
+            ['n1', true],
+            ['session:s1:end', true],
         ])
+        expect(linked[0].durationMs).toBe(100)
+    })
+
+    it('leaves out an empty session end but still times the session', () => {
+        const start = { id: 'session:s1:start', entityId: 's1', kind: 'session-start' as const, content: 'Started', timestamp: 100, fieldValues: { mediaId: 'm1' } }
+        const end = { id: 'session:s1:end', entityId: 's1', kind: 'session-end' as const, content: '  ', timestamp: 400 }
+        const linked = findLinkedEntries([start, end], 'm1')
+        expect(linked.map(l => l.entry.id)).toEqual(['session:s1:start'])
+        expect(linked[0].durationMs).toBe(300)
     })
 })

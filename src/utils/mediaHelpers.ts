@@ -1,7 +1,6 @@
 import React from 'react';
 import { Book, Film, Gamepad2, Tv, Clapperboard, Mic, CalendarCheck, CalendarOff } from 'lucide-react';
 import type { MediaType, MediaStatus, MediaMetadata, MediaItem, TimelineItem } from '@/types';
-import { sessionEndTimelineId } from '@/domain/timeline';
 
 export const MEDIA_TYPES: MediaType[] = ['Book', 'Movie', 'Game', 'TV', 'Anime', 'Podcast'];
 export const MEDIA_STATUSES: MediaStatus[] = ['Planned', 'In Progress', 'Completed', 'Dropped', 'On Hold'];
@@ -161,41 +160,62 @@ export function groupByMonth(items: MediaItem[]): LibrarySection[] {
 // Reverse links: timeline entries → media item
 // ============================================
 
-/** A linked entry, with its session's closing text when it is a session start */
+/** One row in a media item's LOGS, oldest first */
 export interface LinkedEntry {
   entry: TimelineItem;
-  /** The matching session-end item, present only when it carries text */
-  end?: TimelineItem;
+  /** Written inside a linked session (a note during it, or its end) */
+  nested: boolean;
+  /** On a linked session start: how long the session ran, once it has ended */
+  durationMs?: number;
+}
+
+function referencesMedia(entry: TimelineItem, mediaId: string): boolean {
+  const values = entry.fieldValues;
+  if (!values || !('mediaId' in values)) return false;
+  return (values as { mediaId?: unknown }).mediaId === mediaId;
 }
 
 /**
- * Timeline entries that reference this media item, newest first.
+ * Every timeline entry about this media item, oldest first.
  *
- * Matches on `fieldValues.mediaId` rather than on contentType: a custom
- * content type carrying a media-select field links up just the same.
+ * Direct matches go by `fieldValues.mediaId` rather than contentType: a
+ * custom content type carrying a media-select field links up just the same.
  *
- * Only session starts carry fieldValues, so a session's end is paired back in
- * here — that closing note is usually where the verdict lives.
+ * Only session starts carry fieldValues, so a linked session also pulls in
+ * what was written while it ran — the notes logged during it and its closing
+ * text, which is usually where the verdict lives. Zaddy comments stay out:
+ * they hang off an entry, they are not logs of their own.
  */
 export function findLinkedEntries(entries: TimelineItem[], mediaId: string): LinkedEntry[] {
   if (!mediaId) return [];
-  const matched = entries.filter(entry => {
-    const values = entry.fieldValues;
-    if (!values || !('mediaId' in values)) return false;
-    return (values as { mediaId?: unknown }).mediaId === mediaId;
+  const direct = entries.filter(entry => referencesMedia(entry, mediaId));
+  const sessionIds = new Set(
+    direct.filter(e => e.kind === 'session-start').map(e => e.entityId)
+  );
+  const endAt = new Map(
+    entries.filter(e => e.kind === 'session-end' && sessionIds.has(e.entityId))
+      .map(e => [e.entityId, e.timestamp])
+  );
+  const directIds = new Set(direct.map(e => e.id));
+
+  const nested = entries.filter(entry => {
+    if (directIds.has(entry.id)) return false;
+    if (entry.contentType === 'zaddy-comment') return false;
+    if (entry.kind === 'session-end') {
+      return sessionIds.has(entry.entityId) && entry.content.trim() !== '';
+    }
+    return entry.kind === 'note' && !!entry.sessionId && sessionIds.has(entry.sessionId);
   });
 
-  const endIds = new Set(
-    matched.filter(e => e.kind === 'session-start').map(e => sessionEndTimelineId(e.entityId))
-  );
-  const ends = new Map(
-    entries.filter(e => endIds.has(e.id) && e.content.trim()).map(e => [e.entityId, e])
-  );
-
-  return matched
-    .sort((a, b) => b.timestamp - a.timestamp)
-    .map(entry => ({
-      entry,
-      end: entry.kind === 'session-start' ? ends.get(entry.entityId) : undefined,
-    }));
+  return [
+    ...direct.map(entry => {
+      const end = entry.kind === 'session-start' ? endAt.get(entry.entityId) : undefined;
+      return {
+        entry,
+        nested: false,
+        durationMs: end !== undefined ? end - entry.timestamp : undefined,
+      };
+    }),
+    ...nested.map(entry => ({ entry, nested: true })),
+  ].sort((a, b) => a.entry.timestamp - b.entry.timestamp);
 }
