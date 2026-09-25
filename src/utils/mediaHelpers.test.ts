@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { findLinkedEntries, getEntryPreview, getMonthKey, getMonthLabel, groupByMonth, groupByType } from './mediaHelpers'
+import { findLinkedEntries, getMonthKey, getMonthLabel, groupByMonth, groupByType } from './mediaHelpers'
 import type { MediaItem, MediaType } from '@/types'
 
 function item(id: string, over: Partial<MediaItem> = {}): MediaItem {
@@ -93,7 +93,7 @@ describe('findLinkedEntries', () => {
             entry('other', 200, { mediaId: 'm2' }),
             entry('newer', 300, { mediaId: 'm1' }),
         ], 'm1')
-        expect(linked.map(e => e.id)).toEqual(['newer', 'older'])
+        expect(linked.map(l => l.entry.id)).toEqual(['newer', 'older'])
     })
 
     it('ignores entries with no fieldValues or no mediaId', () => {
@@ -106,23 +106,16 @@ describe('findLinkedEntries', () => {
     it('returns nothing for an empty mediaId rather than matching undefined', () => {
         expect(findLinkedEntries([entry('a', 100, { mediaId: undefined })], '')).toEqual([])
     })
-})
 
-describe('getEntryPreview', () => {
-    function noteEntry(content: string) {
-        return { id: 'e', entityId: 'e', kind: 'note' as const, content, timestamp: 0 }
-    }
-
-    it('drops location and image attachment lines', () => {
-        const preview = getEntryPreview(noteEntry('Watched it twice\n📍 Brooklyn\n🖼️ https://x.dev/a.webp'))
-        expect(preview).toBe('Watched it twice')
-    })
-
-    it('collapses multi-line text onto one line', () => {
-        expect(getEntryPreview(noteEntry('first\n\nsecond'))).toBe('first second')
-    })
-
-    it('falls back when an entry has only attachments', () => {
-        expect(getEntryPreview(noteEntry('🖼️ https://x.dev/a.webp'))).toBe('(no text)')
+    it('pairs a linked session start with its non-empty end', () => {
+        const start = { id: 'session:s1:start', entityId: 's1', kind: 'session-start' as const, content: 'Started', timestamp: 100, fieldValues: { mediaId: 'm1' } }
+        const end = { id: 'session:s1:end', entityId: 's1', kind: 'session-end' as const, content: 'Loved the ending', timestamp: 200 }
+        const blankEnd = { id: 'session:s2:end', entityId: 's2', kind: 'session-end' as const, content: '  ', timestamp: 400 }
+        const blankStart = { ...start, id: 'session:s2:start', entityId: 's2', timestamp: 300 }
+        const linked = findLinkedEntries([start, end, blankStart, blankEnd], 'm1')
+        expect(linked.map(l => [l.entry.id, l.end?.id])).toEqual([
+            ['session:s2:start', undefined],
+            ['session:s1:start', 'session:s1:end'],
+        ])
     })
 })

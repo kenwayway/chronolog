@@ -347,74 +347,78 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
+  gap: var(--space-4);
 }
 
-.linkedItem {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  width: 100%;
-  padding: var(--space-1) var(--space-2);
-  background: none;
-  border: none;
-  border-left: 1px solid transparent;
-  text-align: left;
-  cursor: pointer;
-  font-family: inherit;
-  font-size: var(--text-xs);
-  color: var(--text-secondary);
-  transition: color 150ms ease, background-color 150ms ease, border-color 150ms ease;
+.linkedEntry {
+  padding: var(--space-2) 0 var(--space-2) var(--space-3);
+  border-left: 1px solid var(--border-subtle);
+  transition: border-color 150ms ease;
 }
 
-.linkedItem:hover {
-  color: var(--text-primary);
-  background-color: var(--bg-tertiary);
+.linkedEntry:hover {
   border-left-color: var(--accent);
 }
 
-.linkedIcon {
-  flex-shrink: 0;
-  color: var(--text-dim);
-  align-self: center;
+.linkedEntryHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-1);
 }
 
 .linkedWhen {
-  flex-shrink: 0;
   color: var(--text-dim);
   font-family: var(--font-mono);
   font-size: var(--text-xs);
 }
 
-.linkedText {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.linkedThumbs {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-  flex-shrink: 0;
-  margin-left: var(--space-2);
-}
-
-.linkedThumb {
-  width: 26px;
-  height: 26px;
-  object-fit: cover;
-  border: 1px solid var(--border-subtle);
-  display: block;
-}
-
-.linkedThumbMore {
-  font-size: 10px;
-  font-family: var(--font-mono);
+.linkedDuration {
   color: var(--text-dim);
-  padding-left: 2px;
+}
+
+.linkedJump {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  padding: 2px var(--space-1);
+  background: none;
+  border: 1px solid transparent;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: color 150ms ease, border-color 150ms ease;
+}
+
+.linkedJump:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.linkedBody {
+  font-size: var(--text-sm);
+  line-height: 1.8;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+.linkedEnd {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.linkedEndMark {
+  flex-shrink: 0;
+  color: var(--accent);
+  font-size: var(--text-sm);
+  line-height: 1.8;
 }
 
 /* ===== Edit mode ===== */

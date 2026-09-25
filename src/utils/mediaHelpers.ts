@@ -1,6 +1,7 @@
 import React from 'react';
 import { Book, Film, Gamepad2, Tv, Clapperboard, Mic, CalendarCheck, CalendarOff } from 'lucide-react';
 import type { MediaType, MediaStatus, MediaMetadata, MediaItem, TimelineItem } from '@/types';
+import { sessionEndTimelineId } from '@/domain/timeline';
 
 export const MEDIA_TYPES: MediaType[] = ['Book', 'Movie', 'Game', 'TV', 'Anime', 'Podcast'];
 export const MEDIA_STATUSES: MediaStatus[] = ['Planned', 'In Progress', 'Completed', 'Dropped', 'On Hold'];
@@ -160,33 +161,41 @@ export function groupByMonth(items: MediaItem[]): LibrarySection[] {
 // Reverse links: timeline entries → media item
 // ============================================
 
-/** Attachment lines appended by `appendAttachmentLines` — noise in a preview */
-const ATTACHMENT_LINE_RE = /^(📍|🖼[︎️]?)\s/;
+/** A linked entry, with its session's closing text when it is a session start */
+export interface LinkedEntry {
+  entry: TimelineItem;
+  /** The matching session-end item, present only when it carries text */
+  end?: TimelineItem;
+}
 
 /**
  * Timeline entries that reference this media item, newest first.
  *
  * Matches on `fieldValues.mediaId` rather than on contentType: a custom
  * content type carrying a media-select field links up just the same.
+ *
+ * Only session starts carry fieldValues, so a session's end is paired back in
+ * here — that closing note is usually where the verdict lives.
  */
-export function findLinkedEntries(entries: TimelineItem[], mediaId: string): TimelineItem[] {
+export function findLinkedEntries(entries: TimelineItem[], mediaId: string): LinkedEntry[] {
   if (!mediaId) return [];
-  return entries
-    .filter(entry => {
-      const values = entry.fieldValues;
-      if (!values || !('mediaId' in values)) return false;
-      return (values as { mediaId?: unknown }).mediaId === mediaId;
-    })
-    .sort((a, b) => b.timestamp - a.timestamp);
-}
+  const matched = entries.filter(entry => {
+    const values = entry.fieldValues;
+    if (!values || !('mediaId' in values)) return false;
+    return (values as { mediaId?: unknown }).mediaId === mediaId;
+  });
 
-/** One-line preview of an entry's text, with location/image lines dropped */
-export function getEntryPreview(entry: TimelineItem): string {
-  const text = (entry.content ?? '')
-    .split('\n')
-    .filter(line => !ATTACHMENT_LINE_RE.test(line.trim()))
-    .join(' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-  return text || '(no text)';
+  const endIds = new Set(
+    matched.filter(e => e.kind === 'session-start').map(e => sessionEndTimelineId(e.entityId))
+  );
+  const ends = new Map(
+    entries.filter(e => endIds.has(e.id) && e.content.trim()).map(e => [e.entityId, e])
+  );
+
+  return matched
+    .sort((a, b) => b.timestamp - a.timestamp)
+    .map(entry => ({
+      entry,
+      end: entry.kind === 'session-start' ? ends.get(entry.entityId) : undefined,
+    }));
 }
