@@ -10,6 +10,16 @@
   margin: 0 auto;
   cursor: default;
   user-select: none;
+
+  /* Rules and card edges across the library, detail overlay included */
+  --library-rule: var(--border-subtle);
+}
+
+/* The default dark border is an opaque slate that reads blue on near-black
+   and muddies over the blurred cover. A translucent tint of the text colour
+   stays neutral and lets whatever sits behind it show through. */
+:global([data-theme="dark"]) .page {
+  --library-rule: color-mix(in srgb, var(--text-primary) 10%, transparent);
 }
 
 /* ===== Header ===== */
@@ -17,7 +27,7 @@
   display: flex;
   align-items: center;
   padding: var(--space-4) var(--space-5);
-  border-bottom: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--library-rule);
 }
 
 .headerBackBtn {
@@ -63,7 +73,7 @@
   align-items: center;
   gap: 1px;
   margin-right: var(--space-3);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--library-rule);
 }
 
 .groupToggleBtn {
@@ -110,7 +120,7 @@
   color: var(--text-primary);
   border: none;
   outline: none;
-  border-bottom: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--library-rule);
 }
 
 .headerClearBtn {
@@ -125,7 +135,7 @@
 /* ===== Create form wrapper ===== */
 .createFormWrapper {
   padding: var(--space-4) var(--space-5);
-  border-bottom: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--library-rule);
 }
 
 .createFormHeader {
@@ -186,7 +196,7 @@
 .sectionLine {
   flex: 1;
   height: 1px;
-  background-color: var(--border-subtle);
+  background: linear-gradient(to right, var(--library-rule), transparent);
 }
 
 /* ===== Cards grid ===== */
@@ -203,7 +213,7 @@
 .card {
   position: relative;
   background-color: transparent;
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--library-rule);
   overflow: hidden;
   cursor: pointer;
 }
@@ -349,7 +359,7 @@
   width: 32px;
   height: 44px;
   object-fit: cover;
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--library-rule);
 }
 
 .formPreviewClear {
@@ -362,7 +372,7 @@
 }
 
 .formMetaSection {
-  border-top: 1px solid var(--border-subtle);
+  border-top: 1px solid var(--library-rule);
   padding-top: var(--space-2);
 }
 
@@ -435,7 +445,7 @@
 
 .deleteModal {
   background-color: var(--bg-secondary);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--library-rule);
   padding: var(--space-6);
   max-width: 360px;
   width: 100%;

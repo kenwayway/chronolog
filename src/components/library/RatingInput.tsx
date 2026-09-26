@@ -10,7 +10,7 @@ export function RatingInput({ value, onChange }: { value: number; onChange: (v: 
           onClick={() => onChange(value === n ? 0 : n)}
           style={{
             width: 18, height: 18, borderRadius: '50%',
-            border: n <= value ? '2px solid var(--accent)' : '1px solid var(--border-subtle)',
+            border: n <= value ? '2px solid var(--accent)' : '1px solid var(--library-rule)',
             backgroundColor: n <= value ? 'var(--accent)' : 'transparent',
             cursor: 'pointer', padding: 0,
             transition: 'all 120ms ease',

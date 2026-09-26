@@ -58,7 +58,7 @@
   display: flex;
   align-items: center;
   padding: var(--space-4) var(--space-5);
-  border-bottom: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--library-rule);
 }
 
 .detailBackBtn {
@@ -125,7 +125,7 @@
 }
 
 .scrollArea::-webkit-scrollbar-thumb {
-  background: var(--border-subtle);
+  background: var(--library-rule);
   border-radius: 3px;
 }
 
@@ -314,7 +314,7 @@
 .notesLine {
   flex: 1;
   height: 1px;
-  background-color: var(--border-subtle);
+  background: linear-gradient(to right, var(--library-rule), transparent);
 }
 
 .notesContent {
@@ -352,7 +352,7 @@
 
 .linkedEntry {
   padding-left: var(--space-3);
-  border-left: 1px solid var(--border-subtle);
+  border-left: 1px solid var(--library-rule);
 }
 
 .linkedEntryHead {
@@ -459,7 +459,7 @@
   display: flex;
   flex-direction: column;
   gap: 0;
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--library-rule);
   background-color: var(--bg-secondary);
   margin-bottom: var(--space-5);
 }
@@ -469,7 +469,7 @@
   align-items: center;
   justify-content: space-between;
   padding: var(--space-2) var(--space-3);
-  border-bottom: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--library-rule);
 }
 
 .editFieldRowLast {
