@@ -1,9 +1,8 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowUpRight } from 'lucide-react';
-import { useSessionContext } from '@/contexts/SessionContext';
 import { useUIStateContext } from '@/hooks/useUIStateContext';
-import { findLinkedEntries } from '@/utils/mediaHelpers';
+import type { LinkedEntry } from '@/utils/mediaHelpers';
 import { formatDate, formatTime, formatDuration } from '@/utils/formatters';
 import { ContentRenderer } from '@/components/timeline/ContentRenderer';
 import { ImageLightbox } from '@/components/common/ImageLightbox';
@@ -11,7 +10,7 @@ import type { TimelineItem } from '@/types';
 import styles from './MediaDetailView.module.css';
 
 interface LinkedEntriesProps {
-  mediaId: string;
+  linked: LinkedEntry[];
   /** Closes the detail overlay before jumping away from the library */
   onNavigateAway: () => void;
 }
@@ -21,16 +20,10 @@ interface LinkedEntriesProps {
  * library is a list of what you watched; this is the part that says when, and
  * what you were writing about at the time.
  */
-export function LinkedEntries({ mediaId, onNavigateAway }: LinkedEntriesProps) {
+export function LinkedEntries({ linked, onNavigateAway }: LinkedEntriesProps) {
   const navigate = useNavigate();
   const ui = useUIStateContext();
-  const { timelineItems } = useSessionContext();
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
-
-  const linked = useMemo(
-    () => findLinkedEntries(timelineItems, mediaId),
-    [timelineItems, mediaId]
-  );
 
   const jumpToEntry = (entry: TimelineItem) => {
     onNavigateAway();
@@ -39,13 +32,7 @@ export function LinkedEntries({ mediaId, onNavigateAway }: LinkedEntriesProps) {
   };
 
   return (
-    <div className={styles.linkedSection}>
-      <div className={styles.notesHeader}>
-        <span>LOGS</span>
-        {linked.length > 0 && <span className={styles.linkedCount}>&middot; {linked.length}</span>}
-        <div className={styles.notesLine} />
-      </div>
-
+    <>
       {linked.length === 0 ? (
         <span className={styles.notesEmpty}>No logs reference this yet.</span>
       ) : (
@@ -85,6 +72,6 @@ export function LinkedEntries({ mediaId, onNavigateAway }: LinkedEntriesProps) {
       {lightboxImage && (
         <ImageLightbox src={lightboxImage} onClose={() => setLightboxImage(null)} />
       )}
-    </div>
+    </>
   );
 }

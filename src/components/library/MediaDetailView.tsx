@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ArrowLeft, Pencil, Trash2, Image } from 'lucide-react';
 import { getMediaIcon } from '@/utils/mediaHelpers';
 import type { MediaItem } from '@/types';
 import { MetadataTable } from './MetadataTable';
 import { MediaEditForm } from './MediaEditForm';
 import { LinkedEntries } from './LinkedEntries';
+import { useLinkedEntries } from '@/hooks/useLinkedEntries';
 import type { UseLibraryFormReturn } from '@/hooks/useLibraryForm';
 import styles from './MediaDetailView.module.css';
 
@@ -25,6 +26,8 @@ function formatSpotifyEmbedUrl(url: string): string {
   }
 }
 
+type DetailTab = 'notes' | 'logs';
+
 interface MediaDetailViewProps {
   item: MediaItem;
   form: UseLibraryFormReturn;
@@ -32,6 +35,16 @@ interface MediaDetailViewProps {
 
 export function MediaDetailView({ item, form }: MediaDetailViewProps) {
   const isEditingThis = form.editingId === item.id;
+  const linked = useLinkedEntries(item.id);
+  // Open on whichever side has something to read
+  const [tab, setTab] = useState<DetailTab>(() =>
+    !item.notes && linked.length > 0 ? 'logs' : 'notes'
+  );
+
+  const tabs: { id: DetailTab; label: string; count?: number }[] = [
+    { id: 'notes', label: 'NOTES' },
+    { id: 'logs', label: 'LOGS', count: linked.length },
+  ];
 
   return (
     <div className={styles.overlay}>
@@ -80,7 +93,7 @@ export function MediaDetailView({ item, form }: MediaDetailViewProps) {
       </header>
 
       {/* Main content */}
-      <div className={styles.scrollArea}>
+      <div className={`${styles.scrollArea} ${isEditingThis ? '' : styles.scrollAreaPinned}`}>
         {isEditingThis ? (
           <MediaEditForm form={form} />
         ) : (
@@ -116,24 +129,51 @@ export function MediaDetailView({ item, form }: MediaDetailViewProps) {
               )}
             </div>
 
-            {/* RIGHT: Title + Notes */}
+            {/* RIGHT: Title + tabs stay put; only the active panel scrolls */}
             <div className={styles.infoColumn}>
               <h1 className={styles.title}>{item.title}</h1>
-              <div className={styles.notesSection}>
-                <div className={styles.notesHeader}>
-                  <span>NOTES</span>
-                  <div className={styles.notesLine} />
-                </div>
-                <div className={styles.notesContent}>
-                  {item.notes ? item.notes : (
-                    <span className={styles.notesEmpty}>No notes yet.</span>
-                  )}
-                </div>
+
+              <div className={styles.tabBar} role="tablist" aria-label="Notes and logs">
+                {tabs.map(t => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    role="tab"
+                    id={`media-tab-${t.id}`}
+                    aria-selected={tab === t.id}
+                    aria-controls="media-tab-panel"
+                    onClick={() => setTab(t.id)}
+                    className={`${styles.tab} ${tab === t.id ? styles.tabActive : ''}`}
+                  >
+                    <span className={styles.tabLabel}>{t.label}</span>
+                    {t.count !== undefined && t.count > 0 && (
+                      <span className={styles.tabCount}>{t.count}</span>
+                    )}
+                  </button>
+                ))}
+                <div className={styles.notesLine} />
               </div>
-              <LinkedEntries
-                mediaId={item.id}
-                onNavigateAway={() => form.setExpandedId(null)}
-              />
+
+              <div
+                key={tab}
+                id="media-tab-panel"
+                role="tabpanel"
+                aria-labelledby={`media-tab-${tab}`}
+                className={styles.tabPanel}
+              >
+                {tab === 'notes' ? (
+                  <div className={styles.notesContent}>
+                    {item.notes ? item.notes : (
+                      <span className={styles.notesEmpty}>No notes yet.</span>
+                    )}
+                  </div>
+                ) : (
+                  <LinkedEntries
+                    linked={linked}
+                    onNavigateAway={() => form.setExpandedId(null)}
+                  />
+                )}
+              </div>
             </div>
           </div>
         )}
