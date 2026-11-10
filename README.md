@@ -227,6 +227,69 @@ Only exact entries in `ALLOWED_GOOGLE_EMAILS` or `ALLOWED_GOOGLE_SUBJECTS` are
 accepted. Dynamic client registration is restricted to Claude's web callback
 URLs.
 
+### Available tools
+
+Read tools: `search_notes`, `search_sessions`, `get_day`, `get_stats`,
+`list_categories_and_tags`.
+
+With `chronolog:write`: `add_note`, `add_media_item`, `start_session`,
+`end_session`, `edit_entry`, `delete_entry`, `observe`, `comment`.
+Write tools are both hidden from read-only discovery and rejected on direct calls.
+
+### Editing and deleting entries
+
+Use these tools only for edits/deletions the user requested. First find the
+persisted Note or Session ID with a read tool, not a synthetic timeline marker
+such as `session:<id>:start` or `session:<id>:end`.
+
+```json
+{"name":"edit_entry","arguments":{"entityType":"note","id":"<note-id>","changes":{"content":"Corrected text","tags":["idea"]}}}
+```
+
+`changes` is a non-empty partial update; omitted fields retain their values.
+Supported fields:
+
+| Entity | Fields |
+| --- | --- |
+| Both | `content`, `tags`, `category`, `contentType`, `fieldValues` |
+| Note only | `timestamp`, `sessionId` |
+| Session only | `startAt`, `endAt`, `endContent`, `endTags` |
+
+- Arrays and `fieldValues` replace the entire value, not individual elements or
+  keys. Use `[]` to clear tags; use `null` to clear `category`, `contentType`,
+  `fieldValues`, `sessionId`, or `endContent`.
+- Times require ISO 8601 with seconds and `Z`/an explicit offset, for example
+  `2026-10-10T09:00:00-04:00`. Invalid calendar dates are rejected. Sessions must
+  have `endAt >= startAt`; setting an end closes an open session, but `endAt: null`
+  cannot reopen one. Start/end edits never create timeline marker records.
+- `sessionId` must identify an existing Session. Notion tasks remain session-only
+  and require a valid `fieldValues.notionPageId` when their metadata changes.
+- Unknown keys, unsupported entity types, missing targets, empty changes, and
+  edits to identity, `origin`, or `linkedItems` are rejected. Existing zaddy
+  comments allow only content/timestamp edits so their anchors remain intact.
+- Standard domain row sanitization still applies. Specialized custom field
+  schemas are not revalidated beyond existing Notion-task requirements.
+
+After explicit user confirmation, delete a whole entity:
+
+```json
+{"name":"delete_entry","arguments":{"entityType":"session","id":"<session-id>","confirm":true}}
+```
+
+Deletion is permanent: a revision-sync tombstone prevents stale devices or
+backup imports from resurrecting that ID. It does not cascade to owned notes,
+linked entries, comments, or image attachments, and does not clean references in
+those records. A missing target (including a repeated delete) returns an error.
+The confirmation flag is a caller attestation, not a separate interactive prompt.
+
+Both tools return the resulting revision; edits also return the updated
+`note`/`session`, and deletes return `deleted`, `entityType`, and `id`. Session
+changes/deletions use the existing durable Notion queue to recalculate affected
+old/new pages; `notionSync` reports its status when relevant. No schema migration
+is required. Concurrent edits retain the existing last-arrival-wins behavior
+(no compare-and-swap); an intervening edit may be overwritten. A later `observe`
+finalization may rewrite an edited zaddy observation from its buffer.
+
 Deploy once to obtain the Worker URL:
 
 ```bash

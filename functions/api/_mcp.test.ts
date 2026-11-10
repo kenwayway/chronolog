@@ -149,6 +149,8 @@ describe('MCP tool surface', () => {
         expect(names).toEqual(expect.arrayContaining([
             'add_media_item',
             'add_note',
+            'edit_entry',
+            'delete_entry',
             'start_session',
             'end_session',
             'observe',

@@ -245,8 +245,33 @@ MCP write tools (write scope only):
 - `add_note`
 - `start_session`
 - `end_session`
+- `edit_entry`
+- `delete_entry`
 - `observe`
 - `comment`
+
+`edit_entry` takes `{ entityType: 'note' | 'session', id, changes }` and
+updates only supplied fields on an existing persisted entity. `delete_entry`
+takes `{ entityType, id, confirm: true }` and removes the whole entity via a
+revision-sync tombstone. Both call `applyMutationsWithNotionSync`, including
+old/new Notion-page queueing, and return a revision. Never use raw deletion SQL.
+Synthetic session markers, unknown keys, empty changes, and missing/mistyped
+targets are rejected. Identity, origin, and links are immutable via editing.
+
+Editable shared fields: content, tags, category, contentType, fieldValues.
+Notes additionally allow timestamp/sessionId; sessions allow
+startAt/endAt/endContent/endTags. Arrays and fieldValues replace, not merge;
+[] clears tags and null clears optional category/contentType/fieldValues,
+sessionId or endContent. Timestamps require ISO seconds and explicit offset/Z;
+calendar validity and the merged session interval are checked. endAt cannot be
+null (no reopening). Comment edits are restricted to content/timestamp to
+preserve anchors and provenance. Standard row sanitization still applies.
+
+Deletion does not cascade to comments, linked entries, or owned notes, nor does
+it clean their references or attachments. Repeated deletion reports not found.
+Edits use the existing read-modify-write/last-arrival-wins protocol: no CAS, so
+concurrent edits can overwrite each other; tombstones still prevent resurrection.
+Observation buffer finalization can rewrite an edited zaddy observation later.
 
 `observe` maintains a durable zaddy topic buffer. It is for sustained
 personally meaningful conversational signals, not one-off informational

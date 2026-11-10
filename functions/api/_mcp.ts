@@ -141,7 +141,48 @@ const sharedWriteProperties = {
     timezone: dateProperties.timezone,
 };
 
+const editProperties = {
+    content: sharedWriteProperties.content,
+    category: { anyOf: [sharedWriteProperties.category, { type: 'null' }] },
+    tags: sharedWriteProperties.tags,
+    contentType: { anyOf: [sharedWriteProperties.contentType, { type: 'null' }] },
+    fieldValues: { anyOf: [sharedWriteProperties.fieldValues, { type: 'null' }], description: 'Replace the entire object; null clears it. Omitted fields are preserved.' },
+    timestamp: { type: 'string', description: 'Note only: ISO 8601 with explicit offset or Z' },
+    sessionId: { anyOf: [{ type: 'string', minLength: 1, maxLength: 100 }, { type: 'null' }], description: 'Note only: owning session; null detaches' },
+    startAt: { type: 'string', description: 'Session only: ISO 8601 with explicit offset or Z' },
+    endAt: { type: 'string', description: 'Session only: ISO 8601 with explicit offset or Z; cannot reopen a session' },
+    endContent: { anyOf: [sharedWriteProperties.content, { type: 'null' }] },
+    endTags: sharedWriteProperties.tags,
+};
+const entryTargetProperties = {
+    entityType: { type: 'string', enum: ['note', 'session'] },
+    id: { type: 'string', minLength: 1, maxLength: 100, description: 'Persisted entity ID, never a synthetic session marker ID' },
+};
+
 const WRITE_TOOLS = [
+    {
+        name: 'edit_entry',
+        description: 'Edit an existing Note or Session only when the user asks. Only supplied fields change; arrays and fieldValues replace rather than merge. Null clears optional metadata; [] clears tags. Identity, origin and links cannot change. Session end must not precede start; reopening is unsupported.',
+        inputSchema: {
+            type: 'object',
+            properties: {
+                ...entryTargetProperties,
+                changes: { type: 'object', properties: editProperties, minProperties: 1, additionalProperties: false },
+            },
+            required: ['entityType', 'id', 'changes'],
+            additionalProperties: false,
+        },
+    },
+    {
+        name: 'delete_entry',
+        description: 'Permanently delete one existing Note or whole Session after explicit user confirmation. Requires confirm: true. Revision-sync tombstones prevent resurrection. Does not cascade to linked entries, comments or owned notes.',
+        inputSchema: {
+            type: 'object',
+            properties: { ...entryTargetProperties, confirm: { type: 'boolean', const: true } },
+            required: ['entityType', 'id', 'confirm'],
+            additionalProperties: false,
+        },
+    },
     {
         name: 'add_note',
         description: 'Create a note. Use only when the user explicitly asks to save or log it.',
@@ -865,6 +906,125 @@ function ensureNothingRejected(result: { rejectedMutations: { detail?: string }[
     }
 }
 
+function requireObject(value: unknown, field: string): Record<string, unknown> {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error(`${field} must be an object`);
+    return value as Record<string, unknown>;
+}
+
+function rejectUnknownKeys(value: Record<string, unknown>, allowed: readonly string[]) {
+    const unknown = Object.keys(value).find(key => !allowed.includes(key));
+    if (unknown) throw new Error(`Unknown field: ${unknown}`);
+}
+
+function persistedId(value: unknown, field = 'id'): string {
+    if (typeof value !== 'string' || !value.trim() || value.length > 100 || /^session:.*:(start|end)$/.test(value)) {
+        throw new Error(`${field} must be a persisted Note or Session ID, not a synthetic marker`);
+    }
+    return value;
+}
+
+async function entryTarget(args: Record<string, unknown>, db: D1Database) {
+    const id = persistedId(args.id);
+    if (args.entityType === 'note') {
+        const row = await db.prepare('SELECT * FROM notes WHERE id = ?').bind(id).first<NoteRow>();
+        if (row) return { type: 'note' as const, value: noteRowToObject(row) };
+    } else if (args.entityType === 'session') {
+        const row = await db.prepare('SELECT * FROM sessions WHERE id = ?').bind(id).first<SessionRow>();
+        if (row) return { type: 'session' as const, value: sessionRowToObject(row) };
+    } else {
+        throw new Error('entityType must be note or session');
+    }
+    throw new Error(`${args.entityType} "${id}" does not exist`);
+}
+
+// Date.parse normalizes invalid calendar dates (e.g. February 30); edits must
+// reject those instead of silently moving an existing entry to another day.
+function editTimestamp(value: unknown, field: string): number {
+    if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?(?:Z|[+-]\d{2}:\d{2})$/.test(value)) {
+        throw new Error(`${field} must be ISO 8601 with seconds and an explicit offset or Z`);
+    }
+    optionalDate(value.slice(0, 10), field);
+    if (Number(value.slice(11, 13)) > 23 || Number(value.slice(14, 16)) > 59 || Number(value.slice(17, 19)) > 59) {
+        throw new Error(`${field} is invalid`);
+    }
+    return parseTimestamp(value, 0, field);
+}
+
+export function buildEntryEdit(type: 'note' | 'session', current: Note | Session, input: unknown): Note | Session {
+    const changes = requireObject(input, 'changes');
+    const keys = Object.keys(changes);
+    if (!keys.length) throw new Error('changes must not be empty');
+    const common = ['content', 'category', 'tags', 'contentType', 'fieldValues'];
+    rejectUnknownKeys(changes, [...common, ...(type === 'note'
+        ? ['timestamp', 'sessionId'] : ['startAt', 'endAt', 'endContent', 'endTags'])]);
+    if (isZaddyComment(current) && keys.some(key => !['content', 'timestamp'].includes(key))) {
+        throw new Error('Comments only support content and timestamp edits');
+    }
+    const updated = { ...current } as unknown as Record<string, unknown>;
+    for (const [key, value] of Object.entries(changes)) {
+        if (['category', 'contentType', 'fieldValues', 'sessionId', 'endContent'].includes(key) && value === null) {
+            delete updated[key];
+        } else if (key === 'timestamp' || key === 'startAt' || key === 'endAt') {
+            updated[key] = editTimestamp(value, key);
+        } else if (key === 'tags' || key === 'endTags') {
+            if (!Array.isArray(value) || value.length > 30) throw new Error(`${key} must be an array of at most 30 strings`);
+            updated[key] = cleanTags(value) ?? [];
+        } else if (key === 'content' || key === 'endContent' || key === 'contentType') {
+            const max = key === 'contentType' ? 100 : 100000;
+            if (typeof value !== 'string' || value.length > max || (key !== 'endContent' && !value.trim())) {
+                throw new Error(`${key} must be a non-empty string of at most ${max} characters`);
+            }
+            if (key === 'contentType' && value.trim() === ZADDY_COMMENT_CONTENT_TYPE) {
+                throw new Error('Use comment to create zaddy comments');
+            }
+            updated[key] = value.trim();
+        } else if (key === 'sessionId') {
+            updated[key] = persistedId(value, 'sessionId');
+        } else if (key === 'fieldValues') {
+            updated[key] = requireObject(value, 'fieldValues');
+        } else if (key === 'category') {
+            if (typeof value !== 'string' || !CATEGORY_IDS.includes(value)) throw new Error('category is invalid');
+            updated[key] = value;
+        }
+    }
+    if (type === 'note' && updated.contentType === 'notion-task') throw new Error('notion-task can only be attached to a session');
+    // Validate the merged metadata, but never normalize untouched fields.
+    if (updated.contentType === 'notion-task' && keys.some(key => key === 'contentType' || key === 'fieldValues')) {
+        updated.fieldValues = commonFields(updated).fieldValues;
+    }
+    if (type === 'session' && updated.endAt !== null && Number(updated.endAt) < Number(updated.startAt)) {
+        throw new Error('endAt cannot be before session start');
+    }
+    return updated as unknown as Note | Session;
+}
+
+async function editEntry(args: Record<string, unknown>, env: Env) {
+    rejectUnknownKeys(requireObject(args, 'arguments'), ['id', 'entityType', 'changes']);
+    const target = await entryTarget(args, env.CHRONOLOG_DB);
+    const updated = buildEntryEdit(target.type, target.value, args.changes);
+    const changes = args.changes as Record<string, unknown>;
+    if (target.type === 'note' && typeof changes.sessionId === 'string') {
+        await entryTarget({ id: changes.sessionId, entityType: 'session' }, env.CHRONOLOG_DB);
+    }
+    const result = await applyMutationsWithNotionSync(env, [{
+        mutationId: crypto.randomUUID(), entityType: target.type, entityId: target.value.id,
+        operation: 'upsert', value: updated,
+    }]);
+    ensureNothingRejected(result);
+    return { [target.type]: updated, revision: result.revision, notionSync: result.notionSync };
+}
+
+async function deleteEntry(args: Record<string, unknown>, env: Env) {
+    rejectUnknownKeys(requireObject(args, 'arguments'), ['id', 'entityType', 'confirm']);
+    if (args.confirm !== true) throw new Error('Deletion requires explicit user confirmation and confirm: true');
+    const target = await entryTarget(args, env.CHRONOLOG_DB);
+    const result = await applyMutationsWithNotionSync(env, [{
+        mutationId: crypto.randomUUID(), entityType: target.type, entityId: target.value.id, operation: 'delete',
+    }]);
+    ensureNothingRejected(result);
+    return { deleted: true, entityType: target.type, id: target.value.id, revision: result.revision, notionSync: result.notionSync };
+}
+
 async function addMediaItem(args: Record<string, unknown>, env: Env) {
     const mediaItem = buildMediaItem(args);
     const existing = await env.CHRONOLOG_DB.prepare('SELECT id FROM media_items WHERE id = ?')
@@ -1037,6 +1197,8 @@ async function callTool(params: Record<string, unknown> | undefined, env: Env, c
         }
         else if (name === 'add_media_item' && canWrite) data = await addMediaItem(args, env);
         else if (name === 'add_note' && canWrite) data = await addNote(args, env);
+        else if (name === 'edit_entry' && canWrite) data = await editEntry(args, env);
+        else if (name === 'delete_entry' && canWrite) data = await deleteEntry(args, env);
         else if (name === 'start_session' && canWrite) data = await startSession(args, env);
         else if (name === 'end_session' && canWrite) data = await endSession(args, env);
         else if (name === 'observe' && canWrite) data = await observe(args, env);
