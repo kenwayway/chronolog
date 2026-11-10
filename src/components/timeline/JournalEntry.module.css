@@ -98,7 +98,6 @@
     margin-top: var(--space-1);
     border-radius: 1px 1px var(--radius-full) var(--radius-full);
     background: var(--spine-color, var(--text-dim));
-    opacity: 0.75;
 }
 
 .body {

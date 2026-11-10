@@ -274,7 +274,6 @@ export const JournalEntry = memo(function JournalEntry({
                                 }}
                                 onDoubleClick={event => event.stopPropagation()}
                             >
-                                <span aria-hidden="true">↳</span>
                                 <span className={styles.openerLabel}>
                                     {getPreview(opener.content)}
                                 </span>

@@ -92,12 +92,14 @@
   color: var(--accent);
 }
 
+/* Both markers wear the session's category colour, like the rail between
+   them; a session without a category keeps the stock green and grey. */
 .sessionStartIcon {
-  color: var(--success);
+  color: var(--rail-color, var(--success));
 }
 
 .sessionEndIcon {
-  color: var(--text-muted);
+  color: var(--rail-color, var(--text-muted));
 }
 
 /* Timeline connecting lines:
@@ -179,12 +181,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.sessionBackrefLabel::before {
-  content: "\21b3";
-  margin-right: var(--space-2);
-  color: var(--rail-color, var(--accent));
 }
 
 .lineTop {
