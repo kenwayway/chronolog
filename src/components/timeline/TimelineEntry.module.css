@@ -126,9 +126,65 @@
 .sessionLine {
   width: 2px;
   opacity: 0.82;
-  background-color: var(--accent);
+  background-color: var(--rail-color, var(--accent));
   border-radius: 1px;
-  box-shadow: 0 0 8px var(--accent-glow);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--rail-color, var(--accent)) 15%, transparent);
+}
+
+/* A session is drawn as a bracket: the rail is its spine and these are its
+ * arms, reaching from the start and end markers toward the content. Entries
+ * in between keep the plain spine and are otherwise untouched. */
+.bracketArm {
+  position: absolute;
+  top: 9px;
+  left: 50%;
+  width: calc(50% + 10px);
+  height: 2px;
+  background-color: var(--rail-color, var(--accent));
+  opacity: 0.82;
+  pointer-events: none;
+}
+
+/* The end row's pointer back to the session it closes. */
+.sessionBackref {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  max-width: 100%;
+  min-height: 20px;
+  margin: 0 0 var(--space-1);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.04em;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sessionBackref:hover,
+.sessionBackref:focus-visible {
+  color: var(--accent);
+}
+
+.sessionBackref:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.sessionBackrefLabel {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sessionBackrefLabel::before {
+  content: "\21b3";
+  margin-right: var(--space-2);
+  color: var(--rail-color, var(--accent));
 }
 
 .lineTop {
@@ -386,6 +442,11 @@
 
   .symbolCol {
     width: 16px !important;
+  }
+
+  .bracketArm {
+    top: 9px;
+    width: calc(50% + 6px);
   }
 
   .annotationToggle {

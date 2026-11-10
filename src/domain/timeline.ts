@@ -52,6 +52,13 @@ export function projectTimelineItems(notes: Note[], sessions: Session[]): Timeli
   return items.sort((left, right) => left.timestamp - right.timestamp)
 }
 
+/**
+ * What a session's `endContent` holds when it was closed without a closing
+ * remark. It is persisted, so views that already say "this session ended" in
+ * their own way match on it to avoid saying so twice.
+ */
+export const DEFAULT_SESSION_END_CONTENT = 'Session ended'
+
 /** Resolve a domain ID to its canonical timeline view (session start or note). */
 export function timelineItemForEntity(items: TimelineItem[], entityId: string): TimelineItem | undefined {
   return items.find(item =>

@@ -2,6 +2,7 @@ import { ACTIONS, BUILTIN_CONTENT_TYPES, SESSION_STATUS } from '@/utils/constant
 import { generateId } from '@/utils/formatters'
 import { parseTags } from '@/utils/tagParser'
 import { isZaddyComment, ZADDY_COMMENT_CONTENT_TYPE } from '@/utils/zaddyComment'
+import { DEFAULT_SESSION_END_CONTENT } from '@/domain/timeline'
 import { sanitizeContentTypeFieldValues, sanitizeContentTypedEntity } from '@/features/contentTypes/sanitize'
 import type {
     AddMediaItemPayload,
@@ -131,7 +132,7 @@ function handleLogOff(state: SessionState, payload?: LogOffPayload): SessionStat
         return state
     }
 
-    const { cleanContent, tags } = parseTags(payload?.content || 'Session ended')
+    const { cleanContent, tags } = parseTags(payload?.content || DEFAULT_SESSION_END_CONTENT)
     const timestamp = payload?.timestamp ?? Date.now()
     return {
         ...state,

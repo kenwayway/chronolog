@@ -6,7 +6,8 @@ import { TimelineEntry } from "./TimelineEntry";
 import { JournalEntry } from "./JournalEntry";
 import { getThemeLayout } from "@/themes";
 import { buildZaddyAnnotationGroups } from "./annotationGroups";
-import { getTimelineLineState } from "./timelineLineState";
+import { getTimelineLineState, getTimelineRailSession } from "./timelineLineState";
+import { darkenColor } from "@/utils/contentParser";
 import type { ZaddyAnnotation } from "./annotationGroups";
 import { isZaddyComment } from "@/utils/zaddyComment";
 import type { TimelineItem, SessionStatus, CategoryId } from "@/types";
@@ -167,22 +168,40 @@ export function Timeline({
   }, [visibleTimelineEntries, isFilterMode, currentPage]);
 
   // Memoize session duration and line state calculations
-  const { sessionDurations, entryLineStates } = useMemo(() => {
+  const { sessionDurations, entryLineStates, entryRailColors } = useMemo(() => {
     const durations: Record<string, number> = {};
     for (const session of sessions) {
-      if (session.endAt !== null) durations[`session:${session.id}:start`] = session.endAt - session.startAt;
+      if (session.endAt === null) continue;
+      durations[`session:${session.id}:start`] = session.endAt - session.startAt;
     }
     const lineStates: Record<string, string> = {};
+    // A session's rail wears its category colour for its whole span, so the
+    // bracket stays one shape across rows that have other categories or none.
+    const railColors: Record<string, string> = {};
+    const isLight = theme.mode === "light";
 
     for (const entry of sortedEntries) {
       lineStates[entry.id] = getTimelineLineState(
         entry,
         sessions,
       );
+      const railCategoryId = getTimelineRailSession(entry, sessions)?.category;
+      const railCategory = railCategoryId
+        ? categories.find(category => category.id === railCategoryId)
+        : undefined;
+      if (railCategory) {
+        railColors[entry.id] = isLight
+          ? darkenColor(railCategory.color, 10)
+          : railCategory.color;
+      }
     }
 
-    return { sessionDurations: durations, entryLineStates: lineStates };
-  }, [sortedEntries, sessions]);
+    return {
+      sessionDurations: durations,
+      entryLineStates: lineStates,
+      entryRailColors: railColors,
+    };
+  }, [sortedEntries, sessions, categories, theme.mode]);
 
   const allAnnotationsExpanded =
     annotationClusters.length > 0
@@ -389,6 +408,7 @@ export function Timeline({
               isFirst={index === 0}
               isLast={index === sortedEntries.length - 1}
               lineState={entryLineStates[entry.id]}
+              railColor={entryRailColors[entry.id]}
             />
           );
         })()

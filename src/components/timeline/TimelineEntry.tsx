@@ -1,6 +1,7 @@
-import { memo, ReactNode } from "react";
+import { memo, type CSSProperties, type ReactNode } from "react";
 import { ChevronRight, MessageSquareQuote, Play, Square } from "lucide-react";
 import { formatTime, formatDuration, formatApproxDuration, formatDate } from "@/utils/formatters";
+import { getPreview } from "@/utils/contentParser";
 import { ContentRenderer } from "./ContentRenderer";
 import { CommentEditor } from "./CommentEditor";
 import { LinkedEntryPreview } from "./LinkedEntryPreview";
@@ -8,7 +9,7 @@ import { ImageLightbox } from "../common/ImageLightbox";
 import { useTimelineEntry, type EntrySymbol, type Position } from "./useTimelineEntry";
 import styles from "./TimelineEntry.module.css";
 import type { TimelineItem, Category, MediaItem } from "@/types";
-import type { TimelineLinkIndex } from "@/domain/timeline";
+import { DEFAULT_SESSION_END_CONTENT, type TimelineLinkIndex } from "@/domain/timeline";
 
 type LineState = 'start' | 'end' | 'active' | 'default';
 
@@ -22,6 +23,8 @@ interface TimelineEntryProps {
   onContextMenu?: (entry: TimelineItem, position: Position) => void;
   onEdit?: (entry: TimelineItem) => void;
   lineState: LineState | string;
+  /** Category colour of the session whose rail runs through this row. */
+  railColor?: string;
   isLightMode: boolean;
   showDate?: boolean;
   onNavigateToEntry?: (entry: TimelineItem) => void;
@@ -61,6 +64,7 @@ export const TimelineEntry = memo(function TimelineEntry({
   onContextMenu,
   onEdit,
   lineState,
+  railColor,
   isLightMode,
   showDate = false,
   onNavigateToEntry,
@@ -166,6 +170,36 @@ export const TimelineEntry = memo(function TimelineEntry({
     return lineState === "start" || lineState === "active";
   };
 
+  // A session end names the session it closes, so the row reads on its own
+  // however many notes sit between it and its start.
+  const sessionStartEntry = isSessionEnd && !isAnnotation
+    ? linkIndex.byEntityId.get(entry.entityId)
+    : undefined;
+  const sessionBackrefLabel = sessionStartEntry
+    ? getPreview(sessionStartEntry.content)
+    : "";
+
+  // The back-reference already says the session ended; the stock closing
+  // line would only repeat it. A remark the user actually wrote still shows.
+  const isRedundantEndContent = Boolean(sessionStartEntry)
+    && entry.content.trim() === DEFAULT_SESSION_END_CONTENT;
+
+  const jumpToSessionStart = () => {
+    if (!sessionStartEntry) return;
+    const target = document.querySelector<HTMLElement>(
+      `[data-entry-id="${sessionStartEntry.id}"]`,
+    );
+    if (!target) {
+      onNavigateToEntry?.(sessionStartEntry);
+      return;
+    }
+    target.scrollIntoView({ behavior: "smooth", block: "center" });
+    target.style.backgroundColor = "var(--accent-subtle)";
+    setTimeout(() => {
+      target.style.backgroundColor = "";
+    }, 1500);
+  };
+
   const getContentColor = (): string => {
     if (isAnnotation) return "var(--text-muted)";
     if (isSessionStart) return "var(--text-primary)";
@@ -188,6 +222,9 @@ export const TimelineEntry = memo(function TimelineEntry({
           cursor: "default",
           userSelect: "none",
           transition: "background-color 300ms ease",
+          // Set on the row, not the symbol column: the back-reference in the
+          // content column wears the rail's colour too.
+          ...(railColor ? { "--rail-color": railColor } as CSSProperties : {}),
         }}
         {...entryGestures}
       >
@@ -255,6 +292,11 @@ export const TimelineEntry = memo(function TimelineEntry({
               aria-hidden="true"
             />
           )}
+          {/* The bracket's arms: the rail turns toward the content at both
+              ends of a session, so start and end read as one shape. */}
+          {(lineState === "start" || lineState === "end") && (
+            <div className={styles.bracketArm} aria-hidden="true" />
+          )}
           <div className={styles.symbolWrapper}>
             {renderSymbol(symbol)}
           </div>
@@ -299,6 +341,23 @@ export const TimelineEntry = memo(function TimelineEntry({
             )}
           </div>
 
+          {sessionStartEntry && (
+            <button
+              type="button"
+              className={styles.sessionBackref}
+              title="Jump to session start"
+              onClick={(event) => {
+                event.stopPropagation();
+                jumpToSessionStart();
+              }}
+              onDoubleClick={(event) => event.stopPropagation()}
+            >
+              <span className={styles.sessionBackrefLabel}>
+                {sessionBackrefLabel || "SESSION"}
+              </span>
+            </button>
+          )}
+
           {isAnnotation && annotationGroupCount !== undefined && (
             <button
               type="button"
@@ -331,7 +390,7 @@ export const TimelineEntry = memo(function TimelineEntry({
               {isZaddy && !isAnnotation && (
                 <span className={styles.originBadge}>ZADDY</span>
               )}
-              {entry.content && (
+              {entry.content && !isRedundantEndContent && (
                 <span
                   className={`${styles.contentText} ${isAnnotation ? styles.annotationContent : ""}`}
                   style={{

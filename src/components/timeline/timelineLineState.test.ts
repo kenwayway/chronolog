@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Session, TimelineItem } from "@/types";
-import { getTimelineLineState } from "./timelineLineState";
+import { getTimelineLineState, getTimelineRailSession } from "./timelineLineState";
 
 const session: Session = {
   id: "s1",
@@ -54,5 +54,28 @@ describe("getTimelineLineState", () => {
     expect(
       getTimelineLineState(note(400, { origin: "zaddy" }), [session]),
     ).toBe("default");
+  });
+});
+
+describe("getTimelineRailSession", () => {
+  const zaddySession: Session = { id: "z1", content: "chat", startAt: 0, endAt: 1000, origin: "zaddy" };
+
+  it("puts an unlinked note on the rail of the session around it", () => {
+    expect(getTimelineRailSession(note(200), [session])?.id).toBe("s1");
+  });
+
+  it("resolves a session marker to its own session", () => {
+    const end: TimelineItem = {
+      id: "session:s1:end",
+      entityId: "s1",
+      kind: "session-end",
+      content: "",
+      timestamp: 300,
+    };
+    expect(getTimelineRailSession(end, [session])?.id).toBe("s1");
+  });
+
+  it("leaves a note outside every user session off the rail", () => {
+    expect(getTimelineRailSession(note(400), [zaddySession, session])).toBeUndefined();
   });
 });

@@ -7,6 +7,26 @@ function fallsWithinSession(timestamp: number, session: Session): boolean {
     && (session.endAt === null || timestamp < session.endAt);
 }
 
+/**
+ * The user session whose rail runs through this row, if any. A row sits on a
+ * rail for the same reasons it gets a session line state, so the rail can take
+ * its colour from that session without the row knowing anything about it.
+ */
+export function getTimelineRailSession(
+  entry: TimelineItem,
+  sessions: Session[],
+): Session | undefined {
+  const userSessions = sessions.filter(session => session.origin !== "zaddy");
+  const containing = () =>
+    userSessions.find(session => fallsWithinSession(entry.timestamp, session));
+
+  if (entry.origin === "zaddy") return containing();
+  if (entry.kind === "session-start" || entry.kind === "session-end") {
+    return userSessions.find(session => session.id === entry.entityId);
+  }
+  return userSessions.find(session => session.id === entry.sessionId) ?? containing();
+}
+
 export function getTimelineLineState(
   entry: TimelineItem,
   sessions: Session[],
