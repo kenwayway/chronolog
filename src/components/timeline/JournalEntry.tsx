@@ -1,6 +1,7 @@
 import { memo, type CSSProperties } from "react";
 import { ChevronRight, MessageSquareQuote } from "lucide-react";
 import { formatTime, formatDuration, formatDate } from "@/utils/formatters";
+import { getPreview } from "@/utils/contentParser";
 import { ContentRenderer } from "./ContentRenderer";
 import { CommentEditor } from "./CommentEditor";
 import { LinkedEntryPreview } from "./LinkedEntryPreview";
@@ -8,7 +9,7 @@ import { ImageLightbox } from "../common/ImageLightbox";
 import { useTimelineEntry, type Position } from "./useTimelineEntry";
 import styles from "./JournalEntry.module.css";
 import type { TimelineItem, Category, MediaItem } from "@/types";
-import type { TimelineLinkIndex } from "@/domain/timeline";
+import { DEFAULT_SESSION_END_CONTENT, type TimelineLinkIndex } from "@/domain/timeline";
 
 interface JournalEntryProps {
     entry: TimelineItem;
@@ -35,6 +36,10 @@ interface JournalEntryProps {
     annotationGroupExpanded?: boolean;
     annotationGroupEntryIds?: string[];
     onToggleAnnotationGroup?: () => void;
+    /** The card above belongs to the same session. */
+    joinPrev?: boolean;
+    /** The card below belongs to the same session. */
+    joinNext?: boolean;
 }
 
 /**
@@ -45,10 +50,11 @@ interface JournalEntryProps {
  * card wears the stub that terminates the pair. It is the only saturated colour
  * on the card, so the shape of a day is readable before a single word is.
  *
- * A card stack has no rule running down it, so a session's two ends cannot be
- * connected by drawing - anything between them is a card, and in filter mode
- * the stack is reversed and paginated besides. The closing card carries the
- * link instead: it names the hour it opened and jumps to it.
+ * A card stack has no rule running down it, so a session is held together by
+ * spacing instead: its cards close up into one block (`joinPrev`/`joinNext`),
+ * and the cards in between keep their own dots and categories. A filtered view
+ * is reversed and paginated, so nothing joins there and the closing card's
+ * link carries the pair alone: it names the session it closes and jumps to it.
  */
 export const JournalEntry = memo(function JournalEntry({
     entry,
@@ -75,6 +81,8 @@ export const JournalEntry = memo(function JournalEntry({
     annotationGroupExpanded = false,
     annotationGroupEntryIds,
     onToggleAnnotationGroup,
+    joinPrev = false,
+    joinNext = false,
 }: JournalEntryProps) {
     const {
         category,
@@ -110,7 +118,11 @@ export const JournalEntry = memo(function JournalEntry({
     // The link index keys the canonical (never session-end) item per entity, so
     // a closing card can find the card that opened it without a second scan.
     const opener = isSessionEnd ? linkIndex.byEntityId.get(entry.entityId) : undefined;
-    const openerDuration = opener ? entry.timestamp - opener.timestamp : undefined;
+    // The link already says the session ended; the stock closing line would
+    // only repeat it. A remark she actually wrote still shows.
+    const content = opener && entry.content.trim() === DEFAULT_SESSION_END_CONTENT
+        ? ""
+        : entry.content;
 
     const jumpToOpener = () => {
         if (!opener) return;
@@ -198,6 +210,15 @@ export const JournalEntry = memo(function JournalEntry({
         "--category-color": categoryTextColor || undefined,
     } as CSSProperties;
 
+    // A closing card with nothing to say is only the end of the block, so it
+    // is set as a slim footer rather than a full card of empty space.
+    const isBareClosing = Boolean(opener)
+        && !content
+        && !contentTypeDisplay
+        && !(entry.tags && entry.tags.length > 0)
+        && beforeLinks.length === 0
+        && afterLinks.length === 0;
+
     const spineClass = isSessionStart
         ? styles.spine
         : isSessionEnd
@@ -207,7 +228,9 @@ export const JournalEntry = memo(function JournalEntry({
     return (
         <>
             <div
-                className={styles.card}
+                className={`${styles.card} ${joinPrev ? styles.joinPrev : ""} ${
+                    joinNext ? styles.joinNext : ""
+                } ${isBareClosing ? styles.cardBare : ""}`}
                 data-entry-id={entry.id}
                 style={spineStyle}
                 {...entryGestures}
@@ -252,12 +275,9 @@ export const JournalEntry = memo(function JournalEntry({
                                 onDoubleClick={event => event.stopPropagation()}
                             >
                                 <span aria-hidden="true">↳</span>
-                                <span>{formatTime(opener.timestamp)}</span>
-                                {openerDuration !== undefined && (
-                                    <span className={styles.openerSpan}>
-                                        {formatDuration(openerDuration)}
-                                    </span>
-                                )}
+                                <span className={styles.openerLabel}>
+                                    {getPreview(opener.content)}
+                                </span>
                             </button>
                         )}
 
@@ -279,11 +299,11 @@ export const JournalEntry = memo(function JournalEntry({
                         )}
                     </div>
 
-                    {entry.content && (
+                    {content && (
                         <div
                             className={`${styles.content} ${isSessionEnd ? styles.contentClosing : ""}`}
                         >
-                            <ContentRenderer content={entry.content} onImageClick={openLightbox} />
+                            <ContentRenderer content={content} onImageClick={openLightbox} />
                         </div>
                     )}
 

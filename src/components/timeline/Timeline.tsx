@@ -168,7 +168,7 @@ export function Timeline({
   }, [visibleTimelineEntries, isFilterMode, currentPage]);
 
   // Memoize session duration and line state calculations
-  const { sessionDurations, entryLineStates, entryRailColors } = useMemo(() => {
+  const { sessionDurations, entryLineStates, entryRailColors, entryStackJoins } = useMemo(() => {
     const durations: Record<string, number> = {};
     for (const session of sessions) {
       if (session.endAt === null) continue;
@@ -196,12 +196,32 @@ export function Timeline({
       }
     }
 
+    // In the card stack a session is one block: neighbouring cards on the
+    // same rail close up. Zaddy rows are not cards and break the block, and a
+    // filtered view is reversed and paginated, so a session's cards are not
+    // reliably adjacent there and nothing joins.
+    const stackJoins: Record<string, { prev: boolean; next: boolean }> = {};
+    if (!isFilterMode) {
+      const railIds = sortedEntries.map(entry =>
+        entry.origin === "zaddy" ? undefined : getTimelineRailSession(entry, sessions)?.id
+      );
+      sortedEntries.forEach((entry, index) => {
+        const railId = railIds[index];
+        if (!railId) return;
+        stackJoins[entry.id] = {
+          prev: railIds[index - 1] === railId,
+          next: railIds[index + 1] === railId,
+        };
+      });
+    }
+
     return {
       sessionDurations: durations,
       entryLineStates: lineStates,
       entryRailColors: railColors,
+      entryStackJoins: stackJoins,
     };
-  }, [sortedEntries, sessions, categories, theme.mode]);
+  }, [sortedEntries, sessions, categories, theme.mode, isFilterMode]);
 
   const allAnnotationsExpanded =
     annotationClusters.length > 0
@@ -400,7 +420,12 @@ export function Timeline({
           };
 
           return isCardLayout ? (
-            <JournalEntry key={entry.id} {...shared} />
+            <JournalEntry
+              key={entry.id}
+              {...shared}
+              joinPrev={entryStackJoins[entry.id]?.prev}
+              joinNext={entryStackJoins[entry.id]?.next}
+            />
           ) : (
             <TimelineEntry
               key={entry.id}
